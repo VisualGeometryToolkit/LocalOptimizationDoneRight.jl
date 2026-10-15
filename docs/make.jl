@@ -11,7 +11,7 @@ makedocs(;
     format=Documenter.HTML(;
         assets=["assets/landing_tagline.css", "assets/landing_tagline.js"],
         prettyurls=get(ENV, "CI", "false") == "true" || get(ENV, "LODR_DOCS_DEPLOY", "0") == "1",
-        canonical="https://localoptimizationdoneright.github.io",
+        canonical="https://visualgeometrytoolkit.github.io/LocalOptimizationDoneRight.jl/",
         edit_link="main",
     ),
     plugins=[LandingPage(), CodeBlocks()],
@@ -31,14 +31,15 @@ makedocs(;
     ],
 )
 
-# The site is the LocalOptimizationDoneRight organization page
-# (https://localoptimizationdoneright.github.io): unversioned, at the root of
-# that repository's `main` branch. CI deploys it (.github/workflows/docs.yml)
-# with the DOCUMENTER_KEY deploy key of that repository; LODR_DOCS_DEPLOY=1
+# The site is this repository's project page
+# (https://visualgeometrytoolkit.github.io/LocalOptimizationDoneRight.jl/):
+# unversioned, at the root of the `gh-pages` branch. CI deploys it
+# (.github/workflows/docs.yml) with the DOCUMENTER_KEY deploy key of this
+# repository; LODR_DOCS_DEPLOY=1
 # selects pretty URLs for a local build.
 deploydocs(;
-    repo="github.com/LocalOptimizationDoneRight/localoptimizationdoneright.github.io.git",
-    branch="main",
+    repo="github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl.git",
+    branch="gh-pages",
     devbranch="main",
     versions=nothing,
 )

@@ -38,5 +38,8 @@ jobs:
         with:
           version: ${{ matrix.version }}
       - uses: julia-actions/cache@v2
+      # CauRegistry as well as General until the stack is in General.
       - uses: julia-actions/julia-buildpkg@v1
+        with:
+          localregistry: https://github.com/prittjam/CauRegistry.jl.git
       - uses: julia-actions/julia-runtest@v1

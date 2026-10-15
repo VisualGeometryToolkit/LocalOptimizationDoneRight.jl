@@ -1,11 +1,8 @@
 name: Docs
 
-# Builds the documentation and deploys it to the external organization page
-# https://localoptimizationdoneright.github.io (repository
-# LocalOptimizationDoneRight/localoptimizationdoneright.github.io, branch main;
-# see docs/make.jl). Deploying to another repository needs an SSH deploy key:
-# its public half is a write-enabled deploy key of that repository, its private
-# half the DOCUMENTER_KEY secret of this one.
+# Builds the documentation and deploys it to this repository's gh-pages
+# branch, served at https://visualgeometrytoolkit.github.io/LocalOptimizationDoneRight.jl/ . DOCUMENTER_KEY is the
+# private half of a write-enabled deploy key of this repository.
 on:
   push:
     branches:
@@ -31,7 +28,10 @@ jobs:
           version: '1.12'
       - uses: julia-actions/cache@v2
       - name: Install docs dependencies
-        run: julia --project=docs -e 'using Pkg; Pkg.instantiate()'
+        # CauRegistry as well as General until the stack is in General.
+        run: |
+          julia -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl")'
+          julia --project=docs -e 'using Pkg; Pkg.instantiate()'
       - name: Build and deploy docs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
