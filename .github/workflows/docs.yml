@@ -7,7 +7,8 @@ on:
   push:
     branches:
       - main
-    tags: ['*']
+    # No tag trigger: the site is unversioned (deploydocs versions = nothing),
+    # built from main only.
   pull_request:
   workflow_dispatch:
 
