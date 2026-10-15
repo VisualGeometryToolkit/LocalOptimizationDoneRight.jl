@@ -1,0 +1,33 @@
+# =============================================================================
+# heb_stats — the HEB dataset statistics the main paper quotes (Sec. 4, "On
+# HEB, a median of \HEBInlMed inliers among \HEBCsMed correspondences …"):
+# scripts/heb_inlier_stats.jl counts, per pair of the HEB pools the paper's
+# HEB cells read, the correspondences and the benchmark's ground-truth inliers;
+# the statistics over them are macros of scripts/paper_numbers.jl
+# (configs/paper_numbers.toml [sources.heb_stats], paper/figures/paper_numbers.tex).
+#
+# THE GT INLIER DEFINITION is the pools' stored `gt_inliers` mask: the HEB
+# release's own per-correspondence inlier flag (column 10 == 1 of its
+# <scene>_homographies.h5 rows; VisualGeometryEval Datasets heb.jl), written into the pool record unchanged
+# by scripts/heb_h_pools.jl. A pair's correspondences are the pool record's —
+# the release's matches after the pool generator's SNN filter
+# (configs/heb_h_pools.toml [pool]), the set every HEB pipeline sees. Nothing
+# is re-estimated here. The 2026-10-04 numbers in main.tex came from the same
+# masks (inlier_stats job 6863).
+#
+# The pairs counted are the TEST side of the source cell's cross-validation
+# (heb_h_miscal: the registered `heb` split, every pair), the side every HEB
+# figure reports on.
+# =============================================================================
+
+[experiment]
+# The pools counted: heb_h_miscal's (refused unless they agree).
+dataset = "heb"
+matcher = "sift"
+problem = "H"
+pool_dir = "accv2026/data/HEB-H-SIFT-4K_pf3"
+
+[source]
+# The cell whose cross-validation's test side is counted; its pools must be
+# [experiment]'s. The counts are keyed by the pools and that test side alone.
+miscal_config = "heb_h_miscal"

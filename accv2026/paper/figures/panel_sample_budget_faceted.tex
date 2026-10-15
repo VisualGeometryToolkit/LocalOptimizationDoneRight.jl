@@ -1,0 +1,43 @@
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=3 by 1, horizontal sep=6pt, vertical sep=12pt,
+    xticklabels at=edge bottom, xlabels at=edge bottom},
+  scale only axis, width=0.265\linewidth, height=0.205\linewidth,
+  xmin={100}, xmax={4000}, xtick={100,1000,2000,3000},
+  xmajorgrids, ymajorgrids, grid style={gray!20},
+  label style={font=\footnotesize}, tick label style={font=\scriptsize},
+  xlabel={sample budget},
+  title style={font=\footnotesize, align=center}]
+\nextgroupplot[ymin={0.35}, ymax={0.65}, ytick={0.35,0.40,0.45,0.50,0.55,0.60}, minor y tick num={0}, yminorgrids, yticklabel style={text width=2.4em, align=right}, title={Uniform mixtures\\(TLS, Stu-$t$U)}, ylabel={PhotoTourism $\mathbf{E}$\\mAA@$10^\circ$}, ylabel style={align=center}, legend to name=sbfacetedlegend, legend columns=4, legend cell align=left, legend style={draw=none, font=\footnotesize, /tikz/every even column/.append style={column sep=8pt}}]
+\addplot[black, line width=0.5pt, mark=none, forget plot] coordinates {(100,0.5091) (500,0.6607) (1000,0.7120) (1500,0.7373) (2000,0.7545) (2500,0.7674) (3000,0.7773) (3500,0.7855) (4000,0.7922)};
+\addplot[color=ColorIGPoseLib, mark=o, mark options={solid,fill=ColorIGPoseLib}, line width=0.8pt, mark size=1.6pt, dashed, forget plot] coordinates {(100,0.4509) (500,0.5369) (1000,0.5642) (1500,0.5779) (2000,0.5877) (2500,0.5947) (3000,0.6004) (3500,0.6049) (4000,0.6078)};
+\addplot[color=ColorIGLZ, mark=diamond, mark options={solid,fill=ColorIGLZ}, line width=0.8pt, mark size=1.6pt, dashed, forget plot] coordinates {(100,0.4493) (500,0.5352) (1000,0.5625) (1500,0.5761) (2000,0.5860) (2500,0.5933) (3000,0.5992) (3500,0.6036) (4000,0.6066)};
+\addplot[color=ColorIGTLSHQ, mark=triangle, mark options={solid,fill=ColorIGTLSHQ}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(100,0.4679) (500,0.5460) (1000,0.5712) (1500,0.5839) (2000,0.5927) (2500,0.5992) (3000,0.6044) (3500,0.6086) (4000,0.6118)};
+\addplot[color=ColorIGTLSLOP, mark=pentagon*, mark options={solid,fill=ColorIGTLSLOP}, line width=0.8pt, mark size=1.6pt, dashed, forget plot] coordinates {(100,0.4000) (500,0.5000) (1000,0.5322) (1500,0.5483) (2000,0.5595) (2500,0.5681) (3000,0.5750) (3500,0.5802) (4000,0.5839)};
+\addplot[color=ColorIGGNCTLS, mark=diamond, mark options={solid,fill=ColorIGGNCTLS}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(100,0.4484) (500,0.5280) (1000,0.5546) (1500,0.5677) (2000,0.5761) (2500,0.5831) (3000,0.5884) (3500,0.5931) (4000,0.5965)};
+\addplot[color=ColorIGBCD, mark=oplus, mark options={solid,fill=ColorIGBCD}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(100,0.4778) (500,0.5535) (1000,0.5777) (1500,0.5892) (2000,0.5979) (2500,0.6045) (3000,0.6096) (3500,0.6135) (4000,0.6167)};
+\addlegendimage{black, line width=0.5pt}\addlegendentry{oracle (best minimal $\mathbf{E}$)}
+\addlegendimage{color=ColorIGPoseLib, mark=o, mark options={solid,fill=ColorIGPoseLib}, line width=0.8pt, dashed}\addlegendentry{TLS-IRLS}
+\addlegendimage{color=ColorIGLZ, mark=diamond, mark options={solid,fill=ColorIGLZ}, line width=0.8pt, dashed}\addlegendentry{TLS-LZ}
+\addlegendimage{color=ColorIGTLSHQ, mark=triangle, mark options={solid,fill=ColorIGTLSHQ}, line width=0.8pt}\addlegendentry{TLS-HQ}
+\addlegendimage{color=ColorIGTLSLOP, mark=pentagon*, mark options={solid,fill=ColorIGTLSLOP}, line width=0.8pt, dashed}\addlegendentry{TLS-LO$^+$}
+\addlegendimage{color=ColorIGGNCTLS, mark=diamond, mark options={solid,fill=ColorIGGNCTLS}, line width=0.8pt}\addlegendentry{TLS-GNC}
+\addlegendimage{color=ColorIGBCD, mark=oplus, mark options={solid,fill=ColorIGBCD}, line width=0.8pt}\addlegendentry{Stu-$t$U-BCD}
+\addlegendimage{color=ColorIGWIrls, mark=o, mark options={solid,fill=ColorIGWIrls}, line width=0.8pt}\addlegendentry{Welsch-IRLS}
+\addlegendimage{color=ColorIGLift, mark=triangle, mark options={solid,fill=ColorIGLift}, line width=0.8pt}\addlegendentry{Welsch-HQ}
+\addlegendimage{color=ColorIGGNCW, mark=diamond, mark options={solid,fill=ColorIGGNCW}, line width=0.8pt}\addlegendentry{Welsch-GNC}
+\addlegendimage{color=ColorIGGMIrls, mark=o, mark options={solid,fill=ColorIGGMIrls}, line width=0.8pt}\addlegendentry{GM-IRLS}
+\addlegendimage{color=ColorIGGMHQ, mark=triangle, mark options={solid,fill=ColorIGGMHQ}, line width=0.8pt}\addlegendentry{GM-HQ}
+\addlegendimage{color=ColorIGGNCGM, mark=diamond, mark options={solid,fill=ColorIGGNCGM}, line width=0.8pt}\addlegendentry{GM-GNC}
+\nextgroupplot[ymin={0.35}, ymax={0.65}, ytick={0.35,0.40,0.45,0.50,0.55,0.60}, minor y tick num={0}, yminorgrids, yticklabel style={text width=2.4em, align=right}, title={Welsch}, yticklabels={}]
+\addplot[black, line width=0.5pt, mark=none, forget plot] coordinates {(100,0.5091) (500,0.6607) (1000,0.7120) (1500,0.7373) (2000,0.7545) (2500,0.7674) (3000,0.7773) (3500,0.7855) (4000,0.7922)};
+\addplot[color=ColorIGWIrls, mark=o, mark options={solid,fill=ColorIGWIrls}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(100,0.4479) (500,0.5356) (1000,0.5632) (1500,0.5772) (2000,0.5869) (2500,0.5939) (3000,0.5997) (3500,0.6040) (4000,0.6072)};
+\addplot[color=ColorIGLift, mark=triangle, mark options={solid,fill=ColorIGLift}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(100,0.5357) (500,0.5929) (1000,0.6112) (1500,0.6206) (2000,0.6261) (2500,0.6303) (3000,0.6338) (3500,0.6369) (4000,0.6399)};
+\addplot[color=ColorIGGNCW, mark=diamond, mark options={solid,fill=ColorIGGNCW}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(100,0.4647) (500,0.5459) (1000,0.5711) (1500,0.5836) (2000,0.5927) (2500,0.5993) (3000,0.6046) (3500,0.6084) (4000,0.6114)};
+\nextgroupplot[ymin={0.35}, ymax={0.65}, ytick={0.35,0.40,0.45,0.50,0.55,0.60}, minor y tick num={0}, yminorgrids, yticklabel style={text width=2.4em, align=right}, title={Geman--McClure\\(GM)}, yticklabels={}]
+\addplot[black, line width=0.5pt, mark=none, forget plot] coordinates {(100,0.5091) (500,0.6607) (1000,0.7120) (1500,0.7373) (2000,0.7545) (2500,0.7674) (3000,0.7773) (3500,0.7855) (4000,0.7922)};
+\addplot[color=ColorIGGMIrls, mark=o, mark options={solid,fill=ColorIGGMIrls}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(100,0.4447) (500,0.5339) (1000,0.5615) (1500,0.5756) (2000,0.5853) (2500,0.5925) (3000,0.5982) (3500,0.6025) (4000,0.6057)};
+\addplot[color=ColorIGGMHQ, mark=triangle, mark options={solid,fill=ColorIGGMHQ}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(100,0.4733) (500,0.5503) (1000,0.5749) (1500,0.5875) (2000,0.5956) (2500,0.6017) (3000,0.6068) (3500,0.6107) (4000,0.6143)};
+\addplot[color=ColorIGGNCGM, mark=diamond, mark options={solid,fill=ColorIGGNCGM}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(100,0.4061) (500,0.5032) (1000,0.5341) (1500,0.5499) (2000,0.5609) (2500,0.5693) (3000,0.5758) (3500,0.5809) (4000,0.5849)};
+\end{groupplot}
+\end{tikzpicture}

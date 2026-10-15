@@ -1,0 +1,54 @@
+# =============================================================================
+# heb_h_pools — configuration of record for the HEB HOMOGRAPHY-track 4K-sample
+# scoring-pool production: the HEB rows of Fig. 2 (supp_H_miscal) and Fig. 3
+# (supp_H_budget).
+#
+# POOL PRODUCER class (pools are dataset-derived data, not results — the one
+# sanctioned write under data_root()):
+# writes per-scene pools (a light record + its residuals, VisualGeometryEval
+# pool format 4) into a NEW immutable tree under data_root(), through
+# scripts/tools/generate_scoring_pools.jl. Identity: `_config.toml` +
+# `_provenance.toml` sidecars in the output tree; a changed config is a NEW
+# pool tree (bump `pool.version` and `experiment.pool_dir` together), never an
+# overwrite. The pools store the GT motion in the extrinsic convention
+# (`gt_convention`), checked on read. Every generation constant is stated in
+# [pool] below; the 4000-sample target is the budget protocol's.
+# =============================================================================
+
+[experiment]
+dataset = "heb"
+matcher = "sift"                 # the HEB release's own SIFT matches (provenance)
+problem = "H"
+# OUTPUT tree of the GENERATOR, RELATIVE to data_root(). `_pf3` = the
+# pool_format 3 generation; the unsuffixed trees are the retired ones.
+pool_dir = "accv2026/data/HEB-H-SIFT-4K_pf3"
+
+[source]
+# RELATIVE to data_root(): the directory of the ETH HEB <scene>_homographies.h5
+# files.
+raw_dir = "accv2026/data/heb_raw"
+# The sides of the scene split of record, `<split>:validation|test`, resolved
+# through VisualGeometryEval configs/splits.toml (validation_data.jl
+# `split_scenes`). BOTH sides: the budget cell (heb_h_budget) is a test-time
+# evaluation and needs only the 5 test scenes, but the cell that PRODUCES the
+# operating points it reads (supp_H_miscal, stage h_cv) tunes on the 5
+# VALIDATION scenes.
+splits = ["heb:validation", "heb:test"]
+image_unit = "px"                # raw csponds are pixels (driver asserts)
+
+[pool]
+version = "v2"                   # v1 = the refused pre-pool_format-3 trees
+# The as-run concurrency of the HEB generation (scenes are 10-20 GB).
+max_concurrent = 5
+# Generation constants: the values of record of every pool tree of this
+# config (scripts/tools/generate_scoring_pools.jl reads every one).
+sampler = "gaussian"             # the Gaussian-SNN minimal-sample sampler
+gaussian_sigma = 0.125           # its σ (the e2e live loop draws with the same)
+target = 4000                # accepted minimal samples per pair
+max_trials = 100000        # minimal-sample draws per pair, at most
+min_csponds = 20                 # a raw pair with fewer kept correspondences is dropped
+max_pairs_per_scene = 2200       # per-scene pair cap (a seeded subsample)
+subsample_overdraw = 2           # the subsample draws this many × the cap, trimmed after the reader's rejections
+subsample_seed = 42              # StableRNG(stable_seed(subsample_seed, scene))
+pool_seed = 42                   # the minimal-sample streams: StableRNG(stable_seed(pool_seed, pair index))
+min_gt_inliers = 5               # a pair with fewer GT inliers has no σ̂² (NaN)

@@ -1,0 +1,47 @@
+# =============================================================================
+# fig3_miscal_grid — MAIN-PAPER FIG 3 (figures/panel_miscal_grid.tex): one row
+# per dataset, stacked by scripts/tools/make_facet_grid.py from the panels the
+# producing cells deploy (src/cell_stages.jl `facet_grid_stages`). A FIGURE
+# config: it composes, it runs no experiment, so it has no [experiment] and
+# re-keys nothing.
+#
+# Per row: the panel base name and the producer (driver, stage) that deploys
+# it; `maa` is that row's y axis, [lo, hi, step]; absent keeps the panel's own
+# axis.
+# =============================================================================
+[render]
+name = "miscal_grid"
+xopts = "shared"                 # the rows share the ζ axis (1/128..128)
+legend = "miscalgridlegend"
+# The ζ ticks every two octaves, as integers and STACKED fractions
+# (2026-10-04): "1/64" written inline collides with its neighbours at the
+# grid's column width; a vertical fraction is only as wide as its denominator.
+xtick = [0.015625, 0.0625, 0.25, 1.0, 4.0, 16.0, 64.0]
+xticklabels = ["$\\tfrac{1}{64}$", "$\\tfrac{1}{16}$", "$\\tfrac{1}{4}$", "$1$", "$4$", "$16$", "$64$"]
+
+[[render.rows]]
+label = "PhotoTourism"
+problem = "E"
+panel = "panel_lo_miscal"
+producer = "fig3_composed_miscal.jl"
+stage = "render"
+maa = [0.3, 0.7, 0.1]            # 2026-10-04: peak 0.65 at ζ = 1, room above
+
+# 2026-10-04: ETH3D F (SP+LG, laser GT) replaces the shelved 7-Scenes P3P row
+# (its pools needed registered depth; the cell was removed 2026-10-07), and sits
+# in the middle: the rows run E, F, H.
+[[render.rows]]
+label = "ETH3D"
+problem = "F"
+panel = "panel_lo_miscal_eth_F_main"
+producer = "supp_ETH_F_miscal.jl"
+stage = "render_main"
+maa = [0.4, 0.8, 0.1]            # 2026-10-04: curves 0.55–0.75
+
+[[render.rows]]
+label = "HEB"
+problem = "H"
+panel = "panel_lo_miscal_heb_H_main"
+producer = "supp_H_miscal.jl"
+stage = "render_main"
+maa = [0.1, 0.4, 0.1]            # 2026-10-04: peak 0.34

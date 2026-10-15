@@ -1,0 +1,37 @@
+# =============================================================================
+# accv2026_eth_f_budget — the ETH3D-F (SP+LG) sample-budget cell: the main-paper
+# Fig 4 grid's third row (2026-10-04: ETH3D F replaces the shelved 7-Scenes
+# P3P row). A budget cell like every other (src/cell_stages.jl
+# `budget_cell_stages`; the same keys as heb_h_budget.toml): every IG-seeded arm
+# of THE deployed ETH3D-F operating points (accv2026_eth_f_miscal's sequential
+# CV), streamed on the test side of their cross-validation.
+# =============================================================================
+
+[experiment]
+dataset = "eth3d"
+matcher = "splg"
+problem = "F"
+pool_dir = "datasets/eth3d/derived/splg/scoring_data_F_pf3"   # pool format 3 (configs/eth_f_pools.toml)
+
+[operating_points]
+miscal_config = "accv2026_eth_f_miscal"
+
+[budget]
+# The objective-matched Stu-tU-BCD ("IG  +BCD@a*", declared by the operating
+# points' cell) streamed here too; opt-in, it keys this cell.
+objective_matched = ["IG  +BCD"]
+# The research-only zero-clamp Welsch-HQ ("IG  +Lift@zc", declared by the
+# operating points' cell) streamed here too; opt-in, it keys this cell.
+zero_clamp = ["IG  +Lift"]
+protocol = "eth3d"
+selectors = ["student_t_uniform"]
+
+[render]
+xlog = true                         # a log₂ budget axis (render_budget.jl), as HEB's row
+row_label = "ETH3D"
+panel = "panel_sample_budget_eth_F.tex"
+xticks = [100, 500, 1000, 2000, 4000]
+legend = "ethfbudgetlegend"
+deploy = true
+rows = "maa"             # Fig 4 row: mAA alone
+extra_arms = "IG  +BCD"  # Table 1 "other"

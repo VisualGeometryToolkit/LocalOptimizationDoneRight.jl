@@ -1,0 +1,48 @@
+# =============================================================================
+# pt_e_e2e_table — MAIN-PAPER TAB. 3 (figures/table_e2e.tex): end-to-end
+# RANSAC, the deployed Stu-tU + Welsch-HQ pipeline against SupeRANSAC, on EVERY
+# PhotoTourism E test pair (scripts/e2e_ransac.jl; src/e2e_cells.jl).
+#
+# 2026-10-04: replaces the earlier July sample (the first 50 pool pairs per
+# test scene, the two-knob operating points, the old pool). Ours runs the
+# production loop with adaptive termination (RansacConfig defaults: 100..10 000
+# trials, eta = 0.99) at pt_e_miscal's sequential-CV operating point;
+# SupeRANSAC's rows are the SupeRANSAC cell's (configs/pt_e_superansac.toml:
+# tuned once at zeta = 1 on our validation units, a forced 10 000 trials — its
+# adaptive criterion is inert in the released build — on the same test pairs;
+# its stored results when that cell has not run). zeta corrupts each system's
+# residual-unit input at test time only (ours: the selection outlier
+# half-width; SupeRANSAC: its threshold). The ladder is Tab. 3's.
+# =============================================================================
+[experiment]
+dataset = "phototourism"
+matcher = "sift"
+problem = "E"
+pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"      # the PT-E pool of record (pt_e_miscal.toml's)
+
+[operating_points]
+miscal_config = "pt_e_miscal"
+
+[e2e]
+# "ours" = THE paper's Welsch-HQ (configs/protocol.toml [paper] welsch_hq,
+# 2026-10-07): the zero-clamp "IG  +Lift@zc" (declared by pt_e_miscal,
+# `[sequential_cv] zero_clamp`: the z-block of the ACCV submission's numbers).
+# One arm, so the table is two blocks — ours and SupeRANSAC — as published; the
+# faithful "IG  +Lift" stays in pt_e_miscal's sidecar, out of the table.
+arms = ["IG  +Lift@zc"]
+test = "operating_points"        # every test pair of the operating points' cross-validation
+zetas = [0.0625, 1.0, 4.0, 16.0, 128.0]
+seed = 0                         # per-pair stream: stable_seed(seed, stream, scene, pool_index)
+stream = "pt_e_e2e"              # the per-pair streams' label (keys the run with the seed)
+# The SupeRANSAC cell set beside ours (its loss width cross-validated on EXACTLY
+# our validation units, pt_e_miscal's stratified 25 % of the 10 validation
+# scenes: both pipelines tuned on the same pairs). Its ζ ladder covers ours.
+superansac = "pt_e_superansac"
+
+[render]
+panel = "table_e2e.tex"          # the main-paper table, written by the :table stage
+deploy = true
+# The time row (`time`): the timing cell's pinned single-threaded repeats on drawn test
+# pairs (configs/pt_e_e2e_timing.toml, scripts/e2e_timing.jl), not this cell's
+# multithreaded wall clocks.
+time = "pt_e_e2e_timing"

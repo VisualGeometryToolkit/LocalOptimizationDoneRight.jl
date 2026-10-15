@@ -1,0 +1,21 @@
+# =============================================================================
+# timing_table — Table 1's per-call LO timings (scripts/timing_table.jl): every
+# timed arm (arm_rosters.jl TIMING_TAGS) at the pt_e_miscal deployed operating
+# points, single-threaded, on a fixed fixture of PhotoTourism pairs. The same
+# timing file feeds the budget cell's time panel (configs/pt_e_budget.toml
+# [render.time] timing = "lo_timing_<tag>_<scene>.jld2").
+#
+# RUN LAST, ON A QUIET CORE: time_ns() brackets must be uncontended.
+# =============================================================================
+
+[experiment]
+dataset = "phototourism"
+matcher = "sift"
+problem = "E"
+pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"   # the PT-E pool of record (pt_e_miscal.toml's)
+
+[timing]
+tag = "pt_sift"                # the file is lo_timing_<tag>_<scene>.jld2
+sb_protocol = "phototourism"   # the configs/sample_budget_protocol.toml section the timing runs under
+scene = "british_museum"       # the timing fixture: one test scene ...
+npairs = 40                    # ... and its first npairs pairs

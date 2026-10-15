@@ -1,0 +1,13 @@
+# NOTE: upstream RansacLibLO.jl ignored `deps/RansacLib/` because build.jl
+# cloned it at build time. Here it is VENDORED and TRACKED at the pinned commit
+# b952083fcf1b2aea001bf178e010e540ff372889, so the paper artifact builds offline
+# and does not depend on github.com/tsattler/RansacLib remaining reachable.
+# BSD-3-Clause: LICENSE and NOTICE are retained in deps/RansacLib/.
+# Do NOT re-add a `deps/RansacLib/` rule.
+
+deps/ransaclib_wrapper/*.so
+deps/ransaclib_wrapper/*.dylib
+deps/ransaclib_wrapper/*.dll
+deps/ransaclib_wrapper/eigen-src/
+Manifest.toml
+build.log

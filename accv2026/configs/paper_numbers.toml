@@ -1,0 +1,814 @@
+# =============================================================================
+# paper_numbers — every number macro paper/main.tex and paper/supplement.tex
+# typeset (scripts/paper_numbers.jl → paper/figures/paper_numbers.tex, THE one
+# generated macro file; src/paper_numbers.jl computes them). A number in the
+# papers' prose is one of these macros or a declared protocol constant
+# (test/test_paper_numbers.jl); nothing is typed by hand.
+#
+# [sources.<name>] names a result of record by the CONFIG of the cell that
+# produced it (its keyed directory is re-derived, never copied — so a re-keyed
+# cell re-keys this one):
+#   miscal     the cell's operating-points sidecar (its ζ evaluation; `oracle`
+#              names its oracle_floors.jld2 tag)
+#   basin      the basin cell's δ ladder (ladder.jld2)
+#   budget     the budget cell's per-scene curves (budget_curves)
+#   anchoring  the paired ablation: the miscal cell's ζ evaluation (WITH) and
+#              its anchoring_ablation evaluation (WITHOUT)
+#   polish     the polishing cell's run (polish_test.jld2: the pooled mAA its summary reports)
+#   e2e        the end-to-end cell's summary.tsv
+#   selection  the selection-only sweep's summary.jld2 (fig1_sel_miscal.jl render)
+#   heb_stats  the HEB statistics cell's per-pair counts (heb_inlier_stats.jl)
+#   split      a cell's cross-validation: its scenes and their pool pairs
+#
+# [[macro]]: name, source, op, its coordinates and arms, and `format`:
+#   ops        value (one arm) | min | max | range (lo–hi) | spread (max − min)
+#              | oracle_gap (the oracle's mAA ceiling − the best arm)
+#              | max_abs_diff (anchoring: |WITHOUT − WITH|) | refinable (count)
+#              | statistic (heb_stats) | scenes | pairs (split)
+#   arms       arm keys; "@welsch_hq" is configs/protocol.toml [paper] welsch_hq,
+#              "@main" figure_style.jl MAIN_ARMS; `exclude` drops arms
+#   format     { digits = d } fixed point | { int = true } (thin-space
+#              thousands) | { pct = true } | ranges join two of these with "--"
+# =============================================================================
+
+[sources.pt_miscal]
+kind = "miscal"
+config = "pt_e_miscal"
+oracle = "PT_E"
+
+[sources.eth_miscal]
+kind = "miscal"
+config = "accv2026_eth_f_miscal"
+oracle = "ETH_F"
+
+[sources.heb_miscal]
+kind = "miscal"
+config = "heb_h_miscal"
+oracle = "HEB_H"
+
+[sources.basin]
+kind = "basin"
+config = "pt_e_basin"
+
+[sources.pt_budget]
+kind = "budget"
+config = "pt_e_budget"
+
+[sources.eth_budget]
+kind = "budget"
+config = "accv2026_eth_f_budget"
+
+[sources.anchoring]
+kind = "anchoring"
+config = "pt_e_miscal"
+pairs = ["IG  +TLSadapt", "IG  +GNC-W", "IG  +GNC-GM"]   # render_anchoring_paired.jl's fixed/anchored pairs
+
+[sources.polish]
+kind = "polish"
+config = "polish_pt_e"
+
+[sources.e2e]
+kind = "e2e"
+config = "pt_e_e2e_table"
+
+# Tab. 3's time row: pinned single-threaded repeats on drawn test pairs
+# (scripts/e2e_timing.jl), never the accuracy run's multithreaded wall clocks.
+[sources.e2e_timing]
+kind = "e2e_timing"
+config = "pt_e_e2e_timing"
+
+[sources.selection]
+kind = "selection"
+
+[sources.heb_stats]
+kind = "heb_stats"
+config = "heb_stats"
+low_inlier_ratio = 0.2   # \HEBFracLow: the fraction of pairs whose GT inlier ratio is below this
+
+[sources.pt_split]
+kind = "split"
+config = "pt_e_miscal"
+
+[sources.eth_split]
+kind = "split"
+config = "accv2026_eth_f_miscal"
+
+[sources.heb_split]
+kind = "split"
+config = "heb_h_miscal"
+
+# ---- the PhotoTourism miscalibration row (Fig. 2) --------------------------------
+[[macro]]
+name = "OursCal"
+source = "pt_miscal"
+op = "value"
+stat = "maa"
+zeta = 1.0
+arms = ["@welsch_hq"]
+format = { digits = 2 }
+
+[[macro]]
+name = "TLSCal"
+source = "pt_miscal"
+op = "value"
+stat = "maa"
+zeta = 1.0
+arms = ["IG  +PoseLib"]
+format = { digits = 2 }
+
+[[macro]]
+name = "OursInfl"
+source = "pt_miscal"
+op = "value"
+stat = "maa"
+zeta = 128.0
+arms = ["@welsch_hq"]
+format = { digits = 2 }
+
+[[macro]]
+name = "TLSInfl"
+source = "pt_miscal"
+op = "value"
+stat = "maa"
+zeta = 128.0
+arms = ["IG  +PoseLib"]
+format = { digits = 2 }
+
+[[macro]]
+name = "LOPlusInfl"
+source = "pt_miscal"
+op = "value"
+stat = "maa"
+zeta = 128.0
+arms = ["IG  +TLS-LO+"]
+format = { digits = 2 }
+
+[[macro]]
+name = "PTGMHqCal"            # "Welsch \OursCal, GM …, TLS … mAA" (joint HQ at calibration)
+source = "pt_miscal"
+op = "value"
+stat = "maa"
+zeta = 1.0
+arms = ["IG  +GM-HQ"]
+format = { digits = 2 }
+
+[[macro]]
+name = "PTTLSHqCal"
+source = "pt_miscal"
+op = "value"
+stat = "maa"
+zeta = 1.0
+arms = ["IG  +TLS-HQ"]
+format = { digits = 2 }
+
+[[macro]]
+name = "PTBCDCal"             # Stu-tU-BCD "is second at …"
+source = "pt_miscal"
+op = "value"
+stat = "maa"
+zeta = 1.0
+arms = ["IG  +BCD"]
+format = { digits = 2 }
+
+[[macro]]
+name = "PTDeflSpread"         # "at ζ = 1/16, all PhotoTourism pipelines lie within …"
+source = "pt_miscal"
+op = "spread"
+stat = "maa"
+zeta = 0.0625
+arms = ["@main", "IG  +BCD"]
+format = { digits = 2 }
+
+[[macro]]
+name = "PTAnchoredInflLow"    # "anchored and self-scaling methods retain …--\OursInfl at 128×"
+source = "pt_miscal"
+op = "min"
+stat = "maa"
+zeta = 128.0
+arms = ["@main", "IG  +BCD"]
+exclude = ["IG  +PoseLib", "IG  +LZ", "IG  +TLS-LO+"]   # the fixed-scale arms
+format = { digits = 2 }
+
+[[macro]]
+name = "PTOracleGap"          # "PhotoTourism, with a gap of …"
+source = "pt_miscal"
+op = "oracle_gap"
+zeta = 1.0
+arms = ["@main", "IG  +BCD"]
+format = { digits = 2 }
+
+[[macro]]
+name = "ETHOracleGap"         # "the strongest pipelines lie within … of the oracle"
+source = "eth_miscal"
+op = "oracle_gap"
+zeta = 1.0
+arms = ["@main", "IG  +BCD"]
+format = { digits = 2 }
+
+[[macro]]
+name = "HEBOracleGap"         # "a gap of about … that no optimizer closes"
+source = "heb_miscal"
+op = "oracle_gap"
+zeta = 1.0
+arms = ["@main", "IG  +BCD"]
+format = { digits = 1 }
+
+[[macro]]
+name = "HEBCalSpread"         # "at calibration the pipelines lie within …, except the two GNC variants"
+source = "heb_miscal"
+op = "spread"
+stat = "maa"
+zeta = 1.0
+arms = ["@main", "IG  +BCD"]
+exclude = ["IG  +GNC-W", "IG  +GNC-TLS", "IG  +GNC-GM"]
+format = { digits = 2 }
+
+# ---- the basin ladder (Fig. 1; mAA@10° on the refinable seeds) ------------------------
+[[macro]]
+name = "BasinGnc"
+source = "basin"
+op = "value"
+delta = 16.0
+arms = ["IG  +GNC-TLS"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BasinHq"
+source = "basin"
+op = "value"
+delta = 16.0
+arms = ["@welsch_hq"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BasinClassicalLO"
+source = "basin"
+op = "value"
+delta = 16.0
+arms = ["IG  +TLS-LO+"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BasinWelschStatic"    # Welsch-IRLS and Welsch-GNC at 16°
+source = "basin"
+op = "max"
+delta = 16.0
+arms = ["IG  +WIrls", "IG  +GNC-W"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BasinRefinable"
+source = "basin"
+op = "refinable"
+format = { int = true }
+
+[[macro]]
+name = "BasinHqEight"
+source = "basin"
+op = "value"
+delta = 8.0
+arms = ["@welsch_hq"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BasinWIrlsEight"
+source = "basin"
+op = "value"
+delta = 8.0
+arms = ["IG  +WIrls"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BasinSeedEight"
+source = "basin"
+op = "value"
+delta = 8.0
+arms = ["seed"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BasinStaticEightLo"   # "IRLS, the truncated refits, and Stu-tU-BCD reach …--… at 8°"
+source = "basin"
+op = "min"
+delta = 8.0
+arms = ["IG  +WIrls", "IG  +GM-Irls", "IG  +PoseLib", "IG  +LZ", "IG  +TLS-LO+", "IG  +BCD"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BasinStaticEightHi"
+source = "basin"
+op = "max"
+delta = 8.0
+arms = ["IG  +WIrls", "IG  +GM-Irls", "IG  +PoseLib", "IG  +LZ", "IG  +TLS-LO+", "IG  +BCD"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BasinGncOne"
+source = "basin"
+op = "value"
+delta = 1.0
+arms = ["IG  +GNC-TLS"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BasinTruncOne"
+source = "basin"
+op = "range"
+delta = 1.0
+arms = ["IG  +PoseLib", "IG  +LZ", "IG  +TLS-LO+"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BasinSeedOne"
+source = "basin"
+op = "value"
+delta = 1.0
+arms = ["seed"]
+format = { digits = 2 }
+
+# ---- the paired anchoring control (supplement; median pose error, degrees) ----------
+[[macro]]
+name = "AnchorCalDiff"
+source = "anchoring"
+op = "max_abs_diff"
+zeta = 1.0
+format = { digits = 2 }
+
+[[macro]]
+name = "AnchorInflAnch"
+source = "anchoring"
+op = "range"
+side = "with"
+zeta = 128.0
+format = { digits = 1 }
+
+[[macro]]
+name = "AnchorInflFixed"
+source = "anchoring"
+op = "range"
+side = "without"
+zeta = 128.0
+format = { digits = 0 }
+
+# ---- the budget grid (Fig. 3; scene-averaged mAA@10° at B minimal models) ------------
+[[macro]]
+name = "BudPTHqLow"
+source = "pt_budget"
+op = "value"
+budget = 100
+arms = ["@welsch_hq"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BudPTNextLow"         # the best other arm
+source = "pt_budget"
+op = "max"
+budget = 100
+arms = ["@main", "IG  +BCD"]
+exclude = ["@welsch_hq"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BudPTHqHigh"
+source = "pt_budget"
+op = "value"
+budget = 4000
+arms = ["@welsch_hq"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BudPTNextHigh"
+source = "pt_budget"
+op = "max"
+budget = 4000
+arms = ["@main", "IG  +BCD"]
+exclude = ["@welsch_hq"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BudFHq"
+source = "eth_budget"
+op = "value"
+budget = 4000
+arms = ["@welsch_hq"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BudFBest"
+source = "eth_budget"
+op = "max"
+budget = 4000
+arms = ["@main", "IG  +BCD"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BudFSpread"           # "the arms lie within … of each other, except TLS-LO+"
+source = "eth_budget"
+op = "spread"
+budget = 4000
+arms = ["@main", "IG  +BCD"]
+exclude = ["IG  +TLS-LO+"]
+format = { digits = 2 }
+
+[[macro]]
+name = "BudFLOPlus"
+source = "eth_budget"
+op = "value"
+budget = 4000
+arms = ["IG  +TLS-LO+"]
+format = { digits = 2 }
+
+# ---- polishing (Fig. 5; pooled mAA@10° at ζ = 1, before / after the polish) -------------------------------
+[[macro]]
+name = "PolLiftBefore"
+source = "polish"
+op = "value"
+arms = ["@welsch_hq"]
+when = "before"
+format = { digits = 3 }
+
+[[macro]]
+name = "PolLiftAfter"
+source = "polish"
+op = "value"
+arms = ["@welsch_hq"]
+when = "after"
+format = { digits = 3 }
+
+[[macro]]
+name = "PolBCDBefore"
+source = "polish"
+op = "value"
+arms = ["IG  +BCD"]
+when = "before"
+format = { digits = 3 }
+
+[[macro]]
+name = "PolBCDAfter"
+source = "polish"
+op = "value"
+arms = ["IG  +BCD"]
+when = "after"
+format = { digits = 3 }
+
+# ---- RANSAC end to end (Tab. 3; summary.tsv, scene-averaged) -------------------------
+[[macro]]
+name = "EtoEOursMed"
+source = "e2e"
+op = "value"
+arms = ["@welsch_hq"]
+zeta = 1.0
+column = "median_deg"
+format = { digits = 2 }
+
+[[macro]]
+name = "EtoESRMed"
+source = "e2e"
+op = "value"
+arms = ["SupeRANSAC"]
+zeta = 1.0
+column = "median_deg"
+format = { digits = 2 }
+
+[[macro]]
+name = "EtoEOursMAA"
+source = "e2e"
+op = "value"
+arms = ["@welsch_hq"]
+zeta = 1.0
+column = "maa10"
+format = { digits = 2 }
+
+[[macro]]
+name = "EtoESRMAA"
+source = "e2e"
+op = "value"
+arms = ["SupeRANSAC"]
+zeta = 1.0
+column = "maa10"
+format = { digits = 2 }
+
+[[macro]]
+name = "EtoEOursMs"
+source = "e2e_timing"
+op = "value"
+arms = ["@welsch_hq"]
+zeta = 1.0
+column = "med_wall_ms"
+format = { digits = 0 }
+
+[[macro]]
+name = "EtoESRMs"
+source = "e2e_timing"
+op = "value"
+arms = ["SupeRANSAC"]
+zeta = 1.0
+column = "med_wall_ms"
+format = { digits = 0 }
+
+[[macro]]
+name = "EtoETimePairs"        # Tab. 3's caption: the timed pairs per scene (the cell's sample.toml)
+source = "e2e_timing"
+op = "pairs_per_scene"
+format = { int = true }
+
+[[macro]]
+name = "EtoETimeRepeats"      # Tab. 3's caption: the timed repeats per system (the cell's [timing] repeats)
+source = "e2e_timing"
+op = "repeats"
+format = { int = true }
+
+[[macro]]
+name = "EtoEOursRange"        # "under corruption, our median error stays within …"
+source = "e2e"
+op = "range"
+arms = ["@welsch_hq"]
+zetas = [0.0625, 4.0, 16.0, 128.0]
+column = "median_deg"
+format = { digits = 1 }
+
+[[macro]]
+name = "EtoESRRangeLo"
+source = "e2e"
+op = "min"
+arms = ["SupeRANSAC"]
+zetas = [0.0625, 4.0, 16.0, 128.0]
+column = "median_deg"
+format = { digits = 1 }
+
+[[macro]]
+name = "EtoESRRangeHi"        # "SupeRANSAC's reaches … under deflation"
+source = "e2e"
+op = "value"
+arms = ["SupeRANSAC"]
+zeta = 0.0625
+column = "median_deg"
+format = { digits = 0 }
+
+[[macro]]
+name = "EtoEOursDeflMs"
+source = "e2e_timing"
+op = "value"
+arms = ["@welsch_hq"]
+zeta = 0.0625
+column = "med_wall_ms"
+format = { digits = 0 }
+
+[[macro]]
+name = "EtoESRDeflMs"
+source = "e2e_timing"
+op = "value"
+arms = ["SupeRANSAC"]
+zeta = 0.0625
+column = "med_wall_ms"
+format = { digits = 0 }
+
+[[macro]]
+name = "EtoEOursInflMed"
+source = "e2e"
+op = "value"
+arms = ["@welsch_hq"]
+zeta = 128.0
+column = "median_deg"
+format = { digits = 2 }
+
+[[macro]]
+name = "EtoESRInflMed"
+source = "e2e"
+op = "value"
+arms = ["SupeRANSAC"]
+zeta = 128.0
+column = "median_deg"
+format = { digits = 2 }
+
+[[macro]]
+name = "EtoEOursInflMedShort"   # the abstract's one-decimal form
+source = "e2e"
+op = "value"
+arms = ["@welsch_hq"]
+zeta = 128.0
+column = "median_deg"
+format = { digits = 1 }
+
+[[macro]]
+name = "EtoESRInflMedShort"     # the abstract's whole-degree form
+source = "e2e"
+op = "value"
+arms = ["SupeRANSAC"]
+zeta = 128.0
+column = "median_deg"
+format = { digits = 0 }
+
+# ---- scoring only (supplement figure; main Sec. "Scoring rule") ----------------------
+[[macro]]
+name = "SelStuMedCal"
+source = "selection"
+op = "value"
+arms = ["IG  sel"]
+zeta = 1.0
+column = "mean_med"
+format = { digits = 2 }
+
+[[macro]]
+name = "SelSimfitMedCal"
+source = "selection"
+op = "value"
+arms = ["SIMFIT sel"]
+zeta = 1.0
+column = "mean_med"
+format = { digits = 2 }
+
+[[macro]]
+name = "SelStuMAACal"
+source = "selection"
+op = "value"
+arms = ["IG  sel"]
+zeta = 1.0
+column = "mean_mAA"
+format = { digits = 3 }
+
+[[macro]]
+name = "SelSimfitMAACal"
+source = "selection"
+op = "value"
+arms = ["SIMFIT sel"]
+zeta = 1.0
+column = "mean_mAA"
+format = { digits = 3 }
+
+[[macro]]
+name = "SelStuMedInfl"
+source = "selection"
+op = "value"
+arms = ["IG  sel"]
+zeta = 128.0
+column = "mean_med"
+format = { digits = 1 }
+
+[[macro]]
+name = "SelStuMAAInfl"
+source = "selection"
+op = "value"
+arms = ["IG  sel"]
+zeta = 128.0
+column = "mean_mAA"
+format = { digits = 3 }
+
+[[macro]]
+name = "SelSimfitMedInfl"
+source = "selection"
+op = "value"
+arms = ["SIMFIT sel"]
+zeta = 128.0
+column = "mean_med"
+format = { digits = 0 }
+
+[[macro]]
+name = "SelSimfitMAAInfl"
+source = "selection"
+op = "value"
+arms = ["SIMFIT sel"]
+zeta = 128.0
+column = "mean_mAA"
+format = { digits = 3 }
+
+[[macro]]
+name = "SelThreshMedInflLo"   # "the remaining scores have median errors of …--…" (the threshold-based band)
+source = "selection"
+op = "min"
+arms = ["MSAC sel", "GAU sel", "WEL sel", "GEM sel", "MAGSAC sel", "RANSAC sel"]
+zeta = 128.0
+column = "mean_med"
+format = { digits = 0 }
+
+[[macro]]
+name = "SelThreshMedInflHi"
+source = "selection"
+op = "max"
+arms = ["MSAC sel", "GAU sel", "WEL sel", "GEM sel", "MAGSAC sel", "RANSAC sel"]
+zeta = 128.0
+column = "mean_med"
+format = { digits = 0 }
+
+[[macro]]
+name = "SelThreshMAAInfl"     # "… and at most … mAA"
+source = "selection"
+op = "max"
+arms = ["MSAC sel", "GAU sel", "WEL sel", "GEM sel", "MAGSAC sel", "RANSAC sel"]
+zeta = 128.0
+column = "mean_mAA"
+format = { digits = 3 }
+
+# ---- HEB statistics (Sec. 4; the test pairs of heb_h_miscal) -------------------------
+[[macro]]
+name = "HEBCsMed"
+source = "heb_stats"
+op = "statistic"
+statistic = "correspondences_median"
+format = { int = true }
+
+[[macro]]
+name = "HEBInlMed"
+source = "heb_stats"
+op = "statistic"
+statistic = "inliers_median"
+format = { int = true }
+
+[[macro]]
+name = "HEBInlRatio"
+source = "heb_stats"
+op = "statistic"
+statistic = "inlier_ratio_median"
+format = { pct = true }
+
+[[macro]]
+name = "HEBFracLow"
+source = "heb_stats"
+op = "statistic"
+statistic = "low_inlier_ratio_fraction"
+format = { pct = true }
+
+# ---- the evaluation datasets (Tab. 2 and the captions) -------------------------------
+[[macro]]
+name = "PTValScenes"
+source = "pt_split"
+op = "scenes"
+side = "validation"
+format = { int = true }
+
+[[macro]]
+name = "PTValPairs"
+source = "pt_split"
+op = "pairs"
+side = "validation"
+format = { int = true }
+
+[[macro]]
+name = "PTTestScenes"
+source = "pt_split"
+op = "scenes"
+side = "test"
+format = { int = true }
+
+[[macro]]
+name = "PTTestPairs"
+source = "pt_split"
+op = "pairs"
+side = "test"
+format = { int = true }
+
+[[macro]]
+name = "ETHValScenes"
+source = "eth_split"
+op = "scenes"
+side = "validation"
+format = { int = true }
+
+[[macro]]
+name = "ETHValPairs"
+source = "eth_split"
+op = "pairs"
+side = "validation"
+format = { int = true }
+
+[[macro]]
+name = "ETHTestScenes"
+source = "eth_split"
+op = "scenes"
+side = "test"
+format = { int = true }
+
+[[macro]]
+name = "ETHTestPairs"
+source = "eth_split"
+op = "pairs"
+side = "test"
+format = { int = true }
+
+[[macro]]
+name = "HEBValScenes"
+source = "heb_split"
+op = "scenes"
+side = "validation"
+format = { int = true }
+
+[[macro]]
+name = "HEBValPairs"
+source = "heb_split"
+op = "pairs"
+side = "validation"
+format = { int = true }
+
+[[macro]]
+name = "HEBTestScenes"
+source = "heb_split"
+op = "scenes"
+side = "test"
+format = { int = true }
+
+[[macro]]
+name = "HEBTestPairs"
+source = "heb_split"
+op = "pairs"
+side = "test"
+format = { int = true }

@@ -1,0 +1,48 @@
+# =============================================================================
+# pt_e_basin — the tuning of record of MAIN-PAPER FIG 2's basin roster
+# (scripts/fig2_basin.jl, stage basin_cv): each Fig 2 arm's own LOSS-WIDTH
+# operating point on PhotoTourism-E, the arm's entire scale knowledge (the
+# basin test provides no scale). Its test side is the δ-perturbed basin ladder
+# (run_basin_ladder.jl --solo-cv), not the ζ ladder.
+#
+# Until 2026-10-04 this was `run_product_tuning.jl --mode=basin` into a LITERAL
+# directory (registry.jl `basin-product-tuning-v2`) that hashed nothing; it is
+# now a keyed sequential-CV cell like every other (notes/sequential_cv.md), and
+# registry.jl derives its directory and the ladder's stamp from this file.
+# =============================================================================
+
+[experiment]
+dataset = "phototourism"
+matcher = "sift"
+problem = "E"
+pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"      # the PT-E pool of record (pt_e_miscal.toml's)
+
+[protocol]
+cv_section = "phototourism"
+
+# The HEB-H / PT-E protocol, on the basin roster (`basin_specs`): the IG
+# scorer's a* on the selection-only error, then each basin arm's width at it.
+# The basin roster holds no scale-multiple arm, but the fold names an entry
+# for every kind, so the same three are named here.
+[sequential_cv]
+# The objective-matched Stu-tU-BCD (arm_rosters.jl): "IG  +BCD@a*", its refit
+# half-width PINNED to the IG a* (ζ·a* under ζ), never tuned — evaluated beside
+# the tuned "IG  +BCD". Opt-in: declaring it re-keys this cell only (its
+# consumers fold the run without it, protocol_folds.jl operating_points_run).
+objective_matched = ["IG  +BCD"]
+# The research-only zero-clamp Welsch-HQ (arm_rosters.jl, welsch_zero_clamp.jl):
+# "IG  +Lift@zc", the same arm on the z-block of the ACCV camera-ready numbers
+# (hreg = 0 at the lift's clamp, VGC 92597af), TUNED (its own width CV) beside
+# the faithful arm. Opt-in: declaring it re-keys this cell only (its consumers
+# fold the run without it, operating_points_run).
+zero_clamp = ["IG  +Lift"]
+roster = "basin"
+scorer = "scorer"
+refiner = { scale_multiple = "refiner_scale_multiple", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
+cache_validation = true
+decode_parallel = 4
+# ONE scorer per (dataset, model class): Fig 2's basin roster refines at the
+# SAME IG a* Fig 3's PT-E cell tuned — read from its scorer stage, never
+# re-tuned (the fold checks pools, problem, cross-validation and scorer entry
+# agree, and keys this cell by that cell's directory). Run fig3's cv first.
+scorer_of = "pt_e_miscal"

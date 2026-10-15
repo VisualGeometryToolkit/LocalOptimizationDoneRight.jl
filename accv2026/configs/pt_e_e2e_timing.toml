@@ -1,0 +1,49 @@
+# =============================================================================
+# pt_e_e2e_timing — THE TIME ROW of MAIN-PAPER TAB. 3 (figures/table_e2e.tex):
+# ours and SupeRANSAC timed on the SAME drawn PhotoTourism E test pairs, each in
+# a fresh single-threaded process pinned to one CPU, the run repeated
+# (scripts/e2e_timing.jl; src/e2e_timing.jl). The accuracy rows stay the e2e
+# cell's (pt_e_e2e_table: every test pair, multithreaded, per-pair streams).
+#
+# 2026-10-14: replaces the time row of the multithreaded accuracy run, whose
+# wall clocks shared the machine with its other threads (and SupeRANSAC's with
+# the parallel workers of its own cell).
+#
+# THE SAMPLE is VisualGeometryEval's unit sampling, the vocabulary of the
+# cross-validations' validation and test sides (a COMPLETE table, read with
+# read_tuning; no defaults inherited). Stratified by scene: Tab. 3's time is the
+# MEAN OVER SCENES of each scene's median, so every scene needs its own
+# sample, and an equal fraction of each (the 11 test scenes hold 2200 pairs
+# each) weights them as the table does. 2 % = 44 pairs per scene, 484 pairs:
+# within the 200-500 pairs a stable median needs, and one repeat of both systems
+# takes about 15 minutes (ours 5, SupeRANSAC 9 on the 2026-10-14 host). A
+# fraction, never a count (cv_protocol.toml's rule).
+#
+# THE STATISTIC: per pair the median over the repeats, per scene the median over
+# its pairs, the mean over the scenes [ms] (timing.tsv `med_wall_ms`); the
+# spread is that statistic of each repeat alone (rep_min_ms .. rep_max_ms).
+# =============================================================================
+[experiment]
+dataset = "phototourism"
+matcher = "sift"
+problem = "E"
+pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"      # the PT-E pool of record (pt_e_e2e_table's)
+
+[timing]
+e2e_config = "pt_e_e2e_table"     # the accuracy cell: arms, ζ ladder, per-pair streams, termination, SupeRANSAC cell
+sample = { type = "stratified", fraction = 0.02, cap_per_scene = 0, seed = 20261014, rng = "StableRNG" }
+repeats = 5                       # timed repeats per system, ours and SupeRANSAC alternating (ours first in odd repeats)
+warmup_pairs = 4                  # per worker process: the first 4 pairs of each scene at every ζ, untimed (JIT, caches)
+
+[timing.pinning]
+# Each repeat is a fresh process: numactl --physcpubind=<cpu> --membind=<numa_node>
+# julia -t 1 --gcthreads=1 (the worker refuses any other affinity). The CPU is a
+# physical core of node 0 whose SMT sibling (cpu + 112 on this host) was idle
+# when the repeat ran; timing_repeats.toml records both CPUs' busy shares and the
+# load averages around every repeat.
+launcher = "numactl"
+cpu = 38
+numa_node = 0
+julia_threads = 1
+gc_threads = 1
+env = { OPENBLAS_NUM_THREADS = "1", OMP_NUM_THREADS = "1", MKL_NUM_THREADS = "1", JULIA_NUM_THREADS = "1", CUDA_VISIBLE_DEVICES = "" }

@@ -1,0 +1,99 @@
+# =============================================================================
+# heb_h_miscal — configuration of record for the HEB-H composed score+LO
+# miscalibration cell (scripts/supp_H_miscal.jl): the HOMOGRAPHY end of the
+# model-class transfer claim, on the ETH HEB scenes.
+#
+# WHY THIS FILE EXISTS. Until 2026-10-03 this cell declared its
+# cross-validation in JULIA — `cross_validation_over("heb")` inline in the
+# driver — and wrote to a LITERAL directory name
+# (`miscal-product-tuning-hebh-v2`, registry.jl `EXP_H_MISCAL_DIR`) that
+# hashed nothing. Both deviate from every other miscal cell, which declares
+# `[protocol] cv_section` here and keys its run directory by `run_key` of this
+# effective config. A literal directory means a protocol change silently
+# REUSES it: same path, new numbers, no regeneration. Keying it is the point.
+#
+# POOLS. The validation side did not exist at pool_format 3 until the same
+# date: configs/heb_h_pools.toml named `heb:test` only, because the cell that
+# CONSUMES these pools (heb_h_budget) is a test-time evaluation. The cell that
+# PRODUCES its operating points — this one — tunes on the five VALIDATION
+# scenes, which lived only in a retired, unreadable pool tree. That config now
+# names both sides.
+#
+# CODIMENSION. H is codimension 2, and `d_g` MOVES the outlier-half-width
+# window: at the same scale-multiple window the upper edge falls ~3.91 decades
+# from d_g = 1 to d_g = 2 (RansacScoringDoneRight `to_native`). Nothing here states it — the
+# problem does (`problem = "H"`) — and a window cut at one codimension against
+# a grid cut at another is refused as `:selection_out`, never consumed.
+#
+# EVERY KEY BELOW IS READ. `src/config_vocabulary.jl`: "a key nothing reads is
+# a second authority that can only agree or silently disagree with the code."
+# =============================================================================
+
+[experiment]
+dataset = "heb"
+matcher = "sift"
+problem = "H"
+# The HEB-H 4K pools at pool_format 3 (scripts/heb_h_pools.jl), RELATIVE to
+# data_root() for machine-portable identity. NOT an `_extrinsic` tree and does
+# not need to be: the generator stamps `gt_convention = "extrinsic"` on every
+# pool, so a freshly generated tree is extrinsic by construction.
+pool_dir = "accv2026/data/HEB-H-SIFT-4K_pf3"
+# The pool-best oracle bound (median pool-best error + mAA@10 ceiling) drawn on
+# the panel. MUST end in the model-class letter: render_miscal_faceted.jl
+# derives the legend's letter from it, and the floors writer refuses otherwise.
+oracle_tag = "HEB_H"
+
+[protocol]
+# cv_protocol.toml [heb]: the registered `heb` split (5 validation / 5 test,
+# disjoint), every pair of both sides.
+#   validation  5 scenes x ~2200 pairs = ~11000 pairs
+#   test        5 scenes x ~2200 pairs = ~11000 pairs
+cv_section = "heb"
+
+# SEQUENTIAL CV (notes/sequential_cv.md; scripts/tools/run_sequential_cv.jl),
+# replacing the [tuning.default] product grid on 2026-10-04. Each value names a
+# configs/tuning.toml entry; the cv_section above is layered into every one
+# (src/protocol_folds.jl `fold_sequential_cv!`), so all three tune on the same
+# validation pairs and the evaluation reads the same test side.
+#
+#   scorer   -> scorer_cv.jld2     a*: the IG outlier half-width, on the
+#                                  selection-only rotation error
+#   refiner  -> refiner_cv.jld2    w*: each arm's width at the a* READ FROM
+#                                  scorer_cv.jld2, one entry per width kind
+#   evaluate -> operating_points.jld2   the ζ ladder on the test scenes at
+#                                  (a*, w*), the sidecar both the miscal panel
+#                                  and the heb_h_budget cell consume
+[sequential_cv]
+# The objective-matched Stu-tU-BCD (arm_rosters.jl): "IG  +BCD@a*", its refit
+# half-width PINNED to the IG a* (ζ·a* under ζ), never tuned — evaluated beside
+# the tuned "IG  +BCD". Opt-in: declaring it re-keys this cell only (its
+# consumers fold the run without it, protocol_folds.jl operating_points_run).
+objective_matched = ["IG  +BCD"]
+# The research-only zero-clamp Welsch-HQ (arm_rosters.jl, welsch_zero_clamp.jl):
+# "IG  +Lift@zc", the same arm on the z-block of the ACCV camera-ready numbers
+# (hreg = 0 at the lift's clamp, VGC 92597af), TUNED (its own width CV) beside
+# the faithful arm. Opt-in: declaring it re-keys this cell only (its consumers
+# fold the run without it, operating_points_run).
+zero_clamp = ["IG  +Lift"]
+scorer = "scorer"
+refiner = { scale_multiple = "refiner_scale_multiple", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
+# Hold the decoded validation pools in RAM across rounds: every extension and
+# fine round is one sweep over ~11000 pairs, and re-decoding HEB's 10-15 GB
+# scenes costs ~35 min each. Scenes decode in parallel on first use.
+cache_validation = true
+# THE INFORMATIVE SCALE PRIOR (2026-10-04): HEB-H pairs are inlier-starved
+# (median 10 GT inliers, 4.2 % inlier fraction on the test side), and under
+# Jeffreys the self-scaled refiners (IG+LO, IG+BCD) trailed the fixed-shape
+# arms at moderate inlier counts. IG(α₀, α₀·median σ̂²) from the validation
+# pairs' ground-truth variances, α₀ cross-validated by the scorer stage.
+prior = { family = "inverse_gamma", fitting = "robust", alpha0 = "cross_validated", tuning = "prior_alpha0" }
+
+[render]
+deploy = true
+
+[render.main]
+# The cell's MAIN-PAPER row of the Fig 3 grid (fig3_miscal_grid.jl): the
+# Table 1 roster gate (MAIN_ARMS + Stu-tU-BCD, the renderer's own defaults),
+# the mAA@10° row.
+panel = "panel_lo_miscal_heb_H_main.tex"
+rows = ["maa"]

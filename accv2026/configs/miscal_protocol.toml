@@ -1,0 +1,35 @@
+# =============================================================================
+# miscal_protocol — THE miscalibration EVALUATION protocol of record, shared by
+# EVERY miscalibration experiment and folded into each experiment's run key (as
+# cv_protocol.toml and sample_budget_protocol.toml are for their types).
+#
+# zeta ladder: n_zeta log-spaced points over zeta in 2^[-zeta_octaves, zeta_octaves]
+# (n_zeta = 15, zeta_octaves = 7 => zeta = 2^{-7..7}, integer exponents). Tuning is
+# ALWAYS at zeta = 1 (cv_protocol.toml); zeta is a test-time evaluation that
+# scales each arm's own supplied residual unit. THE one authority: every
+# launch derives its --n-zeta/--zeta-octaves from this table
+# or the folded config (src/cell_stages.jl zeta_ladder_args; the sequential
+# CV reads it from its cell's folded `miscal_protocol`), never a literal. The
+# tuning needs no reach into the ladder: the sequential CV tunes at ζ = 1 and
+# the evaluation builds its own selection grid at exactly {ζ_j · a*}. The
+# expand-on-boundary caps are tuning parameters: configs/tuning.toml.
+# =============================================================================
+
+[protocol]
+n_zeta = 15
+zeta_octaves = 7.0
+
+# The consensus-anchoring ABLATION evaluation (scripts/fig_anchoring.jl, stage
+# evaluation — the panel's dashed WITHOUT side): fig3's tuned operating points
+# read out on the same ladder, test scenes and seeds, with the scale-multiple
+# arms' loss width delivered through `scale_interface` instead of the consensus
+# set. "fixed_scale": a fixed external scale (VisualGeometryEval
+# `miscal_evaluation_refit` `plugin_scale`), the plug-in being the tuning's
+# validation reference scale s0 corrupted per column (ζ·s0) — the loss width
+# slides with ζ. The production evaluation's interface, the WITH side, is
+# "consensus_anchored". (The labels are VisualGeometryCore's scale-interface
+# tags: `FixedScale` → "fixed_scale", `ConsensusAnchored` → "consensus_anchored".)
+# Not folded into any run key (only [protocol] is); recorded in the evaluation's
+# artifact.
+[anchoring_ablation]
+scale_interface = "fixed_scale"

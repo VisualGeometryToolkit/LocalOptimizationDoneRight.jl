@@ -1,0 +1,199 @@
+[eth3d_f_pools_1k_courtyard]
+git-tree-sha1 = "feb84c9ff6f8db34b59e35e13ddd4ad6fa5e59b1"
+lazy = true
+
+    [[eth3d_f_pools_1k_courtyard.download]]
+    sha256 = "fe06c8ccf534a601031b020449121a343c2c2276bf2c9534effc326bf9c4d2d2"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_courtyard.tar.gz?download=1"
+
+[eth3d_f_pools_1k_delivery_area]
+git-tree-sha1 = "52d96fc2149f3a086cadd14260546602e4410731"
+lazy = true
+
+    [[eth3d_f_pools_1k_delivery_area.download]]
+    sha256 = "01e0d0859d4543ef5351c929ad22396ab844aa6934fd7b3f9e5d1788b13d6219"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_delivery_area.tar.gz?download=1"
+
+[eth3d_f_pools_1k_electro]
+git-tree-sha1 = "384419ed84a3c4eae39f777adc10f73ec6be5177"
+lazy = true
+
+    [[eth3d_f_pools_1k_electro.download]]
+    sha256 = "477fb762ea0406967f799677b1ecc277908a9f52a51fc54b33bfac6be0c7138f"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_electro.tar.gz?download=1"
+
+[eth3d_f_pools_1k_facade_part1]
+git-tree-sha1 = "722a86fbca7ac2803e82ce112230e1a2e6b81271"
+lazy = true
+
+    [[eth3d_f_pools_1k_facade_part1.download]]
+    sha256 = "2a0b164a9bdce983b261e2bb4d9dc6d0354597d178aaa194116510161e183b55"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_facade_part1.tar.gz?download=1"
+
+[eth3d_f_pools_1k_facade_part2]
+git-tree-sha1 = "bd21bd812395a924065ef5ef37705a3768375f4b"
+lazy = true
+
+    [[eth3d_f_pools_1k_facade_part2.download]]
+    sha256 = "a0dfb154c6a32896419ccfcad6cdefd5ff52fa17de272e806f496dd31fcce9d2"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_facade_part2.tar.gz?download=1"
+
+[eth3d_f_pools_1k_facade_part3]
+git-tree-sha1 = "9bebe33930f579215e1e946ff0aaa2d4f4c7ca85"
+lazy = true
+
+    [[eth3d_f_pools_1k_facade_part3.download]]
+    sha256 = "406374e610811a9a1125d43ec5560e5a0a7fa88f4a31085426b369df1dd596de"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_facade_part3.tar.gz?download=1"
+
+[eth3d_f_pools_1k_facade_part4]
+git-tree-sha1 = "584460224835e2cc7bb0628bc0989c2ca0af13f2"
+lazy = true
+
+    [[eth3d_f_pools_1k_facade_part4.download]]
+    sha256 = "054fee969f16555252d2e8b0205f73f05b42f4ad6087cc20edadf0d285f42952"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_facade_part4.tar.gz?download=1"
+
+[eth3d_f_pools_1k_facade_part5]
+git-tree-sha1 = "b4815f8c36bc37b557e0c32c41393ab8630c3049"
+lazy = true
+
+    [[eth3d_f_pools_1k_facade_part5.download]]
+    sha256 = "2ecebc583a6e5117f3ae00193ee347481b9d12d456460b22cd352b8d569cfcd9"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_facade_part5.tar.gz?download=1"
+
+[eth3d_f_pools_1k_facade_part6]
+git-tree-sha1 = "faee1191a9f639474ea16752f06d9c53d4976fb7"
+lazy = true
+
+    [[eth3d_f_pools_1k_facade_part6.download]]
+    sha256 = "8d63147143c748b0cb49fe39e10974be7745e42e870a5f74f382bbd16f65c4db"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_facade_part6.tar.gz?download=1"
+
+[eth3d_f_pools_1k_facade_part7]
+git-tree-sha1 = "04507b79dc485dd72c3f1b277a6a747270483404"
+lazy = true
+
+    [[eth3d_f_pools_1k_facade_part7.download]]
+    sha256 = "4ee87a3643c8348872b9d2a47acaf2005d0d228f2ca8b0583cdd6312d2dd6942"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_facade_part7.tar.gz?download=1"
+
+[eth3d_f_pools_1k_kicker]
+git-tree-sha1 = "b92f6061153df35c748b38bd0a4396a9550d9706"
+lazy = true
+
+    [[eth3d_f_pools_1k_kicker.download]]
+    sha256 = "5b048a08207492cd7e1c856d836be75b653d68407092d6c1a1bef18e64118c10"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_kicker.tar.gz?download=1"
+
+[eth3d_f_pools_1k_meadow]
+git-tree-sha1 = "5e8e7bbbaddcc10765b47b55635ebabc68be9386"
+lazy = true
+
+    [[eth3d_f_pools_1k_meadow.download]]
+    sha256 = "508ae57ea0991fcc3d9a910bccb09d83eafba3ef14d1a6abcdff740c51d3c781"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_meadow.tar.gz?download=1"
+
+[eth3d_f_pools_1k_meta]
+git-tree-sha1 = "1f7340e3ba77885e91e8d159a908fd871f4e03c4"
+lazy = true
+
+    [[eth3d_f_pools_1k_meta.download]]
+    sha256 = "627a2086be28624e874fc8fd7a0fb1090a6d3e4bdf81c305b12ebff4f8b1d1a6"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_meta.tar.gz?download=1"
+
+[eth3d_f_pools_1k_office]
+git-tree-sha1 = "c2a2c69361ae64bff59dcc48b2f9c8bea6cbcef6"
+lazy = true
+
+    [[eth3d_f_pools_1k_office.download]]
+    sha256 = "32f965770e2f0db8865de30be79b93ce3e4221059954ca88c4a9228cd4595d75"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_office.tar.gz?download=1"
+
+[eth3d_f_pools_1k_pipes]
+git-tree-sha1 = "84573f558d33b117c58b24b3d53f0e30403374db"
+lazy = true
+
+    [[eth3d_f_pools_1k_pipes.download]]
+    sha256 = "9ab142924332ee0ff0bca555d65a7f18fa5875e0c1676382da572edc09fbc6e9"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_pipes.tar.gz?download=1"
+
+[eth3d_f_pools_1k_playground]
+git-tree-sha1 = "498720e57d980bfaae752dbfdaa681628ae9fd50"
+lazy = true
+
+    [[eth3d_f_pools_1k_playground.download]]
+    sha256 = "1d105d498cab5f49e7e399b2ad621241a780007cf381a00071d7ba9cc93238db"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_playground.tar.gz?download=1"
+
+[eth3d_f_pools_1k_relief]
+git-tree-sha1 = "115a0bdf6aeed62b452a0e26680cf95b39407b30"
+lazy = true
+
+    [[eth3d_f_pools_1k_relief.download]]
+    sha256 = "18320453c5654eb2ebcaee5f510a88a61246771dba6a4055a160e9d05632bb0a"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_relief.tar.gz?download=1"
+
+[eth3d_f_pools_1k_relief_2]
+git-tree-sha1 = "22fd46ef5b6b378ecb090b8529c4fa74f3a58a67"
+lazy = true
+
+    [[eth3d_f_pools_1k_relief_2.download]]
+    sha256 = "77faacfb2bd0cf89b7c03b414f77f8c56bdbb465c087875c326624926575eebd"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_relief_2.tar.gz?download=1"
+
+[eth3d_f_pools_1k_terrace]
+git-tree-sha1 = "0dbf513f62f52c73f10a1dabfd737de7d4d0734a"
+lazy = true
+
+    [[eth3d_f_pools_1k_terrace.download]]
+    sha256 = "c253c9288527e2412eebd72c42c82d376f9f334021db8890b0052ced692dd853"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_terrace.tar.gz?download=1"
+
+[eth3d_f_pools_1k_terrains]
+git-tree-sha1 = "41b1c814e0883aae3bd0ab6452e67d22d858e143"
+lazy = true
+
+    [[eth3d_f_pools_1k_terrains.download]]
+    sha256 = "da9badabab4e5656d07fcc35e9768cfcc2091279b6ab40f034e8190c895e4429"
+    url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_terrains.tar.gz?download=1"
+
+[eth3d_splg_csponds]
+git-tree-sha1 = "e622fb709682d75a9924638e47a9f4d329b1fbd4"
+lazy = true
+
+    [[eth3d_splg_csponds.download]]
+    sha256 = "15bb2a631ee8492570a59d9e04af5e23bd0b4e73f5532ef96f27fef91616bc6e"
+    url = "https://zenodo.org/records/23240469/files/eth3d_splg_csponds.tar.gz?download=1"
+
+[heb_raw]
+git-tree-sha1 = "44bb27faffe65496ae13ec3d550c34a5817e1aee"
+lazy = true
+
+    [[heb_raw.download]]
+    sha256 = "71c49ef118ed2a111970a4d7e3fefc2cbd9f9391204d5945a1198ac726d30962"
+    url = "https://zenodo.org/records/23240467/files/heb_raw.tar.gz?download=1"
+
+[pt_e_superansac_stored]
+git-tree-sha1 = "557f46cf50a0ec5d992538b0da5402e75fe9307e"
+lazy = true
+
+    [[pt_e_superansac_stored.download]]
+    sha256 = "dab1861f89081be13f3e0bee7765d5501d0ce7dcb603fce51205b884132560c7"
+    url = "https://zenodo.org/records/23240467/files/pt_e_superansac_stored.tar.gz?download=1"
+
+[pt_raw_test]
+git-tree-sha1 = "eae5de3e20f195eb53d5cef69ad0c070c72250a9"
+lazy = true
+
+    [[pt_raw_test.download]]
+    sha256 = "0cf49bed6b1b1abd0682e9bcd129551c366ec5e473a1ff1bd81fa6c1785fe8b7"
+    url = "https://zenodo.org/records/23240462/files/pt_raw_test.tar.gz?download=1"
+
+[pt_raw_validation]
+git-tree-sha1 = "130b0afdd536a95857d9f2c07ef1893d14f6efe8"
+lazy = true
+
+    [[pt_raw_validation.download]]
+    sha256 = "9e87c54b1ca8ba6abe3fb5fdac7edaf0be5e944b4c20050dd6de8df778b68705"
+    url = "https://zenodo.org/records/23240462/files/pt_raw_validation.tar.gz?download=1"

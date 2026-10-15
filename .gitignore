@@ -1,0 +1,64 @@
+# Derived compute cache. Nothing in the stack writes one here today (the
+# retired evaluation engine's `_grid_cache_path` wrote under its own
+# directory); the guard
+# stays because 546 MB of these blobs were committed in the old repo, two of
+# them over GitHub's 100 MB hard limit.
+.cache/
+
+# Result artifacts. They live in the add-only results root behind
+# accv2026/data/exp_pro (see accv2026/data/README.md), never in the tree; the
+# paper's figures are tracked as rendered .tex under accv2026/paper/figures.
+
+*.jld2
+*.h5
+*.hdf5
+
+# Rendered figures
+*.pdf
+*.png
+*.svg
+
+# Julia. The package Manifest is not pinned; the paper's environments
+# (accv2026/Manifest.toml, accv2026/envs/superansac/Manifest.toml) are tracked.
+/Manifest.toml
+Manifest-v*.toml
+LocalPreferences.toml
+/docs/build/
+
+# Build products of the vendored RansacLib shim (the SOURCE is tracked)
+accv2026/lib/RansacLibLO/deps/ransaclib_wrapper/*.so
+accv2026/lib/RansacLibLO/deps/ransaclib_wrapper/*.dylib
+accv2026/lib/RansacLibLO/deps/ransaclib_wrapper/*.dll
+accv2026/lib/RansacLibLO/deps/ransaclib_wrapper/eigen-src/
+
+# Slurm
+slurm-*.out
+/accv2026/data/exp_raw
+/accv2026/data/exp_pro
+# DrWatson datadir("sims"): smoke runs, never results of record
+/accv2026/data/sims
+
+# Coverage tool debris (LocalCoverage / --code-coverage)
+*.cov
+/coverage/
+
+
+# Documenter: the docs environment resolves against the package by path
+# (docs/Project.toml [sources]); its Manifest is not pinned. The landing
+# page's figures are rasters cropped from the built paper and are tracked.
+/docs/Manifest.toml
+!docs/src/assets/landing/*.png
+
+# Python bytecode (scripts/tools/make_facet_grid.py)
+__pycache__/
+
+# The SupeRANSAC environment's conda environment (accv2026/envs/superansac/CondaPkg.toml)
+.CondaPkg/
+
+# Slurm job logs (scripts/slurm/: ACCV_LOG_DIR, default accv2026/logs)
+/accv2026/logs/
+
+# Personal Claude Code state (never shared)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/worktrees/

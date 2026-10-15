@@ -1,0 +1,41 @@
+# LO timing baselines (the gate: VisualGeometryCore test/lo_timing/gate.jl): min µs per call over 7 reps
+# on one pinned core, and bytes allocated per call. Re-record with
+# LO_TIMING_GATE=record IN THE COMMIT that changes the speed on purpose.
+# Re-recorded 2026-10-09 with K+ O3 (the per-call LO states reused, not built): bytes per call
+# fall to the convenience entry's result buffers; times within noise of the previous record.
+[host]
+cpu = "INTEL(R) XEON(R) PLATINUM 8570"
+julia = "1.12.6"
+core = 56
+
+[arms."GM-GNC"]
+us_per_call = 628.3
+bytes_per_call = 6188.0
+
+[arms."GM-HQ"]
+us_per_call = 718.1
+bytes_per_call = 6188.0
+
+[arms."Stu-t-IRLS"]
+us_per_call = 413.8
+bytes_per_call = 6188.0
+
+[arms."Stu-tU-BCD"]
+us_per_call = 916.6
+bytes_per_call = 6188.0
+
+[arms."TLS-GNC"]
+us_per_call = 667.2
+bytes_per_call = 6188.0
+
+[arms."TLS-HQ"]
+us_per_call = 708.1
+bytes_per_call = 6188.0
+
+[arms."Welsch-GNC"]
+us_per_call = 827.5
+bytes_per_call = 6188.0
+
+[arms."Welsch-HQ"]
+us_per_call = 1014.3
+bytes_per_call = 6188.0

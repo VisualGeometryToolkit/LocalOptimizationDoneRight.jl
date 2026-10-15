@@ -1,0 +1,23 @@
+# The conda environment of envs/superansac (resolved by CondaPkg into
+# envs/superansac/.CondaPkg, not tracked): Python and the build closure of
+# pysuperansac, which is built FROM SOURCE into it (the PyPI wheel predates the
+# settings the cell uses, e.g. use_sprt and local_opt_k):
+#   julia --project=envs/superansac -e 'using CondaPkg; CondaPkg.withenv() do
+#       ENV["CMAKE_PREFIX_PATH"] = ENV["CONDA_PREFIX"]
+#       run(`python -m ensurepip`)   # CondaPkg's pixi backend installs no pip
+#       run(`python -m pip install --no-build-isolation -v <superansac checkout>`)
+#   end'
+# (https://github.com/danini/superansac; host g++ 13 was used for the
+# published rows.) python 3.11 as in the environment those rows ran in.
+[deps]
+python = "3.11.*"
+eigen = ""
+boost-cpp = ""
+libopencv = ""
+cmake = ""
+make = ""
+pybind11 = ""
+
+[pip.deps]
+numpy = ""
+setuptools = ""

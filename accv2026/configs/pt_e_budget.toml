@@ -1,0 +1,64 @@
+# =============================================================================
+# pt_e_budget — the PhotoTourism-E sample-budget cell (main-paper Fig 4's
+# PhotoTourism row, scripts/fig4_budget.jl): every IG-seeded arm of THE
+# deployed PT-E operating points (pt_e_miscal's sequential CV) streamed on the
+# test side of their cross-validation at increasing hypothesis budgets.
+#
+# A budget cell like every other (src/cell_stages.jl `budget_cell_stages`; the
+# same keys as heb_h_budget.toml, accv2026_*_budget.toml): the one budget
+# engine, the one scene schema, the one renderer (scripts/tools/render_budget.jl).
+# Until 2026-10-04 it was a driver of its own (run_sb_fair.jl, env-configured,
+# a hard-coded roster, a literal output directory `sample_budget_fair_vN`, its
+# own scene schema and renderer); this file replaces all of that.
+# =============================================================================
+
+[experiment]
+dataset = "phototourism"
+matcher = "sift"
+problem = "E"
+pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"      # the PT-E pool of record (pt_e_miscal.toml's)
+
+# THE deployed operating points: pt_e_miscal's sequential-CV sidecar, its run
+# key folded into this cell's (src/protocol_folds.jl `fold_budget_cell!`).
+[operating_points]
+miscal_config = "pt_e_miscal"
+
+# The sample-budget protocol of record this cell streams under (a
+# configs/sample_budget_protocol.toml section; folded into the run key).
+[budget]
+# The objective-matched Stu-tU-BCD ("IG  +BCD@a*", declared by the operating
+# points' cell) streamed here too; opt-in, it keys this cell.
+objective_matched = ["IG  +BCD"]
+# The research-only zero-clamp Welsch-HQ ("IG  +Lift@zc", declared by the
+# operating points' cell) streamed here too; opt-in, it keys this cell.
+zero_clamp = ["IG  +Lift"]
+protocol = "phototourism"
+# The selectors whose arms this cell runs: the engine seeds through the IG
+# profile-marginal scorer only, and the paper reports no MSAC-seeded arm in a
+# budget figure (main.tex §4: profile-marginal scoring in every pipeline
+# comparison), so the MSAC-seeded arms of the sidecar are not run.
+selectors = ["student_t_uniform"]
+
+[render]
+row_label = "PhotoTourism"
+panel = "panel_sample_budget_faceted.tex"
+legend = "sbfacetedlegend"
+xlog = false                        # a linear budget axis (Fig 4's)
+# The 4000 label is dropped: at the groupplot inner edges it would collide with
+# the next panel's 100 label; the axis still runs to 4000.
+xticks = [100, 1000, 2000, 3000]
+deploy = true
+rows = "maa"                        # the main paper draws mAA@10° alone
+extra_arms = "IG  +BCD"             # Table 1 "other": the same-objective control
+
+# The supplement's compute-efficiency companion (<panel>_time.tex): mAA vs the
+# cumulative LO time per pair, on the DETERMINISTIC single-thread per-call
+# times of time_lo_supp.jl (this run, under registry.jl EXP_TIMING_DIR). The
+# axis ceilings are the maintainer's of 2026-07-23: the per-call data tops out
+# ~13 ms / mAA ~0.65.
+[render.time]
+legend = "sbtimelegend"
+timing = "lo_timing_pt_sift_british_museum.jld2"
+xmax = 15.0
+xticks = "0,5,10"
+maamax = 0.70

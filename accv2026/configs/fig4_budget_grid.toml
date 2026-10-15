@@ -1,0 +1,44 @@
+# =============================================================================
+# fig4_budget_grid — MAIN-PAPER FIG 4 (figures/panel_sample_budget_grid.tex):
+# one row per dataset, stacked by scripts/tools/make_facet_grid.py from the
+# panels the budget cells deploy (src/cell_stages.jl `facet_grid_stages`). A
+# FIGURE config (no [experiment]).
+#
+# Per row: the panel base name, its producer (driver, stage) and, optionally,
+# `maa` = [lo, hi, step]; absent keeps the panel's own axis (each budget cell's
+# own [render], which is where all three rows set theirs).
+# =============================================================================
+[render]
+name = "sample_budget_grid"
+xopts = "budget"
+legend = "sbgridlegend"
+# 2026-10-04: no oracle-selection reference curves (their scale differs from
+# the arms' and flattened the rows), and y ticks every 0.1 on each row's own
+# fitted range (was 0.05 increments).
+oracle = false
+ytick_spacing = 0.1
+
+[[render.rows]]
+label = "PhotoTourism"
+problem = "E"
+panel = "panel_sample_budget_faceted"
+producer = "fig4_budget.jl"
+stage = "render"
+
+# 2026-10-04: ETH3D F (SP+LG) replaces the shelved 7-Scenes P3P row, in the
+# middle: the rows run E, F, H.
+[[render.rows]]
+label = "ETH3D"
+problem = "F"
+panel = "panel_sample_budget_eth_F"
+producer = "supp_ETH_F_budget.jl"
+stage = "render"
+
+# 2026-10-07: HEB at the inverse-gamma operating points (heb_h_miscal, the
+# prior of the miscalibration row too); the Jeffreys comparison cell is retired.
+[[render.rows]]
+label = "HEB"
+problem = "H"
+panel = "panel_sample_budget_heb_H"
+producer = "supp_H_budget.jl"
+stage = "render"

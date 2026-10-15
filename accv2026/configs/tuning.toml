@@ -1,0 +1,169 @@
+# =============================================================================
+# tuning — THE cross-validation protocol of record of the ACCV 2026 campaign.
+#
+# Every tuning this paper runs is one `[tuning.<name>]` entry below, parsed by
+# VisualGeometryEval's one `[tuning]` parser (schema: VisualGeometryEval
+# docs/TUNING.md). An entry states ONLY what differs from VisualGeometryEval's shipped
+# defaults (its configs/tuning.toml); every absent key inherits. A cell config
+# layers its cross-validation (its cv_protocol.toml section) and its own
+# overrides over the entries it names (`layer_tuning`, inside
+# src/protocol_folds.jl `fold_sequential_cv!`), and its effective config — each
+# layered entry resolved to its complete table — keys the run, so every tuning
+# parameter, inherited ones included, is in the run key and in the recorded
+# `_config.toml`. Drivers read nothing else: no grid literal and no grid CLI
+# flag exists in this project.
+#
+#   scorer, refiner_scale_multiple, refiner_native
+#                   THE hyperparameter tuning: the SEQUENTIAL CV of every
+#                   tuning cell (notes/sequential_cv.md;
+#                   scripts/tools/run_sequential_cv.jl) — each selector's width,
+#                   then each refiner's at it — named by the cells'
+#                   `[sequential_cv]` tables. Defined at the end of this file.
+#   lo_sensitivity  selection-only bootstrap harness (run_lo_sensitivity
+#                   --mode=validation_budget|delta)
+#   lo_sensitivity_natural  the same with grids over the full validation σ̂² range
+#   lo_sensitivity_miscal   the selection-only ζ sweep (--mode=miscal)
+#
+# Paper-level TYPE defaults (`[types.<type>]`, the same layer VisualGeometryEval's own
+# configs/tuning.toml has): layered under every entry whose scheme holds that
+# type (`protocol_tuning`), so a value shared by the entries is stated ONCE.
+#
+# The ζ EVALUATION ladder is not tuning: it stays in miscal_protocol.toml. The
+# sequential CV tunes at ζ = 1 and the evaluation builds its own selection grid
+# at exactly {ζ_j · a*}.
+#
+# RETIRED 2026-10-04: `default` (the composed (selection, refinement) PRODUCT
+# GRID, run_product_tuning.jl) and `validation_budget` (its validation-budget
+# draws, reached by no figure) — replaced by the sequential CV; the reasons are
+# notes/sequential_cv.md's.
+# =============================================================================
+
+# The standardized scale-multiple window of the paper ([1, 3.3]).
+[types.scale_multiple_window]
+lo = 1.0
+hi = 3.3
+
+# THE data of every entry below: the paper's main split, PhotoTourism's
+# registered validation/test scenes (VisualGeometryEval
+# configs/splits.toml), every pair of each side. A dataset cell names its own
+# split and validation sampling through its cv_protocol.toml section
+# (`[protocol] cv_section`, folded by src/protocol_folds.jl).
+[types.cross_validation]
+scene_split = { type = "registered", name = "phototourism" }
+
+# The selection-only bootstrap harness (run_lo_sensitivity --mode=validation_budget|delta):
+# the standardized display axis is 17 linear points over the window, the
+# budget sampling 120 draws per budget (VisualGeometryEval's windowed_bootstrap defaults).
+[tuning.lo_sensitivity]
+type = "windowed_bootstrap"
+
+[tuning.lo_sensitivity.scale_multiple]
+spacing = { type = "linear_count", n = 17 }
+
+# The natural small-validation regime: the native grids span the full
+# validation σ̂² range.
+[tuning.lo_sensitivity_natural]
+type = "windowed_bootstrap"
+
+[tuning.lo_sensitivity_natural.outlier_halfwidth]
+window = { type = "coverage", q_lo = 0.001, q_hi = 0.999, log_margin = 0.30 }
+
+[tuning.lo_sensitivity_natural.loss_width]
+window = { type = "coverage", q_lo = 0.001, q_hi = 0.999, log_margin = 0.30 }
+
+[tuning.lo_sensitivity_natural.scale_multiple]
+spacing = { type = "linear_count", n = 17 }
+
+# The selection-only ζ sweep (run_lo_sensitivity --mode=miscal; Fig 1): 400
+# native columns covering the ζ ladder's reach, 1000 draws.
+[tuning.lo_sensitivity_miscal]
+type = "windowed_bootstrap"
+budget_sampling = { n_draws = 1000 }
+
+[tuning.lo_sensitivity_miscal.outlier_halfwidth]
+window = { type = "coverage", log_margin = 0.1, zeta_octaves = 7.0 }
+spacing = { type = "log_count", n = 400 }
+
+[tuning.lo_sensitivity_miscal.loss_width]
+window = { type = "coverage", log_margin = 0.1, zeta_octaves = 7.0 }
+spacing = { type = "log_count", n = 400 }
+
+[tuning.lo_sensitivity_miscal.scale_multiple]
+spacing = { type = "linear_count", n = 17 }
+
+# =============================================================================
+# SEQUENTIAL CV (notes/sequential_cv.md) — two 1-D cross-validations in
+# sequence instead of one (selection × refinement) product grid:
+#
+#   scorer        a*  = coarse→fine CV of the scorer's outlier half-width on the
+#                       SELECTION-ONLY error (no refit) — once per cell
+#   refiner_*     w*  = coarse→fine CV of each refiner's width at the FIXED a*,
+#                       read from the scorer stage's artifact — per arm
+#
+# One entry per width KIND, because the kinds live on different axes: a scale
+# multiple k is dimensionless (the loss width is k · ŝ of the seed's partition),
+# the native kinds are absolute pool-frame widths. Every window is `fixed` and
+# LOCATED BY EXPANSION (extension rounds on an edge argmin), never positioned at
+# a reference scale — so no scale estimate, no s0 and no σ̂ estimator enter the
+# tuning. A cell layers its own cross-validation over these (its cv_protocol
+# section) through `fold_sequential_cv!` (src/protocol_folds.jl).
+#
+# Pool-frame units (NormalizedImageFrame: half-diagonal = 1), so [1e-4, 1] is
+# 0.01 %–100 % of the half-diagonal on every dataset.
+#
+# SPACING (revised 2026-10-04 after the first HEB-H run, for margin, not
+# because a result moved): the COARSE probe is 8 per decade — a basin narrower
+# than ~half a decade can fall between quarter-decade points, and a wrong
+# bracket is unrecoverable by the fine stage — extending 8 points (half a
+# decade) a side for up to 2 rounds. The FINE stage is a declared DENSITY,
+# 200 per decade (1.2 % steps; 51 points over the eighth-decade-either-side
+# bracket), so its step never floats with the bracket width. On HEB-H the
+# fine curves are flat to <0.05° across 8-17 of 21 points at 5.9 % steps: the
+# density is margin, and the argmin inside a flat bottom stays noise-limited.
+# =============================================================================
+[tuning.scorer]
+type = "coarse_fine"
+edge_margin = 1
+criterion = { type = "finite_median" }
+coarse = { type = "spaced", window = { type = "fixed", lo = 1e-4, hi = 1.0 }, spacing = { type = "log_per_decade", per_decade = 8 } }
+extension = { npts = 8, max_rounds = 2 }
+fine = { type = "log_per_decade", per_decade = 200 }
+
+# The partition-anchored refiners: k over [0.03, 30] (three decades, 25
+# points). [0.1, 10] was too tight at the low end: on HEB-H five arms tuned to
+# k <= 1 and GNC-W's argmin sat two points above k = 0.1, with nothing below
+# it evaluated.
+[tuning.refiner_scale_multiple]
+type = "coarse_fine"
+edge_margin = 1
+criterion = { type = "finite_median" }
+coarse = { type = "spaced", window = { type = "fixed", lo = 0.03, hi = 30.0 }, spacing = { type = "log_per_decade", per_decade = 8 } }
+extension = { npts = 8, max_rounds = 2 }
+fine = { type = "log_per_decade", per_decade = 200 }
+
+# The native-width refiners (self-scaled Stu-t outlier half-width; the
+# fixed-external-scale TLS loss widths): the scorer's pool-frame window.
+[tuning.refiner_native]
+type = "coarse_fine"
+edge_margin = 1
+criterion = { type = "finite_median" }
+coarse = { type = "spaced", window = { type = "fixed", lo = 1e-4, hi = 1.0 }, spacing = { type = "log_per_decade", per_decade = 8 } }
+extension = { npts = 8, max_rounds = 2 }
+fine = { type = "log_per_decade", per_decade = 200 }
+
+# The informative scale prior's shape α₀ (`[sequential_cv] prior = { …, alpha0 =
+# "cross_validated", tuning = "prior_alpha0" }`, scripts/tools/run_sequential_cv.jl):
+# IG(α₀, α₀·median σ̂²_val), searched by the scorer stage, each α₀ scored by the
+# IG selector's validation objective at its own re-tuned a* (a one-value error
+# vector per α₀, which the median criterion returns unchanged). α₀ is a
+# pseudo-observation count: [0.1, 100] spans "barely informative" to "outweighs
+# a 100-inlier partition" (a median HEB-H pair has ν/2 ≈ 5). Same densities as
+# the scorer: each point costs one full a* search (~2 min on HEB-H).
+[tuning.prior_alpha0]
+type = "coarse_fine"
+edge_margin = 1
+criterion = { type = "finite_median" }
+coarse = { type = "spaced", window = { type = "fixed", lo = 0.1, hi = 100.0 }, spacing = { type = "log_per_decade", per_decade = 8 } }
+extension = { npts = 8, max_rounds = 2 }
+fine = { type = "log_per_decade", per_decade = 200 }
+

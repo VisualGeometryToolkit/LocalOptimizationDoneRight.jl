@@ -1,0 +1,1067 @@
+\documentclass[runningheads]{llncs}
+
+% ---------------------------------------------------------------
+% Include basic ACCV package
+\usepackage{accv}
+
+% ---------------------------------------------------------------
+% Other packages
+\usepackage{accvabbrv}
+\usepackage{graphicx}
+\usepackage{adjustbox}
+\usepackage{booktabs}
+\usepackage{subcaption}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepgfplotslibrary{fillbetween}
+\usepgfplotslibrary{groupplots}
+\input{figures/fig_colors}
+% Budget-panel colour family (lowercase *lo keys emitted by emit_budget_panel;
+% same block as the supplement preamble).
+\providecolor{Colorigsel}{HTML}{1B7837}
+\providecolor{Colormsacsel}{HTML}{D1410A}
+\providecolor{Colororacleref}{HTML}{BFBFBF}
+\providecolor{Colormsaclo}{HTML}{D4A000}
+\providecolor{Colorlezachlo}{HTML}{F58231}
+\providecolor{Colorstulo}{HTML}{4363D8}
+\providecolor{Colorwelschirlslo}{HTML}{6B8E23}
+\providecolor{Colorwelschlo}{HTML}{3CB44B}
+\usepackage{mathtools,amssymb}
+\usepackage{derivative}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[accsupp]{axessibility}
+\usepackage{xr-hyper} % cross-references into supplement.aux; must precede hyperref
+
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalize]{cleveref}
+\externaldocument[supp:]{supplement}
+\newcommand{\suppsec}[1]{Supp.\ Sec.~\ref{supp:#1}}
+\newcommand{\supptab}[1]{Supp.\ Tab.~\ref{supp:#1}}
+\newcommand{\suppfig}[1]{Supp.\ Fig.~\ref{supp:#1}}
+
+% ---------------------------------------------------------------
+% Math commands
+\DeclareMathOperator{\RSS}{RSS}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\smax}{smax}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\makeatletter
+\@for\@tmp:={A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z,%
+              a,b,c,d,e,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z}\do{%
+  \expandafter\edef\csname b\@tmp\endcsname{\noexpand\mathbf{\@tmp}}%
+}
+\@for\@tmp:={A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W,X,Y,Z}\do{%
+  \expandafter\edef\csname c\@tmp\endcsname{\noexpand\mathcal{\@tmp}}%
+}
+\@for\@tmp:={alpha,beta,gamma,delta,epsilon,varepsilon,zeta,theta,vartheta,%
+              iota,kappa,lambda,mu,nu,xi,pi,varpi,rho,varrho,sigma,varsigma,tau,%
+              upsilon,phi,varphi,chi,psi,omega,%
+              Gamma,Delta,Theta,Lambda,Xi,Pi,Sigma,Upsilon,Phi,Psi,Omega}\do{%
+  \expandafter\edef\csname b\@tmp\endcsname{%
+    \noexpand\boldsymbol{\expandafter\noexpand\csname\@tmp\endcsname}%
+  }%
+}
+\makeatother
+\newcommand{\bzero}{\mathbf{0}}
+\newcommand{\NN}{\mathcal{N}}
+\newcommand{\Reals}{\mathbb{R}}
+\newcommand{\IG}{\mathrm{IG}}
+\newcommand{\pin}{p_{\mathrm{in}}}
+\newcommand{\pout}{p_{\mathrm{out}}}
+\newcommand{\stu}{Student-$t$}
+% THE score/pipeline names (one source per side; mirrors the released label table)
+\newcommand{\stuU}{Stu-$t$U}          % the Student-t/uniform mixture marginal SCORE
+\newcommand{\tlsirls}{TLS-IRLS}   % PoseLib truncated-loss LM refinement
+\newcommand{\jm}{Jeffreys marginal}
+\newcommand{\kscore}{k_{\mathrm{score}}}
+\newcommand{\klo}{k_{\mathrm{LO}}}
+
+% Every number the paper states is a macro of the ONE generated macro file
+% (scripts/paper_numbers.jl, configs/paper_numbers.toml; test/test_paper_numbers.jl
+% refuses a hand-typed data number in the prose).
+\input{figures/paper_numbers}
+
+% Line breaking: hyphenated compounds (threshold-based, observation-wise, ...)
+% leave a few 2-11pt overfull lines; a small emergency stretch absorbs them.
+\setlength{\emergencystretch}{1.5em}
+
+\begin{document}
+
+% ---------------------------------------------------------------
+\title{Robust Local Optimization Done Right}
+
+\titlerunning{Robust Local Optimization Done Right}
+
+\author{James Pritts \and Kevin K\"oser}
+\authorrunning{J. Pritts and K\"oser}
+\institute{Kiel University, Kiel, Germany}
+
+\maketitle
+
+\begin{abstract}
+	RANSAC scoring and local optimization (LO) impose different robustness
+	requirements, motivating the separation of hypothesis selection from
+	refinement. We systematically isolate the effects of robust-loss shape,
+	incorrectly specified inlier scales, and optimization strategy on essential matrix,
+	fundamental matrix, and homography estimation. A profile-marginal score
+	marginalizes the nuisance inlier scale and selects an inlier partition,
+	from which we estimate the scale that sets the LO loss width; this makes
+	LO robust to an inlier scale specified too large, whereas one specified too small degrades selection itself.
+	Refinement needs gradient from correspondences the seed currently rejects:
+	optimizers that reweight from current residuals stay pinned to their seed,
+	whereas methods with broad basins recover strongly perturbed seeds yet
+	degrade accurate score-selected hypotheses, so basin size alone is
+	insufficient to assess RANSAC LO. Joint half-quadratic optimization
+	balances the two and is the most consistent strategy across model classes.
+	An optimizer matched to the profile-marginal score, which never decreases
+	it, does not reach the best accuracy, challenging the prescription that
+	scoring and refinement objectives should match. Composed from these
+	findings, our RANSAC reduces the median essential-matrix pose error of a
+	state-of-the-art RANSAC on PhotoTourism from $\EtoESRMed^\circ$ to $\EtoEOursMed^\circ$ with a correctly specified inlier scale and
+	from $\EtoESRInflMedShort^\circ$ to $\EtoEOursInflMedShort^\circ$ when it is grossly misspecified ($128\times$ too large).\footnote{Project page: \url{https://localoptimizationdoneright.github.io/}.}
+
+	\keywords{robust estimation \and RANSAC \and local optimization \and
+		half-quadratic lifting \and graduated non-convexity}
+\end{abstract}
+
+% =====================================================================
+\section{Introduction}
+\label{sec:intro}
+% =====================================================================
+Robust geometric estimation from contaminated correspondences is
+central to computer vision~\cite{Fischler1981,Huber1981,Maronna2019}.
+Modern RANSAC variants separate global search from local optimization
+(LO): minimal samples generate hypotheses, a score ranks them, and LO
+refines promising hypotheses using their tentative
+support~\cite{Chum2003,Lebeda2012}. These stages impose different
+requirements: scoring must reliably rank hypotheses, whereas LO needs
+informative descent directions despite contamination and an imperfect
+initial estimate. Both typically depend on an approximate inlier
+scale, whose miscalibration can distort ranking and either amplify
+outlier influence or suppress valid measurements during refinement.
+Even with a well-calibrated scale, valid measurements may have large
+residuals under an imperfect model. Hard truncation, common in RANSAC
+scoring functions, provides no gradient beyond its cutoff and can
+prevent these measurements from guiding refinement.
+
+Iteratively reweighted least squares
+(IRLS)~\cite{HollandWelsch1977,Maronna2019} sets weights from current
+residuals, potentially suppressing valid measurements prematurely;
+classical LO-RANSAC mitigates this through threshold reduction and
+inner resampling~\cite{Chum2003,Lebeda2012}.  Graduated non-convexity
+(GNC) instead progressively transforms smoother surrogate losses into
+the target
+objective~\cite{BlakeZisserman1987,BlackRangarajan1996,YangCarlone2020}.
+Joint half-quadratic (HQ) optimization introduces an independent
+weight for each observation. Initializing these weights near one lets
+large-residual observations continue to influence the model, while
+minimizing over the weights recovers the target
+objective~\cite{BlackRangarajan1996,Zach2014,ZachBourmaud2018}.
+
+Matching scoring and refinement objectives, with updates accepted
+only when they preserve or improve the objective, ensures a
+nondecreasing score~\cite{Shekhovtsov2025}, but does not guarantee
+geometric accuracy. The scoring objective can also restrict the
+optimization strategy, for example by precluding an independent
+observation-wise HQ representation. We therefore separate the scoring
+rule, scale supply, and optimization path.
+
+Shekhovtsov~\cite{Shekhovtsov2025} unifies Gaussian--uniform mixture
+scores through the Bayes decision threshold $\tau$ between inliers and
+outliers, which depends on the inlier noise standard deviation
+$\sigma$. RANSAC~\cite{Fischler1981}, MSAC and MLESAC~\cite{Torr2000},
+and MAGSAC and MAGSAC++~\cite{Barath2019,Barath2020} retain a
+residual-unit parameter fixed at test time: a threshold or, for MAGSAC
+and MAGSAC++, an upper scale bound $\bar\sigma$. We call these scores
+\emph{threshold-based}. SIMFIT~\cite{Heinrich2013} alternates RANSAC
+fitting with scale estimation; SIMFIT++~\cite{Edstedt2025} reduces
+fitting and truncation bias using held-out residuals and a corrected
+estimator. We instead use the profile-marginal score of Pritts
+et~al.~\cite{PrittsScoring2026}, which marginalizes the inlier scale
+and selects an inlier--outlier partition, retaining only an outlier
+half-width in residual units.  It integrates readily into RANSAC, adds
+negligible runtime to the RANSAC pipeline, and is the most resilient
+to scale miscalibration among the scores evaluated in our
+supplementary experiments (\suppsec{sec:supp-scoring}).
+
+We make four contributions. First, we introduce \emph{partition
+	anchoring}, which uses the selected inlier partition to estimate the
+scale for a separately chosen LO objective, leaving only a dimensionless
+width multiplier to tune. Second, controlled comparisons isolate the
+effects of scale supply, loss shape, and optimization strategy. Third,
+we derive a block-coordinate optimizer, nondecreasing in its score, for the profile-marginal
+score and use it as an objective-matched control. Finally, we evaluate
+the resulting RANSAC pipeline against
+SupeRANSAC~\cite{BarathSupeRANSAC2025} on PhotoTourism and find higher
+mAA@$10^\circ$ across the tested scale conditions.
+
+% =====================================================================
+\section{Profile-Marginal Scoring}
+\label{sec:scale-free}
+% =====================================================================
+Let $\be_i(\btheta)\in\Reals^{d_g}$ denote the residual vector of
+observation $i$, where $d_g$ is its dimension, and let
+$r_i(\btheta)=\|\be_i(\btheta)\|$ be its norm.
+We use the profile-marginal Student-$t$/uniform score of
+Pritts et~al.~\cite{PrittsScoring2026}, denoted \stuU{}.
+Inlier residuals are Gaussian with scale $\sigma$, while outlier
+residuals are uniform on $[-a,a]^{d_g}$. Thus, for an inlier
+index set $\cI\subseteq\{1,\ldots,N\}$, the residual-vector
+likelihood is
+\begin{equation}
+	p(\{\be_i\}_{i=1}^N\mid\btheta,\cI,\sigma)
+	=\prod_{i\in\cI}\NN\bigl(\be_i(\btheta);\bzero,\sigma^2\bI\bigr)
+	\prod_{i\notin\cI}(2a)^{-d_g},
+	\label{eq:partition-likelihood}
+\end{equation}
+where the uniform factors assume that outlier residuals lie
+within the stated support.
+Let $y_i\in\{0,1\}$ indicate whether observation $i$ is an
+inlier, and write $\by=(y_1,\ldots,y_N)$ for the corresponding
+labels, so that $\cI=\{i:y_i=1\}$. Let $n_I=|\cI|$ and
+$n_O=N-n_I$, and set the prior inlier probability to $\gamma=1/2$.
+The joint likelihood of residuals and labels is
+\begin{equation}
+	p(\{\be_i\}_{i=1}^N,\by\mid\btheta,\sigma)
+	=\gamma^{n_I}(1-\gamma)^{n_O}\,
+	p(\{\be_i\}_{i=1}^N\mid\btheta,\cI,\sigma),
+	\label{eq:joint-partition}
+\end{equation}
+Its prior factor is constant across partitions.
+We drop this common factor from the score.
+
+Rather than marginalizing the labels at a fixed scale, the score
+marginalizes the scale for each fixed partition under an
+inverse-gamma prior $\pi(\sigma^2)=\IG(\alpha_0,\beta_0)$, with
+shape $\alpha_0$ and scale $\beta_0$:
+\begin{equation}
+	S(\btheta,\cI)=\log\int_0^\infty
+	p(\{\be_i\}_{i=1}^N\mid\btheta,\cI,\sigma)\,
+	\pi(\sigma^2)\,d\sigma^2.
+	\label{eq:score-marginal}
+\end{equation}
+Jeffreys' prior, $\pi(\sigma^2)\propto1/\sigma^2$, is recovered
+as the formal $(\alpha_0,\beta_0)\to(0,0)$ limit, up to a
+common normalization constant. We use the degrees-of-freedom adjustment
+$|\cI|d_g-n_\theta$ for the $n_\theta=md_g$ fitted model parameters, where
+$m$ is the minimal sample size. Under Jeffreys' prior, a partition is
+feasible when $|\cI|d_g>n_\theta$, which makes the scale integral finite.
+We call maximization over feasible inlier partitions
+\emph{partition profiling}; it selects the partition with the highest
+scale-marginal score (the $\argmax$ below is over feasible partitions):
+\begin{equation}
+	\widehat{\cI}(\btheta)\in\argmax_{\cI}S(\btheta,\cI),
+	\qquad
+	\bar S(\btheta)=S\bigl(\btheta,\widehat{\cI}(\btheta)\bigr).
+	\label{eq:profile-score}
+\end{equation}
+The name \emph{profile-marginal} reflects these two operations:
+marginalization over the continuous scale and profiling over
+the discrete partition.
+
+The scale integral has a closed form~\cite{PrittsScoring2026}. For a fixed
+partition, the score is strictly decreasing in $\RSS_{\cI}(\btheta)$, so
+reducing its residual sum of squares raises the score. Under Jeffreys' prior,
+the only residual-unit parameter is the outlier half-width $a$.
+Our experiments reaffirm the robustness of the profile-marginal score
+to extreme scale miscalibration relative to state-of-the-art scores
+(\suppsec{sec:supp-scoring}).
+
+Using the same degrees-of-freedom count, the selected partition
+supplies the scale estimate
+\begin{equation}
+	\hat s^2(\btheta)
+	=\frac{\RSS_{\widehat{\cI}}(\btheta)+2\beta_0}
+	{|\widehat{\cI}|\,d_g-n_\theta+2\alpha_0},
+	\qquad \widehat{\cI}=\widehat{\cI}(\btheta),
+	\label{eq:partition-scale}
+\end{equation}
+This is the reciprocal posterior mean precision. Under Jeffreys' prior it
+reduces to the residual variance
+$\RSS_{\widehat{\cI}}/(|\widehat{\cI}|\,d_g-n_\theta)$
+of the selected inliers. This estimate anchors the LO loss width.
+
+\subsection{Objective-matched local optimization}
+\label{sec:matching-lo}
+We minimize the negative profile-marginal score by block-coordinate
+descent (BCD), equivalently maximizing the score. Given $\btheta_t$, the
+partition step sweeps feasible prefixes of the sorted residuals: for any
+fixed cardinality, the smallest residuals minimize $\RSS_{\cI}$ and
+maximize the fixed-partition score. The model block fits the selected
+partition by nonlinear least squares, accepting only steps with
+$\RSS_{\cI_t}(\btheta_{t+1})\le\RSS_{\cI_t}(\btheta_t)$; the alternating updates are
+\begin{equation}
+	\cI_t\in\argmax_{\cI} S(\btheta_t,\cI),\qquad
+	\btheta_{t+1}\approx\argmin_{\btheta}\RSS_{\cI_t}(\btheta).
+	\label{eq:bcd-updates}
+\end{equation}
+Because the partition step maximizes the score and the least-squares step
+does not increase the fixed-partition RSS, the score obeys
+\begin{equation}
+	\bar S(\btheta_{t+1})
+	\ge S(\btheta_{t+1},\cI_t)
+	\ge S(\btheta_t,\cI_t)
+	=\bar S(\btheta_t).
+	\label{eq:bcd-monotonicity}
+\end{equation}
+We call this method \stuU{}-BCD and
+use it as an \emph{objective-matched} control. Its memberships are binary,
+but its partition is selected jointly from all residuals rather than by
+comparing each residual with a fixed threshold. Its partition step uses
+its own outlier half-width, tuned separately (\cref{sec:experiments}), so the
+nondecreasing score is the profile-marginal at that half-width, which
+need not equal the scoring half-width. The nonseparable score
+does not admit the independent observation-wise HQ representation used
+below (\cref{sec:lift-theory}).
+
+\section{Robust Losses and Optimization Strategies}
+\label{sec:soft-optimization}
+
+We compare IRLS, joint HQ optimization, and GNC within three
+robust-loss families: Welsch~\cite{DennisWelsch1978},
+Geman--McClure (GM)~\cite{GemanMcClure1985,GemanMcClure1987},
+and truncated least squares (TLS). Additional references are
+TLS-LZ~\cite{LeZach2021} and classical
+TLS-LO$^+$~\cite{Lebeda2012,Sattler2019Github}
+(\cref{tab:design,sec:sota}).
+
+For residual norm $r$ and width $c$, the loss functions are
+\begin{equation}
+	\rho^{(\mathrm W)}=\tfrac{c^2}{2}\bigl(1-e^{-r^2/c^2}\bigr),\qquad
+	\rho^{(\mathrm{GM})}=\tfrac{c^2r^2}{2(c^2+r^2)},\qquad
+	\rho^{(\mathrm{TLS})}=\tfrac12\min\bigl(r^2,c^2\bigr).
+	\label{eq:kernels}
+\end{equation}
+How each optimizer obtains its width is described in
+\cref{sec:scale-interface}.
+Welsch and GM retain positive weight at every finite residual;
+hard TLS assigns zero weight beyond $c$.
+TLS-HQ uses a fixed smooth truncated-quadratic surrogate, whereas
+TLS-GNC follows surrogates approaching hard TLS. Thus, comparisons
+within the TLS family vary both the objective and optimization path.
+
+\subsection{Iteratively reweighted least squares}
+
+The local objectives are observation-separable:
+\begin{equation}
+	J(\btheta)=\sum_i \rho\bigl(r_i(\btheta);c\bigr).
+	\label{eq:separable}
+\end{equation}
+IRLS sets $w(r)=\rho'(r)/r$, defined at zero by continuous
+extension, and updates the model by weighted nonlinear least squares:
+\begin{equation}
+	\btheta_{t+1}
+	\approx\argmin_{\btheta}
+	\sum_i w\!\left(r_i(\btheta_t)\right)r_i(\btheta)^2.
+	\label{eq:irls-update}
+\end{equation}
+We take local solver steps rather than solve each subproblem exactly,
+recomputing weights after each model update. Since weights are
+prescribed by current residuals, valid measurements can be suppressed
+before a poor initial model improves. Solver details are in
+\suppsec{sec:supp-lo-details}.
+
+\subsection{Joint half-quadratic optimization}
+\label{sec:lift-theory}
+
+Half-quadratic lifting introduces an independent weight variable
+per observation~\cite{GemanReynolds1992,BlackRangarajan1996}:
+\begin{equation}
+	\rho(r;c)
+	=\min_z\left[\tfrac12zr^2+\Phi(z;c)\right],
+	\qquad z^\star(r)=w(r),
+	\label{eq:lift}
+\end{equation}
+where the regularizer and feasible weight range depend on the loss.
+Minimizing over weights recovers the original objective; setting
+each weight to its conditional optimum recovers the IRLS weight update.
+Following Zach~\cite{Zach2014,ZachBourmaud2018}, we instead initialize
+weights near one and optimize them jointly with the model.
+The weights can therefore depart from their residual-prescribed
+values, allowing initially large residuals to guide refinement.
+This permits an implicit broad-to-narrow path under a fixed lifted
+objective. Dual regularizers and residualizations are given in
+\suppsec{sec:supp-hq-derivations}.
+
+The profile-marginal score couples residuals through the partition RSS
+and partition selection, so it does not admit the independent
+observation-wise representation in \cref{eq:lift}.
+This does not exclude augmentations with coupled variables or
+a shared scale.
+
+\subsection{Explicit continuation and classical LO}
+\label{sec:gnc}
+
+GNC follows a sequence of surrogate losses, warm-starting each stage
+from the preceding solution. For Welsch and GM, we use width
+continuation,
+\begin{equation}
+	F_\mu(\btheta)
+	=\sum_i\rho^{(K)}\!\left(r_i(\btheta);\sqrt{\mu}\,c\right),
+	\qquad K\in\{\mathrm W,\mathrm{GM}\},
+	\label{eq:gnc-family}
+\end{equation}
+with $\mu$ decreasing to one. TLS-GNC instead uses the surrogate
+family of Yang et~al.~\cite{YangCarlone2020}, whose continuous
+weight transition approaches hard truncation as $\mu$ increases.
+All stages share the same model-update budget; continuation need
+not reach the target regime within that budget.
+Initialization and schedules are detailed in
+\suppsec{sec:supp-lo-details} and \suppsec{sec:supp-gnc}.
+
+Classical LO-RANSAC similarly reduces an enlarged consensus threshold,
+but retains binary weights and uses inner RANSAC on non-minimal
+consensus samples~\cite{Chum2003,Lebeda2012}.
+It therefore combines threshold continuation with stochastic search,
+whereas GNC changes the surrogate loss and joint HQ optimizes a
+fixed lifted objective.
+
+\subsection{Scale supply to local optimization}
+\label{sec:scale-interface}
+We distinguish three ways to supply scale. A \emph{partition-anchored}
+optimizer takes the partition selected for the seed $\btheta_0$ and sets
+\begin{equation}
+	\hat s_0^2=\hat s^2(\btheta_0),
+	\qquad c=\klo\hat s_0,
+	\label{eq:partition-anchor}
+\end{equation}
+with $\hat s^2$ from \cref{eq:partition-scale}.
+The loss width $c$ is fixed during that LO call; only the dimensionless
+width multiplier $\klo$ is cross-validated. The width multiplier plays the
+role of the tuning constant of robust statistics: in units of the inlier
+scale it fixes the loss's efficiency under Gaussian noise, and $c=\klo\hat s_0$
+converts it into residual units. In GNC, $c$ is the target
+width, while surrogate widths change along the continuation path.
+A \emph{fixed-scale} optimizer uses the same absolute width
+$c_{\mathrm{ref}}$ for every seed. The profile-marginal optimizer below
+is \emph{self-scaling}: its partition and derived scale are updated
+from the current model, without a separate LO width.
+
+In the default configurations of \cref{tab:design}, Welsch and
+Geman--McClure use partition anchoring for IRLS, HQ, and GNC, as do
+TLS-HQ and TLS-GNC; \stuU{}-BCD is self-scaling.
+Partition anchoring removes the direct dependence of LO width on the
+supplied scale, but the pipeline can still depend on $a$ through the
+selected seed and partition.
+
+
+
+
+\begin{table}[t]
+	\centering
+	\caption{\textbf{Local objectives and optimization strategies.}
+		Names follow \emph{objective--strategy}. Entries give
+		single-threaded time per LO call in ms on PhotoTourism under
+		the shared 25-model-update cap.
+		$^{\dagger}$\stuU{}-BCD optimizes the profile-marginal score.
+		Timing details are in \suppsec{sec:supp-budget}.}
+	\label{tab:design}
+	\setlength{\tabcolsep}{3.5pt}
+	\small
+	\begin{adjustbox}{max width=\linewidth}
+		\input{figures/table_design}
+	\end{adjustbox}
+\end{table}
+
+\subsection{State of the art}
+\label{sec:sota}
+Three established truncated refinements serve as baselines. \tlsirls{} is
+PoseLib's truncated-loss Levenberg--Marquardt refinement~\cite{PoseLib},
+which recomputes binary weights after every model update, i.e., IRLS
+with hard truncation. TLS-LZ~\cite{LeZach2021} approaches the same
+truncated objective through a bilevel formulation whose penalty parameter
+increases on a fixed schedule. TLS-LO$^+$ is the LO$^+$ procedure of
+Lebeda et al.~\cite{Lebeda2012} as implemented in
+RansacLib~\cite{Sattler2019Github}: it reduces an enlarged threshold to
+its target over iterated least-squares refits, runs an inner RANSAC on
+non-minimal samples of the provisional consensus, and keeps a refit only
+when it improves the truncated score at the target threshold. All three
+are hard-truncation methods with a fixed scale
+(\cref{sec:scale-interface}): the same absolute threshold for every seed.
+
+%\section{Broad-to-Narrow Local Optimization}
+%\label{sec:soft-optimization}
+%The strategies in \cref{tab:design} differ in how their weights evolve during optimization.
+%
+%\begin{table}[t]
+%	\centering
+%	\caption{\textbf{Local objectives and optimization strategies.}
+%		Method names follow \emph{objective--strategy}. Entries give isolated
+%		single-threaded time per LO call in ms on PhotoTourism under the shared
+%		25-model-update cap. $^{\dagger}$\stuU{}-BCD directly optimizes the
+%		profile-marginal score. TLS variants use the objectives described in
+%		\cref{sec:soft-optimization}; timing details are in
+%		\suppsec{sec:supp-budget}.}
+%	\label{tab:design}
+%	\setlength{\tabcolsep}{3.5pt}
+%	\small
+%	\begin{adjustbox}{max width=\linewidth}
+%		\input{figures/table_design}
+%	\end{adjustbox}
+%\end{table}
+%
+%We compare optimization strategies within three robust-loss families:
+%Welsch~\cite{DennisWelsch1978}, Geman--McClure
+%(GM)~\cite{GemanMcClure1985,GemanMcClure1987}, and truncated least
+%squares (TLS). The reference truncated refit, \tlsirls{}, is PoseLib's
+%truncated-loss Levenberg--Marquardt (LM) refinement~\cite{PoseLib}:
+%it uses hard TLS, with binary weights recomputed at each model update.
+%All IRLS variants update the model by Levenberg--Marquardt on the problem's chart (Gauss--Newton on SE(3) for P3P). TLS-HQ uses a fixed
+%smooth truncated-quadratic surrogate with zero weight beyond its cutoff;
+%TLS-GNC follows a parameterized surrogate family approaching hard TLS
+%(\cref{sec:gnc}). Thus, the TLS comparison varies both the objective
+%and optimization path. We retain ``TLS'' in the names to identify the
+%loss family.
+%% AUTHOR CHECK: Reconcile the exact TLS-HQ surrogate and TLS-GNC terminal
+%% objective with the implementation and supplement; report the terminal
+%% continuation parameter reached under the 25-update budget.
+%TLS-LZ~\cite{LeZach2021} increases a penalty parameter on a fixed
+%schedule to approach hard truncation. The classical reference is
+%RansacLib's TLS-LO$^+$~\cite{Lebeda2012,Sattler2019Github}.
+%Joint HQ optimization follows Zach~\cite{Zach2014,ZachBourmaud2018};
+%GNC follows Yang et~al.~\cite{YangCarlone2020}. Additional timing results
+%on ScanNet are in \supptab{tab:supp-timing}.
+%
+%For residual norm $r$ and loss width $c$, the Welsch, GM, and hard TLS
+%losses are
+%\begin{equation}
+%	\rho^{(\mathrm W)}=\tfrac{c^2}{2}\bigl(1-e^{-r^2/c^2}\bigr),\qquad
+%	\rho^{(\mathrm{GM})}=\tfrac{c^2r^2}{2(c^2+r^2)},\qquad
+%	\rho^{(\mathrm{TLS})}=\tfrac12\min\bigl(r^2,c^2\bigr).
+%	\label{eq:kernels}
+%\end{equation}
+%The width $c=\klo\hat s_0$ separates a dimensionless width multiplier
+%from the seed's estimated inlier scale (\cref{sec:scale-interface}).
+%Only hard TLS uses $c$ as an inclusion threshold; Welsch and GM assign
+%positive weight at every finite residual. For an isotropic Gaussian
+%residual, $P(r\le k\sigma)=F_{\chi^2_{d_g}}(k^2)$, so an inclusion
+%quantile depends on the residual dimension as well as $k$; here
+%$F_{\chi^2_{d_g}}$ is the chi-squared cumulative distribution function.
+%
+%\subsection{Iteratively reweighted least squares}
+%
+%The M-estimators above minimize an \emph{observation-separable}
+%objective,
+%\begin{equation}
+%	J(\btheta)=\sum_i \rho\bigl(r_i(\btheta);c\bigr),
+%	\label{eq:separable}
+%\end{equation}
+%a sum of one term per observation, each depending only on that
+%observation's residual. The negative mixture log-likelihood in
+%\cref{eq:score} is separable at fixed $\sigma$ and $\gamma$; the
+%negative profile-marginal score is not (\cref{sec:lift-theory}). For a robust loss
+%$\rho(\cdot;c)$ with influence function $\psi=\rho'$, a stationary
+%point away from nondifferentiable loss boundaries satisfies
+%\begin{equation}
+%	\sum_i \psi(r_i)\,\nabla r_i
+%	=\sum_i w(r_i)r_i\nabla r_i=\bzero,
+%	\qquad w(r)=\psi(r)/r,
+%	\label{eq:robust-stationarity}
+%\end{equation}
+%where $w(0)$ is defined by continuous extension.
+%IRLS seeks this fixed point by alternating weight updates with
+%weighted least squares:
+%\begin{equation}
+%	\btheta_{t+1}
+%	=\argmin_{\btheta} \sum_i w\!\left(r_i(\btheta_t)\right)r_i(\btheta)^2.
+%	\label{eq:irls-update}
+%\end{equation}
+%In practice, the nonlinear subproblem is updated by LM rather than
+%solved to its global minimum. Weights are recomputed after each model
+%update. This residual-based initialization can suppress true inliers
+%when the seed is poor. \suppsec{sec:supp-hq-derivations} lists the losses and
+%weights used here.
+%
+%\subsection{Joint half-quadratic optimization}
+%\label{sec:lift-theory}
+%
+%Half-quadratic (HQ) optimization introduces one line-process weight
+%per observation~\cite{GemanReynolds1992,BlackRangarajan1996}. Black--Rangarajan
+%duality rewrites a robust loss as
+%\begin{equation}
+%	\rho(r;c)
+%	=\min_z \left[ \tfrac12 z r^2+\Phi(z;c) \right], \qquad
+%	z^\star(r)=w(r),
+%	\label{eq:lift}
+%\end{equation}
+%where the regularizer and feasible weight range depend on the loss.
+%Minimizing out the weights recovers the original objective exactly;
+%optimizing in the enlarged space permits different trajectories.
+%
+%Alternating exact weight and model updates recovers IRLS. Our HQ
+%optimizer instead implements the joint lift of
+%Zach~\cite{Zach2014,ZachBourmaud2018}, updating the model and the
+%line-process weights together, which allows the weights to depart
+%temporarily from their conditional optima. This distinction is
+%important for poor seeds. IRLS immediately sets the weights from the
+%initial residuals and may suppress true inliers before the model
+%moves. HQ initializes the weights near one and updates them jointly
+%with the model, allowing initially large residuals to influence its motion.
+%This permits an implicit broad-to-narrow path under a fixed lifted
+%objective; neither the weights nor true-inlier support are required to
+%change monotonically.
+%
+%We apply HQ to Welsch, Geman--McClure, and smooth TLS; their dual
+%regularizers and least-squares residualizations are given in
+%\suppsec{sec:supp-hq-derivations}. Welsch and Geman--McClure retain positive weight at every
+%finite residual, whereas smooth TLS reaches zero weight at its cutoff.
+%
+%For the smooth losses considered here, a nonnegative, non-increasing
+%weight $w(r)$ with finite $w(0)$ makes $\rho(\sqrt{2u};c)$ concave in
+%$u\ge0$ and yields the observation-wise multiplicative representation
+%in \cref{eq:lift}~\cite{BlackRangarajan1996,ZachBourmaud2018}.
+%Hard TLS also has an exact lift with $0\le z\le1$ and
+%$\Phi(z;c)=\tfrac12c^2(1-z)$; our TLS-HQ implementation uses a smooth
+%surrogate for joint optimization.
+%
+%The negative profile-marginal score couples residuals through the
+%partition RSS and the maximization over partitions. It therefore cannot
+%be written as a sum of independently minimized observation-wise terms
+%of the form in \cref{eq:lift}. This rules out that particular separable
+%representation, not augmentations with coupled variables or a shared scale.
+%
+%\subsection{Explicit continuation by GNC}
+%\label{sec:gnc}
+%Graduated non-convexity (GNC) follows an explicit broad-to-narrow path
+%by minimizing a sequence of surrogate losses indexed by a continuation
+%parameter $\mu$. For Welsch and Geman--McClure, we use width
+%continuation,
+%\begin{equation}
+%	F_\mu(\btheta)
+%	=\sum_i \rho^{(K)}\!\left(r_i(\btheta);\sqrt{\mu}\,c\right), \qquad
+%	K\in\{\mathrm W,\mathrm{GM}\},
+%	\label{eq:gnc-family}
+%\end{equation}
+%with $\mu$ decreasing to one. Larger $\mu$ broadens the region of
+%substantial influence, and each stage is warm-started from the
+%preceding solution. For Welsch, the initialization
+%$\mu_0=\max\{1,r_{\max}^2/c^2\}$ places all initial residuals within
+%one target or widened loss width, where
+%$r_{\max}=\max_i r_i(\btheta_0)$. This broadens the region of substantial
+%influence but does not ensure convexity in the model parameters.
+%
+%Widening a hard TLS cutoff can restore influence to previously excluded
+%measurements, but the weights remain binary. TLS-GNC instead uses the
+%surrogate family of Yang et~al.~\cite{YangCarlone2020}, whose weights
+%fall continuously from one to zero across a transition band. Increasing
+%$\mu$ narrows the band, recovering hard TLS as $\mu\to\infty$; its
+%schedule therefore runs upward, unlike width continuation for Welsch
+%and GM. Closed forms and schedules are given in \suppsec{sec:supp-gnc}.
+%All stages share the same model-update budget. GNC can still track a
+%contaminated fit or fail to reach the target regime within that budget.
+%
+%\subsection{Relation to classical LO-RANSAC}
+%\label{sec:classic-lo}
+%
+%Classical iterative LO follows a similar broad-to-narrow strategy with
+%binary weights. It repeatedly refits the model while reducing an
+%enlarged consensus threshold to its target value.
+%LO-RANSAC~\cite{Chum2003} and LO$^{+}$~\cite{Lebeda2012} additionally
+%apply inner RANSAC to non-minimal samples from the provisional
+%consensus, combining threshold continuation with stochastic basin
+%search.
+%
+%Classical LO and GNC both broaden support and progressively restrict it.
+%Classical LO changes binary membership through threshold continuation,
+%whereas GNC changes the surrogate loss and its weights. Joint HQ
+%optimization follows a different path through a fixed lifted objective.
+%Inner resampling gives classical LO an additional way to recover
+%alternative fits missed by deterministic updates.
+%
+% =====================================================================
+\section{Experiments}
+\label{sec:experiments}
+% =====================================================================
+We examine four RANSAC design choices: scoring rule, LO objective
+(Welsch, GM, TLS, or \stuU{}), scale supply (fixed-scale,
+partition-anchored, or self-scaling), and optimization strategy
+(IRLS, joint HQ, GNC, BCD, or classical LO). We first measure recovery
+from perturbed seeds with fixed loss widths. We then use the profile-marginal
+score (\stuU{}; \cref{sec:scale-free}) to evaluate pipelines
+under scale corruption and varying hypothesis budgets, with objective-matched
+and paired scale-supply controls. ETH3D fundamental-matrix and HEB
+homography experiments assess these design choices across model classes.
+Every local optimizer has a 25-model-update cap, including all GNC stages.
+Full protocols are reported in \suppsec{sec:supp-protocol}.
+
+\begin{table}[!t]
+	\centering
+	\footnotesize
+	\setlength{\tabcolsep}{2pt}
+	\caption{\textbf{Evaluation datasets.} Scene and image-pair counts are shown
+		for validation and test; there is no separate training split. SP+LG denotes
+		SuperPoint+LightGlue.}
+	\label{tab:datasets-main}
+	\resizebox{\linewidth}{!}{%
+		\begin{tabular}{l c l c c}
+			\toprule
+			Dataset                                  & Transform    & Features     & \shortstack{Validation \\scenes / pairs} &
+			\shortstack{Test                                                                                \\scenes / pairs} \\
+			\midrule
+			PhotoTourism~\cite{Jin2021}              & $\mathbf{E}$ &
+			RootSIFT~\cite{Arandjelovic2012}         & \PTValScenes{} / \PTValPairs{} & \PTTestScenes{} / \PTTestPairs{}                          \\
+			ETH3D~\cite{Schoeps2017}                 & $\mathbf{F}$ &
+			SP+LG~\cite{DeTone2018,Lindenberger2023} &
+			\ETHValScenes{} / \ETHValPairs{} & \ETHTestScenes{} / \ETHTestPairs{}                                              \\
+			HEB~\cite{Barath2023}                    & $\mathbf{H}$ & SIFT         &
+			\HEBValScenes{} / \HEBValPairs{} & \HEBTestScenes{} / \HEBTestPairs{}                                          \\
+			\bottomrule
+		\end{tabular}
+	}
+\end{table}
+
+On PhotoTourism, we use RootSIFT correspondences~\cite{Arandjelovic2012},
+capped at $4\,096$ per image pair, and normalize image coordinates by the
+image half-diagonal. Scoring and
+refinement use Sampson residuals~\cite{Hartley2003}. The reference relative
+pose of each pair, the pseudo-ground truth against which errors are measured,
+is composed from the scene's bundle-adjusted COLMAP
+reconstruction~\cite{Schonberger2016,Jin2021}; its inlier residual variance
+$\hat\sigma_p^2$ is the Sampson residual variance of the reconstruction's
+track correspondences under that pose. Following
+Shekhovtsov~\cite{Shekhovtsov2025}, all methods share the same correspondences
+and precomputed minimal essential-matrix hypotheses for each pair.
+
+For HEB homographies, we use four-point hypothesis pools, calibrated Sampson
+residuals, and the benchmark's reference pose; the error is the rotation error of the best
+homography decomposition, as small baselines leave translation ill-conditioned. For ETH3D
+fundamental matrices, we use seven-point hypothesis pools and Sampson
+residuals. Intrinsics are used only for evaluation: with $\mathbf{A}_i$ denoting the
+image normalization into the canonical frame and $\bar{\mathbf K}_i=\mathbf{A}_i\mathbf
+	K_i$, we convert $\mathbf F$ to $\mathbf E=\bar{\mathbf K}_2^\top\mathbf
+	F\bar{\mathbf K}_1$.
+
+For relative pose, we evaluate the four essential-matrix decompositions
+and report the smallest maximum angular error~\cite{Jin2021}. We define
+mAA@$10^\circ$ as
+\begin{equation}
+	\begin{aligned}
+		\mathrm{mAA}@10^\circ
+		 & =\frac{1}{10^\circ}\int_0^{10^\circ}
+		P(e_{\mathrm{pose}}\le t)\,dt,                                 \\
+		\text{s.t.}\quad e_{\mathrm{pose}}
+		 & =\min_{j\in\{1,2,3,4\}}\max\bigl(e_R^{(j)},e_t^{(j)}\bigr).
+	\end{aligned}
+	\label{eq:maa}
+\end{equation}
+Here $e_R^{(j)}$ and $e_t^{(j)}$ are the rotation and
+translation-direction errors of decomposition $j$. In \cref{eq:maa},
+$t$ is the pose-error threshold, and $P(e_{\mathrm{pose}}\le t)$ is the
+per-scene fraction of pairs whose pose error is at most $t$. We compute mAA
+per scene and then average over scenes, with failed estimates contributing zero. For
+homographies the error is the pose error of the decomposed
+homography, and for fundamental matrices that of the converted essential
+matrix. Dataset-specific evaluation details are in
+\suppsec{sec:supp-protocol}.
+
+\paragraph{Parameter selection.}
+We multiply every supplied residual-unit parameter by $\zeta$: $\zeta=1$ is
+a correctly specified inlier scale (\emph{calibration}), and $\zeta<1$ and
+$\zeta>1$ specify it too small (\emph{deflation}) and too large
+(\emph{inflation}). At calibration, we cross-validate the scoring-function parameter by minimizing
+median validation pose error over the pooled validation pairs, using the
+selected, unrefined hypotheses. We then tune each optimizer's parameter on
+the hypotheses selected by the fixed score, under the same 25-update budget.
+Each search uses a log-spaced coarse grid, extended while its minimum lies
+on the boundary, followed by a fine grid around that minimum; a minimum that
+remains on the boundary is refused rather than used. Selected values are
+fixed for testing.
+Each dataset has its own validation and test split, and parameters are
+re-tuned per dataset, on a stratified quarter of every validation scene's
+pairs for PhotoTourism and ETH3D and on every validation pair for HEB.
+
+Each method tunes only its own parameter. The scores tune their
+residual-unit parameter: the outlier half-width $a$ for \stuU{} and the
+threshold for MSAC. Partition-anchored optimizers tune the width multiplier
+$\klo$ and set $c=\klo\hat s_0$ per seed. The fixed-scale baselines,
+\tlsirls{}, TLS-LZ, and TLS-LO$^+$, tune their loss width
+$c_{\mathrm{ref}}$ directly. \stuU{}-BCD has no loss width; its only
+residual-unit parameter is the outlier half-width of its partition
+re-selection, which is tuned on the refinement axis. SupeRANSAC's maximum expected noise level is set on the same
+validation pairs (\cref{sec:exp-e2e}).
+
+\subsection{Scoring rule}
+The scoring-only comparison evaluates PhotoTourism essential-matrix selection
+(\cref{tab:datasets-main}): with LO disabled, each score ranks the same
+hypothesis pool, and we evaluate its top-ranked model. Scores are tuned on
+validation median error at calibration and held fixed as the supplied scale is
+corrupted. \suppfig{fig:supp-sel-miscal} reports scene-averaged median pose
+error and mAA@$10^\circ$. At calibration, profile-marginal scoring is
+nearly tied with SIMFIT++: their median errors are
+$\SelStuMedCal^\circ$ and $\SelSimfitMedCal^\circ$, and their mAA values are $\SelStuMAACal$ and $\SelSimfitMAACal$,
+respectively. At $128\times$ inflation, profile-marginal scoring reaches a
+median error of $\SelStuMedInfl^\circ$ and $\SelStuMAAInfl$ mAA, while SIMFIT++ reaches $\SelSimfitMedInfl^\circ$
+and $\SelSimfitMAAInfl$ mAA; the remaining scores have median errors of $\SelThreshMedInflLo^\circ$--
+$\SelThreshMedInflHi^\circ$ and at most $\SelThreshMAAInfl$ mAA. Across the scale-corruption sweep,
+profile-marginal scoring is more robust than the alternatives.
+This selection-only comparison does not isolate partition selection from
+scale estimation; pipeline comparisons therefore use profile-marginal scoring.
+
+\subsection{Recovery from perturbed seeds on real correspondences}
+\label{sec:exp-ladder}
+To measure recovery under a fixed budget, we bypass hypothesis selection at
+test time and perturb the SfM reference pose by $\delta$, applying
+equal-magnitude random perturbations to rotation and translation direction.
+Every method receives the same seed and original correspondences, including
+outliers; only the seed is synthetic.
+
+\Cref{fig:basin-ladder} compares IRLS, joint HQ optimization, and GNC for
+Welsch and GM, and also includes truncated refits and classical LO for TLS.
+The TLS methods can have different terminal objectives
+(\cref{sec:soft-optimization}). Because test seeds are supplied directly,
+partition-anchored methods tune an absolute width $c$ instead of $\klo$ and
+hold it fixed across test pairs and perturbations. Validation otherwise
+follows the two-stage protocol in \cref{sec:experiments}; fixed-scale
+methods retain their usual tuning. The classical reference is RansacLib's
+TLS-LO$^+$~\cite{Sattler2019Github}. Since the reference pose comes from
+multi-view SfM while each optimizer fits a two-view pose, even an unperturbed
+seed may differ from the reference, affecting scores at small perturbations.
+
+\begin{figure}[!t]
+	\centering
+	\input{figures/panel_basin_matched}\\[3pt]
+	\pgfplotslegendfromname{basinlegend}
+	\caption{\textbf{Recovery from perturbed seeds by loss family.}
+		mAA@$10^\circ$ versus pose perturbation $\delta$ on $\BasinRefinable$ of
+		$\PTTestPairs$ PhotoTourism test pairs. Each method uses its own
+		cross-validated absolute width and the shared 25-model-update budget.
+		The dashed grey curve evaluates the unrefined seed. TLS variants
+		use the distinct objectives described in \cref{sec:soft-optimization}.
+		At $8^\circ$, Welsch-HQ reaches $\BasinHqEight$ mAA@$10^\circ$ versus $\BasinSeedEight$ for
+		the unrefined seed; at $16^\circ$, TLS-GNC retains the most accuracy
+		($\BasinGnc$ mAA@$10^\circ$).}
+	\label{fig:basin-ladder}
+\end{figure}
+
+Methods that recompute weights from current residuals stay pinned to the
+seed: IRLS, the truncated refits, and \stuU{}-BCD (a binary reweighting,
+\cref{eq:bcd-updates}) reach $\BasinStaticEightLo$--$\BasinStaticEightHi$ mAA@$10^\circ$ at $8^\circ$
+versus $\BasinSeedEight$ for the seed; a monotone score alone does not widen the
+basin. Joint HQ instead optimizes the weights with the model
+(\cref{eq:lift}), so both move independently, and expands the Welsch and GM
+basins. GNC does not help Welsch but recovers the most distant TLS and GM
+seeds, at a cost near the seed. Travel thus needs gradient from
+correspondences the seed currently rejects, yet that gradient can pull a
+good seed toward a contaminated fit; Welsch-HQ balances the two without a
+continuation schedule.
+
+\begin{figure}[t!]
+	\centering
+	\adjustbox{max width=\linewidth}{\input{figures/panel_miscal_grid}}\\[3pt]
+	\adjustbox{max width=\linewidth}{\pgfplotslegendfromname{miscalgridlegend}}
+	\caption{\textbf{Composed pipelines under scale miscalibration.}
+		Scene-averaged mAA@$10^\circ$ with \stuU{} scoring on PhotoTourism
+		essential matrices (top; $\PTTestPairs$ pairs, \PTTestScenes{} scenes), ETH3D fundamental
+		matrices (middle), and HEB homographies (bottom). Columns group TLS and
+		\stuU{}, Welsch, and GM. Parameters are tuned at $\zeta=1$; the
+		corruption protocol is described in \cref{sec:exp-miscal-lo}.
+		On PhotoTourism essential matrices, Welsch-HQ scores $\OursCal$ mAA@$10^\circ$
+		at calibration and retains $\OursInfl$ at $128\times$ inflation, versus $\TLSInfl$
+		for fixed-threshold TLS-IRLS. The black reference is oracle selection
+		without LO from the minimal-model pool, not a ceiling on refined estimates.}
+	% AUTHOR CHECK (figure source not attached): change the first column title
+	% from "Uniform mixtures" to "TLS and profile-marginal"; label zeta=1
+	% distinctly, and rename "oracle" to "oracle selection without LO".
+	\label{fig:miscal}
+\end{figure}
+
+\subsection{Composed pipelines under scale miscalibration}
+\label{sec:exp-miscal-lo}
+We fix profile-marginal scoring (\stuU{}) and compare local optimizers
+on the three model classes (\cref{fig:miscal}), tuning each pipeline on
+its dataset's validation split (\cref{sec:experiments}). Parameters are
+tuned at calibration and held fixed as $\zeta$ varies.
+Partition-anchored
+methods retain their tuned $\klo$ and infer the scale from the selected
+partition. The outlier half-width $a$ remains subject to corruption.
+
+On PhotoTourism, the optimization strategy orders the pipelines more
+consistently than the loss. Within each loss, joint HQ is best at
+calibration and at nearly every corruption level (Welsch $\OursCal$, GM
+$\PTGMHqCal$, TLS $\PTTLSHqCal$ mAA@$10^\circ$), while GNC is at most marginally better
+than IRLS. Selected seeds usually lie near the solution, where GNC's broadening
+is a liability (\cref{sec:exp-ladder}); HQ starts with
+weights near one, so every correspondence contributes gradient early, and
+tightens the weights under one fixed objective. \stuU{}-BCD, which matches
+the scoring objective, is second at $\PTBCDCal$: objective matching brings it
+close, but the composition with a distinct LO objective is better.
+
+Scale corruption splits into two failure modes. Deflation corrupts
+selection: at $\zeta=1/16$, all PhotoTourism pipelines lie within $\PTDeflSpread$ of
+each other, fixed-scale or not, because the deflated $a$ already degrades
+the selected seed and partition, which no optimizer repairs. Inflation
+instead corrupts LO: anchored and self-scaling methods retain
+$\PTAnchoredInflLow$--$\OursInfl$ at $128\times$, versus $\TLSInfl$ for fixed-threshold
+\tlsirls{}. A paired control that changes only scale supply within an
+optimizer (\suppsec{sec:supp-anchoring}) confirms this attribution:
+anchoring changes pose error by at most $\AnchorCalDiff^\circ$ at $\zeta=1$,
+but at $\zeta=128$ reduces it from $\AnchorInflFixed^\circ$ to
+$\AnchorInflAnch^\circ$. It does not protect selection: HEB still
+degrades under severe inflation.
+
+How much LO can matter depends on the gap to oracle selection. On ETH3D,
+the strongest pipelines lie within $\ETHOracleGap$ of the oracle and differ mainly in
+robustness to $\zeta$, where HQ and GNC are nearly flat. On HEB, a median of
+$\HEBInlMed$ inliers among $\HEBCsMed$ correspondences leaves a gap of about
+$\HEBOracleGap$ that no optimizer closes; at calibration the pipelines lie within
+$\HEBCalSpread$, except the two GNC variants. There TLS-LO$^+$, the weakest TLS method on
+PhotoTourism and ETH3D, ties the strongest; we postulate that its inner
+RANSAC on non-minimal samples isolates the small consensus, whereas
+reweighting the selected partition is pulled toward structured outliers.
+PhotoTourism, with a gap of $\PTOracleGap$, is where the choice of local optimizer
+matters most.
+
+
+\subsection{Accuracy versus hypothesis budget}
+\label{sec:exp-budget}
+\begin{figure}[!t]
+	\centering
+	\adjustbox{max width=\linewidth}{\input{figures/panel_sample_budget_grid}}\\[3pt]
+	\adjustbox{max width=\linewidth}{\pgfplotslegendfromname{sbgridlegend}}
+	\caption{\textbf{Accuracy versus hypothesis budget.}
+		Scene-averaged mAA@$10^\circ$ versus the hypothesis budget, counted in minimal models inspected, on PhotoTourism (top), ETH3D fundamental matrices (middle), and HEB (bottom).
+		Each pipeline uses \stuU{} scoring and its dataset-specific
+		cross-validated parameters. LO refines the best-so-far hypothesis at
+		each checkpoint. On PhotoTourism, Welsch-HQ leads at 100 models
+		($\BudPTHqLow$ versus $\BudPTNextLow$ mAA@$10^\circ$ for the next method) and 4,000 models
+		($\BudPTHqHigh$ versus $\BudPTNextHigh$). Results are similar across methods on ETH3D and HEB.}
+	% AUTHOR CHECK (figure source not attached): verify that every x-axis
+	% counts models rather than draws, then label it "hypothesis budget";
+	% rename the oracle legend and remove clipping of its reference curves.
+	\label{fig:sample-budget}
+\end{figure}
+A hypothesis sequence is the ordered list of minimal-sam\-ple models that
+RANSAC proposes for an image pair; we draw one per pair and hold it fixed.
+The sequence is proposed in the same order to every local optimizer, and
+\stuU{} scoring tracks the best hypothesis so far. Local optimization is
+evaluated at fixed checkpoints along the sequence, refining the
+best-so-far hypothesis at each. This isolates refinement at controlled
+hypothesis budgets, with LO triggered only at those checkpoints.
+The budget counts minimal models inspected.
+\Cref{fig:sample-budget} reports the study on the three model classes, each arm tuned on its dataset's validation split.
+
+\begin{figure}[t]
+	\centering
+	\input{figures/panel_polish_diff}
+	\caption{\textbf{Least-squares polish after local optimization.}
+	ECDF of the per-pair change in pose error caused by a least-squares
+	refit on the inlier partition selected by \stuU{}'s partition-profiling
+	step in
+	Eq.~\eqref{eq:profile-score} for the LO output,
+	$e_{\text{polished}}-e_{\text{LO}}$ (negative is better), on the \PTTestScenes{}
+	PhotoTourism test scenes at $\zeta=1$. Polishing leaves
+	mAA@$10^\circ$ unchanged: $\PolLiftAfter$ for Welsch-HQ and $\PolBCDAfter$ for
+	\stuU{}-BCD.}
+	\label{fig:polish}
+\end{figure}
+
+On PhotoTourism, Welsch-HQ is strongest at every budget, and its gain is
+largest at small budgets, where selected hypotheses are more likely to lie
+outside the basin of IRLS: $\BudPTHqLow$ against $\BudPTNextLow$ for the
+next arm after 100 hypotheses, and $\BudPTHqHigh$ against $\BudPTNextHigh$
+after 4000. On HEB homographies it is tied with the strongest arms at
+every budget. On ETH3D fundamental matrices the arms
+lie within \BudFSpread{} of each other, except TLS-LO$^+$ (\BudFLOPlus{}), and Welsch-HQ is not among the
+strongest ($\BudFHq$ against $\BudFBest$ for GM-HQ after 4000). Requiring
+the optimized model to improve the \stuU{} score does not change the
+results. The
+timing analysis in \suppfig{fig:supp-budget-time} shows that, beyond the smallest budget, Welsch-HQ retains the best
+accuracy at matched LO time despite its higher per-call cost
+(\cref{tab:design}).
+
+
+\subsection{Polishing after local optimization}
+\label{sec:exp-polish}
+We apply a final nonlinear least-squares refinement to the locally optimized
+\stuU{}+Welsch-HQ and \stuU{}+\stuU{}-BCD models on PhotoTourism at the
+calibrated scale. For each model, we refit using the inlier partition returned
+by \stuU{}'s partition-profiling step in Eq.~\eqref{eq:profile-score}.
+As shown in \cref{fig:polish}, pose-error changes are balanced around zero and
+the refit yields no systematic pose-accuracy improvement. Starting from the
+LO estimate, refining over this fixed inlier set did not measurably
+move the solution from the local basin reached by LO in our experiments.
+
+
+% ---------------------------------------------------------------
+\subsection{RANSAC}
+\label{sec:exp-e2e}
+The deployed pipeline combines the profile-marginal score of Pritts
+et~al.~\cite{PrittsScoring2026} with Welsch-HQ local optimization, whose
+loss width is set by partition anchoring
+(\cref{eq:profile-score,eq:partition-scale,sec:exp-miscal-lo}). We compare
+it with SupeRANSAC~\cite{BarathSupeRANSAC2025}, including sampling and
+adaptive termination, on the \PTTestScenes{} PhotoTourism test scenes (\cref{tab:e2e}).
+Both are tuned at calibration; at test time, $\zeta$ multiplies each
+system's residual-unit parameter. At calibration, ours reduces the median
+pose error from $\EtoESRMed^\circ$ to $\EtoEOursMed^\circ$ and raises
+mAA@$10^\circ$ from $\EtoESRMAA$ to $\EtoEOursMAA$. Under corruption, our
+median error stays within $\EtoEOursRange^\circ$, whereas SupeRANSAC's
+reaches $\EtoESRRangeHi^\circ$ under deflation and $\EtoESRInflMed^\circ$
+at $128\times$ inflation. We postulate that the calibrated gain has the
+same origin: a threshold tuned on validation pairs is effectively
+miscalibrated for test pairs whose noise scale lies outside the validation
+distribution, whereas partition anchoring estimates the scale per pair.
+
+\begin{table}[t]
+	\centering
+	\small
+	\setlength{\tabcolsep}{4pt}
+	\caption{\textbf{RANSAC under scale miscalibration.}
+		Scene-averaged median pose error and mAA@$10^\circ$ on the \PTTestScenes{}
+		PhotoTourism test scenes; median wall time per pair, single-threaded, on a
+		stratified sample of \EtoETimePairs{} pairs per scene (median of
+		\EtoETimeRepeats{} repeats); both
+		systems tuned at $\zeta=1$, SupeRANSAC at its validated maximum noise level
+		with at most $10\,000$ trials. Bold marks the
+		better system per column.}
+	\label{tab:e2e}
+	\input{figures/table_e2e}
+\end{table}
+
+% =====================================================================
+\section{Conclusion}
+\label{sec:discussion}
+% =====================================================================
+Our results show that local optimization needs gradient from tentative
+correspondences, those that a model fitted to a minimal sample
+classifies as outliers, but that the same gradient can pull a good
+seed toward a contaminated fit. Methods that reweight from current
+residuals, including the objective-matched \stuU{}-BCD, stay pinned to
+their seed. Joint HQ lifting balances the two: it is the most
+consistent strategy across model classes and performs best on
+PhotoTourism, where some score-selected seeds, especially at small
+budgets, lie outside the basin of static reweighting. GNC recovers the
+most distant seeds but is a liability near the solution, where RANSAC
+usually supplies seeds; GM-HQ is among the strongest on ETH3D
+fundamental matrices, and LO$^+$ is competitive on the low-inlier HEB
+homographies, where its inner RANSAC may isolate a small
+consensus. Scale miscalibration splits along the same line: partition
+anchoring through the profile-marginal removes the reliance on an
+externally calibrated threshold and keeps LO robust to inflation,
+whereas deflation degrades selection, which no local optimizer
+repairs. Selection also bounds what LO can gain: on HEB, every
+optimizer leaves a gap of about $\HEBOracleGap$ to oracle selection. Polishing
+by least-squares refitting on selected inliers did not measurably move
+the solution out of LO's local basin. An ideal local optimizer could
+combine these complementary strategies, motivating further work on
+guiding the optimization trajectory beyond the heuristic schedules of
+GNC and LO$^+$. Finally, combining the profile-marginal scorer with
+partition-anchored, half-quadratically lifted local optimization makes
+a state-of-the-art RANSAC pipeline that substantially outperforms a
+strong baseline on essential-matrix estimation.
+% ---------------------------------------------------------------
+
+\vspace{\baselineskip}
+{\footnotesize\noindent\textbf{Acknowledgements.}~James Pritts is funded by
+	Kiel Training for Excellence, an EU Horizon Europe programme under the
+	Marie Sk\l{}odowska-Curie Actions (MSCA), grant agreement
+	No~101081480, and by KMS Kiel Marine Science -- Centre for
+	Interdisciplinary Marine Science at Kiel University.\par}
+
+\bibliographystyle{splncs04}
+\bibliography{main}
+
+\end{document}

@@ -1,0 +1,636 @@
+\documentclass[runningheads]{llncs}
+
+\usepackage{accv}
+\usepackage{accvabbrv}
+\usepackage{graphicx}
+\usepackage[accsupp]{axessibility}
+\usepackage{booktabs}
+\usepackage{adjustbox}
+\usepackage{tabularx}
+\usepackage[section]{placeins}
+\usepackage{subcaption}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepgfplotslibrary{fillbetween,groupplots}
+\input{figures/fig_colors}
+% Every number stated is a macro of the ONE generated macro file
+% (scripts/paper_numbers.jl; test/test_paper_numbers.jl).
+\input{figures/paper_numbers}
+\providecolor{Colorigsel}{HTML}{1B7837}
+\providecolor{Colormsacsel}{HTML}{D1410A}
+\providecolor{Colororacleref}{HTML}{BFBFBF}
+\providecolor{Colormsaclo}{HTML}{D4A000}
+\providecolor{Colorlezachlo}{HTML}{F58231}
+\providecolor{Colorstulo}{HTML}{4363D8}
+\providecolor{Colorwelschirlslo}{HTML}{6B8E23}
+\providecolor{Colorwelschlo}{HTML}{3CB44B}
+\providecolor{ladderBarronadapt}{HTML}{17BECF}
+\usepackage{mathtools,amssymb}
+\usepackage{derivative}
+\usepackage{xr-hyper}
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalize]{cleveref}
+\externaldocument[main:]{main}
+
+\newcommand{\stuU}{Stu-$t$U}
+\newcommand{\kscore}{k_{\mathrm{score}}}
+\newcommand{\klo}{k_{\mathrm{LO}}}
+\newcommand{\cI}{\mathcal{I}}
+\DeclareMathOperator{\RSS}{RSS}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\newcommand{\NN}{\mathcal{N}}
+\newcommand{\Reals}{\mathbb{R}}
+\newcommand{\bzero}{\mathbf{0}}
+\newcommand{\be}{\mathbf{e}}
+\newcommand{\tlsirls}{TLS-IRLS}
+\newcommand{\stu}{Student-$t$}
+\newcommand{\imc}{\mathrm{IMC}}
+\newcommand{\bR}{\mathbf R}
+\newcommand{\bt}{\mathbf t}
+\newcommand{\btheta}{\boldsymbol\theta}
+\newcommand{\epose}{e_{\mathrm{pose}}}
+
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.85}
+
+% Line breaking: a small emergency stretch absorbs the few-point overfull lines
+% at hyphenated compounds (as in main.tex).
+\setlength{\emergencystretch}{1.5em}
+
+\begin{document}
+
+\title{Robust Local Optimization Done Right: Supplementary Material}
+\titlerunning{Robust Local Optimization Done Right (Supplementary)}
+\author{James Pritts \and Kevin K\"oser}
+\authorrunning{J. Pritts and K\"oser}
+\institute{Kiel University, Kiel, Germany}
+\maketitle
+
+\noindent
+Notation follows the main paper: $\be_i(\btheta)$ is the residual vector,
+$r_i$ its norm, and $\cI$ an inlier partition. This supplement details optimizer implementations
+and half-quadratic lifts (\cref{sec:supp-lo-details,sec:supp-hq-derivations}),
+additional datasets and protocols (\cref{sec:supp-protocol}), scoring and
+scale anchoring under corruption (\cref{sec:supp-scoring,sec:supp-anchoring}),
+and the sample-budget runtime analysis (\cref{sec:supp-budget}).
+
+\section{Additional details on local optimization}
+\label{sec:supp-lo-details}
+
+\subsection{Solver implementations}
+
+The reference truncated refit, \tlsirls{}, is PoseLib's
+truncated-loss Levenberg--Marquardt (LM)
+refinement~\cite{PoseLib}, with binary weights recomputed at each
+model update. IRLS variants use LM on the model's local
+parameterization. The nonlinear weighted least-squares subproblems
+are updated locally rather than solved to global optimality.
+
+TLS-HQ uses a fixed smooth truncated-quadratic surrogate whose
+weights reach zero at its cutoff. TLS-GNC follows a surrogate
+family approaching hard TLS, while TLS-LZ~\cite{LeZach2021}
+increases a penalty parameter on a fixed schedule.
+These methods belong to the same loss family but need not optimize
+identical terminal objectives under the finite update budget.
+The classical reference is RansacLib's
+TLS-LO$^+$~\cite{Lebeda2012,Sattler2019Github}.
+
+\subsection{IRLS stationarity and HQ lifting}
+
+For a differentiable robust loss with influence function
+$\psi=\rho'$, stationarity away from nondifferentiable boundaries
+requires
+\begin{equation}
+	\sum_i\psi(r_i)\nabla r_i
+	=\sum_iw(r_i)r_i\nabla r_i=\bzero,
+	\qquad w(r)=\psi(r)/r,
+	\label{eq:robust-stationarity}
+\end{equation}
+with $w(0)$ defined by continuous extension.
+IRLS alternates these residual-dependent weight assignments with
+weighted least-squares model updates.
+
+For the smooth losses considered here, a nonnegative,
+non-increasing weight function with finite $w(0)$ makes
+$g(u)=\rho(\sqrt{2u};c)$ concave for $u\ge0$, since
+$g'(u)=w(\sqrt{2u})$. This yields the multiplicative
+HQ representation~\cite{BlackRangarajan1996,ZachBourmaud2018}.
+Hard TLS also has an exact lift:
+\begin{equation}
+	\tfrac12\min(r^2,c^2)
+	=\min_{0\le z\le1}
+	\left[\tfrac12zr^2+\tfrac12c^2(1-z)\right].
+\end{equation}
+Our TLS-HQ implementation uses a smooth surrogate for joint
+optimization; its dual regularizer and residualization are given
+in \cref{sec:supp-hq-derivations}.
+
+Joint HQ updates allow weights to depart temporarily from their
+conditional optima. Consequently, neither individual weights nor
+true-inlier support must evolve monotonically.
+The broad-to-narrow interpretation describes the permitted
+optimization path, not a monotonicity constraint.
+
+\subsection{Continuation initialization and limitations}
+
+For Welsch width continuation, we initialize
+\begin{equation}
+	\mu_0=\max\{1,r_{\max}^2/c^2\},
+	\qquad r_{\max}=\max_i r_i(\btheta_0).
+\end{equation}
+Every initial residual then lies within the initial width
+$\sqrt{\mu_0}\,c$. This broadens the region of substantial influence
+but does not ensure convexity in the model parameters.
+
+TLS-GNC differs from simply widening a hard cutoff.
+Its weights decrease continuously from one to zero across a
+transition band; increasing $\mu$ narrows that band and recovers
+hard TLS as $\mu\to\infty$. Its schedule therefore runs upward,
+whereas the Welsch and GM width schedules decrease toward one.
+The TLS-GNC weight is given in closed form in \cref{sec:supp-gnc}.
+Under a finite update budget, GNC can follow a contaminated fit
+or stop before reaching the target regime.
+
+\subsection{GNC surrogates}
+\label{sec:supp-gnc}
+
+For Welsch and GM, GNC uses width continuation: at rung $\mu$, it evaluates
+the terminal loss at the inflated width $\sqrt{\mu}\,c$ and decreases $\mu$
+toward one. TLS-GNC follows the Black--Rangarajan outer-bound schedule of
+Yang et~al.~\cite{YangCarlone2020}, increasing $\mu$ to narrow its continuous
+weight-transition band. The 25-model-update budget includes all continuation
+stages, so a run may stop before reaching the terminal loss.
+
+For terminal truncation width $\bar c$, the TLS-GNC weight at residual norm
+$r$ is
+\begin{equation}
+w_\mu(r)=
+\begin{cases}
+1, & r^2\le\dfrac{\mu}{\mu+1}\bar c^2,\\[3pt]
+\dfrac{\bar c\sqrt{\mu(\mu+1)}}{|r|}-\mu,
+& \dfrac{\mu}{\mu+1}\bar c^2<r^2<\dfrac{\mu+1}{\mu}\bar c^2,\\[6pt]
+0, & r^2\ge\dfrac{\mu+1}{\mu}\bar c^2.
+\end{cases}
+\label{eq:supp-gnc-tls}
+\end{equation}
+The transition is continuous at both band edges and converges to the hard
+truncated least-squares weight as $\mu\to\infty$.
+
+\section{Closed-form half-quadratic lifts}
+\label{sec:supp-hq-derivations}
+% =====================================================================
+
+For an even differentiable robust loss with $\rho(0)=0$, multiplicative
+half-quadratic lifting writes
+\begin{equation}
+	\rho(r)
+	=
+	\min_{z\in\mathcal Z}
+	\left[
+		\frac12 z r^2+\frac12\kappa^2(z)
+		\right].
+	\label{eq:supp-hq-form}
+\end{equation}
+The minimizing quadratic coefficient is the IRLS weight
+\begin{equation}
+	z^\star=w(r),\qquad
+	w(r)=\frac{\rho'(r)}{r}.
+	\label{eq:supp-hq-weight}
+\end{equation}
+At an interior optimum,
+\begin{equation}
+	\bigl(\kappa^2\bigr)'(z^\star)=-r^2.
+\end{equation}
+Hence, whenever $w$ is invertible on the relevant branch,
+\begin{equation}
+	\boxed{
+		\bigl(\kappa^2\bigr)'(z)
+		=-\bigl(w^{-1}(z)\bigr)^2,
+		\qquad
+		\kappa^2(z)
+		=-\int\bigl(w^{-1}(z)\bigr)^2\,\mathrm dz+C
+	}
+	\label{eq:supp-hq-master}
+\end{equation}
+with $C$ chosen so that \cref{eq:supp-hq-form} reproduces $\rho$.
+This is the Black--Rangarajan multiplicative construction
+\cite{BlackRangarajan1996,Zach2014,ZachBourmaud2018}.
+
+\paragraph{When the lift exists.}
+Write $\rho(r)=g(u)$ with $u=r^2/2$, as above. The construction in
+\cref{eq:supp-hq-master} is a concave duality in $u$: a regularizer
+$\kappa^2$ with the required properties exists exactly when $g$ is
+nondecreasing and concave on $u\ge0$ with finite slope at zero,
+equivalently when the weight $w(r)=\rho'(r)/r$ is nonincreasing in
+$|r|$ with $w(0)<\infty$. This gives a three-tier taxonomy.
+\emph{Liftable}: monotone, finite weights; Welsch, Geman--McClure,
+Cauchy, Huber, and smooth TLS qualify. \emph{Excluded}: losses with
+$w(0)=\infty$, such as $L_1$ and $L_p$ for $p<2$, have an unbounded
+line-process domain and are excluded from the bounded multiplicative lift
+used here~\cite{BlackRangarajan1996}; losses whose weight increases
+anywhere are non-concave in $u$ and admit no multiplicative dual.
+\emph{Degenerately liftable}: the exact truncated quadratic
+$\rho(r)=\tfrac12\min(r^2,c^2)$ is concave in $u$ and lifts with the
+original binary line process, $z\in\{0,1\}$ and
+$\kappa^2(z)=c^2(1-z)$, but the $z$-subproblem is linear, so the
+optimal weights have no interior and a coupled damped step has no
+smooth $z$ direction. Usable joint optimization additionally requires
+strict concavity near the cutoff, which is why the HQ arm uses the
+smooth TLS kernel below rather than the exact truncation.
+Separability is a precondition for the whole framework: the duality
+applies one variable per observation to a loss of the form
+$\sum_i\rho(r_i)$. Objectives that couple residuals, such as the
+profile-marginal score (through the log of the partition's residual
+sum of squares and the maximization over partitions) or self-scaling
+mixtures (through the jointly estimated scale), admit no
+per-observation $g$ and hence no line-process lift; block-coordinate
+descent is the direct optimizer of the marginal score.
+
+\paragraph{Welsch.}
+For
+\begin{equation}
+	\rho_{\mathrm W}(r;c)
+	=\frac{c^2}{2}\left(1-e^{-r^2/c^2}\right),
+\end{equation}
+\begin{equation}
+	w_{\mathrm W}(r)=e^{-r^2/c^2},
+	\qquad
+	r^2=-c^2\log z.
+\end{equation}
+Substitution into \cref{eq:supp-hq-master} and
+$\kappa_{\mathrm W}^2(1)=0$ give
+\begin{equation}
+	\boxed{
+		\kappa_{\mathrm W}^2(z)
+		=c^2\left(z\log z-z+1\right),
+		\qquad 0<z\le1.
+	}
+	\label{eq:supp-welsch-kappa}
+\end{equation}
+Therefore
+\begin{equation}
+	\rho_{\mathrm W}(r;c)
+	=
+	\min_{0<z\le1}
+	\left[
+		\frac12zr^2
+		+\frac{c^2}{2}\left(z\log z-z+1\right)
+		\right].
+	\label{eq:supp-welsch-lift}
+\end{equation}
+
+\paragraph{Geman--McClure.}
+For
+\begin{equation}
+	\rho_{\mathrm{GM}}(r;c)
+	=\frac12\frac{r^2}{1+r^2/c^2},
+\end{equation}
+\begin{equation}
+	w_{\mathrm{GM}}(r)
+	=\left(1+r^2/c^2\right)^{-2},
+	\qquad
+	r^2=c^2\left(z^{-1/2}-1\right).
+\end{equation}
+Integrating \cref{eq:supp-hq-master} and imposing
+$\kappa_{\mathrm{GM}}^2(1)=0$ yield
+\begin{equation}
+	\boxed{
+		\kappa_{\mathrm{GM}}^2(z)
+		=c^2\left(1-\sqrt z\right)^2,
+		\qquad 0<z\le1,
+	}
+	\label{eq:supp-gm-kappa}
+\end{equation}
+and hence
+\begin{equation}
+	\rho_{\mathrm{GM}}(r;c)
+	=
+	\min_{0<z\le1}
+	\left[
+		\frac12zr^2
+		+\frac{c^2}{2}\left(1-\sqrt z\right)^2
+		\right].
+	\label{eq:supp-gm-lift}
+\end{equation}
+
+\paragraph{Smooth truncated quadratic.}
+We use the normalization
+\begin{equation}
+	\rho_{\mathrm T}(r;c)
+	=
+	\begin{cases}
+		r^2-\dfrac{r^4}{2c^2}, & |r|\le c, \\[4pt]
+		\dfrac{c^2}{2},        & |r|>c.
+	\end{cases}
+	\label{eq:supp-tls-loss}
+\end{equation}
+Its quadratic coefficient is
+\begin{equation}
+	w_{\mathrm T}(r)
+	=2\left(1-r^2/c^2\right)_+.
+	\label{eq:supp-tls-weight}
+\end{equation}
+For the interior branch,
+$r^2=c^2(1-z/2)$ with $0\le z\le2$. Integrating
+\cref{eq:supp-hq-master} and setting $\kappa_{\mathrm T}^2(2)=0$ give
+\begin{equation}
+	\boxed{
+		\kappa_{\mathrm T}^2(z)
+		=c^2\left(1-\frac z2\right)^2,
+		\qquad 0\le z\le2,
+	}
+	\label{eq:supp-tls-kappa}
+\end{equation}
+so
+\begin{equation}
+	\rho_{\mathrm T}(r;c)
+	=
+	\min_{0\le z\le2}
+	\left[
+		\frac12zr^2
+		+\frac{c^2}{2}\left(1-\frac z2\right)^2
+		\right].
+	\label{eq:supp-tls-lift}
+\end{equation}
+The factor convention in \cref{eq:supp-tls-loss} is chosen to match
+\cref{eq:supp-tls-weight,eq:supp-tls-lift}. Multiplying the complete loss by
+a positive constant gives an equivalent minimizer but requires scaling both
+the quadratic coefficient and the auxiliary penalty consistently.
+
+\paragraph{Least-squares residualization.}
+A convenient unconstrained implementation parameterizes the lifted weight as
+$z=u^2$ through a square-root confidence $u\in[0,1]$. Each lifted term is then
+an ordinary sum of squares:
+\begin{align}
+	\text{Welsch:}\quad         &
+	z=u^2,                      &
+	\widehat{\mathbf r}_{\mathrm W}
+	                            & =
+	\begin{bmatrix}
+		ur \\
+		c\sqrt{u^2\log u^2-u^2+1}
+	\end{bmatrix},
+	\label{eq:supp-welsch-residual} \\
+	\text{Geman--McClure:}\quad &
+	z=u^2,                      &
+	\widehat{\mathbf r}_{\mathrm{GM}}
+	                            & =
+	\begin{bmatrix}
+		ur \\
+		c(1-u)
+	\end{bmatrix},
+	\label{eq:supp-gm-residual}     \\
+	\text{smooth TLS:}\quad     &
+	z=2u^2,                     &
+	\widehat{\mathbf r}_{\mathrm T}
+	                            & =
+	\begin{bmatrix}
+		\sqrt2\,ur \\
+		c(1-u^2)
+	\end{bmatrix}.
+	\label{eq:supp-tls-residual}
+\end{align}
+In each case,
+$\rho(r)=\min_u\tfrac12\lVert\widehat{\mathbf r}\rVert^2$.
+Initializing $u$ near one gives broad initial support for all three kernels,
+despite their different native weight ranges.
+
+All three losses saturate at finite cost. Welsch and Geman--McClure have
+$z^\star(r)>0$ for every finite residual and approach zero only
+asymptotically; smooth TLS reaches $z^\star=0$ at the finite cutoff
+$|r|=c$. Thus a finite auxiliary penalty at zero weight should not be
+interpreted as finite-residual rejection for Welsch or Geman--McClure.
+
+% =====================================================================
+\section{Additional datasets and experimental protocol}
+\label{sec:supp-protocol}
+% =====================================================================
+
+The main paper reports PhotoTourism essential-matrix experiments with
+RootSIFT correspondences~\cite{Jin2021}. The transfer study uses ETH3D
+\cite{Schoeps2017} with SuperPoint+LightGlue
+\cite{DeTone2018,Lindenberger2023} for fundamental-matrix estimation.
+
+For the fundamental-matrix track, all methods use shared seven-point
+hypothesis pools and canonical-frame Sampson residuals. Evaluation converts
+$\mathbf F$ to $\mathbf E=\bar{\mathbf K}_2^\top\mathbf F\bar{\mathbf K}_1$,
+where $\bar{\mathbf K}_i=\mathbf A_i\mathbf K_i$ uses the image normalization
+into the canonical frame, and reports relative-pose error after cheirality
+disambiguation. Intrinsics are used only for evaluation.
+
+\paragraph{Controlled comparison.}
+The transfer experiments follow the main protocol: all methods use identical
+per-pair hypothesis pools, residuals, seeds, and validation splits. For each
+pipeline, we tune the scoring parameter first and then tune the optimizer on
+the hypotheses selected by that score; all selected parameters are held fixed
+on the test scenes. Tuning uses a deterministic stratified quarter of every ETH3D
+validation scene's pairs; test scenes are never subsampled.
+Local optimizers are capped at 25 model updates;
+this is a common nominal cap, not a matched wall-clock budget. Ground truth is
+used only for validation, evaluation, and explicitly labeled oracle
+experiments.
+
+\paragraph{Classical LO-RANSAC reference.}
+We use RansacLib's unmodified TLS-LO$^+$ procedure~\cite{Sattler2019Github}:
+the LO trigger, the inner non-minimal
+resampling, the threshold schedule, and the least-squares refit hook. RansacLib
+ships no two-view solvers, so the model solvers its interface requires were
+written for this work: Hartley-normalized eight-point fits with projection to
+the essential manifold or to rank two, a four-point fit for homographies, and
+squared first-order Sampson residuals. The non-minimal fits are unweighted, as
+RansacLib's refit hook drives them; Lebeda et al.~\cite{Lebeda2012} reweighted
+their iterated fits by the Sampson gradient.
+
+\paragraph{Metrics.}
+Pose error and mAA@$10^\circ$ follow the definitions in the main paper
+(Eq.~\ref{main:eq:maa}). We compute mAA per scene and average over scenes, with
+failed estimates contributing zero. The scoring-only comparison reports
+scene-averaged median pose error and mAA@$10^\circ$; the basin experiments
+report mAA@$10^\circ$.
+
+\paragraph{Scale corruption.}
+Methods are tuned once at calibration. At test time, each user-supplied
+quantity expressed in residual units is multiplied by
+$\zeta\in[1/128,128]$; dimensionless multipliers and scales recomputed from the
+selected partition are unchanged. Thus $\zeta$ measures sensitivity to
+external calibration rather than perturbing every internal variable
+identically. \tlsirls{}-$\hat s$ isolates the effect of replacing a fixed
+loss width by one scaled from the selected support.
+
+% =====================================================================
+\section{Scoring under scale miscalibration}
+\label{sec:supp-scoring}
+This experiment evaluates how well each score selects the seed for LO
+under scale miscalibration, with LO disabled: each score ranks the
+identical pool of approximately $10^4$ hypotheses per image pair, and the
+selected hypothesis is evaluated directly. Cross-validation uses only the
+shared scoring window $\kscore\in[1,3.3]$, a dimensionless multiple of
+the validation reference scale $s_0$ (\cref{sec:supp-scale-mapping}). At test time
+the supplied scale is multiplied by $\zeta\in[1/128,128]$ with the
+tuned coordinate $\kscore^*$ held fixed; each score's parameter follows
+through its map (\cref{sec:supp-scale-mapping}) and is used for all pairs
+without retuning. For \stuU{}, the affected parameter is the outlier
+half-width $a$; the selected partition and its scale $\hat s$ remain
+data-dependent. SIMFIT++~\cite{Edstedt2025} is MSAC with a data-driven
+threshold: starting from an initial threshold, it alternates fitting on a
+random half of the correspondences with a bias-corrected median scale
+estimate on the other half and scores at the converged threshold; its
+initial threshold is cross-validated on the $\tau$ axis like the other
+threshold-based scores, and the estimate falls back to it when the
+iteration leaves the admissible range. Because that range is the reference's
+$0.25$--$8$\,px window, SIMFIT++ scores the pool's residuals re-expressed in
+pixels through the stored image normalizations; every other score works in
+the canonical frame, where all of its parameters are defined.
+
+The shaded confidence intervals in \cref{fig:supp-sel-miscal} use a
+scene-clustered BCa bootstrap~\cite{Efron1987}.
+
+\begin{figure}[t]
+	\centering
+	\begin{subfigure}[t]{0.48\linewidth}
+		\centering
+		\caption{median pose error}
+		\adjustbox{max width=\linewidth}{\input{figures/panel_sel_miscal}}
+	\end{subfigure}\hfill
+	\begin{subfigure}[t]{0.48\linewidth}
+		\centering
+		\caption{mAA@$10^\circ$}
+		\adjustbox{max width=\linewidth}{\input{figures/panel_sel_miscal_maa}}
+	\end{subfigure}\\[3pt]
+	\adjustbox{max width=\linewidth}{\pgfplotslegendfromname{selmiscallegend}}
+	\caption{\textbf{Scoring under scale miscalibration, without LO}
+		(PhotoTourism essential matrices; \PTTestScenes{} test and \PTValScenes{} validation scenes). We report (a) the
+		scene-averaged median pose error, with the axis clipped at $6^\circ$ so
+		that the near-tied calibrated regime stays readable (the threshold-based
+		scores leave the panel under inflation and reach $\SelThreshMedInflLo^\circ$--$\SelThreshMedInflHi^\circ$
+		at $128\times$), and (b) mAA@$10^\circ$ at the same operating points,
+		which are tuned on the median. The baseline set spans the Welsch and Geman--McClure scores, RANSAC~\cite{Fischler1981},
+		MSAC~\cite{Torr1998}, MAGSAC++~\cite{Barath2020}, the
+		Gaussian--uniform score~\cite{Shekhovtsov2025}, and SIMFIT++~\cite{Edstedt2025},
+		which re-estimates the inlier threshold per pair from held-out
+		residuals of the hypothesis selected on a random half of the
+		correspondences.}
+	\label{fig:supp-sel-miscal}
+\end{figure}
+
+At calibration ($\zeta=1$) the scores are nearly tied
+(\cref{fig:supp-sel-miscal}), but \stuU{} is substantially more stable
+under scale corruption. This reflects both its data-dependent partition
+selection and scale estimation; the half-width map of
+\cref{eq:corrupted-cutoff} also shows a logarithmic dependence of the
+squared standardized cutoff on $a$, and the experiment
+does not isolate these effects. Re-estimating the threshold per pair
+(SIMFIT++) does not remove the dependence on the supplied scale: at
+$128\times$ inflation its median error is $\SelSimfitMedInfl^\circ$, inside the
+$\SelThreshMedInflLo^\circ$--$\SelThreshMedInflHi^\circ$ band of the threshold-based scores, against
+$\SelStuMedInfl^\circ$ for \stuU{}.
+
+% =====================================================================
+\subsection{Scale corruption and parameter mapping}
+\label{sec:supp-scale-mapping}
+The shared scoring coordinate $\kscore\in[1,3.3]$ and validation reference
+scale $s_0$ determine each score's native residual-unit parameter. RANSAC,
+MSAC, SIMFIT++, and the Gaussian--uniform score use a threshold or cutoff
+$\tau=\kscore s_0$. MAGSAC++ uses the upper noise-scale bound
+$\bar\sigma=\kscore s_0$, not a residual cutoff. For \stuU{}, the outlier
+half-width is
+\begin{equation}
+a(\kscore;s_0,d_g)=s_0\sqrt{\frac{\pi}{2}}
+\exp\!\left(\frac{\kscore^2}{2d_g}\right),
+\label{eq:native-scale-maps}
+\end{equation}
+which equates the isotropic Gaussian inlier density and uniform outlier
+density at residual norm $\kscore s_0$ under equal assignment priors. This
+is a calibration map, not the exact boundary of the profile-marginal
+partition. The optimizer uses a separate width coordinate $\klo$.
+
+Replacing $s_0$ by $\zeta s_0$ at fixed $\kscore^*$ multiplies each native
+parameter by $\zeta$:
+\begin{equation}
+\begin{aligned}
+\tau(\kscore^*;\zeta s_0)&=\zeta\tau(\kscore^*;s_0),\\
+\bar\sigma(\kscore^*;\zeta s_0)&=\zeta\bar\sigma(\kscore^*;s_0),\\
+a(\kscore^*;\zeta s_0,d_g)&=\zeta a(\kscore^*;s_0,d_g).
+\end{aligned}
+\label{eq:native-scale-corruption}
+\end{equation}
+The scoring-only experiment (\cref{sec:supp-scoring}) applies the nearest
+evaluation-grid value to every test pair without retuning. Inverting the maps
+at the original reference scale $s_0$ gives the equivalent coordinates
+\begin{equation}
+k_{\tau}^{\prime}=k_{\bar\sigma}^{\prime}=\zeta\kscore^*,
+\qquad
+(k_a^{\prime})^2=(\kscore^*)^2+2d_g\log\zeta,
+\label{eq:corrupted-cutoff}
+\end{equation}
+where $k_a^{\prime}$ is real only when the right-hand side is nonnegative.
+
+\section{Paired scale-interface control}
+\label{sec:supp-anchoring}
+
+The composed-pipeline study varies both the optimization path and the source
+of residual-unit scale. Here we vary only the scale interface within each
+optimizer. \tlsirls{}-$\hat s$ replaces a fixed $c_{\mathrm{ref}}$ with
+$c=\klo\hat s_0$. For Welsch-GNC and GM-GNC, the paired control replaces
+the default partition-derived initial continuation window with one derived
+from the externally supplied scale. The terminal loss, optimizer, and validation
+protocol are otherwise unchanged.
+
+\begin{figure}[t]
+\centering
+\adjustbox{max width=\linewidth}{\input{figures/panel_anchoring_paired}}\\[3pt]
+\adjustbox{max width=\linewidth}{\pgfplotslegendfromname{anchorlegend}}
+\caption{\textbf{Partition anchoring, paired within optimizer.}
+Scene-averaged median pose error and mAA@$10^\circ$ on the \PTTestScenes{} PhotoTourism test scenes.
+Dashed curves use a fixed reference threshold or a scale-corrupted GNC
+window; solid curves use the same optimizer with partition-derived scale.
+At $\zeta=128$, anchored variants reach $\AnchorInflAnch^\circ$, versus
+$\AnchorInflFixed^\circ$ for their fixed-scale counterparts. The vertical axis is
+clipped at $6^\circ$.}
+\label{fig:supp-anchoring}
+\end{figure}
+
+At calibration, pairing changes median pose error by at most $\AnchorCalDiff^\circ$.
+Under inflation, partition anchoring prevents the large error increase seen
+with externally supplied scale. Scale supply therefore explains most of the
+inflation sensitivity, but not the basin advantage of Welsch-HQ, which remains
+when the scale interface is controlled.
+
+\section{Sample budget and runtime}
+	\label{sec:supp-budget}
+	% =====================================================================
+
+	\begin{figure}[t]
+		\centering
+		\adjustbox{max width=\linewidth}{\input{figures/panel_sample_budget_faceted_time}}\\[3pt]
+		\adjustbox{max width=\linewidth}{\pgfplotslegendfromname{sbtimelegend}}
+		\caption{\textbf{Accuracy versus cumulative LO time on PhotoTourism.}
+			The sample-budget checkpoints from the main paper are re-plotted against
+			cumulative single-threaded LO time per pair. Scoring, sampling, and
+			termination are shared and excluded; this is an accuracy--LO-cost frontier,
+			not an end-to-end speed comparison. Beyond the smallest budget, Welsch-HQ retains the highest accuracy
+			at matched LO time despite its higher per-call cost.}
+		\label{fig:supp-budget-time}
+	\end{figure}
+
+	Local optimization is most valuable when the sample budget is small and
+	the selected model is inaccurate. On easy ETH3D pairs, most selected models are
+	already inside every tested basin, so the arms lie within \BudFSpread{} of each other, except TLS-LO$^+$.
+
+	\paragraph{Timing protocol.}
+We measure local-optimization time with a dedicated single-threaded harness
+that replays the shared hypothesis sequence on one dense PhotoTourism scene
+(40 pairs, about 4,000 correspondences). Each optimizer uses its deployed
+settings and the shared 25-model-update cap. We divide accumulated LO time by
+the number of calls, excluding workspace allocation and first-call
+compilation. The \tlsirls{} and TLS-LZ refits are timed as separate columns in the
+same run; each other optimizer is measured in its own run. These measurements
+underlie the design table and accuracy-versus-LO-time comparison in the main
+paper.
+
+\small
+\bibliographystyle{splncs04}
+\bibliography{main}
+
+\end{document}

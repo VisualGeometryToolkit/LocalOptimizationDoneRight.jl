@@ -1,0 +1,72 @@
+# =============================================================================
+# pt_e_pools — configuration of record for the PhotoTourism ESSENTIAL-track
+# 4K-sample scoring-pool production: THE pool every main-paper cell reads
+# (fig3's deployed tuning, fig2's basin, fig4's budget, fig1's selection
+# bundle, polish, the end-to-end table and the timing runs all key on it).
+#
+# POOL PRODUCER class (pools are dataset-derived data, not results — the one
+# sanctioned write under data_root()):
+# writes per-scene pools (a light record + its residuals, VisualGeometryEval
+# pool format 4) into a NEW immutable tree under data_root(), through
+# scripts/tools/generate_scoring_pools.jl. Identity: `_config.toml` +
+# `_provenance.toml` sidecars in the output tree; a changed config is a NEW
+# pool tree (bump `pool.version` and `experiment.pool_dir` together), never an
+# overwrite. Every generation constant is stated in [pool] below.
+# =============================================================================
+
+[experiment]
+dataset = "phototourism"
+matcher = "sift"                 # the IMC release's RootSIFT matches (provenance)
+problem = "E"
+# OUTPUT tree, RELATIVE to data_root().
+pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"
+
+[source]
+# The sides of the scene split of record, `<split>:validation|test`, resolved
+# through VisualGeometryEval configs/splits.toml `phototourism`
+# (10 validation + 11 test). BOTH sides are generated: the tuning reads the
+# validation side, the evaluations the test side.
+#
+# Stated as DATA, one entry per generated side. Nothing infers "both sides" —
+# the cell's scene set is exactly what this list resolves to, through
+# `split_scenes` (src/validation_data.jl).
+splits = ["phototourism:validation", "phototourism:test"]
+image_unit = "px"                # raw csponds are pixels (driver asserts)
+
+# The raw PhotoTourism trees, RELATIVE to data_root(). Declared HERE because
+# they are THIS HOST'S layout, not the dataset's: the two tutorial splits'
+# matches sit under the campaign tree while the TestData matches and every
+# COLMAP reconstruction sit under datasets/phototourism. The reader takes
+# them from the caller (VisualGeometryEval `PtRawTrees`).
+#
+# Every `*_dir` key here is resolved against data_root() and handed to the
+# reader under the SAME name less `_dir`, so adding a dataset root needs no
+# code change in the tool.
+matches_tutorial_val_dir   = "accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/val"
+matches_tutorial_train_dir = "accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/train"
+matches_ef_test_dir        = "datasets/phototourism/raw_test/RANSAC-Tutorial-Data-Test"
+recon_tutorial_dir         = "datasets/phototourism/raw_train/_track_verified_recons"
+recon_ef_test_dir          = "datasets/phototourism/raw_test/imw2020_testdata/_track_verified_recons"
+
+# The two IMC-PT TestData scenes whose COLMAP model is NOT under
+# recon_ef_test_dir. These are COMPLETE model paths (they already end at
+# dense/sparse); the general case appends <scene>/dense/sparse.
+[source.recon_special]
+reichstag               = "datasets/phototourism/raw_train/_inspect/reichstag/dense/sparse"
+florence_cathedral_side = "datasets/phototourism/raw_test/florence_cathedral_side/dense/sparse"
+
+[pool]
+version = "v2"                   # v1 = the refused pre-pool_format-3 trees
+# Scenes are 72-84 GB each (~2 TB total): stream ONE at a time, never slurp.
+max_concurrent = 1
+# Generation constants: the values of record of every pool tree of this
+# config (scripts/tools/generate_scoring_pools.jl reads every one).
+sampler = "gaussian"             # the Gaussian-SNN minimal-sample sampler
+gaussian_sigma = 0.125           # its σ (the e2e live loop draws with the same)
+target = 4000                # accepted minimal samples per pair
+max_trials = 400000        # minimal-sample draws per pair, at most
+min_csponds = 20                 # a raw pair with fewer kept correspondences is dropped
+max_pairs_per_scene = 2200       # per-scene pair cap (a seeded subsample)
+subsample_overdraw = 2           # the subsample draws this many × the cap, trimmed after the reader's rejections
+subsample_seed = 42              # StableRNG(stable_seed(subsample_seed, scene))
+pool_seed = 42                   # the minimal-sample streams: StableRNG(stable_seed(pool_seed, pair index))

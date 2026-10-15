@@ -1,0 +1,109 @@
+# =============================================================================
+# pt_e_superansac — the SupeRANSAC rows of MAIN-PAPER TAB. 3
+# (figures/table_e2e.tex): SupeRANSAC (Barath et al., 2025) with its loss
+# width cross-validated on the validation units of OUR operating points'
+# cross-validation (pt_e_miscal: the stratified 25 % of each PhotoTourism
+# validation scene, so both pipelines are tuned on the same pairs), then run on
+# every test pair of it — the pairs pt_e_e2e_table reports ours on — under the
+# table's ζ ladder (scripts/superansac_e2e.jl; src/superansac.jl).
+#
+# Ported 2026-10-07 from the earlier SupeRANSAC drivers superansac_cv.jl /
+# superansac_loss_width_worker.jl / superansac_zeta_worker.jl (which ran the
+# published rows); every setting they took from their configs/tuning.toml,
+# their registry or RobustVisualGeometry's RansacConfig defaults is stated
+# here.
+#
+# SupeRANSAC is an OUTSIDE dependency ([environment]); without it the table is
+# built from the stored results of [stored].
+# =============================================================================
+
+[experiment]
+dataset = "phototourism"
+matcher = "sift"
+problem = "E"
+pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"      # the PT-E pool of record (pt_e_miscal.toml's)
+
+[operating_points]
+# The cross-validation whose validation units tune the loss width and whose
+# test units are evaluated (its run key, without opt-in variants, keys this cell).
+miscal_config = "pt_e_miscal"
+
+[superansac]
+# The table's miscalibration ladder: loss width = ζ·w* at test time (w* tuned at
+# ζ = 1; never re-tuned) — Tab. 3's columns (pt_e_e2e_table.toml [e2e] zetas).
+zetas = [0.0625, 1.0, 4.0, 16.0, 128.0]
+
+# THE AUTHORS' ESSENTIAL-MATRIX TESTER PRESET (superansac
+# tests/essential_matrix/tester_superansac.py, file:line in the earlier drivers'
+# superansac_common.jl): matches sorted by descending score 1 − SNN (SIFT's
+# Lowe ratio is low = good) with rank probabilities 1 − rank/n (tester 31-34,
+# 103); PROSAC + MAGSAC (147-148); NestedRANSAC local optimization and LSQ
+# final optimization (149-150); local_opt_k and SPRT (46-47); the
+# neighbourhood grid (97-98, 152-153); the tester's literal image sizes,
+# whatever the true sizes (111).
+[superansac.preset]
+sampler = "PROSAC"
+scoring = "MAGSAC"
+local_optimization = "NestedRANSAC"
+final_optimization = "LSQ"
+local_opt_k = 10
+use_sprt = true
+neighborhood_grid_density = 4
+neighborhood_size = 20
+image_sizes = [2000.0, 2000.0, 2000.0, 2000.0]
+
+# The loss-width CV's runs: the tester's forced run (tester 143-146).
+[superansac.tuning_termination]
+min_trials = 1000
+max_trials = 1000
+confidence = 0.9999999
+
+# The evaluation: OUR production RANSAC termination inputs (RobustVisualGeometry
+# RansacConfig defaults: the trials cap of our loop). SupeRANSAC's adaptive
+# criterion is inert in every binding-reachable configuration, so this is a
+# forced max_trials run.
+[superansac.evaluation_termination]
+min_trials = 100
+max_trials = 10000
+confidence = 0.99
+
+# THE LOSS-WIDTH CV (the single CV path; its cross-validation is the operating
+# points', layered in by src/superansac.jl). The validated loss-width grid, in
+# full: a coarse probe over [0.5, 16] px at 4 points per decade (7 points about
+# the tester's 5.5 px SP+LG default — our pairs are SIFT), an argmin within one
+# point of an edge extends that side by 4 points, at most 2 rounds per side;
+# then 200 log-spaced points over the coarse argmin's neighbours; the median
+# per-pair pose error (a failure is Inf) is minimized. pysuperansac exposes no
+# RNG seed: the objective's run-to-run noise is the library's own.
+[tuning.superansac_loss_width]
+type = "coarse_fine"
+criterion = { type = "median_error" }
+edge_margin = 1
+
+[tuning.superansac_loss_width.coarse]
+type = "spaced"
+window = { type = "fixed", lo = 0.5, hi = 16.0 }
+spacing = { type = "log_per_decade", per_decade = 4 }
+
+[tuning.superansac_loss_width.extension]
+npts = 4
+max_rounds = 2
+
+[tuning.superansac_loss_width.fine]
+type = "log_count"
+n = 200
+
+[environment]
+# The auxiliary environment SupeRANSAC runs in (relative to accv2026/): PythonCall +
+# CondaPkg, with pysuperansac built from source into its conda environment.
+project = "envs/superansac"
+python_module = "pysuperansac"
+source_repository = "https://github.com/danini/superansac"
+
+[stored]
+# The SupeRANSAC results behind the published Tab. 3 (relative to the results
+# root, VisualGeometryEval `results_root()`): copied from the e2e cell of record
+# e2e-3ea0c00581858498 (pt_e_e2e_table, 2026-10-04); provenance in the
+# directory's PROVENANCE.toml. Read by scripts/e2e_ransac.jl when this cell has
+# not run (src/superansac.jl `superansac_results`).
+dir = "phototourism/sift/E/SupeRANSAC/stored-e2e-3ea0c00581858498"

@@ -1,0 +1,40 @@
+# =============================================================================
+# eth_f_pools — the eth3d SuperPoint+LightGlue F two-view scoring pools at
+# pool format 3 (scripts/scoring_pools.jl --config=eth_f_pools), the pools
+# configs/accv2026_eth_f_miscal.toml reads. The previous trees
+# (scoring_data_F, scoring_data_F_vgc07) are pool format 1, which the
+# loader refuses; pool trees are immutable inputs, so this writes a NEW tree.
+#
+# Route `roma`: the consolidated correspondence JLD2s (VisualGeometryEval Datasets roma.jl;
+# their GT inlier labels come from the depth-warp validation at consolidation),
+# at the [pool] target below (1000 accepted minimal samples per pair).
+# =============================================================================
+
+[experiment]
+dataset = "eth3d"
+matcher = "splg"
+problem = "F"
+pool_dir = "datasets/eth3d/derived/splg/scoring_data_F_pf3"
+
+[source]
+route = "roma"
+splits = ["eth3d:validation", "eth3d:test"]
+image_unit = "px"
+input_jld2_dir = "datasets/eth3d/derived/splg/csponds"
+what = "eth3d SuperPoint+LightGlue consolidated correspondences (with depth-warp GT inlier labels)"
+provenance = "the eth3d splg extraction + consolidation (a retired consolidation step; the files are read by VisualGeometryEval Datasets load_roma_pairs); REPRODUCE.md"
+
+[pool]
+version = "v2"
+max_concurrent = 4
+# Generation constants: the values of record of every pool tree of this
+# config (scripts/tools/generate_scoring_pools.jl reads every one).
+sampler = "gaussian"             # the Gaussian-SNN minimal-sample sampler
+gaussian_sigma = 0.125           # its σ (the e2e live loop draws with the same)
+target = 1000                # accepted minimal samples per pair
+max_trials = 100000        # minimal-sample draws per pair, at most
+min_csponds = 20                 # a raw pair with fewer kept correspondences is dropped
+max_pairs_per_scene = 2200       # per-scene pair cap (a seeded subsample)
+subsample_overdraw = 2           # the subsample draws this many × the cap, trimmed after the reader's rejections
+subsample_seed = 42              # StableRNG(stable_seed(subsample_seed, scene))
+pool_seed = 42                   # the minimal-sample streams: StableRNG(stable_seed(pool_seed, pair index))

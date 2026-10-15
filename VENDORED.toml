@@ -1,0 +1,14 @@
+# Third-party provenance, declared for VisualGeometryCore.check_naming (see
+# `naming_scope`): a [[vendored]] tree is upstream code and out of the stack's
+# naming scope; a [[template]] entry names a template's license file whose
+# directory otherwise holds stack text, which stays in scope.
+
+[[vendored]]
+path = "accv2026/lib/RansacLibLO/deps/RansacLib"
+upstream = "https://github.com/tsattler/RansacLib"
+license = "BSD-3-Clause"
+
+[[template]]
+path = "accv2026/paper/LICENSE"
+upstream = "ECCV 2024 author kit, the ACCV 2026 paper template"
+license = "MIT"

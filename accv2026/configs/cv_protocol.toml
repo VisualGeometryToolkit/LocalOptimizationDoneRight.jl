@@ -1,0 +1,47 @@
+# =============================================================================
+# cv_protocol — THE cross-validation protocol of record, shared by every CV
+# experiment (folded into each experiment's run key). Tuning happens at
+# calibration (zeta = 1) on the registered validation scenes of each dataset;
+# zeta is only ever a test-time evaluation at the tuned widths.
+#
+# Each dataset section is a PARTIAL `cross_validation` table of a
+# `[tuning.<name>]` entry (VisualGeometryEval `CrossValidation`; schema
+# in VisualGeometryEval docs/TUNING.md): the registered scene split it names (its lists
+# live ONLY in VisualGeometryEval configs/splits.toml) and how the validation units are
+# sampled. A cell names its section in its own `[protocol] cv_section`;
+# `fold_sequential_cv!` (src/protocol_folds.jl) layers it into every tuning
+# entry the cell names, under the cell's own overrides, and VisualGeometryEval's parser refuses an unknown key or tag.
+# Absent keys inherit VisualGeometryEval's defaults: every unit of each side; a
+# stratified sample takes its seed from VisualGeometryEval's `[tags.unit_sampling]`
+# defaults, combined with each scene's NAME. Subsampling is always a
+# FRACTION, never a fixed count; test sides are never subsampled.
+#
+# The two-view drivers accept `all` or `stratified` validation (a per-scene
+# fraction preserves the scene mix). Another sampling is refused by the
+# driver's signature.
+# =============================================================================
+
+[protocol]
+tune_zeta = 1.0                    # tuning is always at calibration
+
+[heb]
+# EVERY pair of both sides (2026-10-04, notes/sequential_cv.md): the
+# sequential CV costs ~500 objective evaluations instead of the product grid's
+# ~417,000, so the 25 % validation sample it used to need buys nothing — full
+# validation removes the sampling noise outright instead of trading it for
+# cost. 5 val + 5 test scenes x ~2200 pairs.
+scene_split = { type = "registered", name = "heb" }
+validation = { type = "exhaustive" }
+
+[eth3d]
+# 6 val scenes x ~328 pairs: the one plentiful-validation family; 0.25 keeps
+# ~82 pairs/scene medians stable.
+scene_split = { type = "registered", name = "eth3d" }
+validation = { type = "stratified", fraction = 0.25 }
+
+[phototourism]
+# 10 val scenes x ~2200 pairs, a quarter of each -> ~550 pairs/scene, well above
+# the ~82/scene this protocol already relies on for eth3d. Test side keeps every
+# pair so the evaluation merges consistently across cells.
+scene_split = { type = "registered", name = "phototourism" }
+validation = { type = "stratified", fraction = 0.25 }

@@ -1,0 +1,38 @@
+\begin{tikzpicture}
+\begin{groupplot}[
+  group style={group size=3 by 1, horizontal sep=6pt, vertical sep=12pt,
+    xticklabels at=edge bottom, xlabels at=edge bottom},
+  scale only axis, width=0.265\linewidth, height=0.22\linewidth,
+  xmin={0}, xmax={15}, xtick={0,5,10},
+  xmajorgrids, ymajorgrids, grid style={gray!20},
+  label style={font=\footnotesize}, tick label style={font=\scriptsize},
+  title style={font=\footnotesize, align=center}]
+\nextgroupplot[ymin={0.30}, ymax={0.70}, ytick={0.3,0.4,0.5,0.6}, minor y tick num={0}, yminorgrids, yticklabel style={text width=2.4em, align=right}, title={Uniform mixtures\\(TLS, Stu-$t$U)}, ylabel={PhotoTourism $\mathbf{E}$\\mAA@$10^\circ$}, ylabel style={align=center}, legend to name=sbtimelegend, legend columns=4, legend cell align=left, legend style={draw=none, font=\footnotesize, /tikz/every even column/.append style={column sep=8pt}}]
+\addplot[color=ColorIGPoseLib, mark=o, mark options={solid,fill=ColorIGPoseLib}, line width=0.8pt, mark size=1.6pt, dashed, forget plot] coordinates {(0.531,0.4509) (1.062,0.5369) (1.593,0.5642) (2.124,0.5779) (2.655,0.5877) (3.186,0.5947) (3.717,0.6004) (4.248,0.6049) (4.779,0.6078)};
+\addplot[color=ColorIGLZ, mark=diamond, mark options={solid,fill=ColorIGLZ}, line width=0.8pt, mark size=1.6pt, dashed, forget plot] coordinates {(0.934,0.4493) (1.869,0.5352) (2.803,0.5625) (3.737,0.5761) (4.672,0.5860) (5.606,0.5933) (6.540,0.5992) (7.474,0.6036) (8.409,0.6066)};
+\addplot[color=ColorIGTLSHQ, mark=triangle, mark options={solid,fill=ColorIGTLSHQ}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(0.730,0.4679) (1.460,0.5460) (2.190,0.5712) (2.920,0.5839) (3.650,0.5927) (4.380,0.5992) (5.110,0.6044) (5.840,0.6086) (6.570,0.6118)};
+\addplot[color=ColorIGTLSLOP, mark=pentagon*, mark options={solid,fill=ColorIGTLSLOP}, line width=0.8pt, mark size=1.6pt, dashed, forget plot] coordinates {(0.305,0.4000) (0.611,0.5000) (0.916,0.5322) (1.222,0.5483) (1.527,0.5595) (1.833,0.5681) (2.138,0.5750) (2.444,0.5802) (2.749,0.5839)};
+\addplot[color=ColorIGGNCTLS, mark=diamond, mark options={solid,fill=ColorIGGNCTLS}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(0.684,0.4484) (1.368,0.5280) (2.052,0.5546) (2.736,0.5677) (3.420,0.5761) (4.103,0.5831) (4.787,0.5884) (5.471,0.5931) (6.155,0.5965)};
+\addplot[color=ColorIGBCD, mark=oplus, mark options={solid,fill=ColorIGBCD}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(0.857,0.4778) (1.714,0.5535) (2.572,0.5777) (3.429,0.5892) (4.286,0.5979) (5.143,0.6045) (6.000,0.6096) (6.858,0.6135) (7.715,0.6167)};
+\addlegendimage{color=ColorIGPoseLib, mark=o, mark options={solid,fill=ColorIGPoseLib}, line width=0.8pt, dashed}\addlegendentry{TLS-IRLS}
+\addlegendimage{color=ColorIGLZ, mark=diamond, mark options={solid,fill=ColorIGLZ}, line width=0.8pt, dashed}\addlegendentry{TLS-LZ}
+\addlegendimage{color=ColorIGTLSHQ, mark=triangle, mark options={solid,fill=ColorIGTLSHQ}, line width=0.8pt}\addlegendentry{TLS-HQ}
+\addlegendimage{color=ColorIGTLSLOP, mark=pentagon*, mark options={solid,fill=ColorIGTLSLOP}, line width=0.8pt, dashed}\addlegendentry{TLS-LO$^+$}
+\addlegendimage{color=ColorIGGNCTLS, mark=diamond, mark options={solid,fill=ColorIGGNCTLS}, line width=0.8pt}\addlegendentry{TLS-GNC}
+\addlegendimage{color=ColorIGBCD, mark=oplus, mark options={solid,fill=ColorIGBCD}, line width=0.8pt}\addlegendentry{Stu-$t$U-BCD}
+\addlegendimage{color=ColorIGWIrls, mark=o, mark options={solid,fill=ColorIGWIrls}, line width=0.8pt}\addlegendentry{Welsch-IRLS}
+\addlegendimage{color=ColorIGLift, mark=triangle, mark options={solid,fill=ColorIGLift}, line width=0.8pt}\addlegendentry{Welsch-HQ}
+\addlegendimage{color=ColorIGGNCW, mark=diamond, mark options={solid,fill=ColorIGGNCW}, line width=0.8pt}\addlegendentry{Welsch-GNC}
+\addlegendimage{color=ColorIGGMIrls, mark=o, mark options={solid,fill=ColorIGGMIrls}, line width=0.8pt}\addlegendentry{GM-IRLS}
+\addlegendimage{color=ColorIGGMHQ, mark=triangle, mark options={solid,fill=ColorIGGMHQ}, line width=0.8pt}\addlegendentry{GM-HQ}
+\addlegendimage{color=ColorIGGNCGM, mark=diamond, mark options={solid,fill=ColorIGGNCGM}, line width=0.8pt}\addlegendentry{GM-GNC}
+\nextgroupplot[ymin={0.30}, ymax={0.70}, ytick={0.3,0.4,0.5,0.6}, minor y tick num={0}, yminorgrids, yticklabel style={text width=2.4em, align=right}, title={Welsch}, yticklabels={}, xlabel={cum.\ LO time per pair [ms]}]
+\addplot[color=ColorIGWIrls, mark=o, mark options={solid,fill=ColorIGWIrls}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(0.430,0.4479) (0.860,0.5356) (1.291,0.5632) (1.721,0.5772) (2.151,0.5869) (2.581,0.5939) (3.011,0.5997) (3.442,0.6040) (3.872,0.6072)};
+\addplot[color=ColorIGLift, mark=triangle, mark options={solid,fill=ColorIGLift}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(1.129,0.5357) (2.258,0.5929) (3.387,0.6112) (4.516,0.6206) (5.645,0.6261) (6.774,0.6303) (7.903,0.6338) (9.032,0.6369) (10.161,0.6399)};
+\addplot[color=ColorIGGNCW, mark=diamond, mark options={solid,fill=ColorIGGNCW}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(0.834,0.4647) (1.668,0.5459) (2.501,0.5711) (3.335,0.5836) (4.169,0.5927) (5.003,0.5993) (5.837,0.6046) (6.671,0.6084) (7.504,0.6114)};
+\nextgroupplot[ymin={0.30}, ymax={0.70}, ytick={0.3,0.4,0.5,0.6}, minor y tick num={0}, yminorgrids, yticklabel style={text width=2.4em, align=right}, title={Geman--McClure\\(GM)}, yticklabels={}]
+\addplot[color=ColorIGGMIrls, mark=o, mark options={solid,fill=ColorIGGMIrls}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(0.384,0.4447) (0.768,0.5339) (1.151,0.5615) (1.535,0.5756) (1.919,0.5853) (2.303,0.5925) (2.687,0.5982) (3.070,0.6025) (3.454,0.6057)};
+\addplot[color=ColorIGGMHQ, mark=triangle, mark options={solid,fill=ColorIGGMHQ}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(0.729,0.4733) (1.457,0.5503) (2.186,0.5749) (2.914,0.5875) (3.643,0.5956) (4.372,0.6017) (5.100,0.6068) (5.829,0.6107) (6.557,0.6143)};
+\addplot[color=ColorIGGNCGM, mark=diamond, mark options={solid,fill=ColorIGGNCGM}, line width=0.8pt, mark size=1.6pt, forget plot] coordinates {(0.634,0.4061) (1.269,0.5032) (1.903,0.5341) (2.537,0.5499) (3.172,0.5609) (3.806,0.5693) (4.440,0.5758) (5.075,0.5809) (5.709,0.5849)};
+\end{groupplot}
+\end{tikzpicture}

@@ -1,0 +1,55 @@
+# =============================================================================
+# polish_pt_e — does a final polish move a locally optimized result?
+# (scripts/polish.jl, src/cell_stages.jl `polish_cell_stages`; replaces the
+# retired polish_hard table.) Per PT-E test pair, at ζ = 1:
+#
+#   seed  = the IG-selected minimal model at the deployed a* (the sequential
+#           CV's selection; pt_e_miscal's operating points)
+#   E_LO  = each SOURCE arm's refit of that seed at its deployed width — the
+#           exact model the miscal figure reports at ζ = 1 (checked pair for
+#           pair against the sidecar's stored errors)
+#   E_pol = each POLISHER applied to E_LO:
+#     tls       the paper's TLS-IRLS refiner (PoseLib truncated LM) at ITS OWN
+#               cross-validated loss width — the deployed `tls_arm`'s, from the
+#               same sidecar (the support may change during the polish)
+#     l2_stutu  least squares on the Stu-tU partition I* = argmax_I S(E_LO, I)
+#               under the scorer at a* — the pipeline's own inlier set; no
+#               threshold, no parameter
+#   Nothing is tuned here (a width tuned on this experiment's own error picks
+#   the width that disables the polish: c → 0 returns E_LO — observed in the
+#   2026-10-04 smoke, hence the deployed TLS width).
+#
+# Reported: the ECDF of the per-pair error change e_polished − e_LO (the
+# paper's figure); in summary.tsv, Δ mAA@10 / Δ median, per-pair
+# improved/degraded rates and the DISPLACEMENT the polish causes (max of the
+# rotation and translation-direction angles between E_LO and E_pol). A polish
+# that bails keeps E_LO (GT-free fallback).
+# =============================================================================
+
+[experiment]
+dataset = "phototourism"
+matcher = "sift"
+problem = "E"
+pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"      # the PT-E pool of record (pt_e_miscal.toml's)
+
+[operating_points]
+miscal_config = "pt_e_miscal"
+
+[polish]
+# Two high-performing, representative LOs (2026-10-04): Welsch-HQ (ours; a
+# lifted robust loss — THE paper's Welsch-HQ, configs/protocol.toml [paper]
+# welsch_hq: the zero-clamp "IG  +Lift@zc" since 2026-10-07, declared by
+# pt_e_miscal's [sequential_cv] zero_clamp; the faithful "IG  +Lift" is not
+# polished) and Stu-tU-BCD (exact ascent on the score itself). For
+# BCD, l2_stutu is a fixed point by construction — the sanity row.
+# The objective-matched "IG  +BCD@a*" (declared by pt_e_miscal, [sequential_cv] objective_matched) is
+# NOT a source: every source is a facet of the deployed polish figure, and the
+# figure's roster is not changed by the variant's introduction (2026-10-06).
+sources = ["IG  +Lift@zc", "IG  +BCD"]
+polishers = ["l2_stutu"]           # 2026-10-04: L2 on the scorer's inliers alone; "tls" stays available
+tls_arm = "IG  +PoseLib"         # the TLS polish runs at this deployed arm's CV'd loss width
+max_iter = 25                    # the protocol's LO update budget, run to it (convergence)
+
+[render]
+panel_diff = "panel_polish_diff.tex"      # ECDF of e_polished − e_LO per pair (the paper's figure)
+diff_xmax = 0.5                            # degrees; the error-change axis is [−diff_xmax, diff_xmax]

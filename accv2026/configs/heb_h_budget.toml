@@ -1,0 +1,71 @@
+# =============================================================================
+# heb_h_budget — configuration of record for the HEB-H accuracy-vs-sample-
+# budget cell (the classical-LO budget story on the homography transfer
+# benchmark; the HEB row of the main-paper Fig 4 grid,
+# configs/fig4_budget_grid.toml). POLICY as every budget cell: protocol knobs live in configs/sample_budget_protocol.toml ([heb]; folded
+# into the key); the keyed output directory hashes
+# THIS effective config; every driver knob is stated.
+#
+# PROTOCOL (PROTOCOL.md §6 shape, streamed engine): budget curves run
+# EXCLUSIVELY at the tuned optima read from THE deployed operating-points
+# sidecar (deployed_budget_settings, problem-aware :H); there is no
+# self-tuning. Selection = each arm's own tuned outlier half-width;
+# refinement at its tuned width (scale multiple partition-anchored /
+# loss width at its tuned value).
+# =============================================================================
+
+[experiment]
+dataset = "heb"
+matcher = "sift"
+problem = "H"
+# The HEB-H 4K test pools, RELATIVE to data_root() for machine-portable
+# identity. `_pf3` is the pool_format 3 generation produced by
+# scripts/heb_h_pools.jl. It is NOT an `_extrinsic` tree and does not need to
+# be: the generator stamps `gt_convention = "extrinsic"` on every pool, so a
+# freshly generated tree is extrinsic by construction.
+pool_dir = "accv2026/data/HEB-H-SIFT-4K_pf3"
+# The scenes are the TEST side of the deployed sidecar's cross-validation (its
+# persisted spec) — budgets are a test-time evaluation.
+
+[operating_points]
+# THE deployed sidecar of record: supp_H_miscal stage h_cv (the full :H
+# roster, gate-audited under :H), named by its CONFIG and re-derived through
+# `miscal_sidecar_of` — keys derived, never copied (cell_stages.jl).
+#
+# Was an absolute path literal into `miscal-product-tuning-hebh-v2`, a
+# directory name that hashed nothing. Two faults in one line: it was
+# machine-specific, so this config did not identify the same run elsewhere; and
+# it was a second authority that could only agree or silently disagree with the
+# producer. It disagreed the moment heb_h_miscal.toml keyed its output by
+# `run_key` (2026-10-03) — the literal then pointed at a directory nothing
+# writes. Naming the config cannot drift: a protocol change re-keys the
+# producer and this resolves to the new path.
+miscal_config = "heb_h_miscal"
+
+# The sample-budget protocol of record this cell streams under (a
+# configs/sample_budget_protocol.toml section; folded into the run key by
+# src/protocol_folds.jl `fold_budget_cell!`).
+[budget]
+# The objective-matched Stu-tU-BCD ("IG  +BCD@a*", declared by the operating
+# points' cell) streamed here too; opt-in, it keys this cell.
+objective_matched = ["IG  +BCD"]
+# The research-only zero-clamp Welsch-HQ ("IG  +Lift@zc", declared by the
+# operating points' cell) streamed here too; opt-in, it keys this cell.
+zero_clamp = ["IG  +Lift"]
+protocol = "heb"
+# The selectors whose arms this cell runs: the engine seeds through the IG
+# profile-marginal scorer only, and the paper reports no MSAC-seeded arm in a
+# budget figure (main.tex §4: profile-marginal scoring in every pipeline
+# comparison), so the MSAC-seeded arms of the sidecar are not run.
+selectors = ["student_t_uniform"]
+
+[render]
+xlog = true                         # a log₂ budget axis (render_budget.jl)
+row_label = "HEB"
+panel = "panel_sample_budget_heb_H.tex"
+# Budget-axis tick marks (explicit, codified — the panel prints exactly these).
+xticks = [100, 500, 1000, 2000, 3000]
+legend = "hebbudgetlegend"
+deploy = true
+rows = "maa"             # Fig 5 column: mAA alone
+extra_arms = "IG  +BCD"  # Table 1 "other"

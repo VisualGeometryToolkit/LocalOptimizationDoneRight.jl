@@ -1,0 +1,200 @@
+# =============================================================================
+# protocol — THE experiment protocol of record of the ACCV 2026 campaign: every
+# result-changing value the paper's code used to carry as a literal or a
+# global constant, one declaration each, read through ONE mechanism
+# (src/protocol.jl `protocol_value(table, key)`, VisualGeometryCore
+# `toml_default`: a key that is not here throws).
+#
+# `[arms]` is what the ARM TABLE reads (src/arm_rosters.jl). It is folded into the run key of every cell whose
+# runs build arms (src/protocol_folds.jl `fold_arm_protocol!`), so changing a
+# value here is a new run directory for every such cell. The other tables key
+# their experiments through the experiments' stamps (src/registry.jl), which
+# must be bumped when a value changes.
+#
+# The tuning, cross-validation, ζ-evaluation and sample-budget protocols keep
+# their own files (tuning.toml, cv_protocol.toml, miscal_protocol.toml,
+# sample_budget_protocol.toml).
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# THE SCALE-ESTIMATION PROTOCOL — which pairs' sigma-hat^2 is trusted to set the
+# validation scale. It fixes `s0` (the reference scale every tuning window is
+# positioned at) and the sigma-hat^2 quantile band (which sizes the coverage
+# grid), so it determines the whole search. Folded into every tuning cell's run
+# key by src/protocol_folds.jl, because a change here moves every result.
+#
+# THE ESTIMATOR IS UNCHANGED: the pools' stored `gt_variance`. For the H track
+# that is `gt_variance_dlt` — an 8-DOF DLT fit to a pair's GT inliers,
+# sigma^2 = Sampson RSS / (2 n_in - 8). It is a PSEUDO-GT quantity: HEB ships
+# no ground-truth homography (a plane is not determined by R, t and K), so a
+# model must be fitted. The E/F tracks are different and untouched — there the
+# GT model IS determined by the relative pose and K, so `gt_variance` is a true
+# oracle quantity (pool_generator.jl `_oracle_rss`).
+#
+# WHAT IS NEW IS A FLOOR ON WHICH PAIRS COUNT. Measured on HEB-H NYC_Library,
+# 2200 pairs, 2026-10-04: the stored sigma-hat RISES MONOTONICALLY with a
+# pair's GT inlier count and only plateaus past ~80 —
+#
+#   n_inliers   4-12     13-20    21-40    41-80    81-200   201+
+#   median s    3.01e-4  3.38e-4  3.65e-4  4.14e-4  4.75e-4  4.76e-4
+#
+# — because an 8-DOF fit to few points sits close to its own data, and those
+# same points' residuals are what measure it. A noise scale cannot depend on
+# how many inliers a pair happens to have, so the slope IS the bias; the
+# plateau is the pool's actual level. HEB's median pair has 16 GT inliers
+# (p10 = 6) at a 6.6 % inlier rate, and the pool generator's min_gt_inliers = 5 (configs/heb_h_pools.toml)
+# admits fits with nu = 2 degrees of freedom. So `s0`, a median over all pairs,
+# sat at 3.456e-4 — about 1.38x below the plateau.
+#
+# CROSS-CHECKED out of sample: fitting to m inliers and measuring on the HELD-
+# OUT inliers of the same pair converges to 5.18e-4 at m = 120, and for pairs
+# with >= 150 inliers the stored in-sample median is 5.46e-4 — a ratio of 0.95.
+# In-sample and out-of-sample AGREE once there are enough inliers, which is
+# what identifies the plateau as unbiased rather than merely different. (At
+# small m the held-out estimate is biased the OTHER way, 7.06e-4 at m = 8,
+# because HEB-H pairs are not exact homographies and model mismatch inflates
+# held-out residuals. Neither estimator is trustworthy at low inlier counts,
+# which is why the fix is a floor and not a different estimator.)
+#
+# WHAT IT FIXES. Job 6698 (5 scenes, 25 % validation) refused ALL 14 arms, each
+# pinned to the identical grid-top selection: the optimum needed a scale
+# multiple >= 4.07 against the low s0, outside the paper's [1.0, 3.3] window.
+# At the plateau scale the SAME native half-width is k ~ 2.96 — interior. The
+# interval was never wrong and the optimum never moved; `s0` was low, so the
+# window sat below where the data's optimum already was. The old wide
+# (zeta_octaves = 7) grid had absorbed this silently — cutting the grid's reach
+# is what made it visible.
+#
+# THE COST, stated plainly: this is a VARIANCE-for-BIAS trade on `s0` and the
+# band. At a floor of 80 only ~84 of 2200 pairs per scene contribute a scale,
+# so across five validation scenes at 25 % sampling the band's 2 %/98 %
+# endpoints rest on a few dozen order statistics. It does NOT cost tuning
+# pairs: a pair with no scale is still scored — the floor only decides whose
+# sigma-hat^2 is believed. Since 2026-10-04 the two-view tuning reads no scale at all (the
+# sequential CV); this floor serves the windowed-bootstrap harness (Fig 1).
+#
+# WHY CONSUMER-SIDE. This is a distinct knob from heb_h_pools.toml's [pool]
+# min_gt_inliers = 5, which gates whether `gt_variance` is computed AT POOL
+# GENERATION. Applying the floor here needs no pool regeneration (107 GB for
+# HEB-H) and keeps the stored values intact for diagnostics.
+#
+# THE DEEPER FIX IS AVAILABLE AND IS NOT THIS. A per-pair scale unbiased at low
+# inlier counts needs the residuals of a GEOMETRIC fit, and RobustVisualGeometry
+# has one: a homography's `refit_kind` is `NonlinLsq` (chart_dof = 8), so its
+# default `refine!` is the chart-LM on the sl(3) chart minimising the
+# √w-weighted Sampson transfer rows (problems/homography.jl `residual_rows!` /
+# `residual_jacobian_rows!` on `ChartLm{<:HomographyManifold8, …}`, analytic
+# Jacobians, VGC's robust/lm_core.jl). With UNIT weights that is plain
+# nonlinear least squares on Sampson — the Gold Standard step — and it is the
+# same machinery every LO arm in this paper runs on (`Irls{K}`, `HQ{K}`,
+# `Gnc{…}`, the Welsch/Barron variants). The weighted ALGEBRAIC DLT
+# (`refine!(ws::DltWorkspace, …)`) binds only when a DltWorkspace is supplied
+# explicitly, being the more specific method.
+#
+# MEASURED, AND IT DOES NOT HELP (2026-10-04, 150 HEB-H pairs with >= 60 GT
+# inliers): the chart-LM refit gives the SAME held-out scale as the DLT seed to
+# within 1 % at every train size (m = 8: 7.738e-4 vs 7.729e-4; m = 120: 5.000e-4
+# vs 4.997e-4). On Hartley-normalised, inlier-only data at small residuals the
+# algebraic and geometric optima nearly coincide, and the LM refines toward the
+# LS optimum OF THE SAME POINTS — it adds no information, so it cannot shrink an
+# out-of-sample error.
+#
+# And the held-out estimate's decline with train size is not model error either:
+# it is the generalisation-variance term sqrt(1 + p/m) with p = 8 dof
+# (predicted 1.414 / 1.225 / 1.155 / 1.033 at m = 8 / 16 / 24 / 120; observed
+# 1.548 / 1.100 / 1.027 / 1.000). So BOTH routes are closed: the in-sample
+# estimate is already dof-corrected by nu = 2n - 8, and the held-out estimate is
+# variance-inflated at small m. There is no per-pair estimator fix.
+#
+# WHICH LEAVES HEB'S LABELS as the only remaining explanation for the 1.58x
+# climb of sigma-hat with inlier count: a pair with few labelled inliers is one
+# where HEB rejected most correspondences, so its surviving set is the more
+# aggressively censored, and a censored set has a smaller residual spread. That
+# is a property of which correspondences the DATASET labelled, which no
+# estimator of ours can undo. The floor is therefore the remedy rather than a
+# stopgap -- it selects the pairs whose labelled inlier set is not severely
+# censored.
+[scale_estimation]
+# Only pairs with at least this many GT inliers contribute to s0 and the band.
+# 80 is where the stored estimate plateaus (see the table above); 50 would give
+# k ~ 3.30, exactly the window's edge, which is too marginal to deploy.
+min_gt_inliers_for_scale = 80
+
+[arms]
+# THE equal-budget protocol: every LO arm gets the same number of model
+# updates (IRLS / HQ / BCD / LM iterations; GNC's total across rungs; the
+# PoseLib truncated LM; the classical LO's linear solves). Per-arm deviations
+# are declared in the arm's own table below, with their reason.
+# An EXPLICIT override of LocalOptimizationDoneRight's library default
+# (configs/default.toml [local_optimization] max_iter, the same value today),
+# declared here on purpose: the paper's budget is part of its protocol of
+# record — folded into every arm-building cell's run key and supplied to every
+# engine explicitly — so a change of the library default must not move the
+# paper's results silently.
+lo_iteration_budget = 25
+
+[arms.lebeda]
+# THE Lebeda ladder schedule (Lebeda, Matas, Chum, BMVC 2012, Alg. 3, as
+# RansacLib implements it): read by the two-view RansacLib arms (TLS-LO,
+# TLS-LO+; RansacLibLO `lsq_sq_loss_widths`). The values are RansacLib's
+# own `LORansacOptions` defaults (ransac.h): the multiplier scales the SQUARED
+# loss width (√2 on θ² = 2^(1/4) on θ), the ladder has 4 rungs after one fit
+# at θ², and each least-squares fit uses at most 7 × the minimal sample size
+# inliers, drawn at random.
+sq_loss_width_multiplier = 1.4142135623730951
+num_lsq_iterations = 4
+min_sample_multiplicator = 7
+non_min_sample_multiplier = 3
+# The per-call seed of the ladder's inlier-cap draw (RansacLib's mt19937).
+rng_seed = 0
+# Deviations from the budget, by design:
+#   * TLS-LO+ (full LO): its trials are DERIVED so a fully active call spends
+#     exactly the budget, 1 + trials·(2 + num_lsq_iterations) = 25 ⇒ 4 trials
+#     (src/arm_rosters.jl refuses a budget the formula cannot meet).
+#   * TLS-LO (the ladder alone): 1 + num_lsq_iterations = 5 updates — the
+#     ladder has no trials to spend the rest on (RansacLib's ILSQ ignores
+#     num_lo_trials).
+#   * TLS-LO+(ref): RansacLib's own defaults (10 trials, 61 updates), the
+#     supplement's reference row.
+
+[arms.gnc]
+# The continuation's ENTRY width (μ₀ = entry² = 256 on every problem class):
+# the anneal then completes within the budget; the Yang–Carlone r_max start
+# needs ~39 rungs and would end mid-anneal.
+entry = 16.0
+
+[arms.tls_adapt]
+# IG +TLSadapt: the loss width is re-anchored on the refined partition every
+# round, one PoseLib LM iteration per round, so rounds = budget / this.
+lm_iterations_per_round = 1
+
+# -----------------------------------------------------------------------------
+# Experiments
+# -----------------------------------------------------------------------------
+
+[basin_ladder]
+# fig2: the δ-perturbed ladder (run_basin_ladder.jl). The seed perturbations,
+# in degrees (the committed panel's octave grid); the success radius; the
+# perturbation/bootstrap seed (every draw is stable_seed(seed, scene, pair, δ));
+# the bootstrap resample count.
+deltas_deg = [1.0, 2.0, 4.0, 8.0, 16.0, 32.0, 64.0]
+success_deg = 10.0
+seed = 7
+n_bootstrap = 500
+
+[paper]
+# WHICH Welsch-HQ the paper reports (user decision, 2026-10-07). Two z-blocks
+# are recorded in every cell that declares `zero_clamp = ["IG  +Lift"]`: the
+# faithful Zach & Bourmaud limit ("IG  +Lift", the library default since VGC
+# dec9cd8) and the zero clamp ("IG  +Lift@zc", hreg = 0 at the lift's clamp,
+# VGC 92597af — the z-block of the ACCV submission's Welsch-HQ numbers,
+# reproduced bit for bit). The ACCV paper shows the zero-clamp arm as its
+# "Welsch-HQ", for consistency with the submission; the faithful arm stays in
+# the results and out of every paper figure, table and macro producer.
+# Presentation only — NOT folded into any run key (only [arms] is): it decides
+# which recorded arm src/figure_style.jl draws and labels "Welsch-HQ" (style,
+# MAIN_ARMS), which arm the timing run times as "Welsch-HQ"
+# (src/arm_rosters.jl TIMING_TAGS) and which arm the design table and the
+# anchoring reference curve read. The e2e and polish cells name their arms in
+# their own configs; test/runtests.jl checks they name this one.
+welsch_hq = "IG  +Lift@zc"

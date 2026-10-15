@@ -1,0 +1,34 @@
+# =============================================================================
+# sample_budget_protocol — THE sample-budget protocol of record, shared by
+# EVERY sample-budget experiment and folded into each experiment's run key
+# (as cv_protocol.toml is for CV). One schema for the type; per-dataset
+# sections carry the numbers.
+#
+# CHECKPOINT RULE (all datasets): selection tracks the running best every
+# batch_size budget units; the running best is LOCALLY OPTIMIZED at
+#   {batch_size} ∪ {lo_every, 2·lo_every, ..., sample_cap}.
+# Every arm runs at its OWN tuned operating point (operating-points sidecar or CV
+# record — [operating_points] in the experiment config); no self-CV.
+#
+# IMPLEMENTATION: the LO engine's budget engine (engines/budget.jl) walks the
+# pool's pre-scored model stream; LO refits the running best at each
+# checkpoint.
+# =============================================================================
+
+[phototourism]
+sample_cap = 4000        # pool stream depth (PT-E-SIFT-4K_pf3)
+batch_size = 100
+lo_every   = 500         # LO checkpoints {100, 500, 1000, ..., 4000}
+budget_unit = "models"   # Shekhovtsov's unit
+
+[heb]
+sample_cap = 4000        # HEB-H-SIFT-4K_pf3 test pools (4000-deep streams; configs/heb_h_pools.toml [pool] target)
+batch_size = 100
+lo_every   = 500         # LO checkpoints {100, 500, 1000, ..., 4000} — uniform with PT
+budget_unit = "models"
+
+[eth3d]
+sample_cap = 4000        # 4K trees (the pool configs' [pool] target)
+batch_size = 100
+lo_every   = 500         # LO checkpoints {100, 500, ..., 4000} — uniform with PT
+budget_unit = "models"

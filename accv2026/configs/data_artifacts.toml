@@ -1,0 +1,148 @@
+# =============================================================================
+# data_artifacts — THE catalog of the paper's published input data: what each
+# Zenodo-hosted Julia artifact (accv2026/Artifacts.toml, lazy, sha256-pinned)
+# holds, where it mounts, and from which config of record its file list is
+# DERIVED. Nothing here lists a scene or a file: the scenes are the registered
+# splits a pool config names (VisualGeometryEval configs/splits.toml), the
+# files the ones its reader opens.
+#
+#   scripts/tools/make_zenodo_artifacts.jl   builds the tarballs from this
+#                                            catalog and binds Artifacts.toml
+#   scripts/fetch_data.jl                    installs them and links their
+#                                            trees into the data/results roots
+#
+# Every artifact tree stores paths RELATIVE TO ITS MOUNT ROOT — `data` is
+# data_root() (the configs' pool_dir / [source] paths are relative to it),
+# `results` is results_root() (configs/pt_e_superansac.toml [stored] dir) —
+# so the author's tree, a packed artifact and a fetched view have one layout
+# and no path in the code depends on whose machine it runs on.
+#
+# Kinds (VisualGeometryEval DataArtifacts `artifact_files`):
+#   pool_sources  the raw files the pool producer `config` reads for the
+#                 scenes of `splits` (its [source] route: phototourism matches
+#                 + COLMAP models, HEB homography files, consolidated
+#                 correspondences)
+#   pools         the pool tree `config` writes ([experiment] pool_dir) for
+#                 those scenes: each light file, its residuals and the tree's
+#                 run records
+#   stored        the stored results directory a config names ([stored] dir)
+#
+# `record` groups artifacts into Zenodo records (each record at most 50 GB
+# and 100 files: Zenodo's default quota). The data are shared by two papers
+# (RSDR, NeurIPS 2026; LODR, ACCV 2026), so the names are dataset-centric and
+# the records split by licence: `pt` and `heb` CC BY 4.0 (our packaging; the
+# upstream data keep their terms), `eth3d` CC BY-NC-SA 4.0 (ETH3D's
+# share-alike). As packed 2026-10-07: `pt` 38.6 GB, `heb` 15.1 GB, `eth3d`
+# 16.5 GB (the pools in 20 parts, at most 1.41 GB each, 2026-10-15). `id` is the Zenodo record id (the draft's deposition id, which the
+# record keeps on publishing; the DOI 10.5281/zenodo.<id> is reserved);
+# `placeholder` is what make_zenodo_artifacts.jl binds for a record without
+# an id. The PhotoTourism and HEB pools are not published (1.6 TB and
+# 110 GB): the pool producer cells regenerate them from the raw inputs bit for
+# bit (pool_key-identical, fresh-machine test 2026-10-07). `required`
+# artifacts are what scripts/fetch_data.jl installs by default: with them
+# every figure and table regenerates (the PT-E and HEB-H pools by the pool
+# producer cells).
+# =============================================================================
+
+# The format and the code that reads it are VisualGeometryEval's DataArtifacts
+# (load_catalog, artifact_files, fetch_artifacts!, pack_artifacts,
+# catalog_violations); this table binds the catalog to its Artifacts.toml.
+# ACCV2026_ARTIFACTS_TOML names a copy with other URLs and the same hashes (the
+# fresh-machine test's file:// copy).
+[catalog]
+artifacts_toml = "../Artifacts.toml"
+artifacts_toml_env = "ACCV2026_ARTIFACTS_TOML"
+
+[records.pt]
+title = "Two-view robust estimation benchmark inputs: PhotoTourism (RootSIFT matches, COLMAP models)"
+license = "CC-BY-4.0"
+id = "23240462"
+placeholder = "ZENODO_RECORD_PT"
+
+[records.heb]
+title = "Two-view robust estimation benchmark inputs: HEB homographies and stored SupeRANSAC baseline results"
+license = "CC-BY-4.0"
+id = "23240467"
+placeholder = "ZENODO_RECORD_HEB"
+
+[records.eth3d]
+title = "Two-view robust estimation benchmark inputs: ETH3D SuperPoint+LightGlue correspondences and F hypothesis pools"
+license = "CC-BY-NC-SA-4.0"
+id = "23240469"
+placeholder = "ZENODO_RECORD_ETH3D"
+
+[artifacts.pt_raw_validation]
+kind = "pool_sources"
+config = "pt_e_pools"
+splits = ["phototourism:validation"]
+mount = "data"
+record = "pt"
+required = true
+what = "PhotoTourism validation scenes: RootSIFT matches + match confidences (matches.h5, match_conf.h5) and the COLMAP models (cameras/images/points3D.bin) the PT-E pools are generated from"
+provenance = "CVPR 2020 RANSAC tutorial data (IMC 2020 PhotoTourism train/val) and the IMC-PT 2020 TestData; COLMAP models of the IMC-PT release"
+
+[artifacts.pt_raw_test]
+kind = "pool_sources"
+config = "pt_e_pools"
+splits = ["phototourism:test"]
+mount = "data"
+record = "pt"
+required = true
+what = "PhotoTourism test scenes: RootSIFT matches + match confidences and COLMAP models (as pt_raw_validation)"
+provenance = "as pt_raw_validation"
+
+[artifacts.heb_raw]
+kind = "pool_sources"
+config = "heb_h_pools"
+splits = ["heb:validation", "heb:test"]
+mount = "data"
+record = "heb"
+required = true
+what = "HEB <scene>_homographies.h5 files (SIFT matches, GT homographies, per-match GT inlier flags) of the 10 scenes of the registered heb split"
+provenance = "Homography Estimation Benchmark (Barath et al., CVPR 2023), unchanged"
+
+[artifacts.eth3d_splg_csponds]
+kind = "pool_sources"
+config = "eth_f_pools"
+splits = ["eth3d:validation", "eth3d:test"]
+mount = "data"
+record = "eth3d"
+required = true
+what = "ETH3D SuperPoint+LightGlue consolidated correspondences (per-scene JLD2, depth-warp GT inlier labels, calibrations, GT poses) and the extraction manifest"
+provenance = "densematch-tools extract_splg_batch.py over the ETH3D high-res multi-view training images (REPRODUCE.md, Correspondences)"
+
+[artifacts.pt_e_superansac_stored]
+kind = "stored"
+config = "pt_e_superansac"
+mount = "results"
+record = "heb"
+required = true
+what = "the stored SupeRANSAC results behind Tab. 3 (per-scene zeta sweeps, loss-width tuning artifact, tuning units) with PROVENANCE.toml and SHA256SUMS"
+provenance = "the e2e cell of record e2e-3ea0c00581858498 (2026-10-04); configs/pt_e_superansac.toml [stored]"
+
+[artifacts.eth3d_f_pools_1k]
+kind = "pools"
+config = "eth_f_pools"
+splits = ["eth3d:validation", "eth3d:test"]
+# One artifact PER SCENE (eth3d_f_pools_1k_<scene>) plus eth3d_f_pools_1k_meta
+# (the run records): the single 16.5 GB tarball never got through Zenodo's
+# upload proxy (HTTP 502, 12 tries, 2026-10-09/10). The parts' union is the
+# tree of record (git-tree-sha1 642ccb5b737ff0756b704d99cf435be3383afad6);
+# fetch_artifacts! installs and links every part.
+split_by = "scene"
+# The part cap, in uncompressed bytes: courtyard (1.59 GB raw, 1.41 GB packed)
+# is the largest part Zenodo's proxy took; facade (9.06 GB) did not (HTTP 502,
+# 8 tries, 2026-10-15). A scene over the cap ships as sub-parts
+# eth3d_f_pools_1k_<scene>_part1..k, its residuals cut into equal chunks that
+# fetch_artifacts! reassembles byte for byte (VisualGeometryEval DataArtifacts).
+max_part_bytes = 1_600_000_000
+mount = "data"
+record = "eth3d"
+# REQUIRED: the pools of record are NOT regenerable bit for bit from the
+# correspondences with the current stack (fresh-machine test 2026-10-07: same
+# correspondences and first model, other model counts per pair — the F
+# minimal-solver output changed since their generation on 2026-10-04), so the
+# frozen pools ship and the ETH3D cells read them (no re-key).
+required = true
+what = "the ETH3D-F scoring pools (pool format 4: light records + residuals) and their run records"
+provenance = "scripts/scoring_pools.jl --config=eth_f_pools (2026-10-04, migrated to pool format 4 on 2026-10-05)"

@@ -1,0 +1,67 @@
+# =============================================================================
+# accv2026_eth_f_miscal — configuration of record for the ETH_F miscal cell.
+#
+# POLICY: configuration is TOML, data is JSON (cau-tooling EVAL-CONVENTIONS.md).
+# This file is the SINGLE source of truth for the run: the experiment file
+# derives its keyed output directory from a hash of THIS (effective) config,
+# and run_sequential_cv receives every knob from it. Every tuning parameter is
+# a configs/tuning.toml entry its [sequential_cv] names, with its cv_section's
+# cross-validation (registered scene split and validation sampling) layered
+# in: the EFFECTIVE config resolves each to its complete table — inherited
+# defaults included — so the run key and the recorded _config.toml cover
+# every one.
+# ETH3D-F cell (uncalibrated track on the outdoor dataset): composed score+LO miscalibration with the FUNDAMENTAL matrix.
+# First run on the vgc07-migrated pool tree (2026-08-31 overnight fleet).
+# =============================================================================
+
+[experiment]
+dataset = "eth3d"
+matcher = "splg"
+problem = "F"
+# RELATIVE to data_root() (data/README.md) — machine-portable identity.
+# 2026-09-08: the NATIVE pool tree (scoring_data_{E,F}; the *_vgc07 copies are a
+# stale layout and a different pool generation — the runs on them are superseded).
+pool_dir = "datasets/eth3d/derived/splg/scoring_data_F_pf3"   # pool format 3 (configs/eth_f_pools.toml)
+oracle_tag = "ETH_F"
+
+# Protocols of record folded into the run key (src/protocol_folds.jl): the
+# cv_protocol.toml section whose cross-validation (registered scene split +
+# validation sampling) this cell tunes on, layered into every
+# configs/tuning.toml entry [sequential_cv] names, and miscal_protocol.toml
+# (the zeta ladder).
+# THE declaration of the choice; code reads it.
+[protocol]
+cv_section = "eth3d"
+
+# SEQUENTIAL CV (notes/sequential_cv.md; scripts/tools/run_sequential_cv.jl):
+# each selector's width on the selection-only error, then every refiner's
+# width at its selector's a*, then the ζ evaluation. The entries are
+# configs/tuning.toml's; the cv_section above is layered into each.
+[sequential_cv]
+# The objective-matched Stu-tU-BCD (arm_rosters.jl): "IG  +BCD@a*", its refit
+# half-width PINNED to the IG a* (ζ·a* under ζ), never tuned — evaluated beside
+# the tuned "IG  +BCD". Opt-in: declaring it re-keys this cell only (its
+# consumers fold the run without it, protocol_folds.jl operating_points_run).
+objective_matched = ["IG  +BCD"]
+# The research-only zero-clamp Welsch-HQ (arm_rosters.jl, welsch_zero_clamp.jl):
+# "IG  +Lift@zc", the same arm on the z-block of the ACCV camera-ready numbers
+# (hreg = 0 at the lift's clamp, VGC 92597af), TUNED (its own width CV) beside
+# the faithful arm. Opt-in: declaring it re-keys this cell only (its consumers
+# fold the run without it, operating_points_run). Not "MSAC +Lift": the
+# zero-clamp rerun (2026-10-04) re-ran "IG  +Lift" alone, so the published
+# MSAC +Lift is the limit-era (faithful) arm's.
+zero_clamp = ["IG  +Lift"]
+scorer = "scorer"
+refiner = { scale_multiple = "refiner_scale_multiple", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
+cache_validation = true
+decode_parallel = 4
+
+[render]
+deploy = true
+
+[render.main]
+# The cell's MAIN-PAPER row of the Fig 3 grid (configs/fig3_miscal_grid.toml,
+# 2026-10-04: ETH3D F replaces the shelved 7-Scenes P3P row): the Table 1 roster
+# gate (the renderer's own defaults), the mAA@10° row.
+panel = "panel_lo_miscal_eth_F_main.tex"
+rows = ["maa"]

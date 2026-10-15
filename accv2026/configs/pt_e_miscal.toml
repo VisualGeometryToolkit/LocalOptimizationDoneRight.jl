@@ -1,0 +1,58 @@
+# =============================================================================
+# pt_e_miscal — the tuning of record of the PhotoTourism-E SIFT-4K sequential
+# CV (scripts/fig3_composed_miscal.jl, stage cv): which tuning-protocol
+# entries it runs and which cv_protocol.toml split section it layers, folded by
+# src/protocol_folds.jl `fold_sequential_cv!` exactly as a dataset cell's
+# config is. RobustVisualGeometry's `[[tuning_constants]]` cites this file for
+# the essential class's cross-validated value (its `tuning.config`). Like every
+# dataset cell, this effective config keys fig3's run directory
+# (`sequential_cv_dir(cfg)`, src/protocol_folds.jl) — the
+# pool it names included; the test scenes are its cross-validation's.
+# =============================================================================
+
+[experiment]
+dataset = "phototourism"
+matcher = "sift"
+problem = "E"
+# THE PT-E pool (registry.jl EXP_POOL_PT_E reads it here), RELATIVE to
+# data_root() for machine-portable identity. `_pf3` is the pool_format 3
+# generation produced by scripts/pt_e_pools.jl; the unsuffixed tree is the
+# retired pre-2026-10-01 one, kept as the old side of the rerun comparison
+# and REFUSED on read (pool format v1).
+pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"
+
+[protocol]
+cv_section = "phototourism"
+
+# SEQUENTIAL CV (notes/sequential_cv.md; scripts/tools/run_sequential_cv.jl),
+# replacing the [tuning.default] product grid on 2026-10-04 — the HEB-H
+# protocol, unchanged: each selector's width (IG outlier half-width, MSAC loss
+# width) on the selection-only error, then every refiner's width at its
+# selector's a*, then the ζ evaluation. Entries are configs/tuning.toml's; the
+# cv_section above is layered into each (src/protocol_folds.jl).
+[sequential_cv]
+# The objective-matched Stu-tU-BCD (arm_rosters.jl): "IG  +BCD@a*", its refit
+# half-width PINNED to the IG a* (ζ·a* under ζ), never tuned — evaluated beside
+# the tuned "IG  +BCD". Opt-in: declaring it re-keys this cell only (its
+# consumers fold the run without it, protocol_folds.jl operating_points_run).
+objective_matched = ["IG  +BCD"]
+# The research-only zero-clamp Welsch-HQ (arm_rosters.jl, welsch_zero_clamp.jl):
+# "IG  +Lift@zc", the same arm on the z-block of the ACCV camera-ready numbers
+# (hreg = 0 at the lift's clamp, VGC 92597af), TUNED (its own width CV) beside
+# the faithful arm. Opt-in: declaring it re-keys this cell only (its consumers
+# fold the run without it, operating_points_run). Not "MSAC +Lift": the
+# zero-clamp rerun (2026-10-04) re-ran "IG  +Lift" alone, so the published
+# MSAC +Lift is the limit-era (faithful) arm's.
+zero_clamp = ["IG  +Lift"]
+scorer = "scorer"
+refiner = { scale_multiple = "refiner_scale_multiple", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
+# The [phototourism] 25 % validation sample, decoded once and held in RAM. A
+# scene is decoded in FULL before the sample is taken (PT pools are 30-110 GB),
+# so at most 4 decode at a time: peak ~4 whole scenes + the cache.
+cache_validation = true
+decode_parallel = 4
+# The anchoring ablation (fig_anchoring.jl) evaluates the scale-multiple arms at
+# a FIXED external scale s0. On PhotoTourism that scale is the ORACLE variance:
+# σ̂² per pair from the SfM-track-paired detections under the bundle-adjusted
+# pose (VisualGeometryEval Datasets phototourism.jl), so s0 = reference_scale of the validation pairs'.
+plugin_scale = "oracle_gt_variance"

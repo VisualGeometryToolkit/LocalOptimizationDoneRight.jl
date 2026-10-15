@@ -1,0 +1,196 @@
+# =============================================================================
+# configs/default.toml — the defaults of record of LocalOptimizationDoneRight's
+# local optimizers: their keyword defaults and the cross-validated operating
+# points ([[tuning_constants]]).
+#
+# Read through ONE mechanism, `_config_default(table, key)`
+# (src/config_defaults.jl, VisualGeometryCore `toml_default`), which THROWS on
+# a missing table or key: there is no second set of Julia literals. Parsed at
+# precompile (`include_dependency`): an edit forces a recompile.
+# =============================================================================
+
+[local_optimization.poselib]
+# The cheirality vote of an E seed's decomposition (the PoseLib E refiners)
+# strides its points down to about this many (a 4-way majority vote is
+# insensitive to the subsample).
+cheirality_vote_points = 256
+
+[local_optimization.poselib_adapt]
+max_iter = 25        # TOTAL LM budget across rounds (the evaluation's equal LO budget)
+rounds = 5           # scale re-estimation rounds of PoseLibLmAdaptLossWidth (max_iter ÷ rounds LM iterations each)
+min_support = 8      # fewer within-width residuals than this ⇒ no scale re-estimate (partition too thin)
+# The refit protocol's operating scale multiple: the default scale multiple of
+# the re-formed width, and the scale multiple at which the delivered loss width
+# is read as an outlier half-width for the consensus-scale bootstrap.
+operating_scale_multiple = 2.5
+
+# TOML has no NaN: where a struct field is NaN-by-default (`Gnc.entry`) the file
+# spells the meaning (`"r_max"`) and the loader maps it.
+# -----------------------------------------------------------------------------
+# The strategies' internals (src/strategies/types.jl). The keyword defaults of
+# each strategy constructor read its table; BarronHQ's `alpha` is REQUIRED per call. A
+# strategy's width (`scale_multiple` or `loss_width`) is deliberately absent:
+# given none it follows the scorer's decision point, and a scale multiple is
+# cross-validated per MODEL CLASS (see [[tuning_constants]] below), never a
+# strategy default.
+# -----------------------------------------------------------------------------
+[local_optimization.student_t_uniform]
+max_iter = 5
+
+[local_optimization.hq]
+max_iter            = 25
+max_iter_smooth_tls = 40         # the smooth-TLS loss needs the longer schedule
+mu                  = 1.0e-9
+init                = "flat"
+
+[local_optimization.stu_tu_bcd]
+max_iter = 25
+tol      = 0.0
+
+[local_optimization.welsch_hq_newton]
+max_iter = 25
+mu       = 1.0e-9
+
+[local_optimization.welsch_hq_ecm]
+max_iter = 25
+mu       = 1.0e-9
+
+[local_optimization.barron_hq]
+max_iter = 25
+mu       = 1.0e-9
+
+[local_optimization.gm_hq_eps]
+# `scale_multiple` sets loss_width = scale_multiple·ŝ (no width: the scorer's
+# decision point) — a loss-width multiple, not the half-weight depth
+# HQ{GemanMcclureShape} reads
+max_iter = 40
+mu       = 1.0e-9
+
+[local_optimization.gnc]
+max_iter = 25                    # TOTAL model-update budget across all rungs
+factor   = 1.4                   # μ-schedule factor
+entry    = "r_max"               # entry-breadth policy; "r_max" = NaN = Yang–Carlone seed
+budget   = "parity"              # "parity" | "converged"
+
+[local_optimization.stu_tu_hq_tabulated]
+max_iter   = 25
+gamma      = 1.5
+mu         = 1.0e-9
+lut_points = 32
+patience   = 5
+
+[local_optimization.stu_tu_regemm]
+max_iter    = 100
+eta         = 0.5
+lut_points  = 128
+adapt_scale = true
+
+[local_optimization.barron_adaptive]
+max_iter   = 25
+alpha_min           = -10.0
+truncation_multiple = 10.0       # the truncated normaliser's domain, in loss widths
+n_sub               = 256
+
+# -----------------------------------------------------------------------------
+# Tuning constants — THE single home of the cross-validated Welsch-HQ
+# `scale_multiple` of the paper's arms, with codified provenance.
+# `tuning_constant(problem, shape; features, dataset)` resolves (problem, shape,
+# features, dataset) → (problem, shape, features, "any") → (problem, shape,
+# "any", "any"); `shape` never wildcards. `scale_multiple` is VGC's deployment
+# multiple: the loss width is scale_multiple·ŝ, partition-anchored at the seed
+# partition's Student-t plug-in ŝ. `shape` is the loss SHAPE the value was
+# cross-validated for, in the same tag vocabulary as a strategy's `loss` key. A
+# scale multiple is an operating point for ONE shape, not a unit that converts
+# between them, so it is looked up BY shape and a strategy deploying a
+# different one is refused rather than served a number nobody validated for
+# it. (An arm that states its scale multiple in another currency — the
+# GM/Cauchy half-weight depth — converts it where it reads it; that is per-arm
+# arithmetic and is not what `shape` records.)
+#
+# PROVENANCE — one source of truth, each entry exactly one of:
+#   tuning   = { config, name, hash, arm }   a VALIDATED value: the deployed
+#              optimum of arm `arm` of the product tuning `[tuning.<name>]` of
+#              the cell config of record `config` (a path relative to the
+#              directory holding the stack checkouts), whose spec hashes to
+#              `hash` (VisualGeometryEval `tuning_hash`; the run's
+#              sidecar records the same hash, its grid specs and its run key).
+#              Chain: deployed scale_multiple → this entry → the [tuning] spec → its grids
+#              → the run.
+#              `pending_hash` (optional): the config of record's spec has since
+#              moved to this hash and the value awaits re-validation under it;
+#              `hash` keeps naming the spec that PRODUCED the value. Value and
+#              hash change together once the re-validation runs, and
+#              `pending_hash` goes.
+#   transfer = { problem, features, dataset } a TRANSFERRED value: the `scale_multiple` and
+#              provenance of the registry entry of the same shape at that key
+#              (resolved at load, transitively; `scale_multiple` is NOT restated, and a
+#              dangling or cyclic reference is refused at load).
+# An audit re-derives each validated entry's spec hash from its config and
+# checks the value against the cited run's sidecar.
+# -----------------------------------------------------------------------------
+[[tuning_constants]]
+# The PT-E-SIFT-4K product tuning (accv2026 fig3 stage cv): THE cross-validated
+# essential class value.
+problem   = "essential"
+features  = "sift"
+dataset   = "phototourism"
+shape     = "welsch"
+scale_multiple = 1.597
+tuning    = { config = "LocalOptimizationDoneRight/accv2026/configs/pt_e_miscal.toml", name = "default", hash = "a63bf6e4d2759720", arm = "IG  +Lift", pending_hash = "c8ab3b542f3fb519" }
+
+[[tuning_constants]]
+# The essential class tier deploys the PT-E cell's value.
+problem   = "essential"
+features  = "any"
+dataset   = "any"
+shape     = "welsch"
+transfer  = { problem = "essential", features = "sift", dataset = "phototourism" }
+
+[[tuning_constants]]
+problem   = "essential"
+features  = "splg"
+dataset   = "scannet1500"
+shape     = "welsch"
+scale_multiple = 1.795
+tuning    = { config = "LocalOptimizationDoneRight/accv2026/configs/accv2026_sn_e_miscal.toml", name = "default", hash = "a63bf6e4d2759720", arm = "IG  +Lift", pending_hash = "d71dbf14fa315cd1" }
+
+[[tuning_constants]]
+# until the PT-F product tuning lands
+problem   = "fundmat"
+features  = "any"
+dataset   = "any"
+shape     = "welsch"
+transfer  = { problem = "essential", features = "any", dataset = "any" }
+
+[[tuning_constants]]
+# until the HEB-H rotation-only product tuning succeeds at its gate
+problem   = "homography"
+features  = "any"
+dataset   = "any"
+shape     = "welsch"
+transfer  = { problem = "essential", features = "any", dataset = "any" }
+
+[[tuning_constants]]
+# The radial pipeline deploys the homography class's value; no radial cell exists
+problem   = "radial_homography"
+features  = "any"
+dataset   = "any"
+shape     = "welsch"
+transfer  = { problem = "homography", features = "any", dataset = "any" }
+
+[[tuning_constants]]
+# The radial-camera arm deploys the homography class's value until the
+# BlobBoards calibration-set product tuning lands
+problem   = "radial_camera"
+features  = "any"
+dataset   = "any"
+shape     = "welsch"
+transfer  = { problem = "homography", features = "any", dataset = "any" }
+
+[[tuning_constants]]
+# no PnP cell tuned yet (candidate data: BlobBoards)
+problem   = "absolute_pose"
+features  = "any"
+dataset   = "any"
+shape     = "welsch"
+transfer  = { problem = "essential", features = "any", dataset = "any" }
