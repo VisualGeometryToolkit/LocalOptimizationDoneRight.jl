@@ -1,30 +1,17 @@
-# =============================================================================
-# accv2026 — the ACCV 2026 research project ("Score Sharp, Refine Soft, Polish
-# Hard"): drivers (scripts/), configs of record (configs/), data symlinks
-# (data/), the paper (paper/), notes, and the classical RansacLib LO baseline
-# (lib/RansacLibLO, a vendored C++ shim — unregistered, built locally by
-# `Pkg.build("RansacLibLO")`). A DrWatson-style project: it devs the repo's
-# package (LocalOptimizationDoneRight) and RansacLibLO by relative path and
-# carries every dependency the drivers need; the package's own Project.toml
-# stays a library.
-#
-#   cd accv2026 && julia --project=. scripts/<exp>.jl --plan
-#   julia --project=. test/runtests.jl          # the project's tests
-# =============================================================================
 name = "ACCV2026"
 
 [deps]
-Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
-FileWatching = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
+FileWatching = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LocalOptimizationDoneRight = "87a2e6a3-7afc-471f-bd1b-aa3740a29cd9"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 MAT = "23992714-dd62-5051-b70f-ba57cb901cac"
 PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"
@@ -35,30 +22,33 @@ RansacLibLO = "9f3d57fc-bc16-4e17-8696-c68eb0f587f4"
 RansacScoringDoneRight = "e23d4225-f201-4c3a-a297-7efae5f2deeb"
 RobustVisualGeometry = "48970fad-9a21-401c-bf6c-679fa4f2bd7f"
 Rotations = "6038ab10-8711-5258-84ad-4b1120ba62dc"
-LocalOptimizationDoneRight = "87a2e6a3-7afc-471f-bd1b-aa3740a29cd9"
 StableRNGs = "860ef19b-820b-49d6-a774-d7a799459cd3"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 VisualGeometryCore = "297d53b8-c8d7-4cd7-a9af-68e656508a81"
 VisualGeometryEval = "3a96b074-0aeb-4323-98af-032cad4f5882"
 VisualGeometryIo = "d0441031-17df-4f07-bc88-8d8f5a818e7b"
 
-[sources]
-LocalOptimizationDoneRight = {path = ".."}
-RansacLibLO = {path = "lib/RansacLibLO"}
+[sources.LocalOptimizationDoneRight]
+path = ".."
+
+[sources.RansacLibLO]
+path = "lib/RansacLibLO"
 
 [compat]
-CUDA = "5.11"
+CUDA = "5.11, 6"
 DataFrames = "1.8"
 Dates = "1"
 DelimitedFiles = "1"
-FileWatching = "1"
 DrWatson = "2.19"
+FileWatching = "1"
 HDF5 = "0.17.3"
 JLD2 = "0.6"
 LinearAlgebra = "1"
+LocalOptimizationDoneRight = "0.1"
 Logging = "1"
 MAT = "0.12.1"
 PGFPlotsX = "1.6"
@@ -70,13 +60,12 @@ RansacLibLO = "0.2.0"
 RansacScoringDoneRight = "0.1"
 RobustVisualGeometry = "0.1"
 Rotations = "1.7"
-LocalOptimizationDoneRight = "0.1"
 StableRNGs = "1"
 StaticArrays = "1.9"
 Statistics = "1"
 StructArrays = "0.7"
-Test = "1"
 TOML = "1"
+Test = "1"
 VisualGeometryCore = "0.1"
 VisualGeometryEval = "0.1"
 VisualGeometryIo = "0.1"
