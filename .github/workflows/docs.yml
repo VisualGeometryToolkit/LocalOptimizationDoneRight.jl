@@ -38,3 +38,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
         run: julia --project=docs docs/make.jl
+  # The toolkit portal (visualgeometrytoolkit.github.io) mirrors this site:
+  # ask it to rebuild once the site is deployed. PORTAL_DISPATCH_TOKEN is a
+  # fine-grained token with Actions write on the portal repository.
+  portal:
+    needs: docs
+    if: github.event_name != 'pull_request' && vars.PORTAL_DISPATCH == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PORTAL_DISPATCH_TOKEN }}
+          repository: VisualGeometryToolkit/visualgeometrytoolkit.github.io
+          event-type: docs-updated
