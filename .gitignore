@@ -62,3 +62,6 @@ __pycache__/
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 .claude/worktrees/
+
+# private reviewer correspondence; kept on disk, never committed
+accv2026/rebuttal/
