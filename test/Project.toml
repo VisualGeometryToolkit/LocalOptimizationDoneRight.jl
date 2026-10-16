@@ -1,0 +1,38 @@
+# The test environment (Pkg >= 1.11 form; replaces [extras]/[targets]). A
+# workspace member of ../Project.toml, so Pkg.test() runs it without a sandbox.
+[deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+ExplicitImports = "7d51a73a-1435-4ff3-83d9-f097790105c7"
+FiniteDiff = "6a86dc24-6348-571c-b903-95158fe2bd41"
+JET = "c3a54625-cd67-489e-a8e7-0a5a0ff4e31b"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+LocalOptimizationDoneRight = "87a2e6a3-7afc-471f-bd1b-aa3740a29cd9"
+PoseLib = "a8c7e0b4-3d2f-4f1c-9a1e-7b2d9c8f4a3b"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+RobustVisualGeometry = "48970fad-9a21-401c-bf6c-679fa4f2bd7f"
+Rotations = "6038ab10-8711-5258-84ad-4b1120ba62dc"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
+VisualGeometryCore = "297d53b8-c8d7-4cd7-a9af-68e656508a81"
+
+[sources]
+LocalOptimizationDoneRight = {path = ".."}
+
+[compat]
+Aqua = "0.8.18"
+ExplicitImports = "1"
+FiniteDiff = "2"
+JET = "0.12"
+LinearAlgebra = "1"
+PoseLib = "0.1"
+Random = "1"
+RobustVisualGeometry = "0.1"
+Rotations = "1"
+StaticArrays = "1.9"
+StructArrays = "0.7"
+Test = "1"
+TOML = "1.0.3"
+VisualGeometryCore = "0.1"
+julia = "1.12"

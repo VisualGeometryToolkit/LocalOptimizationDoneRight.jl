@@ -18,9 +18,10 @@
 *.png
 *.svg
 
-# Julia. The package Manifest is not pinned; the paper's environments
-# (accv2026/Manifest.toml, accv2026/envs/superansac/Manifest.toml) are tracked.
-/Manifest.toml
+# Julia. The repository is one Pkg workspace (the package, test/, docs/ and
+# accv2026 with its members) resolved in one root Manifest, which is not
+# committed; no member has a Manifest of its own.
+Manifest.toml
 Manifest-v*.toml
 LocalPreferences.toml
 /docs/build/

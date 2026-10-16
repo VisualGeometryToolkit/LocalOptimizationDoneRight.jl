@@ -38,8 +38,11 @@ jobs:
         with:
           version: ${{ matrix.version }}
       - uses: julia-actions/cache@v2
-      # CauRegistry as well as General until the stack is in General.
-      - uses: julia-actions/julia-buildpkg@v1
-        with:
-          localregistry: https://github.com/prittjam/CauRegistry.jl.git
+      # CauRegistry as well as General until the stack is in General. The repo is
+      # one workspace: instantiating the test member resolves every member into
+      # the one root Manifest and installs what the tests need.
+      - name: Instantiate the test environment
+        run: |
+          julia -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl")'
+          julia --project=test -e 'using Pkg; Pkg.instantiate()'
       - uses: julia-actions/julia-runtest@v1

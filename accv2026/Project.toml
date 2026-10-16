@@ -81,3 +81,8 @@ VisualGeometryCore = "0.1"
 VisualGeometryEval = "0.1"
 VisualGeometryIo = "0.1"
 julia = "1.12"
+
+# Members of the repository workspace (../Project.toml): RansacLibLO and the
+# SupeRANSAC environment resolve with everything else in the one root Manifest.
+[workspace]
+projects = ["lib/RansacLibLO", "envs/superansac"]

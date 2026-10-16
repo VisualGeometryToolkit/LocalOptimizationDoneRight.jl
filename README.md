@@ -7,8 +7,9 @@ Code for the ACCV 2026 paper "Robust Local Optimization Done Right" (Score
 Sharp, Refine Soft; [arXiv](https://arxiv.org/abs/2610.05743)), in two halves:
 the registered package `LocalOptimizationDoneRight` — the paper's local
 optimizers, ready to compose into any RANSAC of the stack — and the research
-project `accv2026/` that produces every figure and table. Both pin their
-environment in a tracked `Manifest.toml` so the results can be rebuilt.
+project `accv2026/` that produces every figure and table. Both, with the
+package's tests and docs, are one Pkg workspace: they resolve together, in one
+`Manifest.toml` at the repository root that is not committed.
 
 ## Install
 
