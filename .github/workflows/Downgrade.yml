@@ -1,0 +1,52 @@
+name: Downgrade
+
+# The package's tests at the OLDEST versions its [compat] allows: Resolver.jl
+# (julia-actions/julia-downgrade-compat) resolves the package and its test/
+# member to their compat floors, and the suite runs on that Manifest. A floor
+# that is too low — the code uses something a newer dependency added — fails
+# here instead of on a user's machine. Floors are raised by hand, in the commit
+# that starts using the newer feature (the cau-release policy of 2026-10-16).
+#
+# The workspace is narrowed to the package and test/ in this checkout: the
+# docs, paper and other members are not resolved at their floors. Julia 1.12:
+# Resolver.jl does not run on 1.13 yet (UndefRefError in Pkg's registry code).
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**', '**.md']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
+
+jobs:
+  downgrade:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      BB_TEST_SKIP_GPU: '1'          # BlobBoards: a hosted runner has no GPU
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+      - uses: julia-actions/cache@v2
+      # CauRegistry as well as General until the stack is in General.
+      - name: Registries
+        run: julia -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl")'
+      - name: Narrow the workspace to the package and test/
+        run: julia -e 'using TOML; p = TOML.parsefile("Project.toml"); p["workspace"]["projects"] = ["test"]; open(io -> TOML.print(io, p), "Project.toml", "w")'
+      - uses: julia-actions/julia-downgrade-compat@v2
+        with:
+          mode: deps
+          projects: ., test
+          julia_version: '1.12'
+      - name: Test at the compat floors
+        run: |
+          julia --color=yes --project=. -e 'using Pkg; Pkg.test(; allow_reresolve = false, force_latest_compatible_version = false)' 2>&1 | tee test.log
+          # A ReTestItems suite that finds no test items "passes" with 0 tests.
+          if grep -q 'scan for test items' test.log && ! grep -qE 'Scheduling [1-9][0-9]* tests' test.log; then
+            echo "::error::the suite ran no test items"; exit 1
+          fi
