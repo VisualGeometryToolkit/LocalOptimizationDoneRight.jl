@@ -46,7 +46,7 @@ jobs:
       - name: Test at the compat floors
         run: |
           julia --color=yes --project=. -e 'using Pkg; Pkg.test(; allow_reresolve = false, force_latest_compatible_version = false)' 2>&1 | tee test.log
-          # A ReTestItems suite that finds no test items "passes" with 0 tests.
+          # A ReTestItems suite that finds no test items reports success with 0 tests.
           if grep -q 'scan for test items' test.log && ! grep -qE 'Scheduling [1-9][0-9]* tests' test.log; then
             echo "::error::the suite ran no test items"; exit 1
           fi
