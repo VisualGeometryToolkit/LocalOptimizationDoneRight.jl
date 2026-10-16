@@ -11,7 +11,7 @@ makedocs(;
     format=Documenter.HTML(;
         assets=["assets/landing_tagline.css", "assets/landing_tagline.js"],
         prettyurls=get(ENV, "CI", "false") == "true" || get(ENV, "LODR_DOCS_DEPLOY", "0") == "1",
-        canonical="https://visualgeometrytoolkit.github.io/LocalOptimizationDoneRight.jl/",
+        canonical="https://localoptimizationdoneright.github.io/",
         edit_link="main",
     ),
     plugins=[LandingPage(), CodeBlocks()],
@@ -31,15 +31,18 @@ makedocs(;
     ],
 )
 
-# The site is this repository's project page
-# (https://visualgeometrytoolkit.github.io/LocalOptimizationDoneRight.jl/):
-# unversioned, at the root of the `gh-pages` branch. CI deploys it
-# (.github/workflows/docs.yml) with the DOCUMENTER_KEY deploy key of this
-# repository; LODR_DOCS_DEPLOY=1
+# The site is the localoptimizationdoneright organization page (https://localoptimizationdoneright.github.io):
+# unversioned, at the root of that repository's `main` branch. CI deploys it
+# (.github/workflows/docs.yml) with DOCUMENTER_KEY, the private half of a
+# write-enabled deploy key of that repository. Documenter deploys only when the
+# building repository's name occurs in the target URL; the site is another
+# repository, so the deploy config names it as the target. LODR_DOCS_DEPLOY=1
 # selects pretty URLs for a local build.
+const SITE_REPO = "localoptimizationdoneright/localoptimizationdoneright.github.io"
 deploydocs(;
-    repo="github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl.git",
-    branch="gh-pages",
+    repo="github.com/$(SITE_REPO).git",
+    branch="main",
     devbranch="main",
     versions=nothing,
+    deploy_config=Documenter.GitHubActions(SITE_REPO, get(ENV, "GITHUB_EVENT_NAME", ""), get(ENV, "GITHUB_REF", "")),
 )

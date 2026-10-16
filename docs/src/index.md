@@ -169,6 +169,13 @@ requirements, and the paper evaluates them separately.
   half-quadratically lifted LO substantially outperforms a strong baseline on
   essential-matrix estimation.
 
+## Related projects
+
+Part of the [Visual Geometry Toolkit](https://visualgeometrytoolkit.github.io), Julia packages for robust visual geometry from Kiel University:
+
+- [BlobBoards](https://blobboards.github.io): robust markers for accurate pose (BMVC 2026)
+- [RANSAC Scoring Done Right](https://ransacscoringdoneright.github.io): marginalize the scale, then choose the inliers (NeurIPS 2026)
+
 ## Citation
 
 The paper is on arXiv ([PDF](https://arxiv.org/pdf/2610.05743)). If you use this

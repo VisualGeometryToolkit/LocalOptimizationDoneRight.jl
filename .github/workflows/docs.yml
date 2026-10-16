@@ -1,8 +1,8 @@
 name: Docs
 
-# Builds the documentation and deploys it to this repository's gh-pages
-# branch, served at https://visualgeometrytoolkit.github.io/LocalOptimizationDoneRight.jl/ . DOCUMENTER_KEY is the
-# private half of a write-enabled deploy key of this repository.
+# Builds the documentation and deploys it to the localoptimizationdoneright organization page,
+# https://localoptimizationdoneright.github.io (the `main` branch of localoptimizationdoneright/localoptimizationdoneright.github.io).
+# DOCUMENTER_KEY is the private half of a write-enabled deploy key of that repository.
 on:
   push:
     branches:

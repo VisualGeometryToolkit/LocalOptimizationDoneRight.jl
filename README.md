@@ -1,7 +1,7 @@
 # Robust Local Optimization Done Right — ACCV 2026
 
 [![CI](https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/actions/workflows/CI.yml)
-[![Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://visualgeometrytoolkit.github.io/LocalOptimizationDoneRight.jl/)
+[![Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://localoptimizationdoneright.github.io)
 
 Code for the ACCV 2026 paper "Robust Local Optimization Done Right" (Score
 Sharp, Refine Soft; [arXiv](https://arxiv.org/abs/2610.05743)), in two halves:
