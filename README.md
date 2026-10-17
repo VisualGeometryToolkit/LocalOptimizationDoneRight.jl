@@ -3,6 +3,34 @@
 [![CI](https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/actions/workflows/CI.yml)
 [![Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://localoptimizationdoneright.github.io)
 
+## Abstract
+
+**[Robust Local Optimization Done Right](https://arxiv.org/abs/2610.05743)** — James Pritts and Kevin Köser. *ACCV 2026*. [Project page](https://localoptimizationdoneright.github.io).
+
+RANSAC scoring and local optimization (LO) impose different robustness
+requirements, motivating the separation of hypothesis selection from
+refinement. We systematically isolate the effects of robust-loss shape,
+incorrectly specified inlier scales, and optimization strategy on essential
+matrix, fundamental matrix, and homography estimation. A profile-marginal score
+marginalizes the nuisance inlier scale and selects an inlier partition, from
+which we estimate the scale that sets the LO loss width; this makes LO robust
+to an inlier scale specified too large, whereas one specified too small
+degrades selection itself. Refinement needs gradient from correspondences the
+seed currently rejects: optimizers that reweight from current residuals stay
+pinned to their seed, whereas methods with broad basins recover strongly
+perturbed seeds yet degrade accurate score-selected hypotheses, so basin size
+alone is insufficient to assess RANSAC LO. Joint half-quadratic optimization
+balances the two and is the most consistent strategy across model classes. An
+optimizer matched to the profile-marginal score, which never decreases it, does
+not reach the best accuracy, challenging the prescription that scoring and
+refinement objectives should match. Composed from these findings, our RANSAC
+reduces the median essential-matrix pose error of a state-of-the-art RANSAC on
+PhotoTourism from 2.23 degrees to 1.58 degrees with a correctly specified
+inlier scale and from 38 degrees to 6.2 degrees when it is grossly misspecified
+(128x too large).
+
+## Overview
+
 Code for the ACCV 2026 paper "Robust Local Optimization Done Right" (Score
 Sharp, Refine Soft; [arXiv](https://arxiv.org/abs/2610.05743)), in two halves:
 the registered package `LocalOptimizationDoneRight` — the paper's local
