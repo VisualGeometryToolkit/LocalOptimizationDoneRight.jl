@@ -23,11 +23,11 @@ zeta_octaves = 7.0
 # evaluation — the panel's dashed WITHOUT side): fig3's tuned operating points
 # read out on the same ladder, test scenes and seeds, with the scale-multiple
 # arms' loss width delivered through `scale_interface` instead of the consensus
-# set. "fixed_scale": a fixed external scale (VisualGeometryEval
+# set. "fixed_scale": a fixed external scale (VisualGeometryToolkitEval
 # `miscal_evaluation_refit` `plugin_scale`), the plug-in being the tuning's
 # validation reference scale s0 corrupted per column (ζ·s0) — the loss width
 # slides with ζ. The production evaluation's interface, the WITH side, is
-# "consensus_anchored". (The labels are VisualGeometryCore's scale-interface
+# "consensus_anchored". (The labels are VisualGeometryToolkitCore's scale-interface
 # tags: `FixedScale` → "fixed_scale", `ConsensusAnchored` → "consensus_anchored".)
 # Not folded into any run key (only [protocol] is); recorded in the evaluation's
 # artifact.

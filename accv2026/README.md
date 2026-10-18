@@ -3,7 +3,7 @@
 The paper project of LocalOptimizationDoneRight: every figure, table and
 number of `paper/main.tex` and `paper/supplement.tex` comes from a driver under
 `scripts/` run on a config of record under `configs/`, laid out by the stack's
-paper-project conventions (VisualGeometryEval `PaperProjects`). A
+paper-project conventions (VisualGeometryToolkitEval `PaperProjects`). A
 [DrWatson](https://juliadynamics.github.io/DrWatson.jl/) project, not a
 package; the parent package is tracked through `[sources]` (`path = ".."`).
 

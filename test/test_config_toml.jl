@@ -1,32 +1,33 @@
 # =============================================================================
 # The strategies' TOML — configs/default.toml is the ONE default authority of
-# this package's strategies, and they load through RobustVisualGeometry's one
+# this package's strategies, and they load through VisualGeometryToolkitEstimation's one
 # entry over the MERGED registry:
 #
-#     local_optimization_from_toml(d; class, tags = merge(RobustVisualGeometry.LO_TAGS, LO_TAGS))
+#     local_optimization_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LO_TAGS))
 #
 # What this pins: the shipped file is what the constructors default to and is
 # complete over every strategy field; every tag round-trips through
 # `config_dict`; "cross_validated" resolves the class's tuning constant for the
 # strategy's own shape and nothing else; retired tags name their successor;
 # the core's registry alone refuses this package's tags. (Moved from
-# RobustVisualGeometry's test/config_toml_tests.jl with the strategies.)
+# VisualGeometryToolkitEstimation's test/config_toml_tests.jl with the strategies.)
 # =============================================================================
+import VisualGeometryToolkitCore as VgtkCore
 using Test
 using TOML
-using VisualGeometryCore
-using VisualGeometryCore: AbstractLocalOptimization, GemanMcclureShape, SmoothTLSShape, WelschShape, TagRegistry
-using RobustVisualGeometry
-using RobustVisualGeometry: Irls, config_dict, local_optimization_from_toml
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: AbstractLocalOptimization, GemanMcclureShape, SmoothTLSShape, WelschShape, TagRegistry
+using VisualGeometryToolkitEstimation
+using VisualGeometryToolkitEstimation: Irls, config_dict, local_optimization_from_toml
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: LO_TAGS, BarronAdaptive, StuTuRegemm, _config_default, _TOML_DEFAULTS, _toml_key
-const RVG = RobustVisualGeometry
+const RVG = VisualGeometryToolkitEstimation
 const LO = LocalOptimizationDoneRight
 
 const TAGS = merge(RVG.LO_TAGS, LO.LO_TAGS)
 load(d; class = :homography) = local_optimization_from_toml(d; class, tags = TAGS)
 # A width-carrying strategy's scale multiple (its `ScaleMultiple` width mode).
-sm(lo) = VisualGeometryCore.lo_width(lo).value
+sm(lo) = VgtkCore.lo_width(lo).value
 
 @testset "the strategies' TOML" begin
 
@@ -57,7 +58,7 @@ sm(lo) = VisualGeometryCore.lo_width(lo).value
             tbl = _TOML_DEFAULTS["local_optimization"][tag]
             for f in fieldnames(T)
                 f in get(required, tag, ()) && continue
-                f in VisualGeometryCore.toml_skip_fields(T) && continue   # the width is not a config key
+                f in VgtkCore.toml_skip_fields(T) && continue   # the width is not a config key
                 @test haskey(tbl, _toml_key(f))
             end
         end
@@ -83,7 +84,7 @@ sm(lo) = VisualGeometryCore.lo_width(lo).value
             d = config_dict(lo)
             @test d["type"] == tag
             for f in fieldnames(T)
-                f in VisualGeometryCore.toml_skip_fields(T) && continue   # the width: not a config key
+                f in VgtkCore.toml_skip_fields(T) && continue   # the width: not a config key
                 @test haskey(d, _toml_key(f))
             end
             @test load(d) == lo
@@ -150,7 +151,7 @@ sm(lo) = VisualGeometryCore.lo_width(lo).value
         @test_throws ArgumentError load(Dict("type" => "hq", "loss" => "welch", "scale_multiple" => 1.0))       # unknown loss
         @test_throws ArgumentError load(Dict("type" => "hqq", "loss" => "welsch", "scale_multiple" => 1.0))     # unknown type
         # no width: the strategy follows the scorer's inlier threshold (not a refusal)
-        @test VisualGeometryCore.lo_width(load(Dict("type" => "hq", "loss" => "welsch"))) === nothing
+        @test VgtkCore.lo_width(load(Dict("type" => "hq", "loss" => "welsch"))) === nothing
         @test_throws ArgumentError load(Dict("type" => "welsch_hq_ecm"))                                        # its scale_multiple is required
         @test_throws ArgumentError load(Dict("type" => "barron_hq", "scale_multiple" => 1.0))                   # its alpha is required
         @test_throws ArgumentError load(Dict("type" => "hq", "loss" => "welsch", "scale_multiple" => 1.0, "loss_width" => 2.0))   # both widths

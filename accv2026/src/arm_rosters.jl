@@ -1,7 +1,7 @@
 # =============================================================================
 # src/arm_rosters.jl — THE paper's arm table and the rosters drawn from it
 # (the ComposedSpec/SoloSpec/Roster types, the refit layer and the deployed_*
-# sidecar readers live in the composition evaluator, VisualGeometryEval.Evaluation;
+# sidecar readers live in the composition evaluator, VisualGeometryToolkitEval.Evaluation;
 # the tuning is scripts/tools/run_sequential_cv.jl).
 #
 # ONE table, `ARM_TABLE`: every arm the paper runs, keyed by its registry key
@@ -16,17 +16,17 @@
 # audit_operating_points), so they rebuild arms from this ONE table.
 # =============================================================================
 
-using RobustVisualGeometry: Irls
+using VisualGeometryToolkitEstimation: Irls
 using LocalOptimizationDoneRight: HQ, Gnc, StuTuBCD, StudentTUniform, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth
-using VisualGeometryCore: WelschShape, GemanMcclureShape, SmoothTLSShape, TLSShape, MsacScoring, RansacScoring,
+using VisualGeometryToolkitCore: WelschShape, GemanMcclureShape, SmoothTLSShape, TLSShape, MsacScoring, RansacScoring,
     codimension
 using RansacScoringDoneRight: StudentTUniformScoring
 using RansacLibLO: LebedaLOOptions, PRESET_REFERENCE   # the Lebeda ladder's options; RansacLib's defaults
-using VisualGeometryEval.Evaluation: ComposedSpec, SoloSpec, Roster, WidthSource, TunedWidth, SelectionWidth,
+using VisualGeometryToolkitEval.Evaluation: ComposedSpec, SoloSpec, Roster, WidthSource, TunedWidth, SelectionWidth,
     problem_type
-using VisualGeometryCore: WidthAxis, ScaleMultiple, LossWidth, OutlierHalfwidth, TagRegistry
+using VisualGeometryToolkitCore: WidthAxis, ScaleMultiple, LossWidth, OutlierHalfwidth, TagRegistry
 import PoseLib
-using VisualGeometryCore: lo_label
+using VisualGeometryToolkitCore: lo_label
 # The classical RansacLib LO baseline (LebedaIterLO, LebedaLOPlus) over lib/RansacLibLO.
 include(joinpath(@__DIR__, "lebeda_lo.jl"))
 # The research-only zero-clamp Welsch shape (the "<key>@zc" variants below).
@@ -36,7 +36,7 @@ include(joinpath(@__DIR__, "welsch_zero_clamp.jl"))
 """
     SELECTOR_FAMILIES
 
-The selector families a config or command line names (VisualGeometryCore's
+The selector families a config or command line names (VisualGeometryToolkitCore's
 `TagRegistry`, family suffix `Scoring`): the tag — `snake_case` of the
 family's scoring type (`StudentTUniformScoring` → `"student_t_uniform"`,
 `MlesacScoring` → `"mlesac"`, …) — to the family's SWEEP KEY, the symbol its
@@ -111,7 +111,7 @@ welsch_half_weight_depth(scale_multiple) = scale_multiple * sqrt(log(2.0))
 # OWN scale multiple (ignored by the self-scaling and fixed-external-scale arms,
 # whose width is a native outlier half-width / loss width the refit layer
 # delivers); `strategy_scale_multiple(width)` maps the tuned width value onto
-# that scale multiple. `source` is where the refit width VALUE comes from (VisualGeometryEval
+# that scale multiple. `source` is where the refit width VALUE comes from (VisualGeometryToolkitEval
 # `WidthSource`): tuned by the refiner stage, or — an objective-matched variant
 # (`matched_key`, declared per cell) — its selector's a* itself.
 struct ArmDef
@@ -223,7 +223,7 @@ const _ARM_DEFS = ArmDef[
 # LO call costs what its base arm's does).
 
 # The native axis of an arm's selection score: the Stu-tU marginal's outlier
-# half-width, MSAC's loss width (VisualGeometryCore `width_axis` of the scoring).
+# half-width, MSAC's loss width (VisualGeometryToolkitCore `width_axis` of the scoring).
 _selection_axis(d::ArmDef) = d.sel === :ig ? OutlierHalfwidth() : LossWidth()
 "The registry key of arm `key`'s objective-matched variant."
 matched_key(key::AbstractString) = String(key) * "@a*"
@@ -368,7 +368,7 @@ The default main-figure classical roster is the budget-parity Lebeda pair (LEBED
 PRESET_REFERENCE full-LO row is the supplement's reference operating point.
 
 role=:selection — the Fig 1 scorers with a CPU pool-scoring path (each
-`ctor(width)` is the scoring at that width, selected with VisualGeometryCore's
+`ctor(width)` is the scoring at that width, selected with VisualGeometryToolkitCore's
 `best_pool_model`): IG (:outlier_halfwidth; the Jeffreys marginal), MSAC and
 RANSAC (:loss_width). ROSTER GAP (documented, best-effort): :magsac and the
 other vocab families with sweep-only engines (gau/geman/welsch(_marg)) score

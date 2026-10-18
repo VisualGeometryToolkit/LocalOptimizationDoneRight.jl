@@ -3,26 +3,27 @@
 #
 # 1. One-code-path enforcement: the `locally_optimize!` entries for HQ{K} and
 #    Gnc{<:Irls} have exactly ONE implementation each (the generic
-#    ManifoldLiftHQ/ManifoldLiftGnc dispatch on RobustVisualGeometry's
+#    ManifoldLiftHQ/ManifoldLiftGnc dispatch on VisualGeometryToolkitEstimation's
 #    `LiftableProblem`, src/lift/lifts.jl). Reintroducing a per-problem port fails here.
 # 2. F gains GNC for free: `Gnc{Irls{WelschShape}}` on FundMatProblem works
 #    through the F provider (it error-stubbed before the collapse) and improves
 #    a perturbed seed on a seeded synthetic scene.
 # =============================================================================
-# (Moved from RobustVisualGeometry's test/manifold_collapse_tests.jl with the strategies it tests.)
+# (Moved from VisualGeometryToolkitEstimation's test/manifold_collapse_tests.jl with the strategies it tests.)
+import VisualGeometryToolkitCore as VgtkCore
 using Test, Random, LinearAlgebra, StaticArrays, StructArrays
 using Rotations: RotY
-using VisualGeometryCore
-using VisualGeometryCore: estimate, retcode   # VGC accessors (public)
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: estimate, retcode   # VGC accessors (public)
 using RansacScoringDoneRight: StudentTUniformScoring   # the paper's marginal (the old core default)
-using RobustVisualGeometry
+using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
-const RVGC = RobustVisualGeometry
+const RVGC = VisualGeometryToolkitEstimation
 const LODR = LocalOptimizationDoneRight
 # From its OWNER: RVG no longer imports `signed_sampson_distance` — E's
 # scoring moved to the tangent Sampson and was its last user there, so the
 # quality gate refuses it as a stale explicit import. F still uses it.
-using VisualGeometryCore: signed_sampson_distance
+using VisualGeometryToolkitCore: signed_sampson_distance
 include("scenes.jl")   # the shared scenes, as modules
 using .EpipolarScenes
 
@@ -34,7 +35,7 @@ using .EpipolarScenes
     _base(t) = t isa UnionAll ? _base(t.body) :
         t isa DataType ? t.name.wrapper : nothing
     lo_base(m) = _base(Base.unwrap_unionall(m.sig).parameters[3])
-    ms = collect(methods(VisualGeometryCore.locally_optimize!))
+    ms = collect(methods(VgtkCore.locally_optimize!))
 
     hq_ms = [m for m in ms if lo_base(m) === LODR.HQ]
     hq_impl = [m for m in hq_ms if problem_param(m) !== Any]
@@ -49,13 +50,13 @@ using .EpipolarScenes
     @test length(gnc_impl) == 1                      # ONE generic Gnc{<:Irls} implementation
     @test problem_param(gnc_impl[1]) == RVGC.LiftableProblem
 
-    # Any other problem reaches the ONE refusal (VisualGeometryCore's LO
+    # Any other problem reaches the ONE refusal (VisualGeometryToolkitCore's LO
     # contract), typed on the strategy root only — not a per-strategy stub.
-    for lo in (LODR.HQ{VisualGeometryCore.WelschShape}, LODR.Gnc{RVGC.Irls{VisualGeometryCore.WelschShape}})
-        m = which(VisualGeometryCore.locally_optimize!, Tuple{Any, lo, RVGC.LineFittingProblem{Float64}, Any,
-                                                 VisualGeometryCore.ConsensusSet, VisualGeometryCore.ScoreBuffers, Any})
+    for lo in (LODR.HQ{VgtkCore.WelschShape}, LODR.Gnc{RVGC.Irls{VgtkCore.WelschShape}})
+        m = which(VgtkCore.locally_optimize!, Tuple{Any, lo, RVGC.LineFittingProblem{Float64}, Any,
+                                                 VgtkCore.ConsensusSet, VgtkCore.ScoreBuffers, Any})
         @test problem_param(m) === Any
-        @test Base.unwrap_unionall(m.sig).parameters[3] === VisualGeometryCore.AbstractLocalOptimization
+        @test Base.unwrap_unionall(m.sig).parameters[3] === VgtkCore.AbstractLocalOptimization
     end
 end
 

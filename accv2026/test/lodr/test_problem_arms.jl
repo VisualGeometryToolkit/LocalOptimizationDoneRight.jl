@@ -1,26 +1,27 @@
 # =============================================================================
-# The strategies on RobustVisualGeometry's problems — the arms of its problem
+# The strategies on VisualGeometryToolkitEstimation's problems — the arms of its problem
 # batteries that run this package's strategies (the Student-t + uniform IRLS,
 # StuTuBCD, the Welsch HQ lift), with their scenes, seeds and bounds unchanged.
 # The batteries themselves (and their core-strategy arms) stay with the
-# problems in RobustVisualGeometry. (Moved from its test/fundmat_lm_tests.jl,
+# problems in VisualGeometryToolkitEstimation. (Moved from its test/fundmat_lm_tests.jl,
 # pnp_lens_tests.jl, ransac_homography_tests.jl, ransac_fundmat_tests.jl,
 # radial_homography_tests.jl, radial_camera_tests.jl and line_fitting_tests.jl.)
 # =============================================================================
+import VisualGeometryToolkitCore as VgtkCore
 using Test, Random, LinearAlgebra, StaticArrays, StructArrays
 using Statistics: median
 using Rotations: RotMatrix, RotXYZ, RotY, RotZ, MRP
-using VisualGeometryCore
-using VisualGeometryCore: Csponds, csponds, converged, estimate, rotation, translation, center, division_coeff,
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: Csponds, csponds, converged, estimate, rotation, translation, center, division_coeff,
     homography, radial_rows, is_map_inlier, IGPrior, FundMatManifold7, retract, project, Point2, Point3, Line2D,
     RadialHomography, RadialCamera, radial_transfer, unit_normalize, calibration_matrix
-using VisualGeometryCore.Synthetic: projective_distance
+using VisualGeometryToolkitCore.Synthetic: projective_distance
 using RansacScoringDoneRight: StudentTUniformScoring
-using RobustVisualGeometry
-using RobustVisualGeometry: RadialHomographyProblem, RadialCameraProblem, find_radial_homography, find_radial_camera,
+using VisualGeometryToolkitEstimation
+using VisualGeometryToolkitEstimation: RadialHomographyProblem, RadialCameraProblem, find_radial_homography, find_radial_camera,
     minimal_sample_size, model_type, residuals!, data_size
 using LocalOptimizationDoneRight
-const RVG = RobustVisualGeometry
+const RVG = VisualGeometryToolkitEstimation
 include("scenes.jl")   # the shared scenes, as modules
 using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination, .DivisionBoards
 
@@ -28,7 +29,7 @@ using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination, .Division
 welsch_hq(class) = HQ{WelschShape}(scale_multiple = tuning_constant(class, "welsch").scale_multiple)
 
 @testset "F: the joint-(θ,z) Welsch lift (F-lift, 2026-07-09)" begin
-    # the scene of RobustVisualGeometry's Bartoli–Sturm refit battery
+    # the scene of VisualGeometryToolkitEstimation's Bartoli–Sturm refit battery
     rng = MersenneTwister(42)
     R = RotMatrix(MRP(0.1, -0.2, 0.15))
     t = normalize(SVector(0.3, -0.1, 1.0))
@@ -38,7 +39,7 @@ welsch_hq(class) = HQ{WelschShape}(scale_multiple = tuning_constant(class, "wels
     sqrtw = ones(n)
     prob = RVG.FundMatProblem(u1 .=> u2)
     F_seed = RVG.FundMat(Tuple(F_gt + 0.05 * SMatrix{3, 3, Float64}(randn(rng, 3, 3))))
-    cost(F) = VisualGeometryCore.rows_cost(RVG.ChartLm(RVG._chart(prob, F), prob, sqrtw), zero(SVector{7, Float64}), n)
+    cost(F) = VgtkCore.rows_cost(RVG.ChartLm(RVG._chart(prob, F), prob, sqrtw), zero(SVector{7, Float64}), n)
     # The Welsch HQ lift must run on FundMatProblem and improve the
     # truncated-partition cost from the perturbed seed.
     sc = StudentTUniformScoring(typeof(prob), 0.05; prior = IGPrior(0.0, 0.0))

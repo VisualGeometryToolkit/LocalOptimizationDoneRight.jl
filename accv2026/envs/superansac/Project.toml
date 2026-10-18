@@ -17,7 +17,7 @@ PythonCall = "6099a3de-0909-46bc-b1f4-468b9a2dfc0d"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
-VisualGeometryCore = "297d53b8-c8d7-4cd7-a9af-68e656508a81"
+VisualGeometryToolkitCore = "96820d6b-1dad-4e77-ad4a-8276f2ec1ce7"
 
 [sources]
 
@@ -30,5 +30,5 @@ PythonCall = "0.9.36"
 StaticArrays = "1.9"
 Statistics = "1"
 TOML = "1"
-VisualGeometryCore = "0.1"
+VisualGeometryToolkitCore = "0.1"
 julia = "1.10"

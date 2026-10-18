@@ -12,7 +12,7 @@
 # [pool] table.
 #
 # The pools store the GT motion in the extrinsic convention; the reader
-# (VisualGeometryEval `load_pool`) refuses any other `gt_convention`, and the
+# (VisualGeometryToolkitEval `load_pool`) refuses any other `gt_convention`, and the
 # audit asserts it per scene.
 #
 # STAGES
@@ -22,7 +22,7 @@
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
 using JLD2
-using VisualGeometryEval.Pools: GT_CONVENTION
+using VisualGeometryToolkitEval.Pools: GT_CONVENTION
 include(srcdir("cell_stages.jl"))
 
 "The convention this cell depends on, read off the artifact itself."

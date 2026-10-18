@@ -1,12 +1,12 @@
 # =============================================================================
 # The LO continuation schedules (src/lift/schedules.jl): the LoSchedule
 # contract, the μ-ladder's converged-rung mode and its accessor, and the ladder
-# each GNC graduation family takes. Moved from VisualGeometryCore's
+# each GNC graduation family takes. Moved from VisualGeometryToolkitCore's
 # lo_schedules item (its shape-math testsets stay there) with the schedules.
 # =============================================================================
 using Test
-using VisualGeometryCore
-using VisualGeometryCore: deploy, WelschShape, GemanMcclureShape, TLSShape
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: deploy, WelschShape, GemanMcclureShape, TLSShape
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: LoSchedule, NoSchedule, MuLadder, GeometricAnneal, gnc_schedule, schedule_init,
     scale_mult, advance!, isterminal, with_converged_rung, n_rungs
@@ -119,7 +119,7 @@ end
 end
 
 # The ladder direction is the whole reason BandAnnealed is its own GNC family
-# (VisualGeometryCore's GNC surrogate facet; the ladders are this package's).
+# (VisualGeometryToolkitCore's GNC surrogate facet; the ladders are this package's).
 @testset "gnc_schedule: the ladder of each graduation family" begin
     cbar2 = 2.3
     kW = deploy(WelschShape(), cbar2; scale_multiple = 1.0)

@@ -1,5 +1,5 @@
 # test_data_artifacts.jl — the published input data (configs/data_artifacts.toml,
-# Artifacts.toml; VisualGeometryEval DataArtifacts): every catalog entry is complete and
+# Artifacts.toml; VisualGeometryToolkitEval DataArtifacts): every catalog entry is complete and
 # bound lazily to a Zenodo URL (its record's id, a placeholder only for a record
 # without one; never a local path), and the pool producers' scene resolver reads
 # the registered splits.
@@ -10,7 +10,7 @@ include(joinpath(@__DIR__, "..", "src", "data_artifacts.jl"))
     # Checked against the COMMITTED bindings, whatever ACCV2026_ARTIFACTS_TOML says.
     cat = withenv(artifact_catalog, "ACCV2026_ARTIFACTS_TOML" => nothing)
     @test cat.artifacts_toml == normpath(joinpath(@__DIR__, "..", "Artifacts.toml"))
-    # VisualGeometryEval DataArtifacts: catalog ⇔ bindings, every entry complete,
+    # VisualGeometryToolkitEval DataArtifacts: catalog ⇔ bindings, every entry complete,
     # every URL its record's on Zenodo (the id once it has one) — never file://
     v = catalog_violations(cat)
     @test isempty(v) || (@info "catalog violations" v; false)

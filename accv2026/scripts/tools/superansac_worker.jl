@@ -36,15 +36,15 @@
 # gets a FRESH settings object.
 #
 # METRIC: the pose error of every row of the e2e table — max(ΔR, Δt) [deg]
-# over the best decomposition of E (VisualGeometryCore imc_pose_error), x₂ᵀE x₁
+# over the best decomposition of E (VisualGeometryToolkitCore imc_pose_error), x₂ᵀE x₁
 # = 0; `Inf` when no model. The wall clock brackets exactly the
 # estimateEssentialMatrix call.
 # =============================================================================
 using JLD2, TOML, Printf, Dates
 using Statistics: median
 using StaticArrays: SMatrix, SVector
-using VisualGeometryCore: EssentialMat
-using VisualGeometryCore.Synthetic: imc_pose_error
+using VisualGeometryToolkitCore: EssentialMat
+using VisualGeometryToolkitCore.Synthetic: imc_pose_error
 using PythonCall
 include(joinpath(@__DIR__, "..", "..", "src", "timing_probe.jl"))   # the timing repeat's machine records (pure Base)
 

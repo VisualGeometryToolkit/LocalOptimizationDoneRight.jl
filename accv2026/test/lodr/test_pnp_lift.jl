@@ -18,17 +18,17 @@
 #      behind the camera — the lift's per-iteration cheirality guard
 #      (problems/p3p.jl header) must decouple them and still converge.
 # =============================================================================
-# (Moved from RobustVisualGeometry's test/pnp_lift_tests.jl with the strategies it tests.)
+# (Moved from VisualGeometryToolkitEstimation's test/pnp_lift_tests.jl with the strategies it tests.)
 using Test, Random, LinearAlgebra, StaticArrays
 using Rotations: RotMatrix, RotZ, RotXYZ
-using VisualGeometryCore
-using VisualGeometryCore: estimate, rotation, translation   # VGC accessors (public)
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: estimate, rotation, translation   # VGC accessors (public)
 using RansacScoringDoneRight: StudentTUniformScoring   # owned and exported by RansacScoringDoneRight
-using RobustVisualGeometry
+using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 include("scenes.jl")   # the shared scenes, as modules
 using .PoseScenes, .Contamination, .LiftChecks
-const RVGP = RobustVisualGeometry
+const RVGP = VisualGeometryToolkitEstimation
 
 @testset "PnP loss lift — smoke + parity" begin
     # --- calibrated synthetic -----------------------------------------------

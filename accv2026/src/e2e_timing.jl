@@ -5,7 +5,7 @@
 # The accuracy run (scripts/e2e_ransac.jl) runs every test pair multithreaded:
 # its per-pair streams make every error independent of the thread schedule, but
 # its wall clocks share the machine with the other threads. The timing repeat is
-# separate: a sample of the test pairs drawn by VisualGeometryEval's unit
+# separate: a sample of the test pairs drawn by VisualGeometryToolkitEval's unit
 # sampling (`[timing] sample`, the vocabulary of the validation and test sides),
 # each system timed in a fresh single-threaded process pinned to ONE CPU and its
 # NUMA node (`[timing.pinning]`, numactl), the run repeated `[timing] repeats`
@@ -25,11 +25,12 @@
 #
 # Included after cell_stages.jl and e2e_cells.jl.
 # =============================================================================
+import VisualGeometryToolkitCore as VgtkCore
 using JLD2, TOML, Printf, Dates
 using Statistics: median, mean
 using DrWatson: projectdir, scriptsdir
-using VisualGeometryEval.Tuning: read_tuning, UnitSampling, sample_units, test_scenes, tuning_table
-using VisualGeometryEval.Evaluation: deployed_scalar_setting
+using VisualGeometryToolkitEval.Tuning: read_tuning, UnitSampling, sample_units, test_scenes, tuning_table
+using VisualGeometryToolkitEval.Evaluation: deployed_scalar_setting
 include(joinpath(@__DIR__, "superansac.jl"))     # the SupeRANSAC cell (config, common, protocol folds)
 include(joinpath(@__DIR__, "timing_probe.jl"))   # the machine records of a repeat
 
@@ -44,7 +45,7 @@ timing) and of that cell's SupeRANSAC cell (its run key: SupeRANSAC is timed at
 that cell's tuned loss width). `[timing]`:
 
 - `e2e_config`: the accuracy cell (arms, ζ ladder, per-pair streams, termination);
-- `sample`: the timed pairs, a COMPLETE unit-sampling table in VisualGeometryEval's
+- `sample`: the timed pairs, a COMPLETE unit-sampling table in VisualGeometryToolkitEval's
   vocabulary (`exhaustive` | `stratified` | `uniform`, read by `read_tuning`)
   over that cell's test units;
 - `repeats` (≥ 4) timed repeats per system; `warmup_pairs` (≥ 1): the first pairs
@@ -54,9 +55,9 @@ that cell's tuned loss width). `[timing]`:
 """
 function fold_e2e_timing_cell!(cfg)
     t = cfg["timing"]
-    VisualGeometryCore.check_keys(t, ("e2e_config", "sample", "repeats", "warmup_pairs", "pinning"), "[timing]")
+    VgtkCore.check_keys(t, ("e2e_config", "sample", "repeats", "warmup_pairs", "pinning"), "[timing]")
     p = t["pinning"]
-    VisualGeometryCore.check_keys(p, ("launcher", "cpu", "numa_node", "julia_threads", "gc_threads", "env"), "[timing.pinning]")
+    VgtkCore.check_keys(p, ("launcher", "cpu", "numa_node", "julia_threads", "gc_threads", "env"), "[timing.pinning]")
     Int(t["repeats"]) >= 4 || error("[timing] repeats: at least 4 timed repeats, got $(t["repeats"])")
     Int(t["warmup_pairs"]) >= 1 || error("[timing] warmup_pairs: at least 1, got $(t["warmup_pairs"])")
     p["launcher"] == "numactl" || error("[timing.pinning] launcher: only \"numactl\" is supported, got $(repr(p["launcher"]))")
@@ -106,7 +107,7 @@ _timing_pool_size(pool_dir, scene) = jldopen(f -> length(f["scene_names"]), join
 """
     draw_timing_sample(cfg) -> Dict{String,Vector{Int}}
 
-The timed pairs: `[timing] sample` (VisualGeometryEval unit sampling) applied to
+The timed pairs: `[timing] sample` (VisualGeometryToolkitEval unit sampling) applied to
 the test units of the timed e2e cell's operating points — its test scenes, each
 scene's units as the accuracy run keeps them — scene ⇒ pool indices, sorted.
 """

@@ -25,13 +25,13 @@ using DrWatson; @quickactivate "ACCV2026"
 using JLD2, Statistics, Printf, Dates, TOML, LinearAlgebra
 include(srcdir("cell_stages.jl"))
 include(srcdir("e2e_cells.jl"))      # sidecar_scale_prior
-using VisualGeometryEval.Pools: load_pool, load_pool_residuals, residuals_path, residual_matrix
-using VisualGeometryEval.Evaluation: build_pair_ctx, refit_model, refit_seed, model_imc,
+using VisualGeometryToolkitEval.Pools: load_pool, load_pool_residuals, residuals_path, residual_matrix
+using VisualGeometryToolkitEval.Evaluation: build_pair_ctx, refit_model, refit_seed, model_imc,
     essential_bearings, deployed_budget_settings
 using LocalOptimizationDoneRight: truncated_refit_pose, PoseLibLm
-using RobustVisualGeometry: EssentialProblem, RansacWorkspace
+using VisualGeometryToolkitEstimation: EssentialProblem, RansacWorkspace
 using RansacScoringDoneRight: StudentTUniformScoring
-using VisualGeometryCore: EssentialMat, EuclideanMap, Vec3, cheiral_pose_fast, GaussianShape, best_pool_model,
+using VisualGeometryToolkitCore: EssentialMat, EuclideanMap, Vec3, cheiral_pose_fast, GaussianShape, best_pool_model,
     score_model!, consensus_mask, external_workspace
 using PoseLib: refine_relpose
 start_output_flush!()

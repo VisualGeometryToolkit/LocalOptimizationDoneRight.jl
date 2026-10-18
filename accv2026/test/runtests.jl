@@ -4,21 +4,22 @@
 # codification contract, the protocol invariants hold, and REPRODUCE.md indexes
 # the experiments, the RansacLib LO baseline (src/lebeda_lo.jl over
 # lib/RansacLibLO) refits as declared, and the composition evaluator
-# (VisualGeometryEval.Evaluation) runs the paper's scorer and local optimizers
+# (VisualGeometryToolkitEval.Evaluation) runs the paper's scorer and local optimizers
 # as its RSDR × LODR integration goldens pin (test_engine_integration.jl). Run
 # from the project: `julia --project=. test/runtests.jl` (a DrWatson project,
 # not a package — no Pkg.test).
 # =============================================================================
+import VisualGeometryToolkitEval as VgtkEval
 using Test
-using VisualGeometryEval
+using VisualGeometryToolkitEval
 using LocalOptimizationDoneRight
-import VisualGeometryCore
+import VisualGeometryToolkitCore
 
 @testset "ACCV2026" begin
     @testset "paper config registers" begin
         include(joinpath(@__DIR__, "..", "src", "config.jl"))
         # the data a cross-validation samples is declared by the data, not the spec
-        @test TWO_VIEW_UNIT === VisualGeometryEval.Tuning.PairUnit()
+        @test TWO_VIEW_UNIT === VgtkEval.Tuning.PairUnit()
         @test length(ROSTER.composed(:E)) >= 7
         @test length(ROSTER.solo(:E; role = :refinement)) >= 6
         @test !isempty(PAPER_STYLE.rows)
@@ -29,7 +30,7 @@ import VisualGeometryCore
     # 92597af's z-block at the clamp, Welsch everywhere else, and the opt-in
     # "<key>@zc" arms wired through the rosters.
     @testset "zero-clamp Welsch-HQ variant" begin
-        VGC = VisualGeometryCore
+        VGC = VisualGeometryToolkitCore
         zc, w = WelschZeroClampShape(), WelschShape()
         # 92597af's zblock(::WelschShape, …), verbatim, as the reference
         ref(w̄, c2) = (r = -c2 * log(w̄); w̄ >= one(w̄) ? (r, zero(r)) :
@@ -175,16 +176,16 @@ import VisualGeometryCore
 
     # The LO timing regression gate on the Table 1 arms under the paper's
     # marginal (test/lo_timing/bench.jl). Opt-in; policy, modes and robustness
-    # in VisualGeometryCore's test/lo_timing/gate.jl (the stack's one gate):
+    # in VisualGeometryToolkitCore's test/lo_timing/gate.jl (the stack's one gate):
     #   LO_TIMING_GATE=1      julia --project=. test/runtests.jl
     #   LO_TIMING_GATE=record (same) — rewrites test/lo_timing/baselines.toml
     @testset "lo_timing_gate" begin
-        gate = joinpath(pkgdir(VisualGeometryCore), "test", "lo_timing", "gate.jl")
+        gate = joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "gate.jl")
         if isfile(gate)
             g = Module(:_LoTimingGate); Base.include(g, gate)    # in a module of its own
             Base.invokelatest(g.run_lo_timing_gate, joinpath(@__DIR__, "lo_timing"))
         elseif get(ENV, "LO_TIMING_GATE", "") in ("1", "record")
-            @test_skip "the resolved VisualGeometryCore ships no test/lo_timing/gate.jl (older than the gate)"
+            @test_skip "the resolved VisualGeometryToolkitCore ships no test/lo_timing/gate.jl (older than the gate)"
         end
     end
 end

@@ -25,13 +25,13 @@
 
 using JLD2, Random, Statistics, Printf, DataFrames
 using PGFPlotsX
-using VisualGeometryCore: to_native, native_map, LossWidth, OutlierHalfwidth
-using VisualGeometryEval: cli_option
-using VisualGeometryEval.Evaluation: WindowedGridMethod, FlatProtocol, compute_method_rows,
+using VisualGeometryToolkitCore: to_native, native_map, LossWidth, OutlierHalfwidth
+using VisualGeometryToolkitEval: cli_option
+using VisualGeometryToolkitEval.Evaluation: WindowedGridMethod, FlatProtocol, compute_method_rows,
     window_columns
-using VisualGeometryEval.Stats: bootstrap_ci, reference_scale, scene_ranges
-using VisualGeometryEval.Tuning: load_tuning_artifact, resampling_rng, corrupt_native, _tune_objective
-using VisualGeometryEval.Tuning: nearest_column
+using VisualGeometryToolkitEval.Stats: bootstrap_ci, reference_scale, scene_ranges
+using VisualGeometryToolkitEval.Tuning: load_tuning_artifact, resampling_rng, corrupt_native, _tune_objective
+using VisualGeometryToolkitEval.Tuning: nearest_column
 # The paper config (rosters, PAPER_STYLE) on top of the packages; guarded
 # inside, so a driver that already loaded it does not redefine.
 include(joinpath(@__DIR__, "config.jl"))
@@ -41,7 +41,7 @@ const LO_LABELS = ["IG  sel", "IG  +LO", "IG  +Lift", "MSAC sel", "MSAC +LO"]
 # Labels carried by this bundle, in producer order.
 _bundle_labels(d) = collect(String, d["labels"])
 
-# eq-(28) native maps (VisualGeometryCore `native_map`, the ONE
+# eq-(28) native maps (VisualGeometryToolkitCore `native_map`, the ONE
 # definition, shared with the producer): each label's native axis is the
 # bundle's `label_axis` record (`:outlier_halfwidth` | `:loss_width`), at the
 # codimension its grids were built at (`d_g`).

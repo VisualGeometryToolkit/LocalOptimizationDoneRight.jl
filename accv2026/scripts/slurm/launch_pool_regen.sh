@@ -36,7 +36,7 @@ L=${ACCV_LOG_DIR:-$PROJ/logs}   # the jobs' logs (ACCV_LOG_DIR overrides)
 SB=scripts/slurm/run_experiment.sbatch
 POOLS_CPUS=96          # a pools stage: threads over a scene's pairs
 # An audit stage is NOT cheap. It counts each scene's pairs as
-# `length(load_pool(path))` (VisualGeometryEval), which DESERIALIZES THE WHOLE
+# `length(load_pool(path))` (VisualGeometryToolkitEval), which DESERIALIZES THE WHOLE
 # light pool file. Its memory must therefore exceed the LARGEST scene file in
 # the tree, with room for JLD2's transient buffers. Memory is set
 # only through cpus here (run_experiment.sbatch pins --mem-per-cpu=8000M and

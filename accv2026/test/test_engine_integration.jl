@@ -1,6 +1,6 @@
 # =============================================================================
 # test_engine_integration.jl — the RSDR × LODR integration goldens of the
-# composition evaluator (VisualGeometryEval.Evaluation): the paper's scorer
+# composition evaluator (VisualGeometryToolkitEval.Evaluation): the paper's scorer
 # (RansacScoringDoneRight's Student-t + uniform marginal, its grid kernels) and
 # local optimizers (LocalOptimizationDoneRight's HQ lift, Stu-tU IRLS and BCD,
 # the PoseLib truncated refiners) through the refit layer, the post-LO
@@ -8,14 +8,14 @@
 # miscalibration evaluation refit and the roster's gate-enforced readers.
 #
 # Carried from LocalOptimizationDoneRight's test/test_engine.jl when the
-# engine moved to VisualGeometryEval (K+, 2026-10-09). VisualGeometryEval's
+# engine moved to VisualGeometryToolkitEval (K+, 2026-10-09). VisualGeometryToolkitEval's
 # own suite tests the engine on core components alone (it may not load the
 # scorer or optimizer packages); the cases here are the ones only the paper's
 # components can exercise, on the K+ API: scorings are TEMPLATES, an absolute
 # width reaches a native or an external refiner through `widths` /
 # `solo_refit_imc!` / `refit_imc!(…; s2)` (`FixedS2`).
 #
-# Fixtures: VisualGeometryEval's synthetic E pool pair (a light `PoolPair` with
+# Fixtures: VisualGeometryToolkitEval's synthetic E pool pair (a light `PoolPair` with
 # its residual matrix) and a wide-FOV calibrated scene in a fake pool frame.
 # Runs in a module of its own (no binding leaks into the paper config's Main).
 # =============================================================================
@@ -28,17 +28,17 @@ using LocalOptimizationDoneRight: LocalOptimizationDoneRight as LODR, HQ, StuTuB
     PoseLibLZ, PoseLibLmAdaptLossWidth
 import PoseLib            # LocalOptimizationDoneRight's PoseLib extension: the truncated refiners' solver calls
 using RansacScoringDoneRight: RansacScoringDoneRight, StudentTUniformScoring, loss_width_scoring
-using VisualGeometryEval.Evaluation
-using VisualGeometryEval.Evaluation: Evaluation, PairGeom, ScoreSelector, OracleSelector, lo_error!,
+using VisualGeometryToolkitEval.Evaluation
+using VisualGeometryToolkitEval.Evaluation: Evaluation, PairGeom, ScoreSelector, OracleSelector, lo_error!,
     lo_iteration_budget, deployed_ref
-using VisualGeometryEval.Pools: PoolResiduals, ScoringPool, synthetic_e_pool_pair, sample_starts, GT_CONVENTION
-using VisualGeometryEval.Tuning: tuning_spec, GridSpec, SpacedGrid, LinearCount, grid, save_tuning_artifact,
+using VisualGeometryToolkitEval.Pools: PoolResiduals, ScoringPool, synthetic_e_pool_pair, sample_starts, GT_CONVENTION
+using VisualGeometryToolkitEval.Tuning: tuning_spec, GridSpec, SpacedGrid, LinearCount, grid, save_tuning_artifact,
     tuning_table, ScaleMultipleWindow, PairUnit
-using RobustVisualGeometry: EssentialProblem, FundMatProblem, NoLocalOptimization, RansacWorkspace, consensus_s2!
-using VisualGeometryCore: EssentialMat, FundMat, Point2, Csponds, CameraModel, WelschShape, IGPrior, MsacScoring,
+using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, NoLocalOptimization, RansacWorkspace, consensus_s2!
+using VisualGeometryToolkitCore: EssentialMat, FundMat, Point2, Csponds, CameraModel, WelschShape, IGPrior, MsacScoring,
     ConsensusAnchored, ScaleMultiple, LossWidth, OutlierHalfwidth, scale_interface, width_axis_name, with_width,
     codimension, select_on_grid!, stage_selection, selection_staging, best_pool_model, scoring_workspace
-using VisualGeometryCore.Pools: PoolPair, num_models, num_points
+using VisualGeometryToolkitCore.Pools: PoolPair, num_models, num_points
 
 const P = EssentialProblem
 const PRIOR = IGPrior(0.0, 0.0)                           # Jeffreys
@@ -49,7 +49,7 @@ const TEMPLATE = marginal(1.0)
 const CPU = RansacScoringDoneRight.KernelAbstractions.CPU()
 
 # A one-scene ScoringPool of `pairs` stamped with `total` minimal samples: what
-# VisualGeometryEval's `sample_starts` certifies its boundaries against.
+# VisualGeometryToolkitEval's `sample_starts` certifies its boundaries against.
 starts_pool(pairs, total) = ScoringPool(pairs, :E, "synthetic"; scene_names = fill("synthetic", length(pairs)),
     stamps = (gt_convention = GT_CONVENTION, pool_rng = "LehmerRNG", julia_version = string(VERSION),
               total_samples = total, total_solutions = sum(num_models, pairs), mean_solutions_per_sample = 1.0,
@@ -246,7 +246,7 @@ end
         msac_best = best_pool_model(MsacScoring(1; threshold = 0.1), subpair(pair, 1:22), R[:, 1:22])
         @test res_s.best_idx_batch[1, 2, end] == msac_best      # 20 samples reach model 22
         @test_throws DimensionMismatch evaluate_sample_budget(P, methods, [pair], typeof(R)[]; cfg)
-        # a :samples budget counts through VisualGeometryEval's sample starts, never on its own
+        # a :samples budget counts through VisualGeometryToolkitEval's sample starts, never on its own
         @test_throws ArgumentError evaluate_sample_budget(P, methods[1:1], [pair], [R]; cfg = cfg_s)
     end
     @testset "LO timing summary" begin

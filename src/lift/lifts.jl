@@ -1,8 +1,8 @@
 # =============================================================================
 # The half-quadratic loss lifts and the GNC ports — ONE code path over
-# VisualGeometryCore's chart-rows contract (a problem's provider supplies the
-# rows, their Jacobian, the re-anchor and the model; RobustVisualGeometry
-# implements it for its chart problems). Moved from RobustVisualGeometry's
+# VisualGeometryToolkitCore's chart-rows contract (a problem's provider supplies the
+# rows, their Jacobian, the re-anchor and the model; VisualGeometryToolkitEstimation
+# implements it for its chart problems). Moved from VisualGeometryToolkitEstimation's
 # problems/manifold_providers.jl and estimators/ransac/interface.jl.
 # =============================================================================
 
@@ -186,7 +186,7 @@ function locally_optimize!(
     loss = loss_at(lo, GemanMcclureShape(), cs, scoring, buf)
     return _manifold_hq!(problem, model, loss, lo.μ, :flat, lo.max_iter)
 end
-VisualGeometryCore.deployed_scale_multiple(::GmHqEps, _shape, m::Float64, _s2, _scoring) =
+VgtkCore.deployed_scale_multiple(::GmHqEps, _shape, m::Float64, _s2, _scoring) =
     m > 0 ? m : throw(ArgumentError(
     "GmHqEps: scale_multiple = $m — the crossover sentinel is retired; give no width to follow the scorer"))
 

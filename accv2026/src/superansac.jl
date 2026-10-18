@@ -33,16 +33,17 @@
 # full). pysuperansac exposes no RNG seed: run-to-run objective noise is the
 # library's own.
 # =============================================================================
+import VisualGeometryToolkitCore as VgtkCore
 using JLD2, TOML, Printf, Dates
 using DrWatson: projectdir   # configs/ of the active (accv2026) project
 using Statistics: median, mean
-using VisualGeometryEval.Pools: load_pool
-using VisualGeometryEval.Tuning: layer_tuning, tuning_spec, tuning_table, grid_spec, sample_units,
+using VisualGeometryToolkitEval.Pools: load_pool
+using VisualGeometryToolkitEval.Tuning: layer_tuning, tuning_spec, tuning_table, grid_spec, sample_units,
     validation_scenes, test_scenes
-using VisualGeometryEval.Evaluation: coarse_fine_cv_batched, enforce_probe_interior,
+using VisualGeometryToolkitEval.Evaluation: coarse_fine_cv_batched, enforce_probe_interior,
     save_scalar_tuning_artifact, deployed_scalar_setting
-using VisualGeometryCore.Pools: pixel_csponds
-using VisualGeometryCore: sources, targets
+using VisualGeometryToolkitCore.Pools: pixel_csponds
+using VisualGeometryToolkitCore: sources, targets
 include(joinpath(@__DIR__, "config.jl"))           # the paper prelude (guarded)
 include(joinpath(@__DIR__, "common.jl"))           # run_driver's context: scripts/tools, this project
 include(joinpath(@__DIR__, "protocol_folds.jl"))   # operating_points_run, fold_sequential_cv!
@@ -66,10 +67,10 @@ refused.
 """
 function fold_superansac_cell!(cfg)
     known = ("experiment", "operating_points", "superansac", "tuning", "environment", "stored")
-    VisualGeometryCore.check_keys(cfg, known, "SupeRANSAC cell")
-    VisualGeometryCore.check_keys(cfg["superansac"],
+    VgtkCore.check_keys(cfg, known, "SupeRANSAC cell")
+    VgtkCore.check_keys(cfg["superansac"],
         ("zetas", "preset", "tuning_termination", "evaluation_termination"), "SupeRANSAC cell [superansac]")
-    VisualGeometryCore.check_keys(cfg["tuning"], (SUPERANSAC_TUNING,), "SupeRANSAC cell [tuning]")
+    VgtkCore.check_keys(cfg["tuning"], (SUPERANSAC_TUNING,), "SupeRANSAC cell [tuning]")
     name = String(cfg["operating_points"]["miscal_config"])
     op = fold_sequential_cv!(load_run_config(projectdir("configs", name * ".toml")))
     for k in ("dataset", "matcher", "problem", "pool_dir")
@@ -184,7 +185,7 @@ _match_matrix(cs) = [reduce(hcat, collect.(sources(cs)))' reduce(hcat, collect.(
 SupeRANSAC's raw-PIXEL input slice of `scene`: the pool pairs
 `units_fn(n_pairs)` (strictly increasing pool indices) of the light pool —
 `matches` (per pair an N×4 `[x₁ y₁ x₂ y₂]` matrix of pixel csponds, through
-the record's own maps, VisualGeometryCore `pixel_csponds`), the stored `snn`,
+the record's own maps, VisualGeometryToolkitCore `pixel_csponds`), the stored `snn`,
 the pixel `K1`/`K2` and the GT `R_gt`/`t_gt`, the indices (`pair_indices`),
 the pool's size (`pool_size`) and its `pool_key`. An existing file is kept.
 """
@@ -270,7 +271,7 @@ _on_workers(f, jobs) = asyncmap(f, jobs; ntasks = Threads.nthreads())
     superansac_loss_width_cv!(cfg, dir) -> path
 
 THE loss-width CV of the cell (`[tuning.superansac_loss_width]`, the single
-CV path: VisualGeometryEval `coarse_fine_cv_batched`): every loss width the
+CV path: VisualGeometryToolkitEval `coarse_fine_cv_batched`): every loss width the
 search requests is evaluated by worker processes, one per (validation scene,
 loss width), at the tuning termination; the objective is the spec's criterion
 over the pooled validation units' per-pair pose errors (a failure is `Inf`).
@@ -306,13 +307,13 @@ function superansac_loss_width_cv!(cfg, dir)
     rec = recs[:superansac]
     enforce_probe_interior(rec; context = "SupeRANSAC loss-width CV")
     build = only(builds)
-    # the single-scalar artifact (VisualGeometryEval): grids, CV record and x_star_fine, read back
+    # the single-scalar artifact (VisualGeometryToolkitEval): grids, CV record and x_star_fine, read back
     # only through deployed_scalar_setting
-    save_scalar_tuning_artifact(out, spec, rec; unit = TWO_VIEW_UNIT, code = (VisualGeometryCore,),
+    save_scalar_tuning_artifact(out, spec, rec; unit = TWO_VIEW_UNIT, code = (VisualGeometryToolkitCore,),
         tuning_inputs = inputs, scenes,
         pair_indices = [JLD2.load(f, "pair_indices") for f in inputs], build,
         objective = "the spec's criterion over the pooled validation units' per-pair max(dR, dt) [deg] " *
-                    "(VisualGeometryCore imc_pose_error); a failure is Inf",
+                    "(VisualGeometryToolkitCore imc_pose_error); a failure is Inf",
         protocol = "the [superansac.preset] tester preset at [superansac.tuning_termination]; ONLY " *
                    "inlier_threshold swept; a fresh RANSACSettings per call; no RNG seed exposed by pysuperansac",
         created = string(Dates.now()))

@@ -3,7 +3,7 @@
 # protocol of record (every result-changing value this paper's code used to
 # carry as a literal or a global constant).
 #
-# ONE mechanism: `protocol_value(table, key)` — VisualGeometryCore's
+# ONE mechanism: `protocol_value(table, key)` — VisualGeometryToolkitCore's
 # `toml_default` over the parsed file, which throws on a missing table or key
 # (a value that is not in the file would be a second source of truth). Every
 # reader in src/ and scripts/ goes through it; no reader keeps a fallback.
@@ -12,7 +12,7 @@ if !@isdefined(ACCV2026_PROTOCOL_LOADED)
 
 using DrWatson: projectdir   # configs/ of the active (accv2026) project
 using TOML: TOML
-using VisualGeometryCore: toml_default
+using VisualGeometryToolkitCore: toml_default
 
 "The experiment protocol of record."
 const PROTOCOL_PATH = projectdir("configs", "protocol.toml")

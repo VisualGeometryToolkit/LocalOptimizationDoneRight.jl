@@ -8,7 +8,7 @@
 #
 # THE GT INLIER DEFINITION is the pools' stored `gt_inliers` mask: the HEB
 # release's own per-correspondence inlier flag (column 10 == 1 of its
-# <scene>_homographies.h5 rows; VisualGeometryEval Datasets heb.jl), written into the pool record unchanged
+# <scene>_homographies.h5 rows; VisualGeometryToolkitEval Datasets heb.jl), written into the pool record unchanged
 # by scripts/heb_h_pools.jl. A pair's correspondences are the pool record's —
 # the release's matches after the pool generator's SNN filter
 # (configs/heb_h_pools.toml [pool]), the set every HEB pipeline sees. Nothing

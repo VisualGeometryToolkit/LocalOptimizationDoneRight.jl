@@ -10,7 +10,7 @@
 # non-terminal schedule position must ADVANCE the schedule, never terminate
 # the engine — otherwise easy seeds converge at a wide surrogate and the
 # anneal never completes, so the pose is never optimized at the terminal
-# objective (RobustVisualGeometry commit 373d0a6 fixed exactly this in
+# objective (VisualGeometryToolkitEstimation commit 373d0a6 fixed exactly this in
 # GncIrls; ScheduledWelschIrls carried the pre-fix semantics until the
 # schedule trait consolidated them here).
 #
@@ -185,7 +185,7 @@ end
 
 The rung ladder for a loss's graduation (moved from RVG scoring_glue.jl
 2026-07-18): a [`BandAnnealed`](@ref) shape anneals μ UP to the hard-surrogate
-cap (VisualGeometryCore's `gnc_mu_cap()` — the same cap `gnc_mu0` guards to); the
+cap (VisualGeometryToolkitCore's `gnc_mu_cap()` — the same cap `gnc_mu0` guards to); the
 μ-scaled families anneal μ DOWN to 1, the target loss. Only the
 direction/cap mapping is per-family — rung arithmetic (n_rungs, rung_len) is
 [`MuLadder`](@ref).

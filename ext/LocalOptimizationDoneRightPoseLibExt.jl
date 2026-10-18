@@ -1,6 +1,6 @@
 # =============================================================================
 # LocalOptimizationDoneRightPoseLibExt — the PoseLib truncated refiners'
-# solver calls: VisualGeometryCore's external-refit contract
+# solver calls: VisualGeometryToolkitCore's external-refit contract
 # (`external_workspace`, `prepare_external!`, `refine_external!`) for
 # `PoseLibLm`, `PoseLibLZ` and `PoseLibLmAdaptLossWidth` on two-view problems,
 # their pixel-form inputs read from the refit's two-view frame (`frame.Kc1`,
@@ -22,11 +22,11 @@ const _ADAPT_OPERATING_SCALE_MULTIPLE = LocalOptimizationDoneRight._ADAPT_OPERAT
 import LocalOptimizationDoneRight: truncated_refit_pose
 using PoseLib: refine_relpose, refine_fundamental, refine_homography, LeZachTruncation
 using StaticArrays: SMatrix
-using VisualGeometryCore: VisualGeometryCore, EssentialMat, FundMat, HomographyMat, Csponds, Point2, Vec3,
+using VisualGeometryToolkitCore: VisualGeometryToolkitCore, EssentialMat, FundMat, HomographyMat, Csponds, Point2, Vec3,
     EuclideanMap, TLSShape, LossWidth, OutlierHalfwidth, loss_width, sources, targets, cheiral_pose_fast,
     codimension, data_size, residuals!, with_width, loss_width_to_outlier_halfwidth, FixedS2, scale_s2
-import VisualGeometryCore: external_workspace, prepare_external!, refine_external!
-using RobustVisualGeometry: EssentialProblem, FundMatProblem, HomographyProblem, RansacWorkspace, consensus_s2!
+import VisualGeometryToolkitCore: external_workspace, prepare_external!, refine_external!
+using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem, RansacWorkspace, consensus_s2!
 
 # The PoseLib loss each truncated arm refines on.
 _poselib_loss(::PoseLibLm) = TLSShape()
@@ -152,7 +152,7 @@ function _truncated_moment_s2(loss_width::Float64, r::AbstractVector; min_suppor
 end
 
 # The per-round alternation moment of a refined pose: the within-width
-# second moment of its pool-frame residuals (RobustVisualGeometry's
+# second moment of its pool-frame residuals (VisualGeometryToolkitEstimation's
 # `residuals!` on the E problem — the tangent Sampson on unit bearings).
 _adapt_s2(ws::AdaptWorkspace, problem, R, t, loss_width::Float64) =
     _truncated_moment_s2(loss_width, residuals!(Vector{Float64}(undef, data_size(problem)), problem, EssentialMat(R, t)))

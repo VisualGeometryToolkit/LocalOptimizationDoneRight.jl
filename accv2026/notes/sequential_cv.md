@@ -2,7 +2,7 @@
 
 Status: **IMPLEMENTED 2026-10-04** — THE tuning of every two-view cell
 (`scripts/tools/run_sequential_cv.jl`; the configs' `[sequential_cv]`; the
-batched single CV path, VisualGeometryEval `Evaluation.expanding_search` / `bracket`), and
+batched single CV path, VisualGeometryToolkitEval `Evaluation.expanding_search` / `bracket`), and
 the product grid is retired from accv2026. The design below is as agreed; the
 "Implementation plan" section records the order it was done in. Every number
 below is measured; the file says where.
@@ -55,7 +55,7 @@ top, so the agreement is a shared ceiling.)
 
 ## This is already the project's stated policy
 
-`VisualGeometryEval src/evaluation/cv_probe.jl`: "**THE single CV path for scalar
+`VisualGeometryToolkitEval src/evaluation/cv_probe.jl`: "**THE single CV path for scalar
 hyperparameters.** Every scalar hyperparameter in this project is
 cross-validated by ONE discipline — a coarse probe with expand-on-boundary,
 then a fine sweep over the coarse argmin's bracket, then a FREE argmin …
@@ -171,7 +171,7 @@ extension's points are the new columns; already-computed ones stay valid, as
 
 ### Order of work
 
-1. The evaluation engine (now VisualGeometryEval): `probe_curve_batched` + `fine_stage` batched form, beside the
+1. The evaluation engine (now VisualGeometryToolkitEval): `probe_curve_batched` + `fine_stage` batched form, beside the
    existing ones. Small, and the discipline is already specified.
 2. The evaluation engine's release (it is also carrying 04e1b02's budget-oracle `eligible` fix,
    which the 7-Scenes budget panel is waiting on, plus the window-rule collapse).

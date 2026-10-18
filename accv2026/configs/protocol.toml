@@ -2,7 +2,7 @@
 # protocol — THE experiment protocol of record of the ACCV 2026 campaign: every
 # result-changing value the paper's code used to carry as a literal or a
 # global constant, one declaration each, read through ONE mechanism
-# (src/protocol.jl `protocol_value(table, key)`, VisualGeometryCore
+# (src/protocol.jl `protocol_value(table, key)`, VisualGeometryToolkitCore
 # `toml_default`: a key that is not here throws).
 #
 # `[arms]` is what the ARM TABLE reads (src/arm_rosters.jl). It is folded into the run key of every cell whose
@@ -79,7 +79,7 @@
 # HEB-H) and keeps the stored values intact for diagnostics.
 #
 # THE DEEPER FIX IS AVAILABLE AND IS NOT THIS. A per-pair scale unbiased at low
-# inlier counts needs the residuals of a GEOMETRIC fit, and RobustVisualGeometry
+# inlier counts needs the residuals of a GEOMETRIC fit, and VisualGeometryToolkitEstimation
 # has one: a homography's `refit_kind` is `NonlinLsq` (chart_dof = 8), so its
 # default `refine!` is the chart-LM on the sl(3) chart minimising the
 # √w-weighted Sampson transfer rows (problems/homography.jl `residual_rows!` /

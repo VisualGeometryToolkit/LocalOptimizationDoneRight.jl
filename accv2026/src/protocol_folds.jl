@@ -9,7 +9,7 @@
 # The tuning protocol (configs/tuning.toml) is folded the same way
 # (`fold_sequential_cv!`): each tuning entry a cell's `[sequential_cv]` names
 # is the protocol entry with its cross-validation section and the cell's own
-# overrides layered by VisualGeometryEval's `layer_tuning`; `run_key`
+# overrides layered by VisualGeometryToolkitEval's `layer_tuning`; `run_key`
 # resolves it to its complete table — the registered scene lists included — so
 # every tuning parameter keys the run.
 # =============================================================================
@@ -17,9 +17,9 @@ if !@isdefined(ACCV2026_PROTOCOL_FOLDS_LOADED)
 
 using DrWatson: projectdir   # configs/ of the active (accv2026) project
 using TOML
-using VisualGeometryCore: ScaleMultiple, OutlierHalfwidth, LossWidth, width_axis_name
-using VisualGeometryEval.Tuning: layer_tuning, tuning_spec, TUNING_TAGS, CoarseFine
-using VisualGeometryEval.Experiments:
+using VisualGeometryToolkitCore: ScaleMultiple, OutlierHalfwidth, LossWidth, width_axis_name
+using VisualGeometryToolkitEval.Tuning: layer_tuning, tuning_spec, TUNING_TAGS, CoarseFine
+using VisualGeometryToolkitEval.Experiments:
     load_run_config, run_key, experiment_dir
 include(joinpath(@__DIR__, "protocol.jl"))   # configs/protocol.toml: the arm protocol folded below
 
@@ -36,7 +36,7 @@ const TUNING_PROTOCOL = TOML.parsefile(_TUNING_PATH)
 The `[tuning.<name>]` entry of the tuning protocol of record, with the
 protocol's paper-level type defaults (`[types.<type>]`) layered beneath it —
 under every entry whose scheme holds a field of that name — and `over` (a
-cell's overrides) layered above it, all by VisualGeometryEval's `layer_tuning`.
+cell's overrides) layered above it, all by VisualGeometryToolkitEval's `layer_tuning`.
 """
 function protocol_tuning(name::AbstractString; over::AbstractDict = Dict{String,Any}())
     entries = TUNING_PROTOCOL["tuning"]

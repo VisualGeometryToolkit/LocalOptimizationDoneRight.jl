@@ -1,7 +1,7 @@
 # =============================================================================
 # src/figure_style.jl — the paper's faceted-arm style rows and THE paper style.
 # THIN by contract: ALL styling machinery is package-level — the arm GRAMMAR
-# in VisualGeometryEval.Render figure_style.jl and the house conventions in
+# in VisualGeometryToolkitEval.Render figure_style.jl and the house conventions in
 # Render axis_style.jl. This paper supplies DATA only, gathered into ONE value,
 # `PAPER_STYLE` (a Render `PaperStyle`), which every renderer is handed: the
 # palette and summary rows (palette.jl), the faceted arm records, and the
@@ -148,7 +148,7 @@ const DATASET_NAME = Dict("PT" => "PhotoTourism", "HEB" => "HEB", "ETH" => "ETH3
     arm_lo_us_per_call(runs, key) -> Float64
 
 Arm `key`'s isolated per-call LO wall time [µs] from a timing sidecar's `runs`
-(time_lo_supp.jl): VisualGeometryEval's `lo_us_per_call` of the run and method column the
+(time_lo_supp.jl): VisualGeometryToolkitEval's `lo_us_per_call` of the run and method column the
 arm's `TIMING_TAGS` entry names (`NaN` when that column made no LO call).
 """
 function arm_lo_us_per_call(runs, key::AbstractString)

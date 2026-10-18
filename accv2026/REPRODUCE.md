@@ -120,7 +120,7 @@ sbatch [shape] scripts/slurm/run_experiment.sbatch <exp>.jl [--stage=NAME]
 ### Asset index
 
 Every file `paper/main.tex` and `paper/supplement.tex` read, with what makes
-it. This is the table the suite checks (VisualGeometryEval `PaperProjects`,
+it. This is the table the suite checks (VisualGeometryToolkitEval `PaperProjects`,
 `test/test_paper_project.jl`): an asset the papers read and this table does not
 list, a row the papers no longer read, or a generator that does not write its
 asset fails it. The narrative tables below say what each experiment is.
@@ -199,13 +199,13 @@ EMPTY chain — zero jobs submitted, no error — for a config-driven driver who
 stages are built in `src/cell_stages.jl`.
 
 Both delegate to `scripts/tools/generate_scoring_pools.jl`, THE two-view pool
-driver (VisualGeometryEval's dataset readers → VisualGeometryCore's
-`Pools.PoolPair` → VisualGeometryEval's `write_scene_pool`). It takes
+driver (VisualGeometryToolkitEval's dataset readers → VisualGeometryToolkitCore's
+`Pools.PoolPair` → VisualGeometryToolkitEval's `write_scene_pool`). It takes
 `--config=<name>` and nothing else: every generation parameter comes from that
 TOML (its `[pool]` table, the 4000-sample targets included).
 
 **Minimal-sample starts of a pool tree** (`scripts/tools/derive_pool_samples.jl
---config=<pool config>`). A pool stores no per-model sample id; VisualGeometryEval
+--config=<pool config>`). A pool stores no per-model sample id; VisualGeometryToolkitEval
 `Pools.sample_starts(pool)` recovers the boundaries from the record (a repeated
 draw is its own sample) and certifies them against the pool's `total_samples`
 stamp. ETH3D-F and HEB-H certify; PT-E-SIFT-4K_pf3 does not (276 of 46,200 pairs
@@ -219,9 +219,9 @@ experiment do.
 
 **Regenerate every pool after the 2026-10-01 map rename.** The pool record's
 pixel → pool-frame maps became `source_map`/`target_map` (the record is now
-VisualGeometryCore's `Pools.PoolPair`, read and written by VisualGeometryEval's
+VisualGeometryToolkitCore's `Pools.PoolPair`, read and written by VisualGeometryToolkitEval's
 pool IO), and pool files carried `pool_format = 2` (then
-the evaluation engine's `ARTIFACT_FORMATS.pool`, now VisualGeometryEval's; 3 with the stable streams —
+the evaluation engine's `ARTIFACT_FORMATS.pool`, now VisualGeometryToolkitEval's; 3 with the stable streams —
 see "Result-changing changes of 2026-10-01" below — and now 4). Every pool written before is format 1 and is refused on
 read — `ArgumentError: <file>: pool format v1 predates the source_map/target_map
 rename — regenerate the pool` — and is NOT migratable.
@@ -249,13 +249,13 @@ reads `native_layout`, which is a MIGRATION stamp written by
 | `native_layout` | ABSENT | present, naming the CURRENT versions |
 
 So `native_layout` is not a currency marker: `pool_format` is, and the only
-proof is a READ through the package reader (VisualGeometryEval `load_pool`),
+proof is a READ through the package reader (VisualGeometryToolkitEval `load_pool`),
 which is what both cells' `audit` stage does.
 
 **Regenerate every tuning artifact after the 2026-10-01 tuning-spec format.**
 Every cross-validation is now a `[tuning.<name>]` spec read by
-VisualGeometryEval's one `[tuning]` parser — the schema is documented
-once, in the header of VisualGeometryEval `src/tuning/toml.jl`; this paper's protocol of
+VisualGeometryToolkitEval's one `[tuning]` parser — the schema is documented
+once, in the header of VisualGeometryToolkitEval `src/tuning/toml.jl`; this paper's protocol of
 record is `configs/tuning.toml` (entries `miscal`, `budget`,
 `lo_sensitivity`, `lo_sensitivity_natural`, `lo_sensitivity_miscal`,
 `polish`), and a cell layers its overrides over the entry it uses
@@ -271,8 +271,8 @@ artifacts to regenerate are listed once, below (current format: v4).
 
 **Regenerate every tuning artifact after the 2026-10-01 codified
 cross-validation (tuning format v3).** The data of every tuning is part of
-its spec: `[tuning.<name>.cross_validation]` (VisualGeometryEval
-`CrossValidation`) names a scene split REGISTERED in VisualGeometryEval
+its spec: `[tuning.<name>.cross_validation]` (VisualGeometryToolkitEval
+`CrossValidation`) names a scene split REGISTERED in VisualGeometryToolkitEval
 `configs/splits.toml` — the ONE file holding every scene list (this project
 holds none; `test/protocol_invariants.jl` refuses a registered scene literal
 in src/, scripts/, configs/ or test/) — and how each side's units are sampled
@@ -322,10 +322,10 @@ frozen input remains: every file a driver consumes is produced by a stage.
   dirs — plus the `[source.recon_special]` exceptions for `reichstag` and
   `florence_cathedral_side` (whose models sit outside the recon tree) are
   DECLARED in `configs/pt_e_pools.toml` and handed to the reader
-  (VisualGeometryEval `PtRawTrees`)
+  (VisualGeometryToolkitEval `PtRawTrees`)
   (RootSIFT matches, 4000 minimal-sample models/pair, pool-frame Sampson
   residual matrices, COLMAP pseudo-GT poses + oracle `gt_variance`).
-  Scene split: the registered `phototourism` split of VisualGeometryEval
+  Scene split: the registered `phototourism` split of VisualGeometryToolkitEval
   `configs/splits.toml` (10 val / 11 test, as-run canonical), named by every
   tuning spec's `cross_validation`.
 - **HEB-H-SIFT-4K_pf3 scoring pools** — `scripts/heb_h_pools.jl` from the
@@ -337,7 +337,7 @@ frozen input remains: every file a driver consumes is produced by a stage.
   SP+LG correspondences); the ETH3D cells' configs name it in
   `experiment.pool_dir`.
 - **Results roots** — per-cell tree `<results root>/…`
-  (VisualGeometryEval `results_root()`: `CAU_RESULTS_ROOT` or the `data/exp_pro` link, see
+  (VisualGeometryToolkitEval `results_root()`: `CAU_RESULTS_ROOT` or the `data/exp_pro` link, see
   `data/README.md`), flat campaign root `<data root>/accv2026/…`
   (`ACCV_DATA` overrides; `src/registry.jl` is the one place that binds these).
 - **Stored SupeRANSAC results** — `<results>/phototourism/sift/E/SupeRANSAC/stored-e2e-3ea0c00581858498/`
@@ -353,9 +353,9 @@ frozen input remains: every file a driver consumes is produced by a stage.
 All hyperparameter tuning flows through one code path under one spec — no
 experiment may implement its own sweep/argmin or state a tuning parameter
 outside a `[tuning.<name>]` entry (mandated 2026-07-18; the spec form
-2026-10-01; schema: the header of VisualGeometryEval `src/tuning/toml.jl`):
+2026-10-01; schema: the header of VisualGeometryToolkitEval `src/tuning/toml.jl`):
 
-Every stage is composed from TWO grid-search primitives (VisualGeometryEval
+Every stage is composed from TWO grid-search primitives (VisualGeometryToolkitEval
 `Evaluation.expanding_search` and `bracket`), BATCHED: one objective call per
 round holds every cell's new points, so cells sharing an expensive objective
 (one sweep over a staged validation pool) share every sweep.
@@ -394,7 +394,7 @@ pool_index)`), so its errors do not depend on the thread count. The TIMING run
 (`scripts/e2e_timing.jl --config=pt_e_e2e_timing`) is separate, every setting
 in its config of record:
 
-- the pairs: `[timing] sample`, VisualGeometryEval's unit sampling (the
+- the pairs: `[timing] sample`, VisualGeometryToolkitEval's unit sampling (the
   vocabulary of the cross-validations' sides) over the e2e cell's test units —
   stratified by scene, 2 % of each of the 11 test scenes (44 pairs, 484 in
   all), drawn pair ids in `timing-<key>/sample.toml`;
@@ -492,7 +492,7 @@ not match, so a floor computed on retired pools cannot be taken as current.
 
 | protocol file | governs |
 |---|---|
-| `configs/tuning.toml` | THE tuning protocol: every `[tuning.<name>]` entry the drivers run (windows, spacings, expand-on-boundary rules, argmin, objective, budget sampling, cross-validation), stating only what differs from VisualGeometryEval's `configs/tuning.toml`; paper-level type defaults (`[types.scale_multiple_window]`, the paper's [1, 3.3]; `[types.cross_validation]`, the registered `phototourism` split) |
+| `configs/tuning.toml` | THE tuning protocol: every `[tuning.<name>]` entry the drivers run (windows, spacings, expand-on-boundary rules, argmin, objective, budget sampling, cross-validation), stating only what differs from VisualGeometryToolkitEval's `configs/tuning.toml`; paper-level type defaults (`[types.scale_multiple_window]`, the paper's [1, 3.3]; `[types.cross_validation]`, the registered `phototourism` split) |
 | `configs/cv_protocol.toml` | tuning at ζ=1; per-dataset cross-validations (partial `cross_validation` tables layered into the tuning entry: the registered scene split and the validation sampling; test sides never subsampled) |
 | `configs/miscal_protocol.toml` | ζ evaluation ladder (n_zeta, zeta_octaves) |
 | `configs/sample_budget_protocol.toml` | per-dataset stream depth / checkpoint schedule (explicit `checkpoints` overrides the batch/lo_every rule) |
@@ -503,7 +503,7 @@ not match, so a floor computed on retired pools cannot be taken as current.
 The K+ stack renamed config tags (unit samplings `"all"` → `"exhaustive"`,
 selector `"ig"` → `"student_t_uniform"`, the anchoring interface `"fixed"` →
 `"fixed_scale"`), so every keyed cell moved to a new run directory although no
-number did. The old → new map of every key, computed by VisualGeometryEval
+number did. The old → new map of every key, computed by VisualGeometryToolkitEval
 `Experiments.rekey_map` from the previous runs' `_config.toml` and checked
 against the K+ fold, is `<results>/_rekey/kplus-20261009.toml`. Every cell was
 rerun on the K+ stack: every evaluation, tuning artifact, budget curve, ladder,
@@ -533,7 +533,7 @@ is retired). The SupeRANSAC rows of Tab. 3 are their own cell
   arm-building cell's run key, so every such cell gets a new run directory.
 - The basin ladder's perturbation and bootstrap streams are StableRNGs
   (`basin-ladder-v5`); the polish table's bootstrap likewise (render stage).
-- The evaluation engine (same date; now VisualGeometryEval): every random stream feeding a
+- The evaluation engine (same date; now VisualGeometryToolkitEval): every random stream feeding a
   persisted result is a StableRNG keyed by `stable_seed` (never `Base.hash`,
   never `MersenneTwister`/`Xoshiro`, whose streams Julia does not keep across
   versions): the pool subsample and per-pair pool draws (pool format 3 —
@@ -553,7 +553,7 @@ in by `src/protocol_folds.jl`, THE one fold recipe; which cv_protocol
 section a cell tunes on is declared in its TOML as `[protocol] cv_section`,
 which tuning entries as `[sequential_cv]`; each layered entry resolved to
 its complete table) is hashed into its
-run directory (`VisualGeometryEval.Experiments.run_key`; the `[render]`
+run directory (`VisualGeometryToolkitEval.Experiments.run_key`; the `[render]`
 section is excluded). Consumers re-derive a producer's key from the config
 name (`miscal_sidecar_of`, `operating_points_run`) — keys are derived, never copied.
 

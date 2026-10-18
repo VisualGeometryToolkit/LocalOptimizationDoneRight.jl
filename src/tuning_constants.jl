@@ -2,7 +2,7 @@
 # Per-model-class tuning constants — the index over configs/default.toml's
 # [[tuning_constants]], THE single home of the cross-validated
 # `scale_multiple` of the paper's arms (the accv2026 operating points), with
-# codified provenance. Moved from RobustVisualGeometry, whose find_* pipelines
+# codified provenance. Moved from VisualGeometryToolkitEstimation, whose find_* pipelines
 # now default to the classical Irls{TLSShape} following the scorer.
 #
 # `scale_multiple` is VGC's deployment multiple (robust/losses.jl `deploy`): the loss
@@ -28,13 +28,13 @@
 #
 # (Separately, an arm may STATE its `scale_multiple` in its own currency — the
 # shared half-weight depth of the GM/Cauchy ablation arms — and converts it
-# through RobustVisualGeometry's `plain_scale_multiple`, the ONE place a
+# through VisualGeometryToolkitEstimation's `plain_scale_multiple`, the ONE place a
 # currency map lives. That is not what `shape` records.)
 #
 # PROVENANCE — one source of truth per value. A VALIDATED entry carries
 # `tuning = { config, name, hash, arm }`: the cell config of record and the
 # `[tuning.<name>]` product tuning whose arm `arm` deployed this value, with the
-# spec's hash (VisualGeometryEval `tuning_hash`; the run's sidecar records
+# spec's hash (VisualGeometryToolkitEval `tuning_hash`; the run's sidecar records
 # the same hash, its grid specs and its run key). When the config of record
 # changes (its spec now hashes otherwise) the entry keeps the hash of the spec
 # that PRODUCED its value and states `pending_hash`, the hash it awaits
@@ -52,7 +52,7 @@
 Where a cross-validated `scale_multiple` came from: arm `arm` of the product tuning
 `[tuning.<name>]` of the cell config of record `config` (a path relative to the
 directory holding the stack checkouts), whose spec hashes to `hash`
-(VisualGeometryEval `tuning_hash`). `pending_hash` is `nothing`, or the
+(VisualGeometryToolkitEval `tuning_hash`). `pending_hash` is `nothing`, or the
 hash the config of record's spec has since moved to: the value is pending
 re-validation under it (and `hash` still names the spec that produced it).
 """
@@ -68,7 +68,7 @@ end
     TuningConstant
 
 A cross-validated `scale_multiple` with codified provenance — the loss width
-as a multiple of the estimated scale; see `VisualGeometryCore.deploy`.
+as a multiple of the estimated scale; see `VisualGeometryToolkitCore.deploy`.
 
 # Fields
 - `scale_multiple::Float64` — the loss width as a multiple of ŝ (partition-anchored).
@@ -102,7 +102,7 @@ _registry_key(e) = (Symbol(e["problem"]), String(e["shape"]), Symbol(e["features
 function _tuning_registry(entries)
     raw = Dict{Tuple{Symbol, String, Symbol, Symbol}, Any}()
     for e in entries
-        VisualGeometryCore.check_keys(e, _TUNING_KEYS, "tuning_constants")
+        VgtkCore.check_keys(e, _TUNING_KEYS, "tuning_constants")
         key = _registry_key(e)
         haskey(raw, key) && throw(ArgumentError("[[tuning_constants]]: duplicate entry $key"))
         has_t, has_x = haskey(e, "tuning"), haskey(e, "transfer")
@@ -110,7 +110,7 @@ function _tuning_registry(entries)
             "[[tuning_constants]] $key: state exactly one of `tuning` (a validated value) or `transfer`"))
         if has_t
             haskey(e, "scale_multiple") || throw(ArgumentError("[[tuning_constants]] $key: a validated entry states its `scale_multiple`"))
-            VisualGeometryCore.check_keys(e["tuning"], (_PROVENANCE_KEYS..., _PROVENANCE_OPTIONAL_KEYS...),
+            VgtkCore.check_keys(e["tuning"], (_PROVENANCE_KEYS..., _PROVENANCE_OPTIONAL_KEYS...),
                                           "tuning_constants.tuning")
             get(e["tuning"], "pending_hash", nothing) == e["tuning"]["hash"] && throw(ArgumentError(
                 "[[tuning_constants]] $key: `pending_hash` equals `hash` — nothing is pending"))
@@ -119,7 +119,7 @@ function _tuning_registry(entries)
         else
             haskey(e, "scale_multiple") && throw(ArgumentError(
                 "[[tuning_constants]] $key: a transfer does not restate `scale_multiple` — it is the source's"))
-            VisualGeometryCore.check_keys(e["transfer"], _TRANSFER_KEYS, "tuning_constants.transfer")
+            VgtkCore.check_keys(e["transfer"], _TRANSFER_KEYS, "tuning_constants.transfer")
             all(key -> haskey(e["transfer"], key), _TRANSFER_KEYS) ||
                 throw(ArgumentError("[[tuning_constants]] $key: `transfer` needs $(_TRANSFER_KEYS)"))
         end
@@ -218,7 +218,7 @@ end
 """
     WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL
 
-The Welsch-HQ `scale_multiple` of the essential class (`RobustVisualGeometry.find_essential`): the
+The Welsch-HQ `scale_multiple` of the essential class (`VisualGeometryToolkitEstimation.find_essential`): the
 deployed optimum of the PT-E-SIFT-4K product tuning (the essential class tier
 transfers it from the `(:sift, :phototourism)` entry, the cell that tuned it).
 Equal to `tuning_constant(:essential, "welsch").scale_multiple`.
@@ -228,7 +228,7 @@ const WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL = tuning_constant(:essential, "welsch")
 """
     WELSCH_HQ_SCALE_MULTIPLE_FUNDMAT
 
-The Welsch-HQ `scale_multiple` of the fundmat class (`RobustVisualGeometry.find_fundmat`). TRANSFERRED
+The Welsch-HQ `scale_multiple` of the fundmat class (`VisualGeometryToolkitEstimation.find_fundmat`). TRANSFERRED
 from the essential cell — `tuning_constant(:fundmat, "welsch").validated` is `false`
 until the PT-F cross-validation lands.
 """
@@ -237,7 +237,7 @@ const WELSCH_HQ_SCALE_MULTIPLE_FUNDMAT = tuning_constant(:fundmat, "welsch").sca
 """
     WELSCH_HQ_SCALE_MULTIPLE_HOMOGRAPHY
 
-The Welsch-HQ `scale_multiple` of the homography class (`RobustVisualGeometry.find_homography`).
+The Welsch-HQ `scale_multiple` of the homography class (`VisualGeometryToolkitEstimation.find_homography`).
 TRANSFERRED from the essential cell — `tuning_constant(:homography, "welsch").validated`
 is `false` until the HEB-H re-CV succeeds at its gate.
 """
@@ -246,7 +246,7 @@ const WELSCH_HQ_SCALE_MULTIPLE_HOMOGRAPHY = tuning_constant(:homography, "welsch
 """
     WELSCH_HQ_SCALE_MULTIPLE_ABSOLUTE_POSE
 
-The Welsch-HQ `scale_multiple` of the absolute_pose class (`RobustVisualGeometry.find_absolute_pose`).
+The Welsch-HQ `scale_multiple` of the absolute_pose class (`VisualGeometryToolkitEstimation.find_absolute_pose`).
 TRANSFERRED from the essential cell — no PnP cell has been cross-validated
 yet, so `tuning_constant(:absolute_pose, "welsch").validated` is `false`.
 """

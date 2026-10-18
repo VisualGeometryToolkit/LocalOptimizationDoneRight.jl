@@ -1,24 +1,25 @@
 # =============================================================================
-# The strategies on VisualGeometryCore's contracts: the weight policies they
+# The strategies on VisualGeometryToolkitCore's contracts: the weight policies they
 # iterate (verbs present, normalized or not), the refit family, the width
 # setter, the loss a consensus-anchored strategy deploys, and the
 # local-optimization contract checked by its owner's conformance helper.
-# (Moved from RobustVisualGeometry's test/estimation_interfaces_tests.jl and
+# (Moved from VisualGeometryToolkitEstimation's test/estimation_interfaces_tests.jl and
 # test/contract_conformance_tests.jl with the strategies; the core's
 # strategies keep those tests there.)
 # =============================================================================
+import VisualGeometryToolkitCore as VgtkCore
 using Test, Random, LinearAlgebra, StaticArrays
 using Rotations: RotY
-using VisualGeometryCore
-using VisualGeometryCore: AbstractWeightPolicy, NormalizedWeightPolicy, RefitFamily, NativeRefit,
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: AbstractWeightPolicy, NormalizedWeightPolicy, RefitFamily, NativeRefit,
     update_nuisance!, update_weights!, lo_width, with_width, LossWidth, ScaleMultiple, FixedScale,
     consensus_set, score_model!, scale_s2, csponds, estimate, converged, codimension, minimal_sample_size,
     test_local_optimization_contract, MsacScoring, WelschShape, GemanMcclureShape, TLSShape
 using RansacScoringDoneRight: StudentTUniformScoring
-using RobustVisualGeometry
-using RobustVisualGeometry: RansacConfig, RansacWorkspace, PosteriorLikelihood
+using VisualGeometryToolkitEstimation
+using VisualGeometryToolkitEstimation: RansacConfig, RansacWorkspace, PosteriorLikelihood
 using LocalOptimizationDoneRight
-const RVG = RobustVisualGeometry
+const RVG = VisualGeometryToolkitEstimation
 const LO = LocalOptimizationDoneRight
 include("scenes.jl")   # the shared scenes, as modules
 using .HomographyScenes, .EpipolarScenes
@@ -67,11 +68,11 @@ end
     ]
     for lo in strategies
         @test lo_width(lo) isa ScaleMultiple
-        @test VisualGeometryCore.scale_interface(lo) == VisualGeometryCore.ConsensusAnchored()
+        @test VgtkCore.scale_interface(lo) == VgtkCore.ConsensusAnchored()
         out = with_width(lo, LossWidth(0.25))
         @test typeof(out).name === typeof(lo).name
         @test lo_width(out) == LossWidth(0.25)
-        @test VisualGeometryCore.scale_interface(out) == FixedScale()
+        @test VgtkCore.scale_interface(out) == FixedScale()
         for f in fieldnames(typeof(lo))
             f === :width && continue
             @test isequal(getfield(out, f), getfield(lo, f))
@@ -100,7 +101,7 @@ end
 end
 
 # The local-optimization contract on the strategies this package hosts
-# (VisualGeometryCore's helper; `allocations = false` for now, as for the
+# (VisualGeometryToolkitCore's helper; `allocations = false` for now, as for the
 # core's strategies).
 fitted(p, halfwidth; seed = 1) =
     estimate(ransac(p, StudentTUniformScoring(p, halfwidth); config = RansacConfig(max_trials = 300), rng = MersenneTwister(seed)))

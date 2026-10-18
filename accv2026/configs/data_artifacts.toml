@@ -3,7 +3,7 @@
 # Zenodo-hosted Julia artifact (accv2026/Artifacts.toml, lazy, sha256-pinned)
 # holds, where it mounts, and from which config of record its file list is
 # DERIVED. Nothing here lists a scene or a file: the scenes are the registered
-# splits a pool config names (VisualGeometryEval configs/splits.toml), the
+# splits a pool config names (VisualGeometryToolkitEval configs/splits.toml), the
 # files the ones its reader opens.
 #
 #   scripts/tools/make_zenodo_artifacts.jl   builds the tarballs from this
@@ -17,7 +17,7 @@
 # so the author's tree, a packed artifact and a fetched view have one layout
 # and no path in the code depends on whose machine it runs on.
 #
-# Kinds (VisualGeometryEval DataArtifacts `artifact_files`):
+# Kinds (VisualGeometryToolkitEval DataArtifacts `artifact_files`):
 #   pool_sources  the raw files the pool producer `config` reads for the
 #                 scenes of `splits` (its [source] route: phototourism matches
 #                 + COLMAP models, HEB homography files, consolidated
@@ -44,7 +44,7 @@
 # producer cells).
 # =============================================================================
 
-# The format and the code that reads it are VisualGeometryEval's DataArtifacts
+# The format and the code that reads it are VisualGeometryToolkitEval's DataArtifacts
 # (load_catalog, artifact_files, fetch_artifacts!, pack_artifacts,
 # catalog_violations); this table binds the catalog to its Artifacts.toml.
 # ACCV2026_ARTIFACTS_TOML names a copy with other URLs and the same hashes (the
@@ -134,7 +134,7 @@ split_by = "scene"
 # is the largest part Zenodo's proxy took; facade (9.06 GB) did not (HTTP 502,
 # 8 tries, 2026-10-15). A scene over the cap ships as sub-parts
 # eth3d_f_pools_1k_<scene>_part1..k, its residuals cut into equal chunks that
-# fetch_artifacts! reassembles byte for byte (VisualGeometryEval DataArtifacts).
+# fetch_artifacts! reassembles byte for byte (VisualGeometryToolkitEval DataArtifacts).
 max_part_bytes = 1_600_000_000
 mount = "data"
 record = "eth3d"

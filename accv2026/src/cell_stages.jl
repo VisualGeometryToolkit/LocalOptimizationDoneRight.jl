@@ -27,10 +27,11 @@
 #                      the TEST side of that sidecar's cross-validation;
 #       render (CPU) — the faceted budget panel (+ an optional time panel).
 # =============================================================================
+import VisualGeometryToolkitCore as VgtkCore
 using DrWatson
 using JLD2, TOML
 using DelimitedFiles: readdlm
-import VisualGeometryCore   # check_keys: the figure configs' key check
+import VisualGeometryToolkitCore   # check_keys: the figure configs' key check
 include(srcdir("config.jl"))
 include(srcdir("common.jl"))
 include(srcdir("registry.jl"))
@@ -125,9 +126,9 @@ function miscal_cell_stages(cfg_name::AbstractString;
     # the `[render.main]` table — `panel` and the one statistic of `rows` it draws —
     # drawn with the Table 1 roster gate (the renderer's MAIN_ARMS + EXTRA_ARMS
     # defaults). The grid draws its own legend.
-    VisualGeometryCore.check_keys(r, ("deploy", "main"), "$cfg_path [render]")
+    VgtkCore.check_keys(r, ("deploy", "main"), "$cfg_path [render]")
     m = r["main"]
-    VisualGeometryCore.check_keys(m, ("panel", "rows"), "$cfg_path [render.main]")
+    VgtkCore.check_keys(m, ("panel", "rows"), "$cfg_path [render.main]")
     length(m["rows"]) == 1 || error("$cfg_name [render.main] rows: the grid row draws one statistic, got $(m["rows"])")
     out, row = joinpath(PAPER_FIGDIR, m["panel"]), String(only(m["rows"]))   # deployed straight into the paper (registry.jl)
     push!(stages, Stage(:render_main, "$tag miscal panel, Table 1 roster, $(row) row (Fig 3 grid) -> $(out)",
@@ -373,10 +374,10 @@ config, so nothing else would catch a typo.
 function facet_grid_stages(cfg_name::AbstractString)
     path = projectdir("configs", cfg_name * ".toml")
     r = TOML.parsefile(path)["render"]
-    VisualGeometryCore.check_keys(r, ("name", "xopts", "legend", "xtick", "xticklabels", "oracle", "ytick_spacing", "rows"), "$path [render]")
+    VgtkCore.check_keys(r, ("name", "xopts", "legend", "xtick", "xticklabels", "oracle", "ytick_spacing", "rows"), "$path [render]")
     rows = r["rows"]
     for row in rows
-        VisualGeometryCore.check_keys(row, ("label", "problem", "panel", "producer", "stage", "maa"), "$path [[render.rows]]")
+        VgtkCore.check_keys(row, ("label", "problem", "panel", "producer", "stage", "maa"), "$path [[render.rows]]")
     end
     name = String(r["name"]); xopts = String(r["xopts"]); legend = String(r["legend"])
     composer = scriptsdir("tools", "make_facet_grid.py")

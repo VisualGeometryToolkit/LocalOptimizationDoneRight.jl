@@ -1,6 +1,6 @@
 # =============================================================================
 # The strategies' TOML: their `[local_optimization.<tag>]` keyword defaults
-# (configs/default.toml), the loader method of RobustVisualGeometry's
+# (configs/default.toml), the loader method of VisualGeometryToolkitEstimation's
 # `lo_from_toml` for this package's tags, and the writer (`config_dict`).
 #
 # A strategy is spelled as an inline table, `type` its tag:
@@ -9,7 +9,7 @@
 #
 # and loaded through the core's one entry with the two registries merged:
 #
-#     local_optimization_from_toml(d; class, tags = merge(RobustVisualGeometry.LO_TAGS, LO_TAGS))
+#     local_optimization_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LO_TAGS))
 #
 # `loss` (HQ, Gnc) selects the robust loss from the core's LOSS_TAGS; `gnc`
 # wraps an inner static strategy named by `inner` + `loss`. A width is
@@ -39,14 +39,14 @@ _entry_to_toml(x::Float64) = isnan(x) ? "r_max" : x
 # The one per-field conversion hook of the reader.
 _from_toml(::Type{T}, ::Val{F}, v) where {T, F} = convert_field(fieldtype(T, F), v)
 _from_toml(::Type{<:Gnc}, ::Val{:entry}, v) = _entry_from_toml(v)
-VisualGeometryCore.toml_field(lo::Gnc, ::Val{:entry}) = _entry_to_toml(lo.entry)
+VgtkCore.toml_field(lo::Gnc, ::Val{:entry}) = _entry_to_toml(lo.entry)
 
 for T in values(LO_TAGS)
     @eval begin
         # The width field is written and read as its two keys
         # (`scale_multiple` | `loss_width`), never as `width`.
-        VisualGeometryCore.toml_skip_fields(::Type{<:$T}) = (:width,)
-        VisualGeometryCore.toml_key(::Type{<:$T}, f::Symbol) = _toml_key(f)
+        VgtkCore.toml_skip_fields(::Type{<:$T}) = (:width,)
+        VgtkCore.toml_key(::Type{<:$T}, f::Symbol) = _toml_key(f)
     end
 end
 
@@ -93,7 +93,7 @@ function _table_kwargs(::Type{T}, d::AbstractDict) where {T}
 end
 
 for T in values(LO_TAGS)
-    @eval RobustVisualGeometry.lo_from_toml(::Type{<:$T}, d::AbstractDict; class::Symbol, section::AbstractString) =
+    @eval VgtkEstimation.lo_from_toml(::Type{<:$T}, d::AbstractDict; class::Symbol, section::AbstractString) =
         _lodr_lo_from_toml($T, d; class, section)
 end
 
@@ -132,7 +132,7 @@ end
 # The writer: VGC's `toml_table` walk (the width skipped, Greek spelled ASCII,
 # `Gnc.entry` spelled by its hook); only the discriminators are this package's.
 for T in values(LO_TAGS)
-    @eval function RobustVisualGeometry.config_dict(lo::$T)
+    @eval function VgtkEstimation.config_dict(lo::$T)
         d = toml_table(lo)
         d["type"] = _lo_tag(lo)
         lo isa Gnc && (d["inner"] = "irls")

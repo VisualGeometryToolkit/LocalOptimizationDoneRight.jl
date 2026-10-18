@@ -3,26 +3,26 @@
 # runs: the posterior IRLS (Student-t and Barron-adaptive likelihoods),
 # StuTuBCD, the HQ lift (incl. the ECM scale and the convex-Newton z-block),
 # GNC, the tabulated mixture lift and ReGeMM. (The core's states — Irls{K}, the
-# KeepModel EM, the division-camera IRLS — are RobustVisualGeometry's test.)
+# KeepModel EM, the division-camera IRLS — are VisualGeometryToolkitEstimation's test.)
 # A recorded run must BE the bare run:
 # the same result, and — truncated after every iteration k — the same state,
 # so iterate for iterate. Each state is built as its `locally_optimize!` arm
-# builds it (the internals of this package and RobustVisualGeometry), on a
+# builds it (the internals of this package and VisualGeometryToolkitEstimation), on a
 # fresh workspace per run.
 # =============================================================================
-# (Moved from RobustVisualGeometry's test/bcd_recorded_tests.jl with the strategies it tests.)
+# (Moved from VisualGeometryToolkitEstimation's test/bcd_recorded_tests.jl with the strategies it tests.)
 using Test, Random, LinearAlgebra, StaticArrays
 using Rotations: RotXYZ
-using VisualGeometryCore
-using VisualGeometryCore: CameraModel, Point2, Vec3, csponds, estimate, retcode, iterations, Incumbent,
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: CameraModel, Point2, Vec3, csponds, estimate, retcode, iterations, Incumbent,
     WelschShape, GemanMcclureShape, HuberShape, block_coordinate_descent!, Recorded, current_cost
 using RansacScoringDoneRight: StudentTUniformScoring
-using RobustVisualGeometry
+using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
-const R = RobustVisualGeometry
-const V = VisualGeometryCore
+const R = VisualGeometryToolkitEstimation
+const V = VisualGeometryToolkitCore
 const LO = LocalOptimizationDoneRight
-using VisualGeometryCore: rows_provider, lift_init, lift_refresh!, lift_residuals, lift_size
+using VisualGeometryToolkitCore: rows_provider, lift_init, lift_refresh!, lift_residuals, lift_size
 
 K = SA[800.0 0 320; 0 820.0 240; 0 0 1]
 function two_view(rng, n; planar)

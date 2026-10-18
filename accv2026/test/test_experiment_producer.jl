@@ -10,11 +10,11 @@
 # (Production runs on CUDA over the full pools.)
 # =============================================================================
 using Test, Random, JLD2, DataFrames
-using RobustVisualGeometry: EssentialProblem
+using VisualGeometryToolkitEstimation: EssentialProblem
 using RansacScoringDoneRight: RansacScoringDoneRight
-using VisualGeometryCore: WelschShape
-using VisualGeometryEval.Tuning: tuning_spec, load_tuning_artifact, grid
-using VisualGeometryEval.Pools: synthetic_e_pool_pair, PoolResiduals
+using VisualGeometryToolkitCore: WelschShape
+using VisualGeometryToolkitEval.Tuning: tuning_spec, load_tuning_artifact, grid
+using VisualGeometryToolkitEval.Pools: synthetic_e_pool_pair, PoolResiduals
 
 include(joinpath(@__DIR__, "..", "src", "experiment_producer.jl"))
 include(joinpath(@__DIR__, "..", "src", "plot_lo_sensitivity.jl"))   # compute_summary

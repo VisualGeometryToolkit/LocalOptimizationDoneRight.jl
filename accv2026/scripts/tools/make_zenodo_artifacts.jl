@@ -8,7 +8,7 @@
 #         [--only=name,name] [--record=<group>=<zenodo id>,...] [--local-toml=<path>]
 #
 # For each artifact of configs/data_artifacts.toml (or --only): its file list
-# is DERIVED from the config of record (VisualGeometryEval DataArtifacts
+# is DERIVED from the config of record (VisualGeometryToolkitEval DataArtifacts
 # `artifact_files`); `pack_artifacts` builds it with Pkg.Artifacts — `create_artifact` (the files
 # copied into a tree, in a scratch artifacts directory under <stage>, never the
 # depot), `archive_artifact` (<stage>/tarballs/<name>.tar.gz) and
@@ -29,7 +29,7 @@
 # never committed.
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
-using VisualGeometryEval: cli_option
+using VisualGeometryToolkitEval: cli_option
 include(srcdir("common.jl"))           # binds the project root data_root()/results_root() resolve against
 include(srcdir("data_artifacts.jl"))
 

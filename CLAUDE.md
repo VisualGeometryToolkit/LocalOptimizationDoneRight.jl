@@ -3,8 +3,8 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 LocalOptimizationDoneRight: the ACCV 2026 paper artifact, in two halves: a
-registered package — the paper's local optimizers on VisualGeometryCore's
-local-optimization contract and RobustVisualGeometry's problems (`src/`: the
+registered package — the paper's local optimizers on VisualGeometryToolkitCore's
+local-optimization contract and VisualGeometryToolkitEstimation's problems (`src/`: the
 HQ/GNC lifts and their lift core and schedules in `src/lift/`, the strategies —
 `HQ`, `Gnc`, `StudentTUniform`, `StuTuBCD`, `BarronAdaptive`, the research
 variants — their TOML registry `LO_TAGS` in `src/strategies/`, the
@@ -13,7 +13,7 @@ solver calls are the PoseLib package extension in `ext/`) — and the research
 project `accv2026/` that produces every figure and table. The evaluation engine
 (pair geometry, the refit layer, post-LO matrices, the sample-budget engine,
 live runs, the `Roster` type and its gate-enforced readers, the selection
-stream) is `VisualGeometryEval.Evaluation`; the paper's arm rosters stay in
+stream) is `VisualGeometryToolkitEval.Evaluation`; the paper's arm rosters stay in
 `accv2026/`.
 The RansacLib LO baseline (unregistered) lives in the project: the shim at
 `accv2026/lib/RansacLibLO` (dev'd via `[sources]`) and its arms in
@@ -38,22 +38,22 @@ is no per-item filter. The paper project has its own suite
 The conventions every stack package follows — naming and the estimator verbs,
 signatures, data arguments, coordinate frames and normalization ("frame in =
 frame out"), pixel origins, bearings, Jacobians, units and the stack
-contracts — live ONCE, in VisualGeometryCore's `conventions/` folder
+contracts — live ONCE, in VisualGeometryToolkitCore's `conventions/` folder
 (`conventions/README.md` indexes it). Read them before changing code here.
 This file carries no copy of them, only how they land in this package. Where
 the folder is:
 
-- in a checkout of the stack's monorepo: `../VisualGeometryCore/conventions/`
+- in a checkout of the stack's monorepo: `../VisualGeometryToolkitCore/conventions/`
   (the root CLAUDE.md imports it);
-- in VisualGeometryCore's own repository: `conventions/`;
-- from Julia, the installed copy: `VisualGeometryCore.conventions_dir()`, i.e.
-  `joinpath(pkgdir(VisualGeometryCore), "conventions")`.
+- in VisualGeometryToolkitCore's own repository: `conventions/`;
+- from Julia, the installed copy: `VisualGeometryToolkitCore.conventions_dir()`, i.e.
+  `joinpath(pkgdir(VisualGeometryToolkitCore), "conventions")`.
 
 The agent-docs test checks that this file points there and holds no copy.
 
 ## Data (accv2026)
 
-The data binding, provenance record and data policy are VisualGeometryEval's
+The data binding, provenance record and data policy are VisualGeometryToolkitEval's
 `Experiments` (one implementation for every paper project). accv2026 binds
 itself in `src/common.jl` (`set_project_root!(projectdir())`, asserted to be
 the accv2026 project).
@@ -91,7 +91,7 @@ The rule is the stack's (`conventions/frames.md`); how it lands here:
 
 ### The pool frame here
 
-The drivers consume VisualGeometryEval pools in `NormalizedImageFrame`.
+The drivers consume VisualGeometryToolkitEval pools in `NormalizedImageFrame`.
 The vendored RansacLib baseline normalizes internally (third-party, exempt from
 rule 3). Its E arm takes calibrated plane points: a declared pinhole-only
 third-party exception to the bearings rule, converted once from the pool frame

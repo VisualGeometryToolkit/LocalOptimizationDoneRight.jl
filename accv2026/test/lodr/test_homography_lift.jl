@@ -12,16 +12,16 @@
 #      random sl(3) steps about the GT): the HQ lifts recover where the
 #      static Welsch IRLS is trapped, and match it from near seeds.
 # =============================================================================
-# (Moved from RobustVisualGeometry's test/homography_lift_tests.jl with the strategies it tests.)
+# (Moved from VisualGeometryToolkitEstimation's test/homography_lift_tests.jl with the strategies it tests.)
 using Test, Random, LinearAlgebra, StaticArrays
-using VisualGeometryCore: estimate   # VGC accessor (public)
-using VisualGeometryCore: HomographyManifold8, retract   # the sl(3) chart (public)
+using VisualGeometryToolkitCore: estimate   # VGC accessor (public)
+using VisualGeometryToolkitCore: HomographyManifold8, retract   # the sl(3) chart (public)
 using RansacScoringDoneRight: StudentTUniformScoring   # owned and exported by RansacScoringDoneRight
-using RobustVisualGeometry
+using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 include("scenes.jl")   # the shared scenes, as modules
 using .HomographyScenes, .Contamination, .LiftChecks
-const RVGL = RobustVisualGeometry
+const RVGL = VisualGeometryToolkitEstimation
 
 @testset "Homography loss lift — smoke + parity" begin
     # --- plane-induced synthetic --------------------------------------------
@@ -122,7 +122,7 @@ const RVGL = RobustVisualGeometry
         # the lift core (VGC's rational-radial projection root is a seeded
         # Newton since 0.21.2 and its focal stack a Schur solve since 0.21.2;
         # 0.22 renamed the lens Jacobians to transform_deriv). Same rule.
-        # Re-pinned 2026-09-17 against VisualGeometryCore 0.28.1 / RSDR 0.8.0:
+        # Re-pinned 2026-09-17 against VisualGeometryToolkitCore 0.28.1 / RSDR 0.8.0:
         # VGC's loss family retired the per-shape `lift_cost` loops for a generic
         # loop over the new `lift_rho`; the re-associated cost accumulation moves
         # the HQ arms tens of ulp and the GNC arm 1-2 ulp on clean master, with no

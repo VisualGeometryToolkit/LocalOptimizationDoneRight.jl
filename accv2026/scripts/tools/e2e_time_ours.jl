@@ -10,7 +10,7 @@
 # single-threaded). The deployment, the per-pair streams and the termination
 # are the e2e cell's (`e2e_deployment`, `stable_seed(seed, stream, scene, i)`,
 # `e2e_ransac_config`); the wall clock brackets exactly the `ransac` call
-# (VisualGeometryEval `live_runs`, serial on one thread).
+# (VisualGeometryToolkitEval `live_runs`, serial on one thread).
 #
 # Warm-up: the first `[timing] warmup_pairs` pairs of every scene, every arm and
 # ζ, untimed, before the repeat (JIT and caches). Then every (scene, arm, ζ) in

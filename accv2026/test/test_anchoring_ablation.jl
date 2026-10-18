@@ -7,15 +7,15 @@
 #   • WITH is the production evaluation, untouched;
 #   • the ablation's scale interface is declared in configs/miscal_protocol.toml
 #     and names the evaluation's directory; `--plan` lists the evaluation stage.
-# On VisualGeometryEval's synthetic E pool pair (real pools are not on the test host).
+# On VisualGeometryToolkitEval's synthetic E pool pair (real pools are not on the test host).
 # =============================================================================
 using Test, Random, TOML
-using RobustVisualGeometry: EssentialProblem
-using VisualGeometryEval.Evaluation: miscal_evaluation_refit, apply_lo_refits, build_pair_ctx,
+using VisualGeometryToolkitEstimation: EssentialProblem
+using VisualGeometryToolkitEval.Evaluation: miscal_evaluation_refit, apply_lo_refits, build_pair_ctx,
     refit_imc!, refit_seed
-using VisualGeometryCore: ScaleMultiple, FixedScale, SCALE_INTERFACE_TAGS
+using VisualGeometryToolkitCore: ScaleMultiple, FixedScale, SCALE_INTERFACE_TAGS
 using RansacScoringDoneRight: StudentTUniformScoring
-using VisualGeometryEval.Pools: synthetic_e_pool_pair
+using VisualGeometryToolkitEval.Pools: synthetic_e_pool_pair
 include(joinpath(@__DIR__, "..", "src", "config.jl"))   # the paper's arm roster (ROSTER)
 
 @testset "consensus-anchoring ablation evaluation" begin
@@ -69,7 +69,7 @@ include(joinpath(@__DIR__, "..", "src", "config.jl"))   # the paper's arm roster
         @test iface == "fixed_scale" && SCALE_INTERFACE_TAGS[iface] === FixedScale
         driver = read(joinpath(root, "scripts", "tools", "run_sequential_cv.jl"), String)
         # the interface the driver delivers (it refuses any other)
-        @test occursin("VisualGeometryCore.SCALE_INTERFACE_TAGS[iface] === VisualGeometryCore.FixedScale", driver)
+        @test occursin("VisualGeometryToolkitCore.SCALE_INTERFACE_TAGS[iface] === VisualGeometryToolkitCore.FixedScale", driver)
         # scratch data and results roots: the plan resolves the keyed paths,
         # runs nothing, and so needs no data binding on this machine
         cmd = `$(Base.julia_cmd()) --startup-file=no --project=$root $(joinpath(root, "scripts", "fig_anchoring.jl")) --plan`

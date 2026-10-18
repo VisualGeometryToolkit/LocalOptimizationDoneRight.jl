@@ -3,7 +3,7 @@
 # paper's reference baseline. They live in the research project, not in
 # LocalOptimizationDoneRight, because their C++ backend (lib/RansacLibLO, the
 # vendored RansacLib shim) is an unregistered, locally built package; they plug
-# into the composition evaluator through VisualGeometryCore's external-refit
+# into the composition evaluator through VisualGeometryToolkitCore's external-refit
 # contract (`external_workspace`, `refine_external!`), like any third-party LO
 # strategy.
 #
@@ -58,6 +58,7 @@
 # identical inputs give bitwise-identical outputs.
 # =============================================================================
 
+import VisualGeometryToolkitCore as VgtkCore
 using RansacLibLO: RansacLibLO, LebedaLOOptions, PRESET_REFERENCE, lebeda_lo, lebeda_iterlo
 # The C++ shim is built locally (`Pkg.build("RansacLibLO")`, gitignored). Unbuilt,
 # every Lebeda refit throws inside the evaluator's guarded refit and silently
@@ -65,12 +66,12 @@ using RansacLibLO: RansacLibLO, LebedaLOOptions, PRESET_REFERENCE, lebeda_lo, le
 # refuse at load instead.
 isfile(RansacLibLO._SHIM) ||
     error("RansacLibLO's shim $(RansacLibLO._SHIM) is not built — run `Pkg.build(\"RansacLibLO\")` in accv2026")
-import VisualGeometryCore
-using VisualGeometryCore: AbstractLocalOptimization, ExternalRefit, FixedScale, EssentialMat, FundMat,
+import VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: AbstractLocalOptimization, ExternalRefit, FixedScale, EssentialMat, FundMat,
     HomographyMat, PerspectiveMap, sources, targets, LossWidth, loss_width
-import VisualGeometryCore: external_workspace, refine_external!
+import VisualGeometryToolkitCore: external_workspace, refine_external!
 using StaticArrays: SMatrix
-using RobustVisualGeometry: EssentialProblem, FundMatProblem, HomographyProblem
+using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem
 
 """
     LebedaIterLO(opts::LebedaLOOptions, rng_seed::Integer)
@@ -102,21 +103,21 @@ end
 
 const _LebedaLO = Union{LebedaIterLO, LebedaLOPlus}
 
-VisualGeometryCore.RefitFamily(::_LebedaLO) = ExternalRefit()
+VgtkCore.RefitFamily(::_LebedaLO) = ExternalRefit()
 
 # Identity/scale traits (VGC estimation.jl): fixed-ABSOLUTE scale semantics
 # like PoseLibLm (the deployed loss width is an external truncation supplied
 # at refit time, never a partition read); marker = pentagon* (free shape in the registry: o = static
 # IRLS, triangle = HQ, diamond = GNC, square = truncated LM/LZ).
-VisualGeometryCore.optimization_path(::_LebedaLO) = :classical_lo   # classical LO-RANSAC inner refinement
-VisualGeometryCore.scale_interface(::_LebedaLO) = FixedScale()        # absolute loss width supplied at refit time
-VisualGeometryCore.lo_label(::LebedaIterLO) = raw"TLS-LO"
+VgtkCore.optimization_path(::_LebedaLO) = :classical_lo   # classical LO-RANSAC inner refinement
+VgtkCore.scale_interface(::_LebedaLO) = FixedScale()        # absolute loss width supplied at refit time
+VgtkCore.lo_label(::LebedaIterLO) = raw"TLS-LO"
 # Instance-aware: the RansacLib-default reference preset is a DISTINCT arm
 # (61 updates vs the budget-parity options') and needs a distinct legend label. isbits
 # options ⇒ === is field-wise.
-VisualGeometryCore.lo_label(lo::LebedaLOPlus) =
+VgtkCore.lo_label(lo::LebedaLOPlus) =
     lo.opts === PRESET_REFERENCE ? raw"TLS-LO$^+$ (ref)" : raw"TLS-LO$^+$"
-VisualGeometryCore.loss_family(::_LebedaLO) = :tls
+VgtkCore.loss_family(::_LebedaLO) = :tls
 
 _lebeda_call(lo::LebedaIterLO, pts, seed, sq_loss_width; model::Symbol) =
     lebeda_iterlo(pts, seed, sq_loss_width; model, options = lo.opts, rng_seed = lo.rng_seed)

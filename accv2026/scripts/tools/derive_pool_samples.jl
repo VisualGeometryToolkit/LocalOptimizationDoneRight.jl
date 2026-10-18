@@ -5,17 +5,17 @@
 #
 #   julia --project=. -t auto scripts/tools/derive_pool_samples.jl --config=pt_e_pools
 #
-# A format-4 pool stores no per-model sample id; VisualGeometryEval
+# A format-4 pool stores no per-model sample id; VisualGeometryToolkitEval
 # `Pools.sample_starts(pool)` recovers the boundaries from the record and
 # certifies them against the pool's `total_samples` stamp. Where that
 # certificate fails (an E solve that returned a duplicated root: 276 of the
 # 46,200 PT-E-SIFT-4K_pf3 pairs), only the draw stream decides, and this tool
 # replays it: per pair the StableRNG stream `stable_seed(pool_seed, i)` of
 # `write_scene_pool`, drawn by the Gaussian-SNN sampler of `[pool]` in the form
-# that GENERATED the tree (RobustVisualGeometry 0.23: keys U^(1/w) over the
+# that GENERATED the tree (VisualGeometryToolkitEstimation 0.23: keys U^(1/w) over the
 # normalized weights, the top `m` by `partialsortperm(…; rev = true)`; the
 # current sampler draws log-space keys, which differ where U^(1/w) underflows).
-# VisualGeometryEval `derive_sample_starts` matches the stream to the record
+# VisualGeometryToolkitEval `derive_sample_starts` matches the stream to the record
 # and refuses anything it cannot certify.
 #
 # Output (DERIVED data, never beside the input pools): one
@@ -25,15 +25,15 @@
 # `sample_starts(pool; derived = …)`.
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
-using VisualGeometryEval: cli_option, start_output_flush!
-using VisualGeometryEval.Pools: load_pool, derive_sample_starts, save_sample_starts, sample_starts
-using VisualGeometryEval.Experiments: load_run_config, data_root, run_key, experiment_dir, write_run_records
-using VisualGeometryEval.Stats: stable_seed, POOL_RNG
-using RobustVisualGeometry: EssentialProblem, FundMatProblem, HomographyProblem, minimal_sample_size
+using VisualGeometryToolkitEval: cli_option, start_output_flush!
+using VisualGeometryToolkitEval.Pools: load_pool, derive_sample_starts, save_sample_starts, sample_starts
+using VisualGeometryToolkitEval.Experiments: load_run_config, data_root, run_key, experiment_dir, write_run_records
+using VisualGeometryToolkitEval.Stats: stable_seed, POOL_RNG
+using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem, minimal_sample_size
 
 const _PROBLEMS = Dict(:E => EssentialProblem, :F => FundMatProblem, :H => HomographyProblem)
 
-# The generating Gaussian-SNN draw (RobustVisualGeometry 0.23), as a stream.
+# The generating Gaussian-SNN draw (VisualGeometryToolkitEstimation 0.23), as a stream.
 function gaussian_stream(snn, m, σ, seed)
     w = [exp(-Float64(s)^2 / (2σ^2)) + 1e-6 for s in snn]
     invw = 1.0 ./ (w ./ sum(w))

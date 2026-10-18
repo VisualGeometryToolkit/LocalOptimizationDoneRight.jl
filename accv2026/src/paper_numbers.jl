@@ -10,15 +10,16 @@
 # seeds, the budget cell's `budget_curves`, the polishing and end-to-end
 # cells' summary.tsv, the selection-only sweep's summary.jld2.
 # =============================================================================
+import VisualGeometryToolkitEval as VgtkEval
 if !@isdefined(ACCV2026_PAPER_NUMBERS_LOADED)
 
 using JLD2, TOML, Printf, Statistics
-using VisualGeometryEval.Render: evaluation_curve, budget_curves
-import VisualGeometryEval
+using VisualGeometryToolkitEval.Render: evaluation_curve, budget_curves
+import VisualGeometryToolkitEval
 # The figures' statistics (qualified: the prelude binds neither name).
-const _eligible_maa = VisualGeometryEval.Stats.eligible_maa
-const _finite_median = VisualGeometryEval.Stats.finite_median
-using VisualGeometryEval.Tuning: tuning_spec, tuning_table, validation_scenes, test_scenes, load_tuning_artifact
+const _eligible_maa = VgtkEval.Stats.eligible_maa
+const _finite_median = VgtkEval.Stats.finite_median
+using VisualGeometryToolkitEval.Tuning: tuning_spec, tuning_table, validation_scenes, test_scenes, load_tuning_artifact
 # Included after cell_stages.jl and e2e_cells.jl (the folds, the registry, the arm tables).
 include(joinpath(@__DIR__, "e2e_timing.jl"))   # the timing cell (kind "e2e_timing")
 
@@ -130,7 +131,7 @@ function _read_tsv(path)
 end
 
 # The pairs of one scene of a pool tree: a ScoringPool's `scene_names` holds one
-# label per pair (VisualGeometryEval Pools, `length(scene_names) == length(pairs)`),
+# label per pair (VisualGeometryToolkitEval Pools, `length(scene_names) == length(pairs)`),
 # read without the pairs themselves.
 _pool_pair_count(pool_dir, scene) = jldopen(f -> length(f["scene_names"]), joinpath(pool_dir, scene * ".jld2"))
 

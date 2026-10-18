@@ -2,7 +2,7 @@
 # (linear y 1..6 with ° labels, powers-of-4 ζ fraction ticks, framework markers).
 # 3 panels {Welsch, TLS, GM}, shared y.
 #
-# THIN CALLER: the emission body is VisualGeometryEval.Render `emit_miscal_faceted`;
+# THIN CALLER: the emission body is VisualGeometryToolkitEval.Render `emit_miscal_faceted`;
 # this script keeps only the paper wiring — env parsing, default artifact
 # paths, the oracle constants, the panel table, the main-paper EXCLUDE
 # default and the legend name.

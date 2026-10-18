@@ -30,17 +30,17 @@
 
 using DrWatson; @quickactivate "ACCV2026"
 using CUDA, Random, Statistics, Printf, JLD2, Logging, Dates
-using RobustVisualGeometry
-using RobustVisualGeometry: EssentialProblem
+using VisualGeometryToolkitEstimation
+using VisualGeometryToolkitEstimation: EssentialProblem
 using TOML
 
-# The paper config (the CLI and flusher come with VisualGeometryEval) and THE
+# The paper config (the CLI and flusher come with VisualGeometryToolkitEval) and THE
 # shared streamed-experiment producer (also used by the production cell driver).
 include(srcdir("config.jl"))
 include(srcdir("experiment_producer.jl"))
 include(srcdir("protocol_folds.jl"))
 
-# sbatch-safe output: VisualGeometryEval's periodic stdout/stderr flusher.
+# sbatch-safe output: VisualGeometryToolkitEval's periodic stdout/stderr flusher.
 start_output_flush!()
 
 # =============================================================================

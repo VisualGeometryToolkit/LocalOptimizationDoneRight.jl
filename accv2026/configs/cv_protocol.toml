@@ -5,14 +5,14 @@
 # zeta is only ever a test-time evaluation at the tuned widths.
 #
 # Each dataset section is a PARTIAL `cross_validation` table of a
-# `[tuning.<name>]` entry (VisualGeometryEval `CrossValidation`; schema
-# in VisualGeometryEval docs/TUNING.md): the registered scene split it names (its lists
-# live ONLY in VisualGeometryEval configs/splits.toml) and how the validation units are
+# `[tuning.<name>]` entry (VisualGeometryToolkitEval `CrossValidation`; schema
+# in VisualGeometryToolkitEval docs/TUNING.md): the registered scene split it names (its lists
+# live ONLY in VisualGeometryToolkitEval configs/splits.toml) and how the validation units are
 # sampled. A cell names its section in its own `[protocol] cv_section`;
 # `fold_sequential_cv!` (src/protocol_folds.jl) layers it into every tuning
-# entry the cell names, under the cell's own overrides, and VisualGeometryEval's parser refuses an unknown key or tag.
-# Absent keys inherit VisualGeometryEval's defaults: every unit of each side; a
-# stratified sample takes its seed from VisualGeometryEval's `[tags.unit_sampling]`
+# entry the cell names, under the cell's own overrides, and VisualGeometryToolkitEval's parser refuses an unknown key or tag.
+# Absent keys inherit VisualGeometryToolkitEval's defaults: every unit of each side; a
+# stratified sample takes its seed from VisualGeometryToolkitEval's `[tags.unit_sampling]`
 # defaults, combined with each scene's NAME. Subsampling is always a
 # FRACTION, never a fixed count; test sides are never subsampled.
 #

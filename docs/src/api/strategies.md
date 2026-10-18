@@ -4,10 +4,10 @@
 CurrentModule = LocalOptimizationDoneRight
 ```
 
-Every strategy implements VisualGeometryCore's local-optimization contract
+Every strategy implements VisualGeometryToolkitCore's local-optimization contract
 (`lo_workspace`, `locally_optimize!`), so it composes with any scorer in
-RobustVisualGeometry's `ransac` and `find_*` pipelines. The core baselines,
-`NoLocalOptimization` and `Irls{K}`, live in RobustVisualGeometry. A
+VisualGeometryToolkitEstimation's `ransac` and `find_*` pipelines. The core baselines,
+`NoLocalOptimization` and `Irls{K}`, live in VisualGeometryToolkitEstimation. A
 width-carrying strategy takes `scale_multiple = m` (a multiple of the consensus
 set's scale), `loss_width = w` (an absolute width), or neither, in which case
 its loss width follows the scorer's inlier threshold. See the
@@ -36,7 +36,7 @@ BarronAdaptiveLikelihood
 
 ## PoseLib truncated refiners
 
-External refiners (VisualGeometryCore's `ExternalRefit`): they refine a seed at
+External refiners (VisualGeometryToolkitCore's `ExternalRefit`): they refine a seed at
 an absolute loss width through `refine_external!`, outside the RANSAC loop. The
 solver calls load with PoseLib (a package extension). See
 [Baselines](../guide/baselines.md).

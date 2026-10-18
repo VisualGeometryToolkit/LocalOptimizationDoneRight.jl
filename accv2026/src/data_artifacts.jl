@@ -5,12 +5,12 @@
 # configs/data_artifacts.toml is the catalog (what each artifact holds, its
 # mount, its Zenodo record, the config of record its file list derives from).
 # Its format and everything that reads it — the derived file lists, the
-# author-side packer, the fetch into the artifact view — are VisualGeometryEval's
+# author-side packer, the fetch into the artifact view — are VisualGeometryToolkitEval's
 # DataArtifacts, shared with the other paper projects of the stack; this file
 # only binds the catalog.
 #
 # Resolution ladder (data/README.md): the drivers read data_root() /
-# results_root() (VisualGeometryEval.Experiments): ENV CAU_DATA_ROOT /
+# results_root() (VisualGeometryToolkitEval.Experiments): ENV CAU_DATA_ROOT /
 # CAU_RESULTS_ROOT, else the project's data/exp_raw / data/exp_pro. A machine
 # without either gets them from the artifacts: `fetch_artifacts!` makes
 # data/exp_raw an ARTIFACT VIEW (per-file links into the installed artifact
@@ -20,9 +20,9 @@
 if !@isdefined(ACCV2026_DATA_ARTIFACTS_LOADED)
 
 using TOML
-using VisualGeometryEval.DataArtifacts: DataCatalog, load_catalog, required_artifacts, artifact_files, artifact_parts,
+using VisualGeometryToolkitEval.DataArtifacts: DataCatalog, load_catalog, required_artifacts, artifact_files, artifact_parts,
     fetch_artifacts!, pack_artifacts, zenodo_url, catalog_violations, split_scenes
-using VisualGeometryEval.Experiments: data_root, results_root
+using VisualGeometryToolkitEval.Experiments: data_root, results_root
 
 const DATA_ARTIFACTS_CATALOG = normpath(joinpath(@__DIR__, "..", "configs", "data_artifacts.toml"))
 

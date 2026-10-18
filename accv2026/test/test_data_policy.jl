@@ -1,4 +1,4 @@
-# test_data_policy.jl — the data policy (CLAUDE.md "Data"; VisualGeometryEval
+# test_data_policy.jl — the data policy (CLAUDE.md "Data"; VisualGeometryToolkitEval
 # Experiments `data_policy_violations`, rules D1–D3) over src/ and scripts/.
 # The allowlist is EXPLICIT and holds only the violations whose fix moves a
 # path, deferred until after the 2026-10 regeneration; each names its fix. An
@@ -6,7 +6,7 @@
 # NEW violation fails here.
 using Test
 using DrWatson: projectdir
-using VisualGeometryEval.Experiments: data_policy_violations, DataPolicyAllow
+using VisualGeometryToolkitEval.Experiments: data_policy_violations, DataPolicyAllow
 
 const DATA_POLICY_ALLOW = [
     # D2 — the timing tables are RESULTS written under the data root. Fix:

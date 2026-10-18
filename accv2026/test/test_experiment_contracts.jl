@@ -4,7 +4,7 @@
 # coding through the agent and codify the experiments"). Grep-based and it
 # BITES: a violation fails CI, it does not advise.
 #
-# The checker is PACKAGE API (VisualGeometryEval.Experiments —
+# The checker is PACKAGE API (VisualGeometryToolkitEval.Experiments —
 # `contract_violations(file)` returns one human-readable string per broken
 # rule; the rule catalog F1–F4 /
 # R1–R3 is documented there), so an external paper repo runs the SAME
@@ -15,7 +15,7 @@
 # legacy ACCV drivers with their own byte-frozen conventions).
 # =============================================================================
 using Test
-using VisualGeometryEval: Experiments
+using VisualGeometryToolkitEval: Experiments
 
 const _EXP_DIR  = normpath(joinpath(@__DIR__, "..", "scripts"))
 # drivers at the top level, the CLIs they launch in tools/, the exempt support pair in src/

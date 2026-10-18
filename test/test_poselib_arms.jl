@@ -3,14 +3,14 @@
 # ext/LocalOptimizationDoneRightPoseLibExt.jl): identity traits, the
 # external-refit contract they implement, and the adaptive arm's
 # within-width scale moment. Their integration with the composition evaluator
-# (VisualGeometryEval.Evaluation) and the paper's scorer is
+# (VisualGeometryToolkitEval.Evaluation) and the paper's scorer is
 # accv2026/test/test_engine_integration.jl.
 # =============================================================================
 using Test
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: LocalOptimizationDoneRight as LODR, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth
 import PoseLib
-using VisualGeometryCore: AbstractLocalOptimization, RefitFamily, ExternalRefit, FixedScale, ConsensusAnchored,
+using VisualGeometryToolkitCore: AbstractLocalOptimization, RefitFamily, ExternalRefit, FixedScale, ConsensusAnchored,
     LossWidth, FixedS2, scale_interface, optimization_path, lo_label, external_workspace, refine_external!,
     prepare_external!
 

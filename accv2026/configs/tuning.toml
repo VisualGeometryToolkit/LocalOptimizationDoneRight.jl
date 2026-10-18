@@ -2,8 +2,8 @@
 # tuning — THE cross-validation protocol of record of the ACCV 2026 campaign.
 #
 # Every tuning this paper runs is one `[tuning.<name>]` entry below, parsed by
-# VisualGeometryEval's one `[tuning]` parser (schema: VisualGeometryEval
-# docs/TUNING.md). An entry states ONLY what differs from VisualGeometryEval's shipped
+# VisualGeometryToolkitEval's one `[tuning]` parser (schema: VisualGeometryToolkitEval
+# docs/TUNING.md). An entry states ONLY what differs from VisualGeometryToolkitEval's shipped
 # defaults (its configs/tuning.toml); every absent key inherits. A cell config
 # layers its cross-validation (its cv_protocol.toml section) and its own
 # overrides over the entries it names (`layer_tuning`, inside
@@ -24,7 +24,7 @@
 #   lo_sensitivity_natural  the same with grids over the full validation σ̂² range
 #   lo_sensitivity_miscal   the selection-only ζ sweep (--mode=miscal)
 #
-# Paper-level TYPE defaults (`[types.<type>]`, the same layer VisualGeometryEval's own
+# Paper-level TYPE defaults (`[types.<type>]`, the same layer VisualGeometryToolkitEval's own
 # configs/tuning.toml has): layered under every entry whose scheme holds that
 # type (`protocol_tuning`), so a value shared by the entries is stated ONCE.
 #
@@ -44,7 +44,7 @@ lo = 1.0
 hi = 3.3
 
 # THE data of every entry below: the paper's main split, PhotoTourism's
-# registered validation/test scenes (VisualGeometryEval
+# registered validation/test scenes (VisualGeometryToolkitEval
 # configs/splits.toml), every pair of each side. A dataset cell names its own
 # split and validation sampling through its cv_protocol.toml section
 # (`[protocol] cv_section`, folded by src/protocol_folds.jl).
@@ -53,7 +53,7 @@ scene_split = { type = "registered", name = "phototourism" }
 
 # The selection-only bootstrap harness (run_lo_sensitivity --mode=validation_budget|delta):
 # the standardized display axis is 17 linear points over the window, the
-# budget sampling 120 draws per budget (VisualGeometryEval's windowed_bootstrap defaults).
+# budget sampling 120 draws per budget (VisualGeometryToolkitEval's windowed_bootstrap defaults).
 [tuning.lo_sensitivity]
 type = "windowed_bootstrap"
 

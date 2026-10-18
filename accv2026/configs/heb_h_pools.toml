@@ -5,7 +5,7 @@
 #
 # POOL PRODUCER class (pools are dataset-derived data, not results — the one
 # sanctioned write under data_root()):
-# writes per-scene pools (a light record + its residuals, VisualGeometryEval
+# writes per-scene pools (a light record + its residuals, VisualGeometryToolkitEval
 # pool format 4) into a NEW immutable tree under data_root(), through
 # scripts/tools/generate_scoring_pools.jl. Identity: `_config.toml` +
 # `_provenance.toml` sidecars in the output tree; a changed config is a NEW
@@ -28,7 +28,7 @@ pool_dir = "accv2026/data/HEB-H-SIFT-4K_pf3"
 # files.
 raw_dir = "accv2026/data/heb_raw"
 # The sides of the scene split of record, `<split>:validation|test`, resolved
-# through VisualGeometryEval configs/splits.toml (validation_data.jl
+# through VisualGeometryToolkitEval configs/splits.toml (validation_data.jl
 # `split_scenes`). BOTH sides: the budget cell (heb_h_budget) is a test-time
 # evaluation and needs only the 5 test scenes, but the cell that PRODUCES the
 # operating points it reads (supp_H_miscal, stage h_cv) tunes on the 5

@@ -31,7 +31,7 @@
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
 using JLD2, Statistics, Printf, Dates, TOML
-using RobustVisualGeometry: RansacConfig
+using VisualGeometryToolkitEstimation: RansacConfig
 include(srcdir("cell_stages.jl"))
 include(srcdir("e2e_cells.jl"))
 include(srcdir("superansac.jl"))

@@ -5,11 +5,11 @@ authors = ["James Pritts <jbpritts@gmail.com>"]
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-RobustVisualGeometry = "48970fad-9a21-401c-bf6c-679fa4f2bd7f"
+VisualGeometryToolkitEstimation = "9a478df9-9a37-4dc7-9070-58617efe7573"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
-VisualGeometryCore = "297d53b8-c8d7-4cd7-a9af-68e656508a81"
+VisualGeometryToolkitCore = "96820d6b-1dad-4e77-ad4a-8276f2ec1ce7"
 
 [weakdeps]
 PoseLib = "a8c7e0b4-3d2f-4f1c-9a1e-7b2d9c8f4a3b"
@@ -20,11 +20,11 @@ LocalOptimizationDoneRightPoseLibExt = "PoseLib"
 [compat]
 LinearAlgebra = "1"
 PoseLib = "0.1"
-RobustVisualGeometry = "0.1"
+VisualGeometryToolkitEstimation = "0.1"
 StaticArrays = "1.9"
 Statistics = "1"
 TOML = "1.0.3"
-VisualGeometryCore = "0.1"
+VisualGeometryToolkitCore = "0.1"
 julia = "1.12"
 
 [workspace]

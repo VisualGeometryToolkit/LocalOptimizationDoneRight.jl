@@ -42,7 +42,7 @@
 # arms at a FIXED external scale s0. `"oracle_gt_variance"` records s0 =
 # reference_scale of the validation pairs' stored σ̂² — on PhotoTourism the
 # ORACLE variance (SfM-track detections under the bundle-adjusted pose,
-# VisualGeometryEval Datasets phototourism.jl) — in both artifacts. Absent, no s0 is written and a
+# VisualGeometryToolkitEval Datasets phototourism.jl) — in both artifacts. Absent, no s0 is written and a
 # reader that needs one fails loudly.
 #
 # ROSTERS (`[sequential_cv] roster`): "composed" (default) — the composed
@@ -86,26 +86,27 @@
 #
 # RE-RUNNING SOME ARMS (`--arms="IG  +Lift,MSAC +Lift"`, refiner / evaluate;
 # a pinned arm, e.g. `--arms="IG  +BCD@a*"`, needs the evaluate stage alone):
-# when a code change moves only some arms (2026-10-04: VisualGeometryCore's
+# when a code change moves only some arms (2026-10-04: VisualGeometryToolkitCore's
 # Welsch z-block clamp, the two Welsch-HQ arms), those arms are re-tuned at the
 # EXISTING a* and re-evaluated IN PLACE; every other arm's entries, and the
 # scorer artifact, are kept as they are. The artifacts must exist; each is
 # copied to `<name>.pre_rerun` first, and the rewrite records `rerun_arms`.
 # =============================================================================
 
+import VisualGeometryToolkitCore as VgtkCore
 using DrWatson; @quickactivate "ACCV2026"
 using CUDA, Statistics, Printf, JLD2, Logging, TOML
-using RobustVisualGeometry
+using VisualGeometryToolkitEstimation
 
 include(srcdir("config.jl"))
 include(srcdir("experiment_producer.jl"))
 include(srcdir("protocol_folds.jl"))
-using VisualGeometryEval.Evaluation: coarse_fine_cv_batched, enforce_probe_interior
-using VisualGeometryEval.Tuning: corrupt_native
-using VisualGeometryEval.Tuning: fit_prior, JeffreysPriorSpec, IGRobustSpec   # the scale prior ([sequential_cv] prior)
-using VisualGeometryEval.Evaluation: stream_selections, width_delivery, miscal_evaluation_refit,
+using VisualGeometryToolkitEval.Evaluation: coarse_fine_cv_batched, enforce_probe_interior
+using VisualGeometryToolkitEval.Tuning: corrupt_native
+using VisualGeometryToolkitEval.Tuning: fit_prior, JeffreysPriorSpec, IGRobustSpec   # the scale prior ([sequential_cv] prior)
+using VisualGeometryToolkitEval.Evaluation: stream_selections, width_delivery, miscal_evaluation_refit,
     problem_type, is_tuned, operating_width
-using VisualGeometryCore: width_axis_name, width_axis
+using VisualGeometryToolkitCore: width_axis_name, width_axis
 start_output_flush!()
 
 const CFG    = TOML.parsefile(cli_option(ARGS, "config"))
@@ -181,7 +182,7 @@ mkpath(OUTDIR)
 # --- the scale prior of the marginal score -----------------------------------
 # `[sequential_cv] prior` absent: Jeffreys, data-free (IGPrior(0, 0)). Present:
 # the INFORMATIVE empirical prior IG(α₀, β₀), β₀ = α₀·median(σ̂²) over the
-# finite ground-truth variances of the VALIDATION pairs (VisualGeometryEval `IGRobustSpec`;
+# finite ground-truth variances of the VALIDATION pairs (VisualGeometryToolkitEval `IGRobustSpec`;
 # the test side is never read), so the scale of a thin partition cannot
 # collapse — HEB-H, median 10 GT inliers per pair (2026-10-04):
 #   { family = "inverse_gamma", fitting = "robust", alpha0 = α₀ }       a fixed α₀
@@ -557,7 +558,7 @@ end
 function run_anchoring()
     ROSTER_KIND == "composed" || error("--stage=anchoring: the ablation evaluates a COMPOSED sidecar")
     iface = String(TOML.parsefile(projectdir("configs", "miscal_protocol.toml"))["anchoring_ablation"]["scale_interface"])
-    VisualGeometryCore.SCALE_INTERFACE_TAGS[iface] === VisualGeometryCore.FixedScale ||
+    VgtkCore.SCALE_INTERFACE_TAGS[iface] === VgtkCore.FixedScale ||
         error("miscal_protocol.toml [anchoring_ablation] scale_interface = $(repr(iface)): " *
               "the sequential CV implements the \"fixed_scale\" interface only")
     out = joinpath(OUTDIR, "anchoring_ablation-" * iface, "zeta_evaluation.jld2")

@@ -53,15 +53,15 @@ To reproduce the paper, clone the repository and instantiate `accv2026/` (see
 
 ## Use
 
-The strategies implement VisualGeometryCore's local-optimization contract, so
-they plug into RobustVisualGeometry's `find_*` pipelines and `ransac` beside any
+The strategies implement VisualGeometryToolkitCore's local-optimization contract, so
+they plug into VisualGeometryToolkitEstimation's `find_*` pipelines and `ransac` beside any
 scorer. The core default is MSAC with a truncated-least-squares IRLS; the
 paper's recipe swaps in RansacScoringDoneRight's Student-t + uniform scorer and
 the Welsch half-quadratic lift at its cross-validated scale multiple:
 
 ```julia
-using RobustVisualGeometry, RansacScoringDoneRight, LocalOptimizationDoneRight
-using VisualGeometryCore: WelschShape
+using VisualGeometryToolkitEstimation, RansacScoringDoneRight, LocalOptimizationDoneRight
+using VisualGeometryToolkitCore: WelschShape
 
 result = find_essential(cam1, cam2, pixel_pairs;
     scoring = StudentTUniformScoring(EssentialProblem, outlier_halfwidth),
@@ -69,7 +69,7 @@ result = find_essential(cam1, cam2, pixel_pairs;
 ```
 
 From TOML, merge the strategy registries:
-`local_optimization_from_toml(d; class, tags = merge(RobustVisualGeometry.LO_TAGS, LocalOptimizationDoneRight.LO_TAGS))`.
+`local_optimization_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.LO_TAGS))`.
 
 ## Layout
 
@@ -103,13 +103,13 @@ accv2026/              the research project (DrWatson layout, devs this package)
 
 ## Relationship to the stack
 
-VisualGeometryCore owns the contracts (scoring, local optimization, external
-refit, chart rows); RobustVisualGeometry owns the problems, the one generic
+VisualGeometryToolkitCore owns the contracts (scoring, local optimization, external
+refit, chart rows); VisualGeometryToolkitEstimation owns the problems, the one generic
 RANSAC loop and the core baselines (`NoLocalOptimization`, `Irls{K}`). This
 package depends on those two only (PoseLib is a weak dependency). The
 evaluation engine the paper runs on — pair geometry, the one refit layer,
 post-LO matrices, the sample-budget engine, live runs, `Roster` and its
-gate-enforced readers, the selection stream — is `VisualGeometryEval.Evaluation`,
+gate-enforced readers, the selection stream — is `VisualGeometryToolkitEval.Evaluation`,
 written against the contracts alone. The split rule:
 
 | Belongs in the package | Belongs in `accv2026/` |
@@ -124,7 +124,7 @@ Torsten Sattler's [RansacLib](https://github.com/tsattler/RansacLib) LO-MSAC
 for E/F/H. It lives in the research project: `accv2026/lib/RansacLibLO` wraps
 it in a small C++ shim and is not registered, and its two arms
 (`LebedaIterLO`, `LebedaLOPlus`, in `accv2026/src/lebeda_lo.jl`) are external
-refiners on VisualGeometryCore's contract (`external_workspace`,
+refiners on VisualGeometryToolkitCore's contract (`external_workspace`,
 `refine_external!`), refit by the evaluation engine like the PoseLib arms. `accv2026/Project.toml`
 devs it by path.
 

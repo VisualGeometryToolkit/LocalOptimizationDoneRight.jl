@@ -35,7 +35,7 @@ julia --project=. scripts/fig3_composed_miscal.jl --stage=cv
 
 Each driver declares its data inputs (`require_input`, with provenance), tunes
 only through the single cross-validation path, audits every tuning artifact before
-consuming it (`audit_operating_points`, VisualGeometryEval's `Evaluation`), and ends by rendering its panel
+consuming it (`audit_operating_points`, VisualGeometryToolkitEval's `Evaluation`), and ends by rendering its panel
 into `paper/figures/`. On a Slurm cluster, `scripts/slurm/run_experiment.sbatch`
 wraps the same command and only sets the resource shape.
 
@@ -44,7 +44,7 @@ wraps the same command and only sets the resource shape.
 A cell is a config of record (`configs/<cell>.toml`) plus the driver that runs it.
 Its *effective* config — the TOML with the protocols of record folded in by
 `src/protocol_folds.jl` — is hashed into its run key
-(VisualGeometryEval `Experiments.run_key`, the SHA-256 of the sorted TOML; the
+(VisualGeometryToolkitEval `Experiments.run_key`, the SHA-256 of the sorted TOML; the
 `[render]` section is excluded). Results are written to keyed directories such as
 `phototourism/sift/E/Miscalibration/sequential-cv-<key>/` under the add-only
 results root, never rewritten. Consumers re-derive a producer's key from its

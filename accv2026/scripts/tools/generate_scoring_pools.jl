@@ -6,10 +6,10 @@
 #
 # configs/<name>.toml states everything: the dataset reader and its raw roots
 # ([source]), the problem and output tree ([experiment]), and every generation
-# constant ([pool]). A raw pair (VisualGeometryEval.Datasets, pixels) becomes a
-# pool pair through RobustVisualGeometry's `PoolPair(hypotheses, problem, raw;
+# constant ([pool]). A raw pair (VisualGeometryToolkitEval.Datasets, pixels) becomes a
+# pool pair through VisualGeometryToolkitEstimation's `PoolPair(hypotheses, problem, raw;
 # variance)` on a PIXEL-frame problem carrying the pool's sampler; one scene is
-# written by VisualGeometryEval's `write_scene_pool` (threads, per-pair seeds,
+# written by VisualGeometryToolkitEval's `write_scene_pool` (threads, per-pair seeds,
 # skip-existing, the light file and its residuals). Per dataset:
 #   phototourism — σ̂² over the SfM-track keypoints (`TrackVariance`), the
 #                  reader's pixel-Sampson GT mask;
@@ -18,15 +18,15 @@
 #   roma         — σ̂² over the GT inliers, at least a minimal sample of them.
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
-using VisualGeometryEval: cli_option, start_output_flush!
-using VisualGeometryEval.Datasets: PtRawTrees, PT_SCENES, load_pt_pairs, load_heb_pairs, RomaPair,
+using VisualGeometryToolkitEval: cli_option, start_output_flush!
+using VisualGeometryToolkitEval.Datasets: PtRawTrees, PT_SCENES, load_pt_pairs, load_heb_pairs, RomaPair,
     load_roma_pairs
-using VisualGeometryEval.Pools: write_scene_pool
-using VisualGeometryEval.Experiments: load_run_config, data_root
-using RobustVisualGeometry: EssentialProblem, FundMatProblem, HomographyProblem, GaussianSampler,
+using VisualGeometryToolkitEval.Pools: write_scene_pool
+using VisualGeometryToolkitEval.Experiments: load_run_config, data_root
+using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem, GaussianSampler,
     ProsacSampler, UniformSampler, draw_hypotheses, TrackVariance, InlierVariance, minimal_sample_size
-using VisualGeometryCore: CameraModel, HomographyMap, UnlabeledFrame, GnomonicFrame
-using VisualGeometryCore.Pools: PoolPair, pair_csponds, pair_snn, pair_K1, pair_K2
+using VisualGeometryToolkitCore: CameraModel, HomographyMap, UnlabeledFrame, GnomonicFrame
+using VisualGeometryToolkitCore.Pools: PoolPair, pair_csponds, pair_snn, pair_K1, pair_K2
 using StaticArrays: SMatrix
 include(srcdir("validation_data.jl"))   # split_scenes
 

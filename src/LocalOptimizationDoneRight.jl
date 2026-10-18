@@ -2,13 +2,13 @@
     LocalOptimizationDoneRight
 
 The local optimizers of the ACCV 2026 paper "Score Sharp, Refine Soft, Polish
-Hard", on VisualGeometryCore's local-optimization contract and
-RobustVisualGeometry's problems:
+Hard", on VisualGeometryToolkitCore's local-optimization contract and
+VisualGeometryToolkitEstimation's problems:
 
 - the joint-(θ,z) half-quadratic loss lifts ([`HQ`](@ref) and its research
   variants [`WelschHQNewton`](@ref), [`WelschHQEcm`](@ref), [`BarronHQ`](@ref),
   [`GmHqEps`](@ref)) and graduated non-convexity ([`Gnc`](@ref)), one code
-  path over VisualGeometryCore's chart-rows contract (the lift core and its
+  path over VisualGeometryToolkitCore's chart-rows contract (the lift core and its
   continuation schedules live here);
 - the Student-t + uniform IRLS ([`StudentTUniform`](@ref)), its score-matched
   block-coordinate ascent ([`StuTuBCD`](@ref)), the mixture lifts
@@ -19,12 +19,15 @@ RobustVisualGeometry's problems:
   load with PoseLib, a package extension);
 - the cross-validated operating points ([`tuning_constant`](@ref)) and the
   strategies' TOML registry ([`LO_TAGS`](@ref)), merged with the core's to load:
-  `local_optimization_from_toml(d; class, tags = merge(RobustVisualGeometry.LO_TAGS, LO_TAGS))`.
+  `local_optimization_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LO_TAGS))`.
 
 Compose one with any scorer: `find_essential(cam1, cam2, pairs; local_optimization
 = HQ{WelschShape}(scale_multiple = WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL))`.
 """
 module LocalOptimizationDoneRight
+
+import VisualGeometryToolkitCore as VgtkCore
+import VisualGeometryToolkitEstimation as VgtkEstimation
 
 using LinearAlgebra: I, dot, norm
 using StaticArrays: SMatrix, SVector
@@ -32,7 +35,7 @@ using Statistics: Statistics
 using TOML: TOML
 
 # --- Upstream stack: public names only ----------------------------------------
-using VisualGeometryCore: VisualGeometryCore, AbstractLocalOptimization, AbstractLossShape, AbstractBlockCoordinateMethod,
+using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractLocalOptimization, AbstractLossShape, AbstractBlockCoordinateMethod,
     AbstractWeightPolicy, NormalizedWeightPolicy, AnyLoss, DeployedLoss, deploy, rescale,
     sq_loss_width, loss_shape, liftable, weight, conjugate_curvature,
     lift_weight, lift_cost, loss_family, loss_label,
@@ -49,11 +52,11 @@ using VisualGeometryCore: VisualGeometryCore, AbstractLocalOptimization, Abstrac
     block_coordinate_descent!, path_suffix, optimization_path, EssentialMat,
     present_kwargs, check_keys, allowed_keys, convert_field, toml_table, toml_key, toml_skip_fields
 # The contract verbs this package adds methods to.
-import VisualGeometryCore: locally_optimize!, update_model!, update_residuals!, post_iteration!,
+import VisualGeometryToolkitCore: locally_optimize!, update_model!, update_residuals!, post_iteration!,
     update_nuisance!, update_weights!, stopping_criterion, stop_reason, current_cost,
     current_s2, block_coordinate_result,
     lift_wmax, lift_conjugate, lift_zblock   # the tabulated lift answers the loss's lift facet
-using RobustVisualGeometry: RobustVisualGeometry, Irls, LoBuffers, LiftableProblem,
+using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation, Irls, LoBuffers, LiftableProblem,
     BoundedProblem, EssentialProblem, PosteriorLikelihood, StopWhenNoImprovement,
     posterior_irls!, consensus_posterior, required_outlier_halfwidth, lo_loss, strategy_loss,
     plain_scale_multiple, lo_width_value, LOSS_TAGS
@@ -73,7 +76,7 @@ include("poselib_arms.jl")             # PoseLib's truncated refiners (solver ca
     CONTRACT_GENERICS
 
 The generic functions of LocalOptimizationDoneRight another module may add
-methods to (VisualGeometryCore's `contract_generic_violations`): the PoseLib
+methods to (VisualGeometryToolkitCore's `contract_generic_violations`): the PoseLib
 truncated refiners' pose body, implemented by the PoseLib extension.
 """
 const CONTRACT_GENERICS = (truncated_refit_pose,)

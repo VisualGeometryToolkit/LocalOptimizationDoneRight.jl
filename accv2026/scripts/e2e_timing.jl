@@ -4,7 +4,7 @@
 # scripts/e2e_timing.jl — THE end-to-end TIMING cell (--config=<name>, a
 # configs/*.toml with a [timing] table; the main paper's is pt_e_e2e_timing):
 # the time row of Tab. 3. Ours and SupeRANSAC on the SAME pairs drawn from the
-# e2e cell's test units ([timing] sample, VisualGeometryEval unit sampling),
+# e2e cell's test units ([timing] sample, VisualGeometryToolkitEval unit sampling),
 # each repeat a fresh single-threaded process pinned to one CPU
 # ([timing.pinning], numactl), [timing] repeats runs per system, the two
 # systems alternating (src/e2e_timing.jl). The accuracy rows are not touched:
@@ -55,7 +55,7 @@ end
 
 "The git commit (and whether its tree is dirty) of every checkout the repeats ran."
 function _code_record()
-    mods = (LocalOptimizationDoneRight, VisualGeometryCore, RobustVisualGeometry, RansacScoringDoneRight, VisualGeometryEval)
+    mods = (LocalOptimizationDoneRight, VisualGeometryToolkitCore, VisualGeometryToolkitEstimation, RansacScoringDoneRight, VisualGeometryToolkitEval)
     Dict{String,Any}(string(nameof(m)) => begin
                          d = pkgdir(m)
                          head = readchomp(`git -C $d rev-parse HEAD`)

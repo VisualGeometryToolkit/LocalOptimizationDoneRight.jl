@@ -1,7 +1,7 @@
 # =============================================================================
 # test_lift_losses.jl — loss-parameterized half-quadratic lift (AbstractLossShape).
 # Gates (the Geman–Reynolds duality, the z-block closed forms and the
-# half-weight depth are VisualGeometryCore's shape math, and are tested there
+# half-weight depth are VisualGeometryToolkitCore's shape math, and are tested there
 # only — its test/loss_shape_math_tests.jl):
 #   1. Lift regression — every lift arm stays within 1e-6 of its pre-refactor output on a
 #      fixed synthetic problem (hex captured at 7af4ae4; the offline capture
@@ -14,25 +14,27 @@
 #      cannot run is refused at load).
 #   4. BarronHQ α-dial anchor gates.
 # =============================================================================
-# (Moved from RobustVisualGeometry's test/lift_losses_tests.jl with the strategies it tests.)
+# (Moved from VisualGeometryToolkitEstimation's test/lift_losses_tests.jl with the strategies it tests.)
+import VisualGeometryToolkitCore as VgtkCore
+import VisualGeometryToolkitEstimation as VgtkEstimation
 using Test, Random, LinearAlgebra, StaticArrays, StructArrays
 using Rotations: RotY
-using VisualGeometryCore
-using VisualGeometryCore: Synthetic
-using VisualGeometryCore.Synthetic: projective_distance
-using VisualGeometryCore: estimate, retcode   # VGC accessors (public)
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: Synthetic
+using VisualGeometryToolkitCore.Synthetic: projective_distance
+using VisualGeometryToolkitCore: estimate, retcode   # VGC accessors (public)
 using RansacScoringDoneRight: StudentTUniformScoring   # owned and exported by RansacScoringDoneRight
-using RobustVisualGeometry: LOSS_TAGS, config_dict, local_optimization_from_toml   # public, not exported
-using RobustVisualGeometry
+using VisualGeometryToolkitEstimation: LOSS_TAGS, config_dict, local_optimization_from_toml   # public, not exported
+using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: WelschHQEcm, WelschHQNewton
 const LO = LocalOptimizationDoneRight
 # The merged strategy registry: the core's tags and this package's.
-const TAGS = merge(RobustVisualGeometry.LO_TAGS, LocalOptimizationDoneRight.LO_TAGS)
+const TAGS = merge(VgtkEstimation.LO_TAGS, LocalOptimizationDoneRight.LO_TAGS)
 # NOT exported: under the old serial suite this was visible because an earlier
 # `include` had imported it into the shared namespace. Items get their own
 # module, so it must be named here.
-using RobustVisualGeometry: RansacWorkspace
+using VisualGeometryToolkitEstimation: RansacWorkspace
 
 # THIS TESTSET STAYS IN THE CALIBRATED DOMAIN, deliberately: its problems are
 # stated on the identity camera (`IDCAM`, Cameras), whose "pixels" are
@@ -52,11 +54,11 @@ using RobustVisualGeometry: RansacWorkspace
 cal_problem(a, b) = essential_problem(IDCAM, a, b)
 
 
-const RVGK = RobustVisualGeometry
+const RVGK = VisualGeometryToolkitEstimation
 # From its OWNER: RVG no longer imports `signed_sampson_distance` — E's
 # scoring moved to the tangent Sampson and was its last user there, so the
 # quality gate refuses it as a stale explicit import. F still uses it.
-using VisualGeometryCore: signed_sampson_distance
+using VisualGeometryToolkitCore: signed_sampson_distance
 include("scenes.jl")   # the shared scenes, as modules
 using .EpipolarScenes, .Cameras
 
@@ -364,14 +366,14 @@ end
     # is refused (in the constructor and in a TOML table), never ignored.
     @test Irls{GaussianShape}() isa Irls{GaussianShape}
     @test_throws ArgumentError Irls{GaussianShape}(scale_multiple = 1.5)
-    @test VisualGeometryCore.lo_width(Irls{WelschShape}()) === nothing   # no width: follows the scorer
+    @test VgtkCore.lo_width(Irls{WelschShape}()) === nothing   # no width: follows the scorer
     @test_throws ArgumentError build(Dict{String, Any}("type" => "irls", "loss" => "gaussian", "scale_multiple" => 1.5))
     l2 = Irls{GaussianShape}(max_iter = 7)
     @test !haskey(config_dict(l2), "scale_multiple")
     @test local_optimization_from_toml(config_dict(l2); class = :homography, tags = TAGS) == l2
-    @test VisualGeometryCore.lo_width(l2) === nothing
-    @test VisualGeometryCore.scale_interface(l2) == VisualGeometryCore.NoScale()
-    @test VisualGeometryCore.with_width(l2, nothing) == l2
+    @test VgtkCore.lo_width(l2) === nothing
+    @test VgtkCore.scale_interface(l2) == VgtkCore.NoScale()
+    @test VgtkCore.with_width(l2, nothing) == l2
     # The seeded z₀ policies had no runner anywhere; they now read the deployed
     # loss's own normalized weight (VGC `lift_weight`/`lift_wmax`) — run them.
     for K in (WelschShape, GemanMcclureShape, SmoothTLSShape), init in (:posterior, :consensus)

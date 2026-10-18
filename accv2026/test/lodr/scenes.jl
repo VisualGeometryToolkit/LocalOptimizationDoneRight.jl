@@ -1,12 +1,12 @@
 # =============================================================================
 # Shared synthetic scenes of the strategy tests — plain modules, one definition
-# each. They are RobustVisualGeometry's test scenes (its test/scenes_testsetups.jl,
+# each. They are VisualGeometryToolkitEstimation's test scenes (its test/scenes_testsetups.jl,
 # where they are ReTestItems setups), copied as modules so the tests that moved
 # here with the strategies draw the SAME scenes in the SAME RNG order (their
 # numeric pins depend on it). A test file includes this file into its own
 # module and `using`s the scene modules it needs.
 #
-# Every scene is built through the OWNERS' forward models — VisualGeometryCore's
+# Every scene is built through the OWNERS' forward models — VisualGeometryToolkitCore's
 # `project`/`unproject` on a camera, `EssentialMat(R, t)`, `FundMat(E, K₁, K₂)`,
 # `RadialCamera(camera)`, the rigid charts' `retract` — so no test restates the
 # geometry it then checks.
@@ -21,9 +21,9 @@ using Random: AbstractRNG
 using LinearAlgebra: normalize
 using StaticArrays: SA, SVector
 using Rotations: RotZ
-using VisualGeometryCore: CameraModel, EssentialMat, Pinhole, Point2, TLSShape, cost, csponds, project, px,
+using VisualGeometryToolkitCore: CameraModel, EssentialMat, Pinhole, Point2, TLSShape, cost, csponds, project, px,
     signed_sampson_distance
-using RobustVisualGeometry: EssentialProblem
+using VisualGeometryToolkitEstimation: EssentialProblem
 
 export box_point, calibrated_pairs, perturbed_essential, stereo_pixel_pairs, truncated_sampson_cost,
     FPX, CX, CY, ECAM, topx, essential_problem, ecs
@@ -122,7 +122,7 @@ module HomographyScenes
 using Random: AbstractRNG
 using LinearAlgebra: norm
 using StaticArrays: SA, SMatrix, SVector
-using VisualGeometryCore: HomographyMap, HomographyMat, PerspectiveMap
+using VisualGeometryToolkitCore: HomographyMap, HomographyMat, PerspectiveMap
 
 export H_TRUE, H_PX, gaussian_source, uniform_source, homography_warp, homography_pairs, max_transfer_error
 
@@ -180,7 +180,7 @@ using Random: AbstractRNG
 using LinearAlgebra: norm, normalize
 using StaticArrays: SVector
 using Rotations: AngleAxis, RotMatrix
-using VisualGeometryCore: EuclideanMap, Point3, RigidExpManifold6, Vec3, retract, rotation, log_so3,
+using VisualGeometryToolkitCore: EuclideanMap, Point3, RigidExpManifold6, Vec3, retract, rotation, log_so3,
     translation, unproject
 
 export rigid, rand_pose, retract_pose, perturb_pose, frustum_point, rotation_error_deg, translation_error,
@@ -251,7 +251,7 @@ using Random: AbstractRNG
 using LinearAlgebra: norm
 using StaticArrays: SVector
 using Rotations: RotMatrix
-using VisualGeometryCore: Camera, CameraModel, Division, EuclideanMap, project
+using VisualGeometryToolkitCore: Camera, CameraModel, Division, EuclideanMap, project
 
 export F0, K0, BOARD_ANGLES, BOARD_TS, BOARD_GRID, board_camera, board_pixels, noisy_board_views
 
@@ -327,8 +327,8 @@ module P3PScenes
 using Random: AbstractRNG
 using StaticArrays: SA
 using Rotations: RotMatrix, MRP
-using VisualGeometryCore: Point2, Point3, Vec3, project
-using RobustVisualGeometry: AbsolutePoseProblem
+using VisualGeometryToolkitCore: Point2, Point3, Vec3, project
+using VisualGeometryToolkitEstimation: AbsolutePoseProblem
 
 export p3p_scene
 
@@ -358,7 +358,7 @@ end
 # -----------------------------------------------------------------------------
 module Cameras
 using StaticArrays: SA
-using VisualGeometryCore: CameraModel, Pinhole, Point2, backproject, project, px
+using VisualGeometryToolkitCore: CameraModel, Pinhole, Point2, backproject, project, px
 
 export IDCAM, calibrated_point
 
@@ -417,8 +417,8 @@ end
 module LiftChecks
 using Test: @test, @testset
 using Random: Random, MersenneTwister
-using VisualGeometryCore: GemanMcclureShape, WelschShape, converged, estimate
-using RobustVisualGeometry: Irls, RansacConfig, ransac
+using VisualGeometryToolkitCore: GemanMcclureShape, WelschShape, converged, estimate
+using VisualGeometryToolkitEstimation: Irls, RansacConfig, ransac
 using LocalOptimizationDoneRight: Gnc, HQ
 
 export lift_arms, check_lift_ransac, check_lift_recovers

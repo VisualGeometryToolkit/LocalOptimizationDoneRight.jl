@@ -16,12 +16,12 @@
 # artifacts into results_root() (data/exp_pro is created when no results root
 # is bound). An existing binding wins — CAU_DATA_ROOT / CAU_RESULTS_ROOT or
 # the author's data/exp_raw symlink — and is never written to by this script
-# (VisualGeometryEval DataArtifacts `fetch_artifacts!`; data/README.md). A
+# (VisualGeometryToolkitEval DataArtifacts `fetch_artifacts!`; data/README.md). A
 # split entry fetches all its parts; a file shipped in chunks (a sub-part of a
 # scene over the catalog's `max_part_bytes`) is reassembled in the view.
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
-using VisualGeometryEval: cli_option
+using VisualGeometryToolkitEval: cli_option
 include(srcdir("common.jl"))
 include(srcdir("data_artifacts.jl"))
 

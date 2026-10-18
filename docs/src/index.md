@@ -117,8 +117,8 @@ maps every figure to its config and driver, and [Baselines](guide/baselines.md)
 covers the classical LO arms.
 
 ```julia
-using RobustVisualGeometry, RansacScoringDoneRight, LocalOptimizationDoneRight
-using VisualGeometryCore: WelschShape
+using VisualGeometryToolkitEstimation, RansacScoringDoneRight, LocalOptimizationDoneRight
+using VisualGeometryToolkitCore: WelschShape
 
 # the paper's recipe: Student-t + uniform selection, Welsch-HQ refinement at its
 # cross-validated scale multiple of the consensus set's scale
@@ -128,7 +128,7 @@ result = find_essential(cam1, cam2, pixel_pairs;
 ```
 
 The evaluation engine the paper runs on (pair geometry, the refit layer, the
-sample-budget engine, rosters) is `VisualGeometryEval.Evaluation`.
+sample-budget engine, rosters) is `VisualGeometryToolkitEval.Evaluation`.
 
 ## Method
 

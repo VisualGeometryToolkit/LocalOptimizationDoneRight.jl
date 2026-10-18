@@ -3,7 +3,7 @@
 # CV (scripts/fig3_composed_miscal.jl, stage cv): which tuning-protocol
 # entries it runs and which cv_protocol.toml split section it layers, folded by
 # src/protocol_folds.jl `fold_sequential_cv!` exactly as a dataset cell's
-# config is. RobustVisualGeometry's `[[tuning_constants]]` cites this file for
+# config is. VisualGeometryToolkitEstimation's `[[tuning_constants]]` cites this file for
 # the essential class's cross-validated value (its `tuning.config`). Like every
 # dataset cell, this effective config keys fig3's run directory
 # (`sequential_cv_dir(cfg)`, src/protocol_folds.jl) — the
@@ -54,5 +54,5 @@ decode_parallel = 4
 # The anchoring ablation (fig_anchoring.jl) evaluates the scale-multiple arms at
 # a FIXED external scale s0. On PhotoTourism that scale is the ORACLE variance:
 # σ̂² per pair from the SfM-track-paired detections under the bundle-adjusted
-# pose (VisualGeometryEval Datasets phototourism.jl), so s0 = reference_scale of the validation pairs'.
+# pose (VisualGeometryToolkitEval Datasets phototourism.jl), so s0 = reference_scale of the validation pairs'.
 plugin_scale = "oracle_gt_variance"

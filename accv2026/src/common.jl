@@ -3,7 +3,7 @@
 #
 # The stage runner (Stage, run_stages with --plan/--force/--stage), driver
 # shell-out (run_driver), input declarations (require_input) and the
-# done-predicate helper (fresher) are VisualGeometryEval.Experiments; the
+# done-predicate helper (fresher) are VisualGeometryToolkitEval.Experiments; the
 # interior-argmin audit is the LO engine's `audit_operating_points(ROSTER,
 # path)`. This file keeps only THIS paper's wiring: the repo root, the
 # driver-directory helper, and the run_driver context (scripts resolve against
@@ -15,7 +15,7 @@
 # =============================================================================
 if !@isdefined(ACCV2026_EXPERIMENTS_COMMON_LOADED)
 
-using VisualGeometryEval.Experiments: set_driver_context!, set_project_root!
+using VisualGeometryToolkitEval.Experiments: set_driver_context!, set_project_root!
 using DrWatson: projectdir, scriptsdir
 using TOML
 
@@ -42,7 +42,7 @@ set_driver_context!(
 
 # The data/results binding and the provenance record (data_root,
 # results_root, run_key, write_run_records, …) are package API
-# (VisualGeometryEval.Experiments; data/README.md): this project binds itself
+# (VisualGeometryToolkitEval.Experiments; data/README.md): this project binds itself
 # as the project they resolve against — data/exp_raw and data/exp_pro, read as
 # the link paths (every keyed path of this paper is spelled under them).
 set_project_root!(EXP_PROJECT_ROOT)

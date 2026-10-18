@@ -19,6 +19,7 @@
 #
 #   julia --project=. scripts/heb_inlier_stats.jl [--plan] [--stage=NAME] [--force]
 # =============================================================================
+import VisualGeometryToolkitCore as VgtkCore
 using DrWatson; @quickactivate "ACCV2026"
 using JLD2, TOML, Printf, Dates
 include(srcdir("cell_stages.jl"))
@@ -28,7 +29,7 @@ include(srcdir("paper_numbers.jl"))   # heb_counts_cell
 const CFG_NAME = "heb_stats"
 const CFG_PATH = projectdir("configs", CFG_NAME * ".toml")
 const CFG = load_run_config(CFG_PATH)
-VisualGeometryCore.check_keys(CFG, ("experiment", "source"), CFG_PATH)
+VgtkCore.check_keys(CFG, ("experiment", "source"), CFG_PATH)
 # The source cell's cross-validation and the counts' key (src/paper_numbers.jl
 # heb_counts_cell: keyed by the pools and the test side, its scenes and sampling).
 const CELL = heb_counts_cell(CFG)

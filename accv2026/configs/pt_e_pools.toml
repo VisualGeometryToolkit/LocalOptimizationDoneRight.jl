@@ -6,7 +6,7 @@
 #
 # POOL PRODUCER class (pools are dataset-derived data, not results — the one
 # sanctioned write under data_root()):
-# writes per-scene pools (a light record + its residuals, VisualGeometryEval
+# writes per-scene pools (a light record + its residuals, VisualGeometryToolkitEval
 # pool format 4) into a NEW immutable tree under data_root(), through
 # scripts/tools/generate_scoring_pools.jl. Identity: `_config.toml` +
 # `_provenance.toml` sidecars in the output tree; a changed config is a NEW
@@ -23,7 +23,7 @@ pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"
 
 [source]
 # The sides of the scene split of record, `<split>:validation|test`, resolved
-# through VisualGeometryEval configs/splits.toml `phototourism`
+# through VisualGeometryToolkitEval configs/splits.toml `phototourism`
 # (10 validation + 11 test). BOTH sides are generated: the tuning reads the
 # validation side, the evaluations the test side.
 #
@@ -37,7 +37,7 @@ image_unit = "px"                # raw csponds are pixels (driver asserts)
 # they are THIS HOST'S layout, not the dataset's: the two tutorial splits'
 # matches sit under the campaign tree while the TestData matches and every
 # COLMAP reconstruction sit under datasets/phototourism. The reader takes
-# them from the caller (VisualGeometryEval `PtRawTrees`).
+# them from the caller (VisualGeometryToolkitEval `PtRawTrees`).
 #
 # Every `*_dir` key here is resolved against data_root() and handed to the
 # reader under the SAME name less `_dir`, so adding a dataset root needs no

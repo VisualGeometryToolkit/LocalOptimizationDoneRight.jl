@@ -5,7 +5,7 @@
 # keyed outdir from configs/<cell>.toml through run_key / data_root() and have
 # no entry here.
 #
-# Roots come from VisualGeometryEval's results_root() / data_root() and the
+# Roots come from VisualGeometryToolkitEval's results_root() / data_root() and the
 # configs, never hardcoded twice.
 # =============================================================================
 if !@isdefined(ACCV2026_EXPERIMENTS_REGISTRY_LOADED)
@@ -15,7 +15,7 @@ include(joinpath(@__DIR__, "common.jl"))   # binds the project root results_root
 include(joinpath(@__DIR__, "protocol_folds.jl"))   # keyed run dirs (miscal_sidecar_of)
 
 # --- roots -------------------------------------------------------------------
-# The per-cell results tree: VisualGeometryEval's `results_root()` (CAU_RESULTS_ROOT or the
+# The per-cell results tree: VisualGeometryToolkitEval's `results_root()` (CAU_RESULTS_ROOT or the
 # project's data/exp_pro link → <results>/accv2026, data/README.md); ACCV_DATA —
 # the flat campaign root (<data root>/accv2026 unless set; on a fetched machine
 # inside the artifact view).
@@ -35,7 +35,7 @@ end
 const PAPER_FIGDIR = get(ENV, "PAPER_FIGS", projectdir("paper", "figures"))
 
 # Every tuning artifact named below is written by the tuning-artifact writer
-# (VisualGeometryEval `save_tuning_artifact`) and read through `load_tuning_artifact`,
+# (VisualGeometryToolkitEval `save_tuning_artifact`) and read through `load_tuning_artifact`,
 # which REFUSES an artifact of another format (tuning format v3, 2026-10-01:
 # the codified cross-validation — registered scene split, unit samplings,
 # stable name-keyed seeds): their stamps were bumped with the format so every

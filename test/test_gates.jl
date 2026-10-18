@@ -6,10 +6,11 @@
 # Strict deprecations: `Pkg.test(; julia_args = ["--depwarn=error"])` succeeds
 # (2026-09-08; re-verified 2026-09-21) and is the release-gate invocation.
 # =============================================================================
+import VisualGeometryToolkitCore as VgtkCore
 using Test
 using LocalOptimizationDoneRight
 using Aqua, ExplicitImports, JET
-using VisualGeometryCore: VisualGeometryCore
+using VisualGeometryToolkitCore: VisualGeometryToolkitCore
 import PoseLib                # loads the PoseLib extension, checked by the stack contracts below
 const _M = LocalOptimizationDoneRight
 
@@ -29,10 +30,10 @@ const _M = LocalOptimizationDoneRight
         @test check_no_stale_explicit_imports(_M) === nothing
         @test check_all_explicit_imports_are_public(_M) === nothing
     end
-    # The stack's naming vocabulary (VisualGeometryCore.check_naming) over the
+    # The stack's naming vocabulary (VisualGeometryToolkitCore.check_naming) over the
     # whole repository: package, vendored-wrapper library and paper project.
     @testset "naming" begin
-        VisualGeometryCore.test_naming(_M)
+        VgtkCore.test_naming(_M)
     end
     @testset "JET ratchet" begin
         JET_BASELINE = 0          # 2026-09-08; only ever decreases
@@ -43,12 +44,12 @@ const _M = LocalOptimizationDoneRight
     end
 end
 
-# ONE owner of minimal-sample boundaries: VisualGeometryEval `Pools.sample_starts`
+# ONE owner of minimal-sample boundaries: VisualGeometryToolkitEval `Pools.sample_starts`
 # (certified against the pool's `total_samples` stamp). A "new sample where the
 # `sample_indices` column changes" rule merges repeated draws — the budget
 # engine's own counter did, until 2026-10-08 — so no code here compares adjacent
 # sample columns: the package source, the paper project's code and its drivers.
-@testset "sample boundaries come from VisualGeometryEval only" begin
+@testset "sample boundaries come from VisualGeometryToolkitEval only" begin
     adjacent = r"(sample_indices|sidx)[^\n]*\b[jk]\s*[-+]\s*1\b"
     root = pkgdir(LocalOptimizationDoneRight)
     offenders = String[]
@@ -62,17 +63,17 @@ end
     @test isempty(offenders) || (@info "ad hoc sample boundaries" offenders; false)
 end
 
-# The stack contracts (VisualGeometryCore quality/stack_contracts.jl), enforced:
+# The stack contracts (VisualGeometryToolkitCore quality/stack_contracts.jl), enforced:
 # Project.toml names only the allow-listed stack packages, no `_`-prefixed
 # name of another stack package is reached from src/ or ext/, and every method
 # added to another stack package's function lands on its CONTRACT_GENERICS —
 # for the package and for its PoseLib extension.
 @testset "stack contracts" begin
     root = pkgdir(_M)
-    @test isempty(VisualGeometryCore.stack_dependency_violations(joinpath(root, "Project.toml"), "LocalOptimizationDoneRight"))
-    @test isempty(vcat(VisualGeometryCore.private_name_violations(joinpath(root, "src"), "LocalOptimizationDoneRight"),
-                       VisualGeometryCore.private_name_violations(joinpath(root, "ext"), "LocalOptimizationDoneRight")))
-    @test isempty(VisualGeometryCore.contract_generic_violations(_M))
+    @test isempty(VgtkCore.stack_dependency_violations(joinpath(root, "Project.toml"), "LocalOptimizationDoneRight"))
+    @test isempty(vcat(VgtkCore.private_name_violations(joinpath(root, "src"), "LocalOptimizationDoneRight"),
+                       VgtkCore.private_name_violations(joinpath(root, "ext"), "LocalOptimizationDoneRight")))
+    @test isempty(VgtkCore.contract_generic_violations(_M))
     ext = Base.get_extension(_M, :LocalOptimizationDoneRightPoseLibExt)
-    @test ext !== nothing && isempty(VisualGeometryCore.contract_generic_violations(ext))
+    @test ext !== nothing && isempty(VgtkCore.contract_generic_violations(ext))
 end

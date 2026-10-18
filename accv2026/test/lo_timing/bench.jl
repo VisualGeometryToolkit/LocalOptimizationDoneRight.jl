@@ -6,7 +6,7 @@
 # GNC, the Student-t + uniform IRLS and BCD. Moved from the library's
 # test/lo_timing (K+, 2026-10-09: its test target names no scorer package;
 # the PoseLib arms and the lift kernels stay timed there). Run by the opt-in
-# gate of accv2026/test/runtests.jl (LO_TIMING_GATE=1; VisualGeometryCore's
+# gate of accv2026/test/runtests.jl (LO_TIMING_GATE=1; VisualGeometryToolkitCore's
 # test/lo_timing/gate.jl policy), in its own single-threaded process pinned to
 # one core:
 #
@@ -14,11 +14,11 @@
 #
 # THE CALL SET `lo_calls_phototourism_e.bin`: 24 recorded local optimizations
 # of the ACCV Table 1 timing protocol, 8 PhotoTourism british_museum pairs
-# (346–1094 correspondences, the pool frame of VisualGeometryEval's PT-E-SIFT
+# (346–1094 correspondences, the pool frame of VisualGeometryToolkitEval's PT-E-SIFT
 # pool) × 3 RANSAC LO-checkpoint seeds each (the first, middle and last
 # checkpoint of the Welsch-IRLS run of record), the camera matrices and the
 # selection's outlier half-width. Little-endian binary, written once (the same
-# file RobustVisualGeometry's and LocalOptimizationDoneRight's gates time
+# file VisualGeometryToolkitEstimation's and LocalOptimizationDoneRight's gates time
 # their arms on):
 #
 #   "LOFX0001" | npairs::Int64 | nseeds::Int64 | outlier_halfwidth::Float64 |
@@ -33,10 +33,10 @@
 # spread (the noise probe). `ncalls` is the call set's size.
 # =============================================================================
 
-using LocalOptimizationDoneRight, RobustVisualGeometry, VisualGeometryCore, RansacScoringDoneRight
+using LocalOptimizationDoneRight, VisualGeometryToolkitEstimation, VisualGeometryToolkitCore, RansacScoringDoneRight
 using LocalOptimizationDoneRight: HQ, Gnc, StudentTUniform, StuTuBCD
-using RobustVisualGeometry: RansacWorkspace, Irls
-using VisualGeometryCore: IGPrior
+using VisualGeometryToolkitEstimation: RansacWorkspace, Irls
+using VisualGeometryToolkitCore: IGPrior
 using StaticArrays, LinearAlgebra, Random
 
 const FIXTURE = joinpath(@__DIR__, "lo_calls_phototourism_e.bin")

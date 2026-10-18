@@ -28,8 +28,8 @@ using Random: MersenneTwister, randn
 using LinearAlgebra: normalize
 using StaticArrays: SMatrix, SVector, SA
 using Rotations: RotY
-using VisualGeometryCore: Point2, Csponds
-using VisualGeometryEval.Evaluation: PairGeom, perturbed_pose
+using VisualGeometryToolkitCore: Point2, Csponds
+using VisualGeometryToolkitEval.Evaluation: PairGeom, perturbed_pose
 
 const _TWO_VIEW_FOV = (
     wide = (cloud = (2.0, 1.5, 1.5, 3.0), image = (1.5, 1.2), seed = 3),

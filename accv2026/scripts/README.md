@@ -4,7 +4,7 @@ One executable file per experiment; each file **is** the experiment: it
 declares its data inputs (`require_input` with provenance), runs idempotent
 stages (skip-if-done; `--force` re-runs; `--stage=NAME` runs one), tunes only
 through **THE single CV path** under a `[tuning.<name>]` spec
-(`../configs/tuning.toml`; schema: the header of VisualGeometryEval `src/tuning/toml.jl`, defaults in its `configs/tuning.toml`;
+(`../configs/tuning.toml`; schema: the header of VisualGeometryToolkitEval `src/tuning/toml.jl`, defaults in its `configs/tuning.toml`;
 the sequential CV `tools/run_sequential_cv.jl`, with boundary detection +
 read-time refusal),
 audits every tuning artifact for interior argmins before

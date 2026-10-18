@@ -2,7 +2,7 @@
 # poselib_arms.jl — PoseLib's truncated refiners as LO strategies (the solver
 # calls live in the PoseLib extension, ext/LocalOptimizationDoneRightPoseLibExt.jl).
 #
-# External refiners (VisualGeometryCore's `ExternalRefit`): they refine at an
+# External refiners (VisualGeometryToolkitCore's `ExternalRefit`): they refine at an
 # absolute loss width through `refine_external!` on their per-pair
 # `external_workspace` (the pool-frame calibrations and correspondences), never
 # in the native RANSAC loop — truncating at a marginal's outlier half-width
@@ -44,7 +44,7 @@ The INITIAL width is anchored on the seed's consensus scale — `ŝ²` of the
 consensus set under the refit scoring at the outlier half-width of the
 delivered loss width (`loss_width_to_outlier_halfwidth` at the refit
 protocol's operating scale multiple, `[local_optimization.poselib_adapt]
-operating_scale_multiple`), RobustVisualGeometry's `consensus_s2!` — never a
+operating_scale_multiple`), VisualGeometryToolkitEstimation's `consensus_s2!` — never a
 plug-in scale; a consensus too thin to carry a scale makes no refit.
 `max_iter` is the total LM budget across rounds. Defaults:
 configs/default.toml `[local_optimization.poselib_adapt]`. E-track only
@@ -64,26 +64,26 @@ PoseLibLmAdaptLossWidth(; max_iter::Integer = _config_default("local_optimizatio
     PoseLibLmAdaptLossWidth(Int(max_iter), Int(rounds), Float64(scale_multiple))
 
 const _PoseLibArm = Union{PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth}
-VisualGeometryCore.RefitFamily(::_PoseLibArm) = ExternalRefit()
+VgtkCore.RefitFamily(::_PoseLibArm) = ExternalRefit()
 
-# Identity (VisualGeometryCore traits). PoseLib's truncated-loss LM is a binary
+# Identity (VisualGeometryToolkitCore traits). PoseLib's truncated-loss LM is a binary
 # weight recomputed every iteration — static reweighting, the IRLS column;
 # Le–Zach's relaxed TLS multiplies its penalty per LM iteration until it
 # collapses to hard truncation — explicit continuation, the GNC column. Both
 # are FixedScale: the absolute loss width is supplied at refit time. The
 # adaptive arm anchors its start width on the consensus scale.
-VisualGeometryCore.optimization_path(::PoseLibLm) = :irls
-VisualGeometryCore.optimization_path(::PoseLibLZ) = :gnc
-VisualGeometryCore.optimization_path(::PoseLibLmAdaptLossWidth) = :irls
-VisualGeometryCore.scale_interface(::Union{PoseLibLm, PoseLibLZ}) = FixedScale()
-VisualGeometryCore.scale_interface(::PoseLibLmAdaptLossWidth) = ConsensusAnchored()
-VisualGeometryCore.loss_family(::_PoseLibArm) = :tls
-VisualGeometryCore.lo_label(::PoseLibLm) = raw"TLS-IRLS"
-VisualGeometryCore.lo_label(::PoseLibLZ) = raw"TLS-LZ"
+VgtkCore.optimization_path(::PoseLibLm) = :irls
+VgtkCore.optimization_path(::PoseLibLZ) = :gnc
+VgtkCore.optimization_path(::PoseLibLmAdaptLossWidth) = :irls
+VgtkCore.scale_interface(::Union{PoseLibLm, PoseLibLZ}) = FixedScale()
+VgtkCore.scale_interface(::PoseLibLmAdaptLossWidth) = ConsensusAnchored()
+VgtkCore.loss_family(::_PoseLibArm) = :tls
+VgtkCore.lo_label(::PoseLibLm) = raw"TLS-IRLS"
+VgtkCore.lo_label(::PoseLibLZ) = raw"TLS-LZ"
 # The truncated LS refined with a RE-ESTIMATED scale (ŝ); the filled square
 # marks a refiner that re-estimates its scale.
-VisualGeometryCore.lo_label(::PoseLibLmAdaptLossWidth) = raw"TLS-IRLS-$\hat s$"
-VisualGeometryCore.lo_marker(::PoseLibLmAdaptLossWidth) = Symbol("square*")
+VgtkCore.lo_label(::PoseLibLmAdaptLossWidth) = raw"TLS-IRLS-$\hat s$"
+VgtkCore.lo_marker(::PoseLibLmAdaptLossWidth) = Symbol("square*")
 
 """
     truncated_refit_pose(lo, ws, problem, seed_E, loss_width) -> Union{Nothing, refined pose}

@@ -47,7 +47,7 @@ end
 @info "WITHOUT evaluation" scale_interface = dwithout["scale_interface"] plugin_scale = dwithout["plugin_scale"]
 ro_with, ro_without = dwith["evaluation"], dwithout["evaluation"]
 
-# Curves through VisualGeometryEval's evaluation statistics (Render `evaluation_curve`):
+# Curves through VisualGeometryToolkitEval's evaluation statistics (Render `evaluation_curve`):
 # the finite median row and THE mAA rule row (`eligible_maa`).
 curve(ro, arm)    = evaluation_curve(ro, arm, finite_median)
 maacurve(ro, arm) = evaluation_curve(ro, arm, eligible_maa)

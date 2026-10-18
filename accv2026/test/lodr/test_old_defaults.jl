@@ -1,15 +1,15 @@
 # =============================================================================
 # The find_* pipelines under the paper's per-class recipes — the defaults of
-# RobustVisualGeometry's find_* before 2026-10, now stated explicitly: the
+# VisualGeometryToolkitEstimation's find_* before 2026-10, now stated explicitly: the
 # Welsch HQ lift at the class's cross-validated scale multiple,
 #
 #     local_optimization = HQ{WelschShape}(scale_multiple = tuning_constant(class, "welsch").scale_multiple)
 #
 # with their default scorer of that time, the Jeffreys Student-t + uniform
 # marginal at the class's file outlier half-width (`old_scoring`; the core
-# default is now MSAC at a threshold convention, RobustVisualGeometry b5194da).
+# default is now MSAC at a threshold convention, VisualGeometryToolkitEstimation b5194da).
 #
-# Same scenes, seeds and bounds as RobustVisualGeometry's fitting_pipelines
+# Same scenes, seeds and bounds as VisualGeometryToolkitEstimation's fitting_pipelines
 # item (moved from there with the recipes; that item now pins the core
 # default, Irls{TLSShape}).
 # =============================================================================
@@ -19,11 +19,11 @@ using StaticArrays
 using StructArrays
 using Random
 using Rotations: RotMatrix, RotXYZ, RotY
-using VisualGeometryCore
-using VisualGeometryCore: converged, estimate, rotation, translation   # VGC accessors (public)
-using RobustVisualGeometry: RansacWorkspace   # public, not exported
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: converged, estimate, rotation, translation   # VGC accessors (public)
+using VisualGeometryToolkitEstimation: RansacWorkspace   # public, not exported
 using RansacScoringDoneRight: StudentTUniformScoring, Predictive   # owned and exported by RansacScoringDoneRight
-using RobustVisualGeometry
+using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 include("scenes.jl")   # the shared scenes, as modules
 using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination
@@ -31,7 +31,7 @@ using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination
 # The paper's per-class recipe.
 welsch_hq(class) = HQ{WelschShape}(scale_multiple = tuning_constant(class, "welsch").scale_multiple)
 # The find_* default scorer before 2026-10: the marginal at the class's
-# `[pipelines.<class>] outlier_halfwidth` of RobustVisualGeometry's
+# `[pipelines.<class>] outlier_halfwidth` of VisualGeometryToolkitEstimation's
 # configs/default.toml then (pixels; hand-eye a fraction of the problem's L).
 const OLD_OUTLIER_HALFWIDTH = Dict(:homography => 20.0, :fundmat => 50.0, :essential => 20.0, :absolute_pose => 5.0, :hand_eye => 0.05)
 old_scoring(problem, class) = StudentTUniformScoring(problem, OLD_OUTLIER_HALFWIDTH[class])

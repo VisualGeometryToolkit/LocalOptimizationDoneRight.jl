@@ -9,12 +9,12 @@
 #
 # Colours are emitted as `\providecolor{Color<key>}{HTML}{<hex>}` (the paper's
 # own definitions, figures/fig_colors.tex, are loaded first and win). The
-# selector hues that ARE the house palette (VisualGeometryEval
+# selector hues that ARE the house palette (VisualGeometryToolkitEval
 # `default_palette()`) are looked up there, never re-typed. Both tables feed
 # `PAPER_STYLE` (figure_style.jl), the one value every renderer is handed.
 # =============================================================================
 
-using VisualGeometryCore: lo_label, lo_marker
+using VisualGeometryToolkitCore: lo_label, lo_marker
 
 const _HOUSE = Dict(default_palette())
 "Colour name => hex of the selection scorers and the composed arms outside the faceted rows."

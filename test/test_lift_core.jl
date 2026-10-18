@@ -1,12 +1,13 @@
 # =============================================================================
 # The lift core (src/lift/lift_core.jl): the z-block kinds against a dense
-# joint solve, the lift's own state (LiftState) over VisualGeometryCore's chart
+# joint solve, the lift's own state (LiftState) over VisualGeometryToolkitCore's chart
 # rows (RowsWorkspace), cubic Hermite interpolation and TabulatedLift. Moved
-# from VisualGeometryCore's lift_zblock_kinds item with the lift core.
+# from VisualGeometryToolkitCore's lift_zblock_kinds item with the lift core.
 # =============================================================================
+import VisualGeometryToolkitCore as VgtkCore
 using Test, Random, LinearAlgebra, StaticArrays
-using VisualGeometryCore
-using VisualGeometryCore: RowsWorkspace, sq_loss_width, lift_wmax, lift_conjugate, lift_zblock
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: RowsWorkspace, sq_loss_width, lift_wmax, lift_conjugate, lift_zblock
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: LiftState, lift_state, JointGaussNewton, WelschConvexNewton, TabulatedLift,
     tabulate!, lift_window, lift_raw_window, cubic_hermite, _lift_hq_increment!, _update_lift_z!,
@@ -36,7 +37,7 @@ function _dense(J, r, coef, D, C)
     end
     return -(H \ g)
 end
-# The codim-C rows (J, r) — VisualGeometryCore's RowsWorkspace — and the lift's
+# The codim-C rows (J, r) — VisualGeometryToolkitCore's RowsWorkspace — and the lift's
 # own state holding z.
 function _ws(J, r, z, D, C)
     rws = RowsWorkspace{D, C}(length(z))
@@ -146,11 +147,11 @@ end
 end
 
 # The convexified Newton z-block reads Welsch's conjugate curvature (the
-# constant c²) and refuses every other shape (moved from VisualGeometryCore's
+# constant c²) and refuses every other shape (moved from VisualGeometryToolkitCore's
 # conjugate_curvature item; the curvature itself is VGC's shape math).
 @testset "the convexified Newton z-block's curvature" begin
     loss = deploy(WelschShape(), 0.04; scale_multiple = 1.5)
-    @test _convex_newton_curvature(loss, 0.3) == VisualGeometryCore.sq_loss_width(loss)
+    @test _convex_newton_curvature(loss, 0.3) == VgtkCore.sq_loss_width(loss)
     @test_throws ArgumentError _convex_newton_curvature(deploy(CauchyShape(), 0.04; scale_multiple = 1.5), 0.3)
 end
 end

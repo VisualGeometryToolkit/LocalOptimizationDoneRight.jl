@@ -1,7 +1,7 @@
 # =============================================================================
 # The essential-matrix research local optimizations — the Welsch convexified
 # Newton and ECM lifts, and the Student-t + uniform mixture lift and its ReGeMM
-# baseline (moved from RobustVisualGeometry's problems/essential.jl). They run
+# baseline (moved from VisualGeometryToolkitEstimation's problems/essential.jl). They run
 # on E's chart-rows provider.
 # =============================================================================
 
@@ -109,7 +109,7 @@ end
 # joint lift StuTuHQTabulated and the ReGeMM baseline StuTuRegemm)
 # =============================================================================
 #
-# The mixture is VisualGeometryCore's: `PosteriorWeightState` holds (ν, ŝ²,
+# The mixture is VisualGeometryToolkitCore's: `PosteriorWeightState` holds (ν, ŝ²,
 # π) and the E-step buffers, `StudentTMixture` its scalar formulas. The ECM on
 # (ŝ², π) at fixed ν is the toolkit's three M-step blocks in order — E-step
 # (`update_weights!`), ŝ² (`update_scale!`, the latent-precision-weighted ECM
@@ -121,12 +121,12 @@ end
 # The state (`PosteriorWeightState(n; ν, s_hat_sq, log_two_outlier_halfwidth, codimension,
 # inlier_prior)` — Jeffreys, π clamped by the toolkit's one clamp), the ECM cycle
 # (`mixture_ecm!`), the NLL (`mixture_nll(pws, r, n)`) and the κ² table
-# (`tabulate!(tab, StudentTMixture(pws))`) are all VisualGeometryCore's; nothing of the
+# (`tabulate!(tab, StudentTMixture(pws))`) are all VisualGeometryToolkitCore's; nothing of the
 # mixture's math is restated here.
 
 # The setup both mixture arms' dispatch shares: E's lift provider and a fresh ECM
 # state at the consensus set's (ν, ŝ², π), from the one posterior seeding
-# (RobustVisualGeometry's `consensus_posterior`).
+# (VisualGeometryToolkitEstimation's `consensus_posterior`).
 function _mixture_lift_setup(L::LoBuffers, problem::EssentialProblem, model, cs::ConsensusSet, buf::ScoreBuffers, scoring)
     n = data_size(problem)
     a = required_outlier_halfwidth(scoring)
@@ -265,12 +265,12 @@ end
 struct StopWhenLeftBasin <: StoppingCriterion end
 @inline stop_reason(::StopWhenLeftBasin, state, method, prob, θ, θ_old, iter) =
     state.cur_cost > state.seed_nll ? :left_basin : :continue
-@inline RobustVisualGeometry.iterations_without_improvement(state::LiftedMixtureState) = state.no_improve
+@inline VgtkEstimation.iterations_without_improvement(state::LiftedMixtureState) = state.no_improve
 stopping_criterion(method::LiftedMixtureMethod) =
     StopWhenLeftBasin() | StopWhenNoImprovement(method.patience, 2) | StopWhenIncrementSmall()
 current_cost(state::LiftedMixtureState) = state.cur_cost
 
-# RANSAC LO dispatch — EssentialProblem specialization (VisualGeometryCore's
+# RANSAC LO dispatch — EssentialProblem specialization (VisualGeometryToolkitCore's
 # contract refuses other problem types). Builds the seed partition's posterior
 # state for the data-driven scale ŝ² and ν, then runs `block_coordinate_descent!`.
 function locally_optimize!(

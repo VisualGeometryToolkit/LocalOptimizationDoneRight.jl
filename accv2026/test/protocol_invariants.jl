@@ -1,20 +1,21 @@
 # =============================================================================
 # test/protocol_invariants.jl — EXECUTABLE protocol invariants (the historical
 # eval/protocol/check_invariants.jl, repointed at the LocalOptimizationDoneRight
-# layout: VisualGeometryEval src/ = mechanisms (read via pkgdir), scripts/ =
+# layout: VisualGeometryToolkitEval src/ = mechanisms (read via pkgdir), scripts/ =
 # the campaign drivers).
 #
 # Any failure means a retired protocol or a vocabulary drift has re-entered
 # the codebase — fix the code, never this file.
 # =============================================================================
+import VisualGeometryToolkitEval as VgtkEval
 using Test, TOML
-using RobustVisualGeometry: RobustVisualGeometry
-using VisualGeometryEval: VisualGeometryEval
+using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation
+using VisualGeometryToolkitEval: VisualGeometryToolkitEval
 
 const ROOT = normpath(joinpath(@__DIR__, ".."))
 include(joinpath(ROOT, "src", "config.jl"))   # the arm table + protocol of record (idempotent)
 const SCRIPTS = joinpath(ROOT, "scripts")
-const EVAL = pkgdir(VisualGeometryEval)
+const EVAL = pkgdir(VisualGeometryToolkitEval)
 const SRC = joinpath(EVAL, "src")
 
 # "src" = the eval package's sources (EVAL); "prelude" = this project's src/.
@@ -30,7 +31,7 @@ _all_eval_sources() = [
     # 1. The retired shared-knob CV is DELETED — its symbols may not reappear
     #    in CODE (word-boundary match on non-comment lines; comments recording
     #    the removal are allowed). Its bundle LO refit builder is kept out by
-    #    the quality naming test: VisualGeometryCore.check_naming rejects its name.
+    #    the quality naming test: VisualGeometryToolkitCore.check_naming rejects its name.
     _code_lines(txt) = [l for l in split(txt, '\n') if !startswith(lstrip(l), "#")]
     for sym in ("run_sb_fair_cv", "load_sb_fair_cv", "fullbudget_err")
         re = Regex("\\b\\Q$(sym)\\E\\b")
@@ -71,11 +72,11 @@ _all_eval_sources() = [
     @test occursin("arm_style_records(_ARM_PROBES", fs)
     @test occursin("TIMING_TAGS", _read("prelude", "arm_rosters.jl"))   # derived from the one arm table
 
-    # 5. Scene lists have ONE source, VisualGeometryEval's registered
+    # 5. Scene lists have ONE source, VisualGeometryToolkitEval's registered
     #    splits (configs/splits.toml), reached only through a spec's
     #    cross_validation: no file of this project states a registered scene.
     @test !isfile(joinpath(ROOT, "src", "scene_splits.jl"))
-    registered = Set(s for sp in values(VisualGeometryEval.Tuning.SPLIT_REGISTRY["splits"])
+    registered = Set(s for sp in values(VgtkEval.Tuning.SPLIT_REGISTRY["splits"])
                      for side in ("validation_scenes", "test_scenes") for s in sp[side])
     # The one named scene that is not a split: Table 1's timing FIXTURE (one
     # test scene's first pairs, configs/timing_table.toml [timing] scene).

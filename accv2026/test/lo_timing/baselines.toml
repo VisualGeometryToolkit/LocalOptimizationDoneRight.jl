@@ -1,4 +1,4 @@
-# LO timing baselines (the gate: VisualGeometryCore test/lo_timing/gate.jl): min µs per call over 7 reps
+# LO timing baselines (the gate: VisualGeometryToolkitCore test/lo_timing/gate.jl): min µs per call over 7 reps
 # on one pinned core, and bytes allocated per call. Re-record with
 # LO_TIMING_GATE=record IN THE COMMIT that changes the speed on purpose.
 # Re-recorded 2026-10-09 with K+ O3 (the per-call LO states reused, not built): bytes per call

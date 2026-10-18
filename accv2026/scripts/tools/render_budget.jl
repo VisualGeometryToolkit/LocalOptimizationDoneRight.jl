@@ -6,7 +6,7 @@
 # error, mAA@10}) and, for a cell whose config has a [render.time] table, its
 # compute-efficiency companion (KIND=time; mAA vs cumulative LO time).
 #
-# THIN CALLER of the one budget path, VisualGeometryEval.Render `budget_curves` (the
+# THIN CALLER of the one budget path, VisualGeometryToolkitEval.Render `budget_curves` (the
 # statistics over the cell's per-scene files, the ONE scene schema) →
 # emit_budget_faceted_curves / emit_budget_time_panel. This script only reads
 # the cell's wiring: its scene files, its roster gate, its [render] settings.

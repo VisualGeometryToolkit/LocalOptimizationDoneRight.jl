@@ -4,7 +4,7 @@
 #
 # Every keyword default and constant of the package that changes a
 # refinement reads it here, so there is no second set of Julia literals to drift
-# from it. The lookup is VisualGeometryCore's `toml_default`, which throws on a missing
+# from it. The lookup is VisualGeometryToolkitCore's `toml_default`, which throws on a missing
 # table or key by design. Parsed at precompile; `include_dependency` makes an
 # edit force a recompile (a Revise session needs a restart to see one).
 # =============================================================================

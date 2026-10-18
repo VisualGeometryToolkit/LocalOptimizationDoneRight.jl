@@ -12,7 +12,7 @@ author's host two SYMLINKS:
                (sequential-cv-<key>/ with _config.toml/_provenance.toml)
                are created here and never rewritten.
 
-Resolution ladder (VisualGeometryEval.Experiments, experiments/data.jl;
+Resolution ladder (VisualGeometryToolkitEval.Experiments, experiments/data.jl;
 bound to this project by src/common.jl's set_project_root!(projectdir())):
   data_root():    ENV["CAU_DATA_ROOT"]    -> data/exp_raw -> error
   results_root(): ENV["CAU_RESULTS_ROOT"] -> data/exp_pro -> error

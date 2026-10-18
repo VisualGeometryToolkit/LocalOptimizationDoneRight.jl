@@ -9,7 +9,7 @@
 # wall clocks shared the machine with its other threads (and SupeRANSAC's with
 # the parallel workers of its own cell).
 #
-# THE SAMPLE is VisualGeometryEval's unit sampling, the vocabulary of the
+# THE SAMPLE is VisualGeometryToolkitEval's unit sampling, the vocabulary of the
 # cross-validations' validation and test sides (a COMPLETE table, read with
 # read_tuning; no defaults inherited). Stratified by scene: Tab. 3's time is the
 # MEAN OVER SCENES of each scene's median, so every scene needs its own

@@ -2,7 +2,7 @@
 # src/validation_data.jl — the data a cross-validation reads, from its spec.
 #
 # Every scene list and every unit sample of this paper comes from the
-# `cross_validation` of a `[tuning.<name>]` spec (VisualGeometryEval
+# `cross_validation` of a `[tuning.<name>]` spec (VisualGeometryToolkitEval
 # Tuning: the registered scene split of its configs/splits.toml, the unit
 # samplings, stable name-keyed seeds). Nothing here states a scene, a fraction
 # or a seed. A driver states which samplings it supports by the SIGNATURE of
@@ -12,16 +12,16 @@
 #   two_view_scene_loaders(cv, pool_dir)  stratified (or every) PAIRS per scene
 #
 # and a pool producer's scene set is one side of a registered split
-# (VisualGeometryEval DataArtifacts `split_scenes`, the resolver the producer
+# (VisualGeometryToolkitEval DataArtifacts `split_scenes`, the resolver the producer
 # cells, the pool driver and the data catalog share).
 # =============================================================================
-using VisualGeometryEval.DataArtifacts: split_scenes
-using VisualGeometryEval.Tuning: CrossValidation, SceneSplit, ExhaustiveSampling, StratifiedSampling,
+using VisualGeometryToolkitEval.DataArtifacts: split_scenes
+using VisualGeometryToolkitEval.Tuning: CrossValidation, SceneSplit, ExhaustiveSampling, StratifiedSampling,
     sample_units, validation_units, test_units,
     validation_scenes, test_scenes, tuning_spec, load_tuning_artifact, registered_split
-import VisualGeometryEval.Tuning: sampling_unit
-using VisualGeometryEval.Pools: load_pool, load_pool_residuals, residuals_path
-using VisualGeometryCore.Pools: PoolPair
+import VisualGeometryToolkitEval.Tuning: sampling_unit
+using VisualGeometryToolkitEval.Pools: load_pool, load_pool_residuals, residuals_path
+using VisualGeometryToolkitCore.Pools: PoolPair
 
 const TWO_VIEW_UNIT = sampling_unit(PoolPair)
 

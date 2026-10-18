@@ -18,12 +18,12 @@
 #   anything else      — refused: a fixed loss width has no in-loop port here.
 # The scale prior is the operating points' own (their scorer artifact's).
 # =============================================================================
-using VisualGeometryEval.Evaluation: build_pair_ctx, live_runs, live_row, RefitHalfwidth,
+using VisualGeometryToolkitEval.Evaluation: build_pair_ctx, live_runs, live_row, RefitHalfwidth,
     audit_operating_points, deployed_budget_settings
-using VisualGeometryEval.Pools: load_pool
-using VisualGeometryCore: ScaleMultiple, OutlierHalfwidth, width_axis_name, IGPrior
-using VisualGeometryCore.Pools: PoolPair
-using RobustVisualGeometry: EssentialProblem, RansacConfig, GaussianSampler
+using VisualGeometryToolkitEval.Pools: load_pool
+using VisualGeometryToolkitCore: ScaleMultiple, OutlierHalfwidth, width_axis_name, IGPrior
+using VisualGeometryToolkitCore.Pools: PoolPair
+using VisualGeometryToolkitEstimation: EssentialProblem, RansacConfig, GaussianSampler
 using RansacScoringDoneRight: StudentTUniformScoring
 using Printf: Printf
 using DrWatson: projectdir   # configs/ of the active (accv2026) project
@@ -35,7 +35,7 @@ const PT_E_SNN_SIGMA = Float64(load_run_config(projectdir("configs", "pt_e_pools
 """
     pt_live_problem(pair::PoolPair) -> EssentialProblem
 
-The live-RANSAC problem of a PT-E pool pair: RobustVisualGeometry's pool-frame
+The live-RANSAC problem of a PT-E pool pair: VisualGeometryToolkitEstimation's pool-frame
 `EssentialProblem(pair)` (its sample gate's 0.1 px duplicate tolerance is in
 pool units), sampled by the Gaussian-SNN sampler over the record's raw Lowe
 ratios `pair.snn` (low = good) at the pool generator's σ — the pool's own
@@ -46,7 +46,7 @@ pt_live_problem(pair::PoolPair) =
     pair.snn === nothing ? EssentialProblem(pair) :
     EssentialProblem(pair; sampler = GaussianSampler(Float64.(pair.snn); snn_sigma = PT_E_SNN_SIGMA))
 
-"The light PT-E pool of `scene` (VisualGeometryEval `load_pool`; its records carry the SNN)."
+"The light PT-E pool of `scene` (VisualGeometryToolkitEval `load_pool`; its records carry the SNN)."
 function pt_pool(scene::AbstractString, pool_dir::AbstractString)
     require_input(joinpath(pool_dir, "$scene.jld2"); what = "PT-E-SIFT-4K_pf3 pool ($scene)",
                   provenance = "configs/pt_e_pools.toml (generate_scoring_pools.jl)")
@@ -140,7 +140,7 @@ const E2E_SUMMARY_HEADER = join(["arm", "zeta", "median_deg", "maa10", "maa5", "
 
 One summary.tsv row: system `name` at `ζ`, the MEAN over the scenes of
 `per` (one record per scene, with `err` [deg], `trials` and the wall times
-`wall(r)` [s]) of each scene's finite median error, mAA@10° (VisualGeometryEval
+`wall(r)` [s]) of each scene's finite median error, mAA@10° (VisualGeometryToolkitEval
 `eligible_maa`, the threshold of record), mAA@5°, median trials and median
 wall time [ms]. Ours and SupeRANSAC's rows are both this line.
 """

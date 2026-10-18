@@ -40,10 +40,10 @@
 using DrWatson; @quickactivate "ACCV2026"
 using Random, Statistics, Printf, JLD2, Logging, Dates, LinearAlgebra
 using StableRNGs: StableRNG
-using RobustVisualGeometry
-using VisualGeometryCore
-using VisualGeometryCore: Synthetic, to_native
-using VisualGeometryEval.Tuning: corrupt_native
+using VisualGeometryToolkitEstimation
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: Synthetic, to_native
+using VisualGeometryToolkitEval.Tuning: corrupt_native
 
 # The paper config on top of the LO engine (PairCtx geometry, RefitFamily refit
 # layer, the PoseLib adaptive-loss-width custom engine).
@@ -143,14 +143,14 @@ const _LADDER_TEMPLATE = StudentTUniformScoring(EssentialProblem, 1.0)
 # basin-experiment practice; the mask fraction is reported.
 
 # Pose perturbation: `perturbed_pose` / `perturbed_seed_E` live in the eval
-# evaluator (VisualGeometryEval.Evaluation, engine/geometry.jl) so every consumer
+# evaluator (VisualGeometryToolkitEval.Evaluation, engine/geometry.jl) so every consumer
 # perturbs IDENTICALLY — same seeded axis draw,
 # same translation jitter, same [t]ₓR seed model.
 
 function run_ladder()
     # STREAMING: one scene in memory at a time (a full PT scene is ~150 GB;
     # loading the roster at once OOMs the node).  The error tensor is scalar.
-    load_scene(s) = first(TEST_SIDE[s]()).pairs   # the one pool reader (VisualGeometryEval.Pools), the test side's pairs
+    load_scene(s) = first(TEST_SIDE[s]()).pairs   # the one pool reader (VisualGeometryToolkitEval.Pools), the test side's pairs
     counts = Int[]
     for sc in SCENES
         pp = load_scene(sc); push!(counts, length(pp)); pp = nothing; GC.gc()
@@ -235,7 +235,7 @@ function run_ladder()
     errs = errs[keep, :, :]
 
     # ---- B2 evaluation: success rate + conditional error, pair-bootstrap BCa bands
-    # (VisualGeometryEval `bootstrap_ci`, the interval of every other CI in the paper). A
+    # (VisualGeometryToolkitEval `bootstrap_ci`, the interval of every other CI in the paper). A
     # refinable pair whose refit failed (non-finite) did not travel: it counts
     # as a non-success, never drops out of the rate.
     rng = StableRNG(stable_seed(SEED, "bootstrap"))

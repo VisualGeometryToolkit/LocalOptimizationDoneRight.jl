@@ -5,9 +5,9 @@ CurrentModule = LocalOptimizationDoneRight
 ```
 
 The paper compares its local optimizers with two families of established
-refiners, both run as `ExternalRefit` strategies (VisualGeometryCore's external
+refiners, both run as `ExternalRefit` strategies (VisualGeometryToolkitCore's external
 refit contract: `external_workspace`, `refine_external!`) through the same refit
-layer (`VisualGeometryEval.Evaluation`) and under the same LO budget as every
+layer (`VisualGeometryToolkitEval.Evaluation`) and under the same LO budget as every
 other arm: PoseLib's truncated refiners (in
 the package) and RansacLib's classical LO-MSAC (in the paper project
 `accv2026/`, see below). They are evaluation-only: they refine a selected seed
@@ -55,7 +55,7 @@ Chum, BMVC 2012), **run unmodified** as a seeded local optimization for E, F and
   shim locally and is not registered, so the registered
   `LocalOptimizationDoneRight` does not depend on it. The paper project devs it
   by path (`[sources]` in `accv2026/Project.toml`), and the two arms
-  (`accv2026/src/lebeda_lo.jl`) implement VisualGeometryCore's external refit
+  (`accv2026/src/lebeda_lo.jl`) implement VisualGeometryToolkitCore's external refit
   contract (`external_workspace`, `refine_external!`), like any third-party
   strategy.
 

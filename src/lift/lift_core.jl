@@ -1,8 +1,8 @@
 # =============================================================================
 # Manifold-parametric lift core — the θ-block of the joint-(θ,z) half-quadratic
 # loss lift and of the GNC surrogate step, for every chart and every residual
-# codimension (moved from VisualGeometryCore's robust/lift_core.jl). The rows a
-# step reads are a chart-rows provider's (VisualGeometryCore's contract:
+# codimension (moved from VisualGeometryToolkitCore's robust/lift_core.jl). The rows a
+# step reads are a chart-rows provider's (VisualGeometryToolkitCore's contract:
 # `lift_rows(prov)::RowsWorkspace{D, C}`, filled by `lift_refresh!` /
 # `lift_jacobian!`); the lift's own state — the line process z and the
 # reduced system — is this package's `LiftState{D}`.
@@ -39,7 +39,7 @@ The lift's own buffers on a `D`-dof chart for `n` points: the line process `z`
 and its back-substitution terms (`dvec`, `gzv`), and the reduced normal
 equations (`Hbuf`, `gbuf`). The stacked rows, their Jacobian, the per-point
 norms and the participation mask are the chart-rows provider's
-(VisualGeometryCore `RowsWorkspace{D, C}`). [`lift_state`](@ref) builds one per
+(VisualGeometryToolkitCore `RowsWorkspace{D, C}`). [`lift_state`](@ref) builds one per
 (task, size).
 """
 struct LiftState{D}
@@ -56,7 +56,7 @@ LiftState{D}(n::Int) where {D} = LiftState{D}(
     lift_state(::Val{D}, n) -> LiftState{D}
 
 The lift's state for `n` points under the one reuse policy
-(VisualGeometryCore's `task_buffers`).
+(VisualGeometryToolkitCore's `task_buffers`).
 """
 lift_state(::Val{D}, n::Int) where {D} =
     task_buffers(LiftState{D}, () -> LiftState{D}(n), (:lodr_lift_state, n))
@@ -395,7 +395,7 @@ _seed_weighted_z!(z, loss, res, n::Int, hard::Bool) = throw(ArgumentError(
 # The stationarity condition κ²′(w) = −r²(w) gives EXACT node slopes, so a cubic
 # Hermite on the node values reproduces κ² to high order from a coarse grid
 # (M ≈ 32 matches a ~1000-node linear table), and one evaluation yields both
-# quantities the z-block needs. Moved here from RobustVisualGeometry's
+# quantities the z-block needs. Moved here from VisualGeometryToolkitEstimation's
 # essential-matrix mixture lift, where it was written against the mixture.
 
 """
@@ -517,7 +517,7 @@ end
 
 Tabulate the half-quadratic conjugate `κ²` of the Student-t + uniform mixture's
 IRLS weight — which has no closed form — from the weight and its slope,
-VisualGeometryCore's `posterior_weight` and `posterior_weight_derivative`.
+VisualGeometryToolkitCore's `posterior_weight` and `posterior_weight_derivative`.
 """
 tabulate!(tab::TabulatedLift, m::StudentTMixture; warm::Bool = false) =
     tabulate!(tab, x -> (posterior_weight(m, x), posterior_weight_derivative(m, x)); warm)

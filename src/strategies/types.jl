@@ -1,13 +1,13 @@
 # =============================================================================
-# The paper's local-optimization strategies (moved from RobustVisualGeometry's
+# The paper's local-optimization strategies (moved from VisualGeometryToolkitEstimation's
 # scoring_glue.jl): the half-quadratic lifts HQ{K} and their research
 # variants, GNC, the Student-t + uniform IRLS and its score-matched BCD, the
 # Barron arms — their types, identity, width modes, the strategy registry
 # (`LO_TAGS`) and the one keyword constructor.
 #
-# They implement VisualGeometryCore's local-optimization contract
+# They implement VisualGeometryToolkitCore's local-optimization contract
 # (`locally_optimize!`, `lo_width`, `with_width`, `deployed_scale_multiple`) on
-# RobustVisualGeometry's problems and its public posterior-weight iteration.
+# VisualGeometryToolkitEstimation's problems and its public posterior-weight iteration.
 # =============================================================================
 
 """
@@ -91,14 +91,14 @@ free variable, initialized LARGE (all-inlier = smoothed cost) and **evolved
 jointly with θ**, Schur-eliminating `Δz` — this broadens the basin, escaping a
 poor seed where the static [`Irls`](@ref)/[`StudentTUniform`](@ref) is trapped,
 *without* annealing or quadrature. ONE code path for every loss AND every
-problem (`ManifoldLiftHQ` on VisualGeometryCore's chart-rows contract,
+problem (`ManifoldLiftHQ` on VisualGeometryToolkitCore's chart-rows contract,
 lift/lifts.jl); `K` contributes only its closed-form z-block
 quantities and tracked cost. Implemented for every liftable problem (the
 `MinimalSolveProblem` family: its lift provider supplies the chart).
 
-The loss width is frozen at setup by the width mode (VisualGeometryCore's
+The loss width is frozen at setup by the width mode (VisualGeometryToolkitCore's
 `loss_at`): at the consensus set's Student-t scale `ŝ` the `scale_multiple` is
-read in the loss's OWN currency (RobustVisualGeometry's `plain_scale_multiple`,
+read in the loss's OWN currency (VisualGeometryToolkitEstimation's `plain_scale_multiple`,
 shared with `Irls{K}`), which
 converts it to the plain multiple that goes in a deployment's `scale_multiple`
 slot — the loss width is then `scale_multiple·ŝ` and `sq_loss_width` is
@@ -231,7 +231,7 @@ NOT implemented here, the LO dispatch covers `Gnc{<:Irls}`
 only). The GNC arms run through the same `locally_optimize!` contract as
 every IRLS/lift strategy — one code path, one width resolution.
 
-**Width** (VisualGeometryCore's `loss_at`): under `ScaleMultiple(m)` the
+**Width** (VisualGeometryToolkitCore's `loss_at`): under `ScaleMultiple(m)` the
 terminal (target) loss width is `c̄ = m·ŝ` with `ŝ` the consensus set's
 Student-t scale (exactly the width the lifted loss arms freeze); under
 `LossWidth(w)` it is `w`; with neither it follows the scorer's inlier
@@ -307,30 +307,30 @@ end
 
 # -----------------------------------------------------------------------------
 # Identity of the loss-parametric strategies — read off the loss tag
-# (RobustVisualGeometry's `strategy_loss`, which `Irls{K}` shares).
+# (VisualGeometryToolkitEstimation's `strategy_loss`, which `Irls{K}` shares).
 # -----------------------------------------------------------------------------
-RobustVisualGeometry.strategy_loss(::Type{<:HQ{K}}) where {K} = K
-RobustVisualGeometry.strategy_loss(::Type{<:Gnc{S}}) where {S} = strategy_loss(S)
+VgtkEstimation.strategy_loss(::Type{<:HQ{K}}) where {K} = K
+VgtkEstimation.strategy_loss(::Type{<:Gnc{S}}) where {S} = strategy_loss(S)
 
-VisualGeometryCore.lo_label(lo::Union{HQ, Gnc}) =
+VgtkCore.lo_label(lo::Union{HQ, Gnc}) =
     loss_label(strategy_loss(lo)) * "-" * path_suffix(optimization_path(lo))
-VisualGeometryCore.loss_family(lo::Union{HQ, Gnc}) = loss_family(strategy_loss(lo))
+VgtkCore.loss_family(lo::Union{HQ, Gnc}) = loss_family(strategy_loss(lo))
 
-# The scale-multiple currency (RobustVisualGeometry's `plain_scale_multiple`,
+# The scale-multiple currency (VisualGeometryToolkitEstimation's `plain_scale_multiple`,
 # the one table): `HQ{K}` reads its `scale_multiple` in its loss's currency,
 # as `Irls{K}` does; GNC is the ONE mechanism exception — Yang–Carlone's
 # schedules are stated in the TARGET loss width c̄ = scale_multiple·ŝ for every
 # surrogate, so a GNC `scale_multiple` is a width multiple whatever the shape
 # (the GNC-GM arm is CV'd in that currency; a half-weight read would move it by
 # 1/√(√2−1) ≈ 1.55).
-VisualGeometryCore.deployed_scale_multiple(::HQ, shape, m::Float64, _s2, _scoring) = plain_scale_multiple(shape, m)
-VisualGeometryCore.deployed_scale_multiple(::Gnc, _shape, m::Float64, _s2, _scoring) = m
+VgtkCore.deployed_scale_multiple(::HQ, shape, m::Float64, _s2, _scoring) = plain_scale_multiple(shape, m)
+VgtkCore.deployed_scale_multiple(::Gnc, _shape, m::Float64, _s2, _scoring) = m
 # The fixed-core Barron dial: the facet-B width is scale_multiple·ŝ/√2.
-VisualGeometryCore.deployed_scale_multiple(::BarronHQ, _shape, m::Float64, _s2, _scoring) = m / sqrt(2.0)
+VgtkCore.deployed_scale_multiple(::BarronHQ, _shape, m::Float64, _s2, _scoring) = m / sqrt(2.0)
 
 # The shape `fixed_width` hands the currency hook.
-RobustVisualGeometry.deployed_shape(lo::Union{HQ, Gnc}) = strategy_loss(lo)()
-RobustVisualGeometry.deployed_shape(lo::BarronHQ) = BarronShape(lo.α)
+VgtkEstimation.deployed_shape(lo::Union{HQ, Gnc}) = strategy_loss(lo)()
+VgtkEstimation.deployed_shape(lo::BarronHQ) = BarronShape(lo.α)
 
 """
     StuTuHQTabulated <: AbstractLocalOptimization
@@ -464,7 +464,7 @@ _barron_sq_width(::Nothing, _cs, scoring, buf) = inlier_threshold(scoring, buf)^
 # expm1/log1p forms, called at their site rather than renamed here.
 
 # log Z̃(α) lookup on the canonical α grid — built lazily once per truncation_multiple T.
-# Z̃(α) = ∫_{-T}^{T} e^{−½ρ(x², α)} dx is VisualGeometryCore's truncated
+# Z̃(α) = ∫_{-T}^{T} e^{−½ρ(x², α)} dx is VisualGeometryToolkitCore's truncated
 # normaliser `truncated_log_normaliser(shape, c² = 1, Δ = ½, T)` (adaptive quadrature over
 # [0, T], doubled for the symmetric domain). Unit scale, so one table serves
 # every c: log(c·Z̃) = log c + logZ̃_unit.
@@ -517,7 +517,7 @@ function update_nuisance!(lh::BarronAdaptiveLikelihood)
         sh = _barron_grid_shape(α)
         s = 0.0; m = 0
         for i in 1:lh.stride:lh.n
-            s += VisualGeometryCore.ρ(sh, sq_residuals(rws)[i] * lh.inv_sq_loss_width, 1.0)
+            s += VgtkCore.ρ(sh, sq_residuals(rws)[i] * lh.inv_sq_loss_width, 1.0)
             m += 1
         end
         L = lh.logZ[ai] + 0.5 * s / m                 # unit loss = ½ρ (facet B)
@@ -536,19 +536,19 @@ function update_weights!(lh::BarronAdaptiveLikelihood)
     return nothing
 end
 
-# The strategies that carry a WIDTH MODE (VisualGeometryCore's `lo_width`),
+# The strategies that carry a WIDTH MODE (VisualGeometryToolkitCore's `lo_width`),
 # their derived scale-interface label, and the one setter: the width mode is a
 # type parameter, so `with_width` rebuilds the strategy at a new mode — every
 # other field carried across through the type's own constructor.
 const _WidthCarrying = Union{HQ, Gnc, WelschHQNewton, BarronHQ, GmHqEps, BarronAdaptive}
-VisualGeometryCore.lo_width(lo::_WidthCarrying) = lo.width
-VisualGeometryCore.scale_interface(lo::_WidthCarrying) = width_scale_interface(lo.width)
-VisualGeometryCore.with_width(lo::HQ{K}, w) where {K} = HQ{K}(lo.max_iter, lo.μ, lo.init, lo_width_value(w))
-VisualGeometryCore.with_width(lo::Gnc{S}, w) where {S} = Gnc{S}(lo.max_iter, lo.factor, lo.entry, lo.budget, lo_width_value(w))
-VisualGeometryCore.with_width(lo::WelschHQNewton, w) = WelschHQNewton(lo.max_iter, lo.μ, lo_width_value(w))
-VisualGeometryCore.with_width(lo::BarronHQ, w) = BarronHQ(lo.α, lo.max_iter, lo.μ, lo_width_value(w))
-VisualGeometryCore.with_width(lo::GmHqEps, w) = GmHqEps(lo.max_iter, lo.μ, lo_width_value(w))
-VisualGeometryCore.with_width(lo::BarronAdaptive, w) =
+VgtkCore.lo_width(lo::_WidthCarrying) = lo.width
+VgtkCore.scale_interface(lo::_WidthCarrying) = width_scale_interface(lo.width)
+VgtkCore.with_width(lo::HQ{K}, w) where {K} = HQ{K}(lo.max_iter, lo.μ, lo.init, lo_width_value(w))
+VgtkCore.with_width(lo::Gnc{S}, w) where {S} = Gnc{S}(lo.max_iter, lo.factor, lo.entry, lo.budget, lo_width_value(w))
+VgtkCore.with_width(lo::WelschHQNewton, w) = WelschHQNewton(lo.max_iter, lo.μ, lo_width_value(w))
+VgtkCore.with_width(lo::BarronHQ, w) = BarronHQ(lo.α, lo.max_iter, lo.μ, lo_width_value(w))
+VgtkCore.with_width(lo::GmHqEps, w) = GmHqEps(lo.max_iter, lo.μ, lo_width_value(w))
+VgtkCore.with_width(lo::BarronAdaptive, w) =
     BarronAdaptive(lo.max_iter, lo.α_min, lo.truncation_multiple, lo.n_sub, lo_width_value(w))
 
 # =============================================================================
@@ -591,23 +591,23 @@ const _LO_REGISTRY = (
 )
 # ReGeMM's scale policy is a FIELD's value, not a type's: frozen (ŝ², π) is the
 # strict fixed-scale consistent refiner, anchored at the consensus set.
-VisualGeometryCore.scale_interface(lo::StuTuRegemm) = lo.adapt_scale ? SelfScaling() : ConsensusAnchored()
+VgtkCore.scale_interface(lo::StuTuRegemm) = lo.adapt_scale ? SelfScaling() : ConsensusAnchored()
 
 for (T, tag, path, iface, family, label, shape, _) in _LO_REGISTRY
     @eval begin
         _lo_tag(::Type{<:$T}) = $tag
-        VisualGeometryCore.optimization_path(::$T) = $(QuoteNode(path))
+        VgtkCore.optimization_path(::$T) = $(QuoteNode(path))
     end
-    iface === nothing || @eval VisualGeometryCore.scale_interface(::$T) = $iface
-    family === nothing || @eval VisualGeometryCore.loss_family(::$T) = $(QuoteNode(family))
-    label === nothing || @eval VisualGeometryCore.lo_label(::$T) = $label
+    iface === nothing || @eval VgtkCore.scale_interface(::$T) = $iface
+    family === nothing || @eval VgtkCore.loss_family(::$T) = $(QuoteNode(family))
+    label === nothing || @eval VgtkCore.lo_label(::$T) = $label
     # The shape a FIXED-LOSS arm deploys (no `loss` key: its type names
     # the shape) — read by its loss family and by the TOML loader's
     # `scale_multiple = "cross_validated"` resolution (config_toml.jl). A tagged strategy
     # without one fails loudly there, never resolving somebody else's constant.
     shape === nothing || @eval begin
         _fixed_loss_shape(::Type{<:$T}) = $shape
-        VisualGeometryCore.loss_family(::$T) = loss_family($shape)
+        VgtkCore.loss_family(::$T) = loss_family($shape)
     end
 end
 
@@ -619,10 +619,10 @@ const _LO_PARAMETRIC = Dict{Any, Bool}(T => par for (T, _, _, _, _, _, _, par) i
 """
     LO_TAGS
 
-This package's local-optimization strategy registry (VisualGeometryCore's
+This package's local-optimization strategy registry (VisualGeometryToolkitCore's
 `TagRegistry`): TOML tag → strategy type or loss-parametric family, the tag
 `snake_case` of the type's name. Retired tags name their successor. Merge it
-with the core's to load either: `merge(RobustVisualGeometry.LO_TAGS, LO_TAGS)`.
+with the core's to load either: `merge(VisualGeometryToolkitEstimation.LO_TAGS, LO_TAGS)`.
 """
 const LO_TAGS = TagRegistry(
     :local_optimization, "",

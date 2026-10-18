@@ -4,7 +4,7 @@
 # points ([[tuning_constants]]).
 #
 # Read through ONE mechanism, `_config_default(table, key)`
-# (src/config_defaults.jl, VisualGeometryCore `toml_default`), which THROWS on
+# (src/config_defaults.jl, VisualGeometryToolkitCore `toml_default`), which THROWS on
 # a missing table or key: there is no second set of Julia literals. Parsed at
 # precompile (`include_dependency`): an edit forces a recompile.
 # =============================================================================
@@ -112,7 +112,7 @@ n_sub               = 256
 #              optimum of arm `arm` of the product tuning `[tuning.<name>]` of
 #              the cell config of record `config` (a path relative to the
 #              directory holding the stack checkouts), whose spec hashes to
-#              `hash` (VisualGeometryEval `tuning_hash`; the run's
+#              `hash` (VisualGeometryToolkitEval `tuning_hash`; the run's
 #              sidecar records the same hash, its grid specs and its run key).
 #              Chain: deployed scale_multiple → this entry → the [tuning] spec → its grids
 #              → the run.

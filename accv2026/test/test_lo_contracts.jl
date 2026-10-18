@@ -7,20 +7,22 @@
 #   • consensus-anchored width: corrupting the deployed native barely moves
 #     the GNC arms (the leak-dead property, like the Welsch HQ lift),
 #   • the Welsch HQ lift's basin against the Stu-tU IRLS.
-# (The composition evaluator's contracts are VisualGeometryEval's suite's; its
+# (The composition evaluator's contracts are VisualGeometryToolkitEval's suite's; its
 # integration with these arms and scorers is test_engine_integration.jl.)
 # =============================================================================
 
+import VisualGeometryToolkitCore as VgtkCore
+import VisualGeometryToolkitEstimation as VgtkEstimation
 using Test, Random, LinearAlgebra, StaticArrays
-using RobustVisualGeometry
-using VisualGeometryCore
-using VisualGeometryCore: Synthetic, Csponds, consensus_set, residuals!, estimate, iterations, lo_width,
+using VisualGeometryToolkitEstimation
+using VisualGeometryToolkitCore
+using VisualGeometryToolkitCore: Synthetic, Csponds, consensus_set, residuals!, estimate, iterations, lo_width,
     minimal_sample_size, codimension
-using RobustVisualGeometry: consensus_s2!
+using VisualGeometryToolkitEstimation: consensus_s2!
 using RansacScoringDoneRight: StudentTUniformScoring
 
 # The evaluator + the paper config.
-using VisualGeometryEval.Evaluation: perturbed_seed_E
+using VisualGeometryToolkitEval.Evaluation: perturbed_seed_E
 include(joinpath(@__DIR__, "..", "src", "config.jl"))
 include(joinpath(@__DIR__, "two_view_scene.jl"))
 
@@ -79,10 +81,10 @@ end
         @test_throws ArgumentError Gnc{HQ{WelschShape}}(scale_multiple = 2.5)
         @test_throws ErrorException _gnc(:welsch, budget = :bar)
         # the GM/TLS μ is a convexity parameter, not a width — numeric entry refuses
-        # (the entry policy's μ₀ values are VisualGeometryCore's `gnc_entry_mu0`,
+        # (the entry policy's μ₀ values are VisualGeometryToolkitCore's `gnc_entry_mu0`,
         # tested there)
         @test_throws ErrorException _gnc(:gm, entry = 4.0)
-        @test VisualGeometryCore.scale_interface(_gnc(:welsch)) isa VisualGeometryCore.ConsensusAnchored
+        @test VgtkCore.scale_interface(_gnc(:welsch)) isa VgtkCore.ConsensusAnchored
         @test lo_width(_gnc(:tls)) isa ScaleMultiple   # a width read off the consensus scale
     end
 
@@ -105,12 +107,12 @@ end
         for δ in (0.02, 0.2), s in (14, 15)
             E0 = _loc_seed_E(δ; seed = s)
             lo = _gnc(v, max_iter = LO_BUDGET)
-            ws = RobustVisualGeometry.RansacWorkspace(prob, sc, lo)
+            ws = VgtkEstimation.RansacWorkspace(prob, sc, lo)
             # the seed's score on the workspace buffers, and its consensus set
             @test consensus_s2!(ws, prob, sc, E0) !== nothing
             cs = consensus_set(sc, ws.buf.scoring_ws, ws.buf.residuals; model_dof = minimal_sample_size(prob) + 1,
                                d_g = codimension(prob), epoch = ws.buf.epoch)
-            est = VisualGeometryCore.locally_optimize!(ws.lo_ws, lo, prob, E0, cs, ws.buf, sc)
+            est = VgtkCore.locally_optimize!(ws.lo_ws, lo, prob, E0, cs, ws.buf, sc)
             @test estimate(est) isa EssentialMat
             @test iterations(est) <= lo.max_iter
             r = locally_optimize(prob, E0; scoring = _marginal(_LOC_A), local_optimization = lo)

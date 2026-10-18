@@ -1,6 +1,6 @@
 # =============================================================================
 # test_paper_project.jl — the stack's paper-project conventions
-# (VisualGeometryEval `PaperProjects.paper_project_violations`): the layout,
+# (VisualGeometryToolkitEval `PaperProjects.paper_project_violations`): the layout,
 # the data policy (D1–D4), the REPRODUCE.md asset index against what the two
 # papers read, configs of record, provenance and the data catalog. Opt-outs
 # with their reasons sit in the files they excuse (`# paper-project: allow
@@ -9,8 +9,8 @@
 # shrinks, and any NEW violation fails.
 # =============================================================================
 using Test
-using VisualGeometryEval.PaperProjects: paper_project_violations
-using VisualGeometryEval.Experiments: DataPolicyAllow
+using VisualGeometryToolkitEval.PaperProjects: paper_project_violations
+using VisualGeometryToolkitEval.Experiments: DataPolicyAllow
 
 const PAPER_PROJECT_ALLOW = [
     # D2 — the timing tables are RESULTS written under the data root. Fix:

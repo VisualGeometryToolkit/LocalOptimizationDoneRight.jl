@@ -2,9 +2,9 @@
 # test_tuning_protocol.jl — THE tuning protocol of record (configs/tuning.toml)
 # and its fold into a cell's effective config (src/protocol_folds.jl):
 #
-#   * every [tuning.<name>] entry parses through VisualGeometryEval's one parser, with
+#   * every [tuning.<name>] entry parses through VisualGeometryToolkitEval's one parser, with
 #     the paper-level type defaults ([types.<type>]) layered beneath it;
-#   * every entry's data is a registered scene split (VisualGeometryEval
+#   * every entry's data is a registered scene split (VisualGeometryToolkitEval
 #     configs/splits.toml): the PhotoTourism split by the paper's
 #     [types.cross_validation], another through a cell's cv_protocol section;
 #     the resolved spec carries the registry's lists;
@@ -22,7 +22,7 @@
 #     (src/validation_data.jl).
 # =============================================================================
 using Test, TOML
-using VisualGeometryEval.Tuning, VisualGeometryEval.Experiments
+using VisualGeometryToolkitEval.Tuning, VisualGeometryToolkitEval.Experiments
 
 include(joinpath(@__DIR__, "..", "src", "config.jl"))
 

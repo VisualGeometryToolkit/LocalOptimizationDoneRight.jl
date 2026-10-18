@@ -1,7 +1,7 @@
 # =============================================================================
 # The cross-validated operating points — [[tuning_constants]] in
 # configs/default.toml, read through `tuning_constant` — and their one-source
-# provenance. (Moved from RobustVisualGeometry's test/fitting_pipelines_tests.jl
+# provenance. (Moved from VisualGeometryToolkitEstimation's test/fitting_pipelines_tests.jl
 # and test/config_toml_tests.jl with the tuning constants.)
 # =============================================================================
 using Test

@@ -5,7 +5,7 @@
 # (scoring_data_F, scoring_data_F_vgc07) are pool format 1, which the
 # loader refuses; pool trees are immutable inputs, so this writes a NEW tree.
 #
-# Route `roma`: the consolidated correspondence JLD2s (VisualGeometryEval Datasets roma.jl;
+# Route `roma`: the consolidated correspondence JLD2s (VisualGeometryToolkitEval Datasets roma.jl;
 # their GT inlier labels come from the depth-warp validation at consolidation),
 # at the [pool] target below (1000 accepted minimal samples per pair).
 # =============================================================================
@@ -22,7 +22,7 @@ splits = ["eth3d:validation", "eth3d:test"]
 image_unit = "px"
 input_jld2_dir = "datasets/eth3d/derived/splg/csponds"
 what = "eth3d SuperPoint+LightGlue consolidated correspondences (with depth-warp GT inlier labels)"
-provenance = "the eth3d splg extraction + consolidation (a retired consolidation step; the files are read by VisualGeometryEval Datasets load_roma_pairs); REPRODUCE.md"
+provenance = "the eth3d splg extraction + consolidation (a retired consolidation step; the files are read by VisualGeometryToolkitEval Datasets load_roma_pairs); REPRODUCE.md"
 
 [pool]
 version = "v2"

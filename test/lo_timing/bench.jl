@@ -15,11 +15,11 @@
 # variant (TLS-LZ) at the equal LO budget (25), on THE CALL SET
 # `lo_calls_phototourism_e.bin`: 24 recorded local optimizations of the ACCV
 # Table 1 timing protocol, 8 PhotoTourism british_museum pairs (346–1094
-# correspondences, the pool frame of VisualGeometryEval's PT-E-SIFT pool) × 3
+# correspondences, the pool frame of VisualGeometryToolkitEval's PT-E-SIFT pool) × 3
 # RANSAC LO-checkpoint seeds each (the first, middle and last checkpoint of the
 # Welsch-IRLS run of record), the camera matrices and the selection's outlier
 # half-width. Little-endian binary, written once (the same file
-# RobustVisualGeometry's gate times its core arms on):
+# VisualGeometryToolkitEstimation's gate times its core arms on):
 #
 #   "LOFX0001" | npairs::Int64 | nseeds::Int64 | outlier_halfwidth::Float64 |
 #   per pair: n::Int64, Kc1 (9, column-major), Kc2 (9), x1 (2n), x2 (2n),
@@ -27,7 +27,7 @@
 #
 # The truncation loss width is the selection's outlier half-width as the
 # absolute pool-frame loss width (the arms' `LossWidth` currency). They are
-# external refiners, timed through VisualGeometryCore's external-refit contract
+# external refiners, timed through VisualGeometryToolkitCore's external-refit contract
 # directly: `external_workspace` once per pair (outside the timing), then one
 # `refine_external!(ws, lo, problem, seed, LossWidth(w), scoring)` per call —
 # the E seed's cheirality plus PoseLib's `refine_relpose`, the bracket Table 1
@@ -36,10 +36,10 @@
 # A "call" is one `refine_external!`. `import PoseLib` loads the solver calls
 # (the package's PoseLib extension).
 #
-# THE LIFT KERNELS (from VisualGeometryCore's bench, with the lift core): the
+# THE LIFT KERNELS (from VisualGeometryToolkitCore's bench, with the lift core): the
 # joint-(θ,z) HQ and the GNC normal-equation accumulations on the 5-dof
 # essential chart (`_lift_hq_increment!`, `_lift_gnc_increment!` over
-# VisualGeometryCore's chart rows), on a fixed seeded scene of 1000
+# VisualGeometryToolkitCore's chart rows), on a fixed seeded scene of 1000
 # correspondences (f = 800 px, 30 % outliers; deterministic, no fixture). A
 # "call" is one sweep over the scene.
 #
@@ -48,11 +48,11 @@
 # spread (the noise probe). `ncalls` is the Table 1 call set's size.
 # =============================================================================
 
-using LocalOptimizationDoneRight, RobustVisualGeometry, VisualGeometryCore
+using LocalOptimizationDoneRight, VisualGeometryToolkitEstimation, VisualGeometryToolkitCore
 import PoseLib                # the PoseLib extension: the truncated refiners' solver calls
 using LocalOptimizationDoneRight: LiftState, _lift_hq_increment!, _lift_gnc_increment!, _seed_lift_z!,
     PoseLibLm, PoseLibLZ
-using VisualGeometryCore: RowsWorkspace, sampson_rows!, sampson_jacobian_rows!, retract, retract_directions,
+using VisualGeometryToolkitCore: RowsWorkspace, sampson_rows!, sampson_jacobian_rows!, retract, retract_directions,
     zero_tangent, backproject_with_jacobian, EssentialManifold5, deploy, external_workspace, refine_external!,
     LossWidth
 using StaticArrays, LinearAlgebra, Random
@@ -103,7 +103,7 @@ const EXTERNAL_ARMS = [
     "TLS-IRLS" => () -> PoseLibLm(BUDGET),
     "TLS-LZ"   => () -> PoseLibLZ(BUDGET),
 ]
-# The refit's two-view frame (VisualGeometryEval hands over its pair geometry): the
+# The refit's two-view frame (VisualGeometryToolkitEval hands over its pair geometry): the
 # pool-frame calibrations and correspondences.
 const FRAMES = [(; Kc1 = pr.Kc1, Kc2 = pr.Kc2, cs = pool_csponds(pr)) for pr in PAIRS]
 # The truncation loss width, absolute in the pool frame: the selection's
@@ -158,7 +158,7 @@ const FM1 = [backproject_with_jacobian(CAM, u) for u in U1]
 const FM2 = [backproject_with_jacobian(CAM, u) for u in U2]
 const F1 = first.(FM1); const F2 = first.(FM2); const M1 = last.(FM1); const M2 = last.(FM2)
 const CHE = EssentialManifold5(EssentialMat(R, T))
-const RWS = RowsWorkspace{5, 1}(N)        # the chart rows (VisualGeometryCore)
+const RWS = RowsWorkspace{5, 1}(N)        # the chart rows (VisualGeometryToolkitCore)
 const LS = LiftState{5}(N)                # the lift's own state
 const WELSCH = deploy(WelschShape(), 1.0; scale_multiple = 1.5)
 const GM = deploy(GemanMcclureShape(), 1.0; scale_multiple = 1.25)

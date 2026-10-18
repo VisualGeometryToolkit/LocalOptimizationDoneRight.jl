@@ -6,6 +6,7 @@
 # \EtoE*Ms macros — never from the accuracy run's multithreaded wall clocks
 # or a hand-typed value.
 # =============================================================================
+import VisualGeometryToolkitEval as VgtkEval
 using Test, TOML
 
 const _T_ROOT = normpath(joinpath(@__DIR__, ".."))
@@ -18,9 +19,9 @@ _t_cfg(n) = TOML.parsefile(joinpath(_T_ROOT, "configs", n * ".toml"))
     include(joinpath(_T_ROOT, "src", "e2e_timing.jl"))
     raw = _t_cfg("pt_e_e2e_timing")
     t = raw["timing"]
-    # the sample is a COMPLETE table of VisualGeometryEval's unit-sampling vocabulary
-    s = VisualGeometryEval.Tuning.read_tuning(VisualGeometryEval.Tuning.UnitSampling, t["sample"])
-    @test s isa VisualGeometryEval.Tuning.StratifiedSampling
+    # the sample is a COMPLETE table of VisualGeometryToolkitEval's unit-sampling vocabulary
+    s = VgtkEval.Tuning.read_tuning(VgtkEval.Tuning.UnitSampling, t["sample"])
+    @test s isa VgtkEval.Tuning.StratifiedSampling
     @test t["repeats"] >= 4 && t["warmup_pairs"] >= 1
     @test t["pinning"]["julia_threads"] == 1 && t["pinning"]["gc_threads"] == 1
     @test all(k -> haskey(t["pinning"], k), ("launcher", "cpu", "numa_node", "env"))

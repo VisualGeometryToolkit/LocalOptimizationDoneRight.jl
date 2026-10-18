@@ -17,6 +17,7 @@
 #
 #   julia --project=. scripts/paper_numbers.jl [--plan] [--stage=NAME] [--force]
 # =============================================================================
+import VisualGeometryToolkitCore as VgtkCore
 using DrWatson; @quickactivate "ACCV2026"
 using JLD2, TOML, Printf
 include(srcdir("cell_stages.jl"))
@@ -25,7 +26,7 @@ include(srcdir("paper_numbers.jl"))
 
 const CFG_PATH = PAPER_NUMBERS_PATH
 const CFG = TOML.parsefile(CFG_PATH)
-VisualGeometryCore.check_keys(CFG, ("sources", "macro"), CFG_PATH)
+VgtkCore.check_keys(CFG, ("sources", "macro"), CFG_PATH)
 # The effective config: the macros and sources of record, and the keyed runs
 # they read (relative to the results root; a split reads its cell's keyed
 # directory) — so the key moves whenever any source re-keys.

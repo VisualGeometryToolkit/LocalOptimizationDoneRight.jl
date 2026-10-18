@@ -9,7 +9,7 @@
 #   Pkg.test(test_args = ["lift_core|schedules"])   # the files whose name matches
 #   LO_TIMING_GATE=1 (same) — the opt-in timing gate (test_lo_timing_gate.jl)
 #
-# The evaluation engine is VisualGeometryEval's (VisualGeometryEval.Evaluation,
+# The evaluation engine is VisualGeometryToolkitEval's (VisualGeometryToolkitEval.Evaluation,
 # tested there); its integration with these strategies and the paper's scorer
 # is accv2026/test/test_engine_integration.jl. The strategy tests that run on
 # the paper's scorer (RansacScoringDoneRight, which the stack allow-list keeps

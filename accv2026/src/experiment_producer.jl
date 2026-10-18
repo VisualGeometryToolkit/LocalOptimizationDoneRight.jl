@@ -15,13 +15,13 @@
 # of a per-scene cap:
 #
 #   PHASE 1 (val scalars): load each VAL scene, collect σ̂² (`gt_variance`), free.
-#     → the native grids, realized from the run's `[tuning]` spec (VisualGeometryEval
+#     → the native grids, realized from the run's `[tuning]` spec (VisualGeometryToolkitEval
 #       `grid_spec`: the coverage window rule over the val σ̂² band + spacing).
 #       The IG prior is Jeffreys ⇒ `IGPrior(0,0)`, data-independent, so no
 #       full-pool scalar sweep is needed.
-#   PHASE 2 (stage→grid→selection rows, per scene): VisualGeometryEval's
+#   PHASE 2 (stage→grid→selection rows, per scene): VisualGeometryToolkitEval's
 #     `stream_selections` — per scene, stage each batch on-device ONCE, evaluate
-#     EVERY selector's grid on that staged copy (VisualGeometryCore
+#     EVERY selector's grid on that staged copy (VisualGeometryToolkitCore
 #     `select_on_grid!` — RansacScoringDoneRight's grid kernels), then score each selector's
 #     per-(pair, column) selection through `apply_lo_refits` (a
 #     NoLocalOptimization row: the selected pool model's imc).  Free the scene.
@@ -39,14 +39,14 @@
 # =============================================================================
 
 using CUDA, Statistics, JLD2
-using RobustVisualGeometry: NoLocalOptimization
+using VisualGeometryToolkitEstimation: NoLocalOptimization
 using RansacScoringDoneRight: loss_spec, loss_scale_bounds, StudentTUniformScoring, SimFitPP, loss_width_scoring
-using VisualGeometryCore: AbstractLossShape, WidthAxis, LossWidth, OutlierHalfwidth, width_axis_name, width_axis,
+using VisualGeometryToolkitCore: AbstractLossShape, WidthAxis, LossWidth, OutlierHalfwidth, width_axis_name, width_axis,
     native_map, IGPrior, codimension, minimal_sample_size
-using VisualGeometryEval.Stats: reference_scale
-using VisualGeometryEval.Tuning: TuningSpec, WindowedBootstrap, CoverageWindow, GridSpec, grid,
+using VisualGeometryToolkitEval.Stats: reference_scale
+using VisualGeometryToolkitEval.Tuning: TuningSpec, WindowedBootstrap, CoverageWindow, GridSpec, grid,
     grid_spec, save_tuning_artifact, fit_prior, ALL_PRIOR_SPECS
-using VisualGeometryEval.Evaluation: stream_selections, LoRefitSpec
+using VisualGeometryToolkitEval.Evaluation: stream_selections, LoRefitSpec
 
 # The paper config (rosters, vocabulary, registries) on top of the package.
 include(joinpath(@__DIR__, "config.jl"))
@@ -129,7 +129,7 @@ _selection_rows(selectors) = (idxs_of, _) ->
 # =============================================================================
 # Generic selector roster.
 # A selector FAMILY is a display tag and a RansacScoringDoneRight scoring; its
-# native axis is the scoring's `width_axis` (VisualGeometryCore), and the
+# native axis is the scoring's `width_axis` (VisualGeometryToolkitCore), and the
 # evaluator's `stream_selections` evaluates its grid (`select_on_grid!`: RSDR's
 # grid kernels, or SIMFIT++'s host loop). `build_selectors(selectors, …)` gives each family its "<TAG> sel"
 # selection entry. The bundles are SELECTION-ONLY: refined arms exist only via

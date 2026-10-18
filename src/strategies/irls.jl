@@ -1,6 +1,6 @@
 # =============================================================================
 # The posterior-weight IRLS arms — the Student-t + uniform IRLS and the
-# Barron-adaptive IRLS — on RobustVisualGeometry's posterior-weight iteration
+# Barron-adaptive IRLS — on VisualGeometryToolkitEstimation's posterior-weight iteration
 # (`posterior_irls!`), and the score-matched block-coordinate ascent StuTuBCD.
 # =============================================================================
 
@@ -8,7 +8,7 @@
     locally_optimize!(L, lo::StudentTUniform, problem, model, cs, buf, scoring) -> FitResult
 
 The paper's Stu-tU-IRLS: the posterior-weight iteration under the Student-t +
-uniform posterior (RobustVisualGeometry's `PosteriorLikelihood`),
+uniform posterior (VisualGeometryToolkitEstimation's `PosteriorLikelihood`),
 self-scaling, seeded from the consensus set `cs`. It needs the scorer's
 uniform outlier model (`outlier_halfwidth`).
 """

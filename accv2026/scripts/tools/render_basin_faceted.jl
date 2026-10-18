@@ -3,7 +3,7 @@
 # conditional mean final error) vs pose perturbation δ. Within each loss:
 # static IRLS, HQ passive-z₀ (no continuation), HQ active-z₀, GNC.
 #
-# THIN CALLER: the emission body is VisualGeometryEval.Render `emit_basin_faceted`;
+# THIN CALLER: the emission body is VisualGeometryToolkitEval.Render `emit_basin_faceted`;
 # this script keeps only the paper wiring — env parsing, default artifact
 # paths, the panel table, the EXCLUDE default and the legend name. Arm names
 # are the deployed-sidecar keys (two spaces after IG); CV'd scale multiple per method.

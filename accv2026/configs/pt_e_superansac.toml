@@ -10,7 +10,7 @@
 # Ported 2026-10-07 from the earlier SupeRANSAC drivers superansac_cv.jl /
 # superansac_loss_width_worker.jl / superansac_zeta_worker.jl (which ran the
 # published rows); every setting they took from their configs/tuning.toml,
-# their registry or RobustVisualGeometry's RansacConfig defaults is stated
+# their registry or VisualGeometryToolkitEstimation's RansacConfig defaults is stated
 # here.
 #
 # SupeRANSAC is an OUTSIDE dependency ([environment]); without it the table is
@@ -58,7 +58,7 @@ min_trials = 1000
 max_trials = 1000
 confidence = 0.9999999
 
-# The evaluation: OUR production RANSAC termination inputs (RobustVisualGeometry
+# The evaluation: OUR production RANSAC termination inputs (VisualGeometryToolkitEstimation
 # RansacConfig defaults: the trials cap of our loop). SupeRANSAC's adaptive
 # criterion is inert in every binding-reachable configuration, so this is a
 # forced max_trials run.
@@ -102,7 +102,7 @@ source_repository = "https://github.com/danini/superansac"
 
 [stored]
 # The SupeRANSAC results behind the published Tab. 3 (relative to the results
-# root, VisualGeometryEval `results_root()`): copied from the e2e cell of record
+# root, VisualGeometryToolkitEval `results_root()`): copied from the e2e cell of record
 # e2e-3ea0c00581858498 (pt_e_e2e_table, 2026-10-04); provenance in the
 # directory's PROVENANCE.toml. Read by scripts/e2e_ransac.jl when this cell has
 # not run (src/superansac.jl `superansac_results`).

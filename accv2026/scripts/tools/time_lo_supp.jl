@@ -23,12 +23,12 @@
 # =============================================================================
 
 using DrWatson; @quickactivate "ACCV2026"   # the project this tool runs under (srcdir/projectdir)
-using RobustVisualGeometry; const RVG = RobustVisualGeometry
-using VisualGeometryEval.Pools: load_pool, load_pool_residuals, residuals_path, residual_matrix
+using VisualGeometryToolkitEstimation; const RVG = VisualGeometryToolkitEstimation
+using VisualGeometryToolkitEval.Pools: load_pool, load_pool_residuals, residuals_path, residual_matrix
 import PoseLib, JLD2
 using Printf
 import TOML
-using RobustVisualGeometry: EssentialProblem
+using VisualGeometryToolkitEstimation: EssentialProblem
 include(srcdir("config.jl"))
 
 
@@ -63,7 +63,7 @@ scene  = cli_option(ARGS, "scene")                  # the timing fixture: requir
 npairs = parse(Int, cli_option(ARGS, "npairs"))
 
 const POOL_FILE = joinpath(POOL, "$scene.jld2")
-pool = load_pool(POOL_FILE)                    # THE pool reader (VisualGeometryEval.Pools)
+pool = load_pool(POOL_FILE)                    # THE pool reader (VisualGeometryToolkitEval.Pools)
 const IDX = collect(1:min(npairs, length(pool)))
 sub  = pool.pairs[IDX]
 sub_R = let res = load_pool_residuals(residuals_path(POOL_FILE), pool; pairs = IDX)

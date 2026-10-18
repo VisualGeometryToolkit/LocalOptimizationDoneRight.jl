@@ -2,26 +2,27 @@
 # the external-refit contract they implement, the refit path on every track, and
 # the vendored RansacLibLO library's own suite. Run in its own process by
 # runtests.jl (it loads the paper config, like test_lo_contracts.jl).
+import VisualGeometryToolkitEval as VgtkEval
 using Test
 using LocalOptimizationDoneRight: LocalOptimizationDoneRight
 include(joinpath(@__DIR__, "..", "src", "config.jl"))
-using VisualGeometryCore: VisualGeometryCore, ExternalRefit, LossWidth, FixedS2, OutlierHalfwidth,
+using VisualGeometryToolkitCore: VisualGeometryToolkitCore, ExternalRefit, LossWidth, FixedS2, OutlierHalfwidth,
     refine_external!
 using RansacLibLO: LebedaLOOptions, PRESET_REFERENCE
 
 # Budget-parity options as a caller builds them: RansacLib defaults with 4 trials
 # (1 + 4·(2 + 4) = 25 updates for a fully active full-LO call).
 const _FOUR_TRIALS = LebedaLOOptions(num_lo_trials = 4)
-using VisualGeometryEval.Evaluation: PairCtx, problem_type, model_imc, refit_imc!, refit_seed, solo_refit_imc!,
+using VisualGeometryToolkitEval.Evaluation: PairCtx, problem_type, model_imc, refit_imc!, refit_seed, solo_refit_imc!,
     SoloSpec, LoRefitSpec
-using RobustVisualGeometry: EssentialProblem
+using VisualGeometryToolkitEstimation: EssentialProblem
 using RansacScoringDoneRight: StudentTUniformScoring
-using VisualGeometryCore: CameraModel
+using VisualGeometryToolkitCore: CameraModel
 
 include(joinpath(@__DIR__, "test_lebeda_identity.jl"))
 
 # In a module of its own: the library's suite defines helpers (`skew`) that the
-# paper config imports from VisualGeometryCore.
+# paper config imports from VisualGeometryToolkitCore.
 @testset "vendored RansacLibLO suite" begin
     Core.eval(Main, :(module _RansacLibLOSuite
         include($(joinpath(dirname(@__DIR__), "lib", "RansacLibLO", "test", "runtests.jl")))
@@ -33,7 +34,7 @@ end
 # test regime; a planar variant for H), in a fake
 # pool frame with non-trivial focals so the E-track loss-width conversion is live.
 using Random, LinearAlgebra, StaticArrays
-using VisualGeometryCore: Point2, EssentialMat, FundMat, HomographyMat, Csponds
+using VisualGeometryToolkitCore: Point2, EssentialMat, FundMat, HomographyMat, Csponds
 using RansacLibLO: lebeda_iterlo
 
 include(joinpath(@__DIR__, "two_view_scene.jl"))
@@ -161,7 +162,7 @@ end
         @test first(solo_refit_imc!(ctx, solo, seed, w, 0.05)) === native
         spec = LoRefitSpec("TLS-LO", lo, OutlierHalfwidth(), [0.05], reshape(Int32[1], 1, 1); widths = [w])
         M = fill(NaN, 1, 1)
-        VisualGeometryEval.Evaluation._apply_refit_row!(M, ctx, lo, spec, 1, OPERATING_SCALE_MULTIPLE, NaN)
+        VgtkEval.Evaluation._apply_refit_row!(M, ctx, lo, spec, 1, OPERATING_SCALE_MULTIPLE, NaN)
         @test M[1, 1] === native
         # the contract itself: FixedS2(w²) is the loss width √(w²) = w
         ws = _lebeda_ws(ctx)
