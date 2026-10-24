@@ -16,7 +16,7 @@ const _FOUR_TRIALS = LebedaLOOptions(num_lo_trials = 4)
 using VisualGeometryToolkitEval.Evaluation: PairCtx, problem_type, model_imc, refit_imc!, refit_seed, solo_refit_imc!,
     SoloSpec, LoRefitSpec
 using VisualGeometryToolkitEstimation: EssentialProblem
-using RansacScoringDoneRight: StudentTUniformScoring
+using RANSACScoringDoneRight: StudentTUniformScoring
 using VisualGeometryToolkitCore: CameraModel
 
 include(joinpath(@__DIR__, "test_lebeda_identity.jl"))

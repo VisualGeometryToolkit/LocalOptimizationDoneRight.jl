@@ -22,7 +22,7 @@ using Rotations: RotMatrix, RotXYZ, RotY
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: converged, estimate, rotation, translation   # VGC accessors (public)
 using VisualGeometryToolkitEstimation: RansacWorkspace   # public, not exported
-using RansacScoringDoneRight: StudentTUniformScoring, Predictive   # owned and exported by RansacScoringDoneRight
+using RANSACScoringDoneRight: StudentTUniformScoring, Predictive   # owned and exported by RANSACScoringDoneRight
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 include("scenes.jl")   # the shared scenes, as modules

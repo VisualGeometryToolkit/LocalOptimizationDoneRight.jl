@@ -30,7 +30,7 @@ using VisualGeometryToolkitEval: cli_option
 using VisualGeometryToolkitEval.Evaluation: WindowedGridMethod, FlatProtocol, compute_method_rows,
     window_columns
 using VisualGeometryToolkitEval.Stats: bootstrap_ci, reference_scale, scene_ranges
-using VisualGeometryToolkitEval.Tuning: load_tuning_artifact, resampling_rng, corrupt_native, _tune_objective
+using VisualGeometryToolkitEval.Tuning: load_tuning_artifact, resampling_rng, corrupt_native, tune_objective
 using VisualGeometryToolkitEval.Tuning: nearest_column
 # The paper config (rosters, PAPER_STYLE) on top of the packages; guarded
 # inside, so a driver that already loaded it does not redefine.
@@ -89,7 +89,7 @@ function _fixed_width_rows(label, d, zetas, seed0)
     # Calibration tune: windowed free argmin of the spec's objective over the
     # full validation pool.
     win = window_columns(_window(d), grid, _tonat(label, d), σ)
-    cstar = win[argmin([Float64(_tune_objective(_scheme(d).criterion, view(val, :, c)))
+    cstar = win[argmin([Float64(tune_objective(_scheme(d).criterion, view(val, :, c)))
                         for c in win])]
     # Deployment evaluation: the column nearest each ζ-scaled tuned native.
     cols = [view(test, :, nearest_column(grid, corrupt_native(grid[cstar], ζ))) for ζ in zetas]

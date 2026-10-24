@@ -1,7 +1,7 @@
 # =============================================================================
 # test_engine_integration.jl — the RSDR × LODR integration goldens of the
 # composition evaluator (VisualGeometryToolkitEval.Evaluation): the paper's scorer
-# (RansacScoringDoneRight's Student-t + uniform marginal, its grid kernels) and
+# (RANSACScoringDoneRight's Student-t + uniform marginal, its grid kernels) and
 # local optimizers (LocalOptimizationDoneRight's HQ lift, Stu-tU IRLS and BCD,
 # the PoseLib truncated refiners) through the refit layer, the post-LO
 # matrices, the sample-budget engine, live runs, the selection stream, the
@@ -27,7 +27,7 @@ using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: LocalOptimizationDoneRight as LODR, HQ, StuTuBCD, StudentTUniform, PoseLibLm,
     PoseLibLZ, PoseLibLmAdaptLossWidth
 import PoseLib            # LocalOptimizationDoneRight's PoseLib extension: the truncated refiners' solver calls
-using RansacScoringDoneRight: RansacScoringDoneRight, StudentTUniformScoring, loss_width_scoring
+using RANSACScoringDoneRight: RANSACScoringDoneRight, StudentTUniformScoring, loss_width_scoring
 using VisualGeometryToolkitEval.Evaluation
 using VisualGeometryToolkitEval.Evaluation: Evaluation, PairGeom, ScoreSelector, OracleSelector, lo_error!,
     lo_iteration_budget, deployed_ref
@@ -46,7 +46,7 @@ const PRIOR = IGPrior(0.0, 0.0)                           # Jeffreys
 marginal(a) = StudentTUniformScoring(P, a; prior = PRIOR)
 "THE refit scoring template of every context here."
 const TEMPLATE = marginal(1.0)
-const CPU = RansacScoringDoneRight.KernelAbstractions.CPU()
+const CPU = RANSACScoringDoneRight.KernelAbstractions.CPU()
 
 # A one-scene ScoringPool of `pairs` stamped with `total` minimal samples: what
 # VisualGeometryToolkitEval's `sample_starts` certifies its boundaries against.

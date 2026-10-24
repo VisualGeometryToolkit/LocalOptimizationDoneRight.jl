@@ -15,7 +15,7 @@ using VisualGeometryToolkitCore: AbstractWeightPolicy, NormalizedWeightPolicy, R
     update_nuisance!, update_weights!, lo_width, with_width, LossWidth, ScaleMultiple, FixedScale,
     consensus_set, score_model!, scale_s2, csponds, estimate, converged, codimension, minimal_sample_size,
     test_local_optimization_contract, MsacScoring, WelschShape, GemanMcclureShape, TLSShape
-using RansacScoringDoneRight: StudentTUniformScoring
+using RANSACScoringDoneRight: StudentTUniformScoring
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitEstimation: RansacConfig, RansacWorkspace, PosteriorLikelihood
 using LocalOptimizationDoneRight

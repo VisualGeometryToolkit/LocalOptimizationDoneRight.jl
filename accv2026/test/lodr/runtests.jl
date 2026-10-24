@@ -1,6 +1,6 @@
 # =============================================================================
 # accv2026/test/lodr — LocalOptimizationDoneRight's strategy tests that run on
-# the paper's scorer (RansacScoringDoneRight's Student-t + uniform marginal):
+# the paper's scorer (RANSACScoringDoneRight's Student-t + uniform marginal):
 # the Table 1 strategies (HQ lifts, GNC, Stu-tU IRLS and BCD) on
 # VisualGeometryToolkitEstimation's problems, their lifts on H / PnP, the recorded BCD
 # traces, and the old find_* recipes. Moved from the package's test/ (K+,
@@ -35,6 +35,6 @@ function _run_lodr_file(file)
     return nothing
 end
 
-@testset "LocalOptimizationDoneRight × RansacScoringDoneRight" begin
+@testset "LocalOptimizationDoneRight × RANSACScoringDoneRight" begin
     foreach(_run_lodr_file, _LODR_FILES)
 end

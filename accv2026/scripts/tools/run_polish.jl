@@ -30,7 +30,7 @@ using VisualGeometryToolkitEval.Evaluation: build_pair_ctx, refit_model, refit_s
     essential_bearings, deployed_budget_settings
 using LocalOptimizationDoneRight: truncated_refit_pose, PoseLibLm
 using VisualGeometryToolkitEstimation: EssentialProblem, RansacWorkspace
-using RansacScoringDoneRight: StudentTUniformScoring
+using RANSACScoringDoneRight: StudentTUniformScoring
 using VisualGeometryToolkitCore: EssentialMat, EuclideanMap, Vec3, cheiral_pose_fast, GaussianShape, best_pool_model,
     score_model!, consensus_mask, external_workspace
 using PoseLib: refine_relpose

@@ -55,7 +55,7 @@ end
 
 "The git commit (and whether its tree is dirty) of every checkout the repeats ran."
 function _code_record()
-    mods = (LocalOptimizationDoneRight, VisualGeometryToolkitCore, VisualGeometryToolkitEstimation, RansacScoringDoneRight, VisualGeometryToolkitEval)
+    mods = (LocalOptimizationDoneRight, VisualGeometryToolkitCore, VisualGeometryToolkitEstimation, RANSACScoringDoneRight, VisualGeometryToolkitEval)
     Dict{String,Any}(string(nameof(m)) => begin
                          d = pkgdir(m)
                          head = readchomp(`git -C $d rev-parse HEAD`)

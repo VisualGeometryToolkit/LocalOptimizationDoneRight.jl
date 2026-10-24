@@ -30,7 +30,7 @@ The stack keeps the two roles behind separate contracts, so a scorer and a local
 optimizer are chosen independently:
 
 ```julia
-using VisualGeometryToolkitEstimation, RansacScoringDoneRight, LocalOptimizationDoneRight
+using VisualGeometryToolkitEstimation, RANSACScoringDoneRight, LocalOptimizationDoneRight
 using VisualGeometryToolkitCore: WelschShape
 
 # the core default: MSAC at the class's threshold + TLS-IRLS following it

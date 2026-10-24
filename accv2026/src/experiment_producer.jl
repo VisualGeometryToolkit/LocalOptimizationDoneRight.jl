@@ -22,7 +22,7 @@
 #   PHASE 2 (stage→grid→selection rows, per scene): VisualGeometryToolkitEval's
 #     `stream_selections` — per scene, stage each batch on-device ONCE, evaluate
 #     EVERY selector's grid on that staged copy (VisualGeometryToolkitCore
-#     `select_on_grid!` — RansacScoringDoneRight's grid kernels), then score each selector's
+#     `select_on_grid!` — RANSACScoringDoneRight's grid kernels), then score each selector's
 #     per-(pair, column) selection through `apply_lo_refits` (a
 #     NoLocalOptimization row: the selected pool model's imc).  Free the scene.
 #
@@ -40,7 +40,7 @@
 
 using CUDA, Statistics, JLD2
 using VisualGeometryToolkitEstimation: NoLocalOptimization
-using RansacScoringDoneRight: loss_spec, loss_scale_bounds, StudentTUniformScoring, SimFitPP, loss_width_scoring
+using RANSACScoringDoneRight: loss_spec, loss_scale_bounds, StudentTUniformScoring, SimFitPP, loss_width_scoring
 using VisualGeometryToolkitCore: AbstractLossShape, WidthAxis, LossWidth, OutlierHalfwidth, width_axis_name, width_axis,
     native_map, IGPrior, codimension, minimal_sample_size
 using VisualGeometryToolkitEval.Stats: reference_scale
@@ -128,7 +128,7 @@ _selection_rows(selectors) = (idxs_of, _) ->
 
 # =============================================================================
 # Generic selector roster.
-# A selector FAMILY is a display tag and a RansacScoringDoneRight scoring; its
+# A selector FAMILY is a display tag and a RANSACScoringDoneRight scoring; its
 # native axis is the scoring's `width_axis` (VisualGeometryToolkitCore), and the
 # evaluator's `stream_selections` evaluates its grid (`select_on_grid!`: RSDR's
 # grid kernels, or SIMFIT++'s host loop). `build_selectors(selectors, …)` gives each family its "<TAG> sel"
@@ -140,7 +140,7 @@ _selection_rows(selectors) = (idxs_of, _) ->
 const SELECTOR_TAGS = Dict(:ig => "IG ", :msac => "MSAC", :ransac => "RANSAC", :magsac => "MAGSAC",
                            :gau => "GAU", :welsch => "WEL", :geman => "GEM", :simfitpp => "SIMFIT")
 
-# The RansacScoringDoneRight loss-width family tag of a sweep key.
+# The RANSACScoringDoneRight loss-width family tag of a sweep key.
 const _LOSS_WIDTH_FAMILY = Dict(:msac => :msac, :ransac => :ransac, :magsac => :magsac,
                                 :gau => :mlesac, :welsch => :welsch_cost, :geman => :geman)
 
@@ -229,7 +229,7 @@ MiscalibrationExperiment(zetas, n) = MiscalibrationExperiment(zetas, n, [:ig, :m
 Well-depth (Δ) sweep: selection error vs loss contrast, with the Δ→∞ limit
 anchored at the closed-form Student-t (the IG baseline selector).  One
 mixture-marginal selector per `Δ ∈ deltas` (Track-B quadrature,
-RansacScoringDoneRight `grid_evaluate` of a `loss_spec`), sweeping the SAME outlier-half-width grid as the IG
+RANSACScoringDoneRight `grid_evaluate` of a `loss_spec`), sweeping the SAME outlier-half-width grid as the IG
 selector (shared uniform outlier model ⇒ shared eq-(28) map).
 `include_baselines=true` also runs the production IG/MSAC selectors on the
 same streamed pool, giving the anchor curves for free.

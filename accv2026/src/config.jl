@@ -9,7 +9,7 @@
 # The stack: VisualGeometryToolkitEval (statistics, the codified CV, the stage
 # runner and run records, rendering, pool IO, and the composition evaluator
 # `Evaluation`), the paper's local optimizers (LocalOptimizationDoneRight) and
-# scorers (RansacScoringDoneRight), and the estimator / geometry packages below
+# scorers (RANSACScoringDoneRight), and the estimator / geometry packages below
 # them. Contents (thin per-paper CONFIG; every mechanism lives in a
 # package):
 #   protocol.jl       — configs/protocol.toml, the experiment protocol of record
@@ -54,11 +54,11 @@ using VisualGeometryToolkitCore: Point2, EssentialMat, FundMat, intrinsics, Vec3
 using VisualGeometryToolkitCore.Pools
 using VisualGeometryToolkitEval.Evaluation: lo_iteration_budget
 using PoseLib: refine_relpose
-using RansacScoringDoneRight: StudentTUniformScoring
-import RansacScoringDoneRight
+using RANSACScoringDoneRight: StudentTUniformScoring
+import RANSACScoringDoneRight
 
 "The packages whose code determines a tuning artifact's result (VisualGeometryToolkitEval `save_tuning_artifact` / `code_identity` `code`)."
-const TUNING_CODE = (VisualGeometryToolkitEstimation, RansacScoringDoneRight, VisualGeometryToolkitCore, LocalOptimizationDoneRight,
+const TUNING_CODE = (VisualGeometryToolkitEstimation, RANSACScoringDoneRight, VisualGeometryToolkitCore, LocalOptimizationDoneRight,
                      VisualGeometryToolkitEval)
 
 include(joinpath(@__DIR__, "protocol.jl"))         # configs/protocol.toml (protocol_value)

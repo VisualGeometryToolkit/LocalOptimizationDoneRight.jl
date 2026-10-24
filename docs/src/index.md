@@ -117,7 +117,7 @@ maps every figure to its config and driver, and [Baselines](guide/baselines.md)
 covers the classical LO arms.
 
 ```julia
-using VisualGeometryToolkitEstimation, RansacScoringDoneRight, LocalOptimizationDoneRight
+using VisualGeometryToolkitEstimation, RANSACScoringDoneRight, LocalOptimizationDoneRight
 using VisualGeometryToolkitCore: WelschShape
 
 # the paper's recipe: Student-t + uniform selection, Welsch-HQ refinement at its

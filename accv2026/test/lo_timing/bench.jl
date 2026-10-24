@@ -1,7 +1,7 @@
 # =============================================================================
 # accv2026/test/lo_timing/bench.jl — the LO timing benchmark of the paper's
 # Table 1 arms that refine under its Student-t + uniform marginal
-# (RansacScoringDoneRight): LocalOptimizationDoneRight's strategies at the
+# (RANSACScoringDoneRight): LocalOptimizationDoneRight's strategies at the
 # equal LO budget (25 model updates) — Welsch, GM and TLS under the HQ lift /
 # GNC, the Student-t + uniform IRLS and BCD. Moved from the library's
 # test/lo_timing (K+, 2026-10-09: its test target names no scorer package;
@@ -33,7 +33,7 @@
 # spread (the noise probe). `ncalls` is the call set's size.
 # =============================================================================
 
-using LocalOptimizationDoneRight, VisualGeometryToolkitEstimation, VisualGeometryToolkitCore, RansacScoringDoneRight
+using LocalOptimizationDoneRight, VisualGeometryToolkitEstimation, VisualGeometryToolkitCore, RANSACScoringDoneRight
 using LocalOptimizationDoneRight: HQ, Gnc, StudentTUniform, StuTuBCD
 using VisualGeometryToolkitEstimation: RansacWorkspace, Irls
 using VisualGeometryToolkitCore: IGPrior

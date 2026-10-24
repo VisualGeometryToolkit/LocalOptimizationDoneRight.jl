@@ -56,11 +56,11 @@ To reproduce the paper, clone the repository and instantiate `accv2026/` (see
 The strategies implement VisualGeometryToolkitCore's local-optimization contract, so
 they plug into VisualGeometryToolkitEstimation's `find_*` pipelines and `ransac` beside any
 scorer. The core default is MSAC with a truncated-least-squares IRLS; the
-paper's recipe swaps in RansacScoringDoneRight's Student-t + uniform scorer and
+paper's recipe swaps in RANSACScoringDoneRight's Student-t + uniform scorer and
 the Welsch half-quadratic lift at its cross-validated scale multiple:
 
 ```julia
-using VisualGeometryToolkitEstimation, RansacScoringDoneRight, LocalOptimizationDoneRight
+using VisualGeometryToolkitEstimation, RANSACScoringDoneRight, LocalOptimizationDoneRight
 using VisualGeometryToolkitCore: WelschShape
 
 result = find_essential(cam1, cam2, pixel_pairs;

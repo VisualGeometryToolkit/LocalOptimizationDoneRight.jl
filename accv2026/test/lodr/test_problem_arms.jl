@@ -16,7 +16,7 @@ using VisualGeometryToolkitCore: Csponds, csponds, converged, estimate, rotation
     homography, radial_rows, is_map_inlier, IGPrior, FundMatManifold7, retract, project, Point2, Point3, Line2D,
     RadialHomography, RadialCamera, radial_transfer, unit_normalize, calibration_matrix
 using VisualGeometryToolkitCore.Synthetic: projective_distance
-using RansacScoringDoneRight: StudentTUniformScoring
+using RANSACScoringDoneRight: StudentTUniformScoring
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitEstimation: RadialHomographyProblem, RadialCameraProblem, find_radial_homography, find_radial_camera,
     minimal_sample_size, model_type, residuals!, data_size

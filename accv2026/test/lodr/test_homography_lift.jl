@@ -16,7 +16,7 @@
 using Test, Random, LinearAlgebra, StaticArrays
 using VisualGeometryToolkitCore: estimate   # VGC accessor (public)
 using VisualGeometryToolkitCore: HomographyManifold8, retract   # the sl(3) chart (public)
-using RansacScoringDoneRight: StudentTUniformScoring   # owned and exported by RansacScoringDoneRight
+using RANSACScoringDoneRight: StudentTUniformScoring   # owned and exported by RANSACScoringDoneRight
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 include("scenes.jl")   # the shared scenes, as modules

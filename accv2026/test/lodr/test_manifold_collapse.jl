@@ -15,7 +15,7 @@ using Test, Random, LinearAlgebra, StaticArrays, StructArrays
 using Rotations: RotY
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: estimate, retcode   # VGC accessors (public)
-using RansacScoringDoneRight: StudentTUniformScoring   # the paper's marginal (the old core default)
+using RANSACScoringDoneRight: StudentTUniformScoring   # the paper's marginal (the old core default)
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 const RVGC = VisualGeometryToolkitEstimation

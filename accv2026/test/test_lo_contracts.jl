@@ -19,7 +19,7 @@ using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: Synthetic, Csponds, consensus_set, residuals!, estimate, iterations, lo_width,
     minimal_sample_size, codimension
 using VisualGeometryToolkitEstimation: consensus_s2!
-using RansacScoringDoneRight: StudentTUniformScoring
+using RANSACScoringDoneRight: StudentTUniformScoring
 
 # The evaluator + the paper config.
 using VisualGeometryToolkitEval.Evaluation: perturbed_seed_E

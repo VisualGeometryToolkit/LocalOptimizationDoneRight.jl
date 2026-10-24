@@ -21,7 +21,7 @@
 #
 # CODIMENSION. H is codimension 2, and `d_g` MOVES the outlier-half-width
 # window: at the same scale-multiple window the upper edge falls ~3.91 decades
-# from d_g = 1 to d_g = 2 (RansacScoringDoneRight `to_native`). Nothing here states it — the
+# from d_g = 1 to d_g = 2 (RANSACScoringDoneRight `to_native`). Nothing here states it — the
 # problem does (`problem = "H"`) — and a window cut at one codimension against
 # a grid cut at another is refused as `:selection_out`, never consumed.
 #

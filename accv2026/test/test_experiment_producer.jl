@@ -11,7 +11,7 @@
 # =============================================================================
 using Test, Random, JLD2, DataFrames
 using VisualGeometryToolkitEstimation: EssentialProblem
-using RansacScoringDoneRight: RansacScoringDoneRight
+using RANSACScoringDoneRight: RANSACScoringDoneRight
 using VisualGeometryToolkitCore: WelschShape
 using VisualGeometryToolkitEval.Tuning: tuning_spec, load_tuning_artifact, grid
 using VisualGeometryToolkitEval.Pools: synthetic_e_pool_pair, PoolResiduals
@@ -35,7 +35,7 @@ include(joinpath(@__DIR__, "..", "src", "plot_lo_sensitivity.jl"))   # compute_s
         "budget_sampling" => Dict("n_draws" => 20, "sizes" => [1, 2]),
         "cross_validation" => Dict("scene_split" => Dict("type" => "registered", "name" => "phototourism"))))), "smoke")
     kw = (; problem_type = EssentialProblem, spec,
-          backend = RansacScoringDoneRight.KernelAbstractions.CPU())
+          backend = RANSACScoringDoneRight.KernelAbstractions.CPU())
     path = tempname() * ".jld2"
     mc = miscalibration_sweep(scenes, 1, [0.5, 1.0, 2.0]; batch = 1,
                               save_bundle = path, kw...)

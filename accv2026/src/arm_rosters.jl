@@ -20,7 +20,7 @@ using VisualGeometryToolkitEstimation: Irls
 using LocalOptimizationDoneRight: HQ, Gnc, StuTuBCD, StudentTUniform, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth
 using VisualGeometryToolkitCore: WelschShape, GemanMcclureShape, SmoothTLSShape, TLSShape, MsacScoring, RansacScoring,
     codimension
-using RansacScoringDoneRight: StudentTUniformScoring
+using RANSACScoringDoneRight: StudentTUniformScoring
 using RansacLibLO: LebedaLOOptions, PRESET_REFERENCE   # the Lebeda ladder's options; RansacLib's defaults
 using VisualGeometryToolkitEval.Evaluation: ComposedSpec, SoloSpec, Roster, WidthSource, TunedWidth, SelectionWidth,
     problem_type

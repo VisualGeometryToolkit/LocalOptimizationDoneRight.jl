@@ -23,7 +23,7 @@ using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: Synthetic
 using VisualGeometryToolkitCore.Synthetic: projective_distance
 using VisualGeometryToolkitCore: estimate, retcode   # VGC accessors (public)
-using RansacScoringDoneRight: StudentTUniformScoring   # owned and exported by RansacScoringDoneRight
+using RANSACScoringDoneRight: StudentTUniformScoring   # owned and exported by RANSACScoringDoneRight
 using VisualGeometryToolkitEstimation: LOSS_TAGS, config_dict, local_optimization_from_toml   # public, not exported
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight

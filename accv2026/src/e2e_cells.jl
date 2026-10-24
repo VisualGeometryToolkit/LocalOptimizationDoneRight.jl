@@ -24,7 +24,7 @@ using VisualGeometryToolkitEval.Pools: load_pool
 using VisualGeometryToolkitCore: ScaleMultiple, OutlierHalfwidth, width_axis_name, IGPrior
 using VisualGeometryToolkitCore.Pools: PoolPair
 using VisualGeometryToolkitEstimation: EssentialProblem, RansacConfig, GaussianSampler
-using RansacScoringDoneRight: StudentTUniformScoring
+using RANSACScoringDoneRight: StudentTUniformScoring
 using Printf: Printf
 using DrWatson: projectdir   # configs/ of the active (accv2026) project
 using Statistics: mean, median

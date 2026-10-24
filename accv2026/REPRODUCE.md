@@ -214,7 +214,7 @@ replays the generator's seeded streams and writes the exact starts as derived
 data under `<results>/phototourism/sift/E/PoolSamples/samples-<key>/` (give a
 scene's file as `sample_starts(pool; derived = …)`). The paper's budget cells
 count MODELS (`configs/sample_budget_protocol.toml`), so they read no sample
-starts; a `:samples` budget and RansacScoringDoneRight's scoring-only budget
+starts; a `:samples` budget and RANSACScoringDoneRight's scoring-only budget
 experiment do.
 
 **Regenerate every pool after the 2026-10-01 map rename.** The pool record's

@@ -12,7 +12,7 @@
 # The evaluation engine is VisualGeometryToolkitEval's (VisualGeometryToolkitEval.Evaluation,
 # tested there); its integration with these strategies and the paper's scorer
 # is accv2026/test/test_engine_integration.jl. The strategy tests that run on
-# the paper's scorer (RansacScoringDoneRight, which the stack allow-list keeps
+# the paper's scorer (RANSACScoringDoneRight, which the stack allow-list keeps
 # out of this test target) live in accv2026/test/lodr/.
 # =============================================================================
 using Test

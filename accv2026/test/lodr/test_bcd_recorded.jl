@@ -16,7 +16,7 @@ using Rotations: RotXYZ
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: CameraModel, Point2, Vec3, csponds, estimate, retcode, iterations, Incumbent,
     WelschShape, GemanMcclureShape, HuberShape, block_coordinate_descent!, Recorded, current_cost
-using RansacScoringDoneRight: StudentTUniformScoring
+using RANSACScoringDoneRight: StudentTUniformScoring
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 const R = VisualGeometryToolkitEstimation
