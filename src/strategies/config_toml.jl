@@ -38,7 +38,7 @@ _loss_tag(::Type{K}) where {K <: AbstractLossShape} = _LOSS_TAG_OF[K]
 
 # Gnc{S} wraps the inner static strategy `inner` (+ `loss`): concrete at
 # `Gnc{Irls{loss}}`. (HQ{K}, a plain strategy: Estimation's default.)
-function VgtkEstimation.lo_concrete(::Type{Gnc}, d::AbstractDict, sec::AbstractString; tags = nothing)
+function VgtkEstimation.lo_concrete(::Type{Gnc}, d::AbstractDict, sec::AbstractString; tags::TagRegistry)
     inner_tag = get(d, "inner", "irls")
     inner_tag in ("irls",) || throw(ArgumentError("[$sec] inner must be \"irls\", got $(repr(inner_tag))"))
     haskey(d, "loss") || throw(ArgumentError("[$sec] needs a `loss` (one of $(sort(collect(keys(LOSS_TAGS)))))"))
@@ -51,6 +51,8 @@ end
 # GM arm. (A number is the caller's own and is taken as given, by Estimation's
 # method.)
 for T in values(LO_TAGS)
+    # only a strategy with a width, or Welsch-HQ-ECM's plain scale multiple, has one to resolve
+    (:width in fieldnames(T) || :scale_multiple in fieldnames(T)) || continue
     @eval VgtkEstimation.lo_resolve_scale_multiple(::Type{<:$T}, K::Type, v::AbstractString; class::Symbol) =
         v == "cross_validated" ?
         tuning_constant(class, _loss_tag(K)).scale_multiple :

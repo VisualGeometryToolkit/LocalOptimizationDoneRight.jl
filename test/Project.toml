@@ -18,11 +18,13 @@ TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 VisualGeometryToolkitCore = "96820d6b-1dad-4e77-ad4a-8276f2ec1ce7"
 
 [sources]
+LocalOptimizationDoneRight = {path = ".."}
+
 # TEMPORARY: the unreleased 0.2 wave; replaced by the registered versions at release
 PoseLib = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/PoseLib"}
 VisualGeometryToolkitCore = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/VisualGeometryToolkitCore"}
 VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/VisualGeometryToolkitEstimation"}
-LocalOptimizationDoneRight = {path = ".."}
+# END TEMPORARY
 
 [compat]
 Aqua = "0.8.18"

@@ -225,10 +225,19 @@ VisualGeometryToolkitEval's pool IO, its destination map named
 (then the evaluation engine's `ARTIFACT_FORMATS.pool`, now VisualGeometryToolkitEval's; 3 with the stable streams —
 see "Result-changing changes of 2026-10-01" below — then 4, and now 5). Every pool written before is format 1 and is refused on
 read — `ArgumentError: <file>: pool format v1 predates the destination map's pair key,
-destination_map (v5) — migrate a format-4 pool with Pools.migrate_pool; …` — and is NOT migratable. A format-4 pool is the
-exception: VisualGeometryToolkitEval's `Pools.migrate_pool` carries it over to
-format 5 (it validates and compares before writing); there is no format-4
-reader.
+destination_map (v5) — migrate a format-4 pool with Pools.migrate_pool; convert an
+older one to format 4 first with <a conversion script Eval names that this repository
+does not contain>` — and is NOT migratable: regenerate it. A format-4 pool is the exception: `VisualGeometryToolkitCore.Pools.migrate_pool`
+carries it over to format 5 (it validates and compares before writing); there
+is no format-4 reader.
+
+**The pools on disk are format 4.** The existing `_pf3` trees (PT-E-SIFT-4K_pf3,
+HEB-H-SIFT-4K_pf3, the ETH3D-F `scoring_data_F_pf3`) and the ETH3D-F pools
+published on Zenodo (record 23240469) are format 4. No driver of the
+VisualGeometryToolkit 0.2 wave reads them: migrate each tree with
+`migrate_pool` into a NEW tree (or regenerate it through its producer), and
+re-publish the Zenodo artifact and update `configs/data_artifacts.toml`, before
+any driver runs.
 Regenerate each tree through
 its POOL PRODUCER cell into a NEW out-dir, then point the consuming configs at
 it. The main-paper trees are `scripts/pt_e_pools.jl` (PT-E-SIFT-4K_pf3) and

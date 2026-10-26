@@ -142,9 +142,9 @@ const _LADDER_TEMPLATE = StudentTUniformScoring(EssentialProblem, 1.0)
 # and every method is penalized by the metric, not the optimization.  Standard
 # basin-experiment practice; the mask fraction is reported.
 
-# Pose perturbation: `perturbed_pose` / `perturbed_seed_E` live in the eval
-# evaluator (VisualGeometryToolkitEval.Evaluation, engine/geometry.jl) so every consumer
-# perturbs IDENTICALLY — same seeded axis draw,
+# Pose perturbation: `perturbed_pose` lives in VisualGeometryToolkitCore.Synthetic
+# and `perturbed_seed_E` in the eval evaluator (VisualGeometryToolkitEval.Evaluation,
+# engine/geometry.jl) so every consumer perturbs IDENTICALLY — same seeded axis draw,
 # same translation jitter, same [t]ₓR seed model.
 
 function run_ladder()

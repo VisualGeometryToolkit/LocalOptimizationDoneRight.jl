@@ -41,7 +41,7 @@ using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractLocalOptimiz
     lift_weight, lift_cost, loss_family, loss_label,
     gnc_surrogate, gnc_weight, gnc_entry_mu0, gnc_mu_cap, band_signal, NoSurrogate, MuScaled,
     BandAnnealed, GaussianShape, WelschShape, GemanMcclureShape, SmoothTLSShape,
-    BarronShape, ConsensusSet, consensus_score, is_predictive, ScoreBuffers, ScaleMultiple, LossWidth,
+    BarronShape, ConsensusSet, consensus_score, is_predictive, ScoreBuffers, ScaleMultiple, LossWidth, TagRegistry,
     SelfScaling, ConsensusAnchored, FixedScale, ExternalRefit, scale_s2, inlier_count, inlier_threshold,
     outlier_halfwidth, score_model!, loss_at, width_scale_interface, lo_estimate, Incumbent,
     keep_best, StoppingCriterion, PosteriorWeightState, reset_posterior!, StudentTMixture, posterior_weight,

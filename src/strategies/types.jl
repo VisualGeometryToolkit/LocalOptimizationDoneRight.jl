@@ -612,7 +612,8 @@ const LO_TAGS = VgtkEstimation.@lo_registry _LO_REGISTRY defaults = _TOML_DEFAUL
 # strict fixed-scale consistent refiner, anchored at the consensus set.
 VgtkCore.scale_interface(lo::StuTuRegemm) = lo.adapt_scale ? SelfScaling() : ConsensusAnchored()
 
-# The Barron shape α is the arm's identity, so it is positional.
+# The Barron shape α is the arm's identity, so it is also positional; the
+# registry gives BarronHQ its keyword constructor as well (`BarronHQ(; alpha…)`).
 BarronHQ(α::Real; kw...) = lo_construct(BarronHQ; α, kw...)
 
 # The per-strategy exceptions, each a hook of the machinery.
