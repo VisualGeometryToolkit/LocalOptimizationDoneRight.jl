@@ -339,6 +339,8 @@ end
         d = Dict{String, Any}("type" => tag)
         takes_scale_multiple && (d["scale_multiple"] = 1.5)
         tag == "barron_hq" && (d["alpha"] = -2.0)
+        # the terminal placement names its strategy in a nested `inner` table
+        tag == "terminal_lo" && (d["inner"] = Dict{String, Any}("type" => "hq", "loss" => "welsch", "scale_multiple" => 1.5))
         r = runlo(build(d))
         @test estimate(r) !== nothing
         @test retcode(r) in (:converged, :max_iterations)

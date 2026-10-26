@@ -251,7 +251,7 @@ using Random: AbstractRNG
 using LinearAlgebra: norm
 using StaticArrays: SVector
 using Rotations: RotMatrix
-using VisualGeometryToolkitCore: Camera, CameraModel, Division, EuclideanMap, project
+using VisualGeometryToolkitCore: PosedCamera, CameraModel, Division, EuclideanMap, project
 
 export F0, K0, BOARD_ANGLES, BOARD_TS, BOARD_GRID, board_camera, board_pixels, noisy_board_views
 
@@ -270,13 +270,13 @@ const BOARD_TS = [
 const BOARD_GRID = -80.0:40.0:80.0
 
 """
-    board_camera(R, t; f = F0, ks = (K0,), center = (0, 0)) -> Camera
+    board_camera(R, t; f = F0, ks = (K0,), center = (0, 0)) -> PosedCamera
 
 The camera viewing a board's `z = 0` plane at `x_cam = R·X + t`: focal `f`,
 principal point `center`, and a division lens whose pixel-radius coefficients
 are `ks` (`k_p` on `ρ^{2p}`).
 """
-board_camera(R, t; f = F0, ks = (K0,), center = (0.0, 0.0)) = Camera(
+board_camera(R, t; f = F0, ks = (K0,), center = (0.0, 0.0)) = PosedCamera(
     CameraModel(; focal = f, pp = (Float64(center[1]), Float64(center[2])),
         lens = Division((k * f^(2p) for (p, k) in enumerate(ks))...)),
     EuclideanMap(RotMatrix{3, Float64}(R), SVector{3, Float64}(t))

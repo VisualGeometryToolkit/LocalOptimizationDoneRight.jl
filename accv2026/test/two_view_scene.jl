@@ -29,7 +29,8 @@ using LinearAlgebra: normalize
 using StaticArrays: SMatrix, SVector, SA
 using Rotations: RotY
 using VisualGeometryToolkitCore: Point2, Csponds
-using VisualGeometryToolkitEval.Evaluation: PairGeom, perturbed_pose
+using VisualGeometryToolkitCore.Synthetic: perturbed_pose
+using VisualGeometryToolkitEval.Evaluation: PairGeom
 
 const _TWO_VIEW_FOV = (
     wide = (cloud = (2.0, 1.5, 1.5, 3.0), image = (1.5, 1.2), seed = 3),
