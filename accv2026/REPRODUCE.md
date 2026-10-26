@@ -218,13 +218,17 @@ starts; a `:samples` budget and RANSACScoringDoneRight's scoring-only budget
 experiment do.
 
 **Regenerate every pool after the 2026-10-01 map rename.** The pool record's
-pixel → pool-frame maps became `source_map`/`target_map` (the record is now
-VisualGeometryToolkitCore's `Pools.PoolPair`, read and written by VisualGeometryToolkitEval's
-pool IO), and pool files carried `pool_format = 2` (then
-the evaluation engine's `ARTIFACT_FORMATS.pool`, now VisualGeometryToolkitEval's; 3 with the stable streams —
-see "Result-changing changes of 2026-10-01" below — and now 4). Every pool written before is format 1 and is refused on
-read — `ArgumentError: <file>: pool format v1 predates the source_map/target_map
-rename — regenerate the pool` — and is NOT migratable.
+pixel → pool-frame maps became `source_map` and a destination map (the record
+is now VisualGeometryToolkitCore's `Pools.PoolPair`, read and written by
+VisualGeometryToolkitEval's pool IO, its destination map named
+`destination_map` since pool format 5), and pool files carried `pool_format = 2`
+(then the evaluation engine's `ARTIFACT_FORMATS.pool`, now VisualGeometryToolkitEval's; 3 with the stable streams —
+see "Result-changing changes of 2026-10-01" below — then 4, and now 5). Every pool written before is format 1 and is refused on
+read — `ArgumentError: <file>: pool format v1 predates the destination map's pair key,
+destination_map (v5) — migrate a format-4 pool with Pools.migrate_pool; …` — and is NOT migratable. A format-4 pool is the
+exception: VisualGeometryToolkitEval's `Pools.migrate_pool` carries it over to
+format 5 (it validates and compares before writing); there is no format-4
+reader.
 Regenerate each tree through
 its POOL PRODUCER cell into a NEW out-dir, then point the consuming configs at
 it. The main-paper trees are `scripts/pt_e_pools.jl` (PT-E-SIFT-4K_pf3) and
@@ -245,7 +249,7 @@ reads `native_layout`, which is a MIGRATION stamp written by
 
 | key | fresh (generated) | retired (migrated 2026-09-22) |
 |---|---|---|
-| `pool_format` | `3` | ABSENT — refused on read as v1 |
+| `pool_format` | `5` | ABSENT — refused on read as v1 |
 | `native_layout` | ABSENT | present, naming the CURRENT versions |
 
 So `native_layout` is not a currency marker: `pool_format` is, and the only
