@@ -41,7 +41,7 @@ using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractLocalOptimiz
     lift_weight, lift_cost, loss_family, loss_label,
     gnc_surrogate, gnc_weight, gnc_entry_mu0, gnc_mu_cap, band_signal, NoSurrogate, MuScaled,
     BandAnnealed, GaussianShape, WelschShape, GemanMcclureShape, SmoothTLSShape,
-    BarronShape, ConsensusSet, consensus_score, is_predictive, ScoreBuffers, ScaleMultiple, LossWidth, TagRegistry,
+    BarronShape, ConsensusSet, consensus_score, is_predictive, ScoreBuffers, ScaleMultiple, LossWidth,
     SelfScaling, ConsensusAnchored, FixedScale, ExternalRefit, scale_s2, inlier_count, inlier_threshold,
     outlier_halfwidth, score_model!, loss_at, width_scale_interface, lo_estimate, Incumbent,
     keep_best, StoppingCriterion, PosteriorWeightState, reset_posterior!, StudentTMixture, posterior_weight,
@@ -49,8 +49,7 @@ using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractLocalOptimiz
     sq_residuals, robust_weight, truncated_log_normaliser, data_size, codimension,
     refine!, fit_scale, JeffreysPrior, weighted_sq, iterations, retcode, toml_default, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
     lift_retract, lift_model, lift_valid, lift_rows, lift_residuals, lift_size,
-    block_coordinate_descent!, path_suffix, optimization_path, EssentialMat,
-    present_kwargs, check_keys, allowed_keys, convert_field, toml_table, toml_key, toml_skip_fields
+    block_coordinate_descent!, path_suffix, optimization_path, EssentialMat
 # The contract verbs this package adds methods to.
 import VisualGeometryToolkitCore: locally_optimize!, update_model!, update_residuals!, post_iteration!,
     update_nuisance!, update_weights!, stopping_criterion, stop_reason, current_cost,
@@ -59,7 +58,7 @@ import VisualGeometryToolkitCore: locally_optimize!, update_model!, update_resid
 using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation, Irls, LoBuffers, LiftableProblem,
     BoundedProblem, EssentialProblem, PosteriorLikelihood, StopWhenNoImprovement,
     posterior_irls!, consensus_posterior, required_outlier_halfwidth, lo_loss, strategy_loss,
-    plain_scale_multiple, lo_width_value, LOSS_TAGS
+    plain_scale_multiple, lo_width_value, lo_construct, LOSS_TAGS
 
 include("config_defaults.jl")          # configs/default.toml → `_TOML_DEFAULTS`, `_config_default`
 include("lift/schedules.jl")           # LoSchedule, MuLadder, GeometricAnneal, gnc_schedule

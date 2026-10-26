@@ -552,20 +552,25 @@ VgtkCore.with_width(lo::BarronAdaptive, w) =
     BarronAdaptive(lo.max_iter, lo.α_min, lo.truncation_multiple, lo.n_sub, lo_width_value(w))
 
 # =============================================================================
-# THE strategy registry — one row of facts per strategy, one keyword constructor
+# THE strategy registry — one row of facts per strategy, on
+# VisualGeometryToolkitEstimation's `@lo_registry`
 # =============================================================================
 #
 # Every strategy of this package is ONE row here: its TOML tag (the
 # `configs/default.toml` `[local_optimization.<tag>]` table its keyword
 # defaults read, and the `type` a config spells it by — the tag rule:
 # `snake_case` of the type's name), its optimization path, whether it is a
-# loss-parametric family (`Irls{K}`/`HQ{K}`/`Gnc{Irls{K}}`, which take a `loss`
-# key), and — for the named one-off strategies — the identity VGC's `lo_label` /
+# loss-parametric family (`HQ{K}`/`Gnc{Irls{K}}`, which take a `loss` key),
+# and — for the named one-off strategies — the identity VGC's `lo_label` /
 # `loss_family` / `scale_interface` report. `nothing` in a column means the
 # fact is DERIVED, not stated: the parametric families read their label and
-# loss family off the loss tag (above), a fixed-loss arm its loss family off its
+# loss family off the loss tag, a fixed-loss arm its loss family off its
 # `shape` column, and a width-carrying strategy its scale interface off its
 # width mode (`_WidthCarrying`).
+#
+# The keyword constructor, the TOML reader and the writer are Estimation's
+# (`lo_construct`, `lo_from_toml`, `lo_config_dict`); this package states its
+# exceptions as methods of their hooks (below, and config_toml.jl).
 #
 # Paths (the design-table column; marker shape = path, VGC `path_marker`):
 # PoseLib's truncated-loss LM is a binary weight recomputed every iteration —
@@ -589,136 +594,36 @@ const _LO_REGISTRY = (
     (BarronAdaptive,      "barron_adaptive",       :irls, nothing,       nothing, raw"Barron-IRLS",         BarronShape,       false),
     (GmHqEps,             "gm_hq_eps",             :hq,   nothing,       nothing, raw"GM-HQ ($\epsilon$)",  GemanMcclureShape, false),
 )
-# ReGeMM's scale policy is a FIELD's value, not a type's: frozen (ŝ², π) is the
-# strict fixed-scale consistent refiner, anchored at the consensus set.
-VgtkCore.scale_interface(lo::StuTuRegemm) = lo.adapt_scale ? SelfScaling() : ConsensusAnchored()
-
-for (T, tag, path, iface, family, label, shape, _) in _LO_REGISTRY
-    @eval begin
-        _lo_tag(::Type{<:$T}) = $tag
-        VgtkCore.optimization_path(::$T) = $(QuoteNode(path))
-    end
-    iface === nothing || @eval VgtkCore.scale_interface(::$T) = $iface
-    family === nothing || @eval VgtkCore.loss_family(::$T) = $(QuoteNode(family))
-    label === nothing || @eval VgtkCore.lo_label(::$T) = $label
-    # The shape a FIXED-LOSS arm deploys (no `loss` key: its type names
-    # the shape) — read by its loss family and by the TOML loader's
-    # `scale_multiple = "cross_validated"` resolution (config_toml.jl). A tagged strategy
-    # without one fails loudly there, never resolving somebody else's constant.
-    shape === nothing || @eval begin
-        _fixed_loss_shape(::Type{<:$T}) = $shape
-        VgtkCore.loss_family(::$T) = loss_family($shape)
-    end
-end
-
-# A strategy takes a width (`scale_multiple` / `loss_width` keys) iff it has a
-# `width` field, and a `loss` key iff it is a loss-parametric family.
-_lo_takes_width(::Type{T}) where {T} = :width in fieldnames(T)
-const _LO_PARAMETRIC = Dict{Any, Bool}(T => par for (T, _, _, _, _, _, _, par) in _LO_REGISTRY)
 
 """
     LO_TAGS
 
 This package's local-optimization strategy registry (VisualGeometryToolkitCore's
-`TagRegistry`): TOML tag → strategy type or loss-parametric family, the tag
-`snake_case` of the type's name. Retired tags name their successor. Merge it
-with the core's to load either: `merge(VisualGeometryToolkitEstimation.LO_TAGS, LO_TAGS)`.
+`TagRegistry`, built by VisualGeometryToolkitEstimation's `@lo_registry`): TOML
+tag → strategy type or loss-parametric family, the tag `snake_case` of the
+type's name. Retired tags name their successor. Merge it with the core's to
+load either: `merge(VisualGeometryToolkitEstimation.LO_TAGS, LO_TAGS)`.
 """
-const LO_TAGS = TagRegistry(
-    :local_optimization, "",
-    (tag => T for (T, tag) in _LO_REGISTRY)...;
-    retired = ("stutu_bcd" => "stu_tu_bcd",
-               "stutu_hq_tabulated" => "stu_tu_hq_tabulated", "stutu_regemm" => "stu_tu_regemm"),
-    paths = [r"(^|\.)local_optimization\.type$"]
+const LO_TAGS = VgtkEstimation.@lo_registry _LO_REGISTRY defaults = _TOML_DEFAULTS["local_optimization"] retired = (
+    "stutu_bcd" => "stu_tu_bcd", "stutu_hq_tabulated" => "stu_tu_hq_tabulated", "stutu_regemm" => "stu_tu_regemm",
 )
 
-# -----------------------------------------------------------------------------
-# The ONE keyword constructor of every strategy, driven by `fieldnames` and the
-# tag: a field's keyword is the field's name; its default is the strategy's
-# `[local_optimization.<tag>]` key in `configs/default.toml` (ASCII-spelled,
-# `_toml_key`); a field with NO key in the file is REQUIRED (Barron's `α`).
-# The width field is set by `scale_multiple = m` (`ScaleMultiple(m)`) or
-# `loss_width = w` (`LossWidth(w)`) — both is an `ArgumentError` — and by
-# neither follows the scorer (`nothing`). Values convert to the field's type;
-# an unknown keyword is an `ArgumentError`.
-#
-# The per-strategy exceptions are hooks, each stated once:
-#   `_lo_admits(T)`            construction-time admission, BEFORE any field
-#   `_lo_key(T, Val(f))`       a field read from another key (HQ smooth-TLS)
-#   `_lo_field(T, Val(f), v)`  a supplied value's conversion / refusal
-#   `_lo_absent(T, Val(f))`    a field's value when the caller omits it
-#   `_lo_validate(lo)`         cross-field checks on the built value
-# -----------------------------------------------------------------------------
-function _lo_construct(::Type{T}; kw...) where {T <: AbstractLocalOptimization}
-    _lo_admits(T)
-    kw = _lo_width_keywords(T, kw)
-    for f in keys(kw)
-        f in fieldnames(T) || throw(
-            ArgumentError(
-                "$T has no keyword `$f` (its keywords: $(join(_lo_keywords(T), ", ")))"
-            )
-        )
-    end
-    vals = ntuple(fieldcount(T)) do i
-        f = fieldname(T, i)
-        haskey(kw, f) ? _lo_field(T, Val(f), kw[f]) : _lo_absent(T, Val(f))
-    end
-    return _lo_validate(T(vals...))
-end
+# ReGeMM's scale policy is a FIELD's value, not a type's: frozen (ŝ², π) is the
+# strict fixed-scale consistent refiner, anchored at the consensus set.
+VgtkCore.scale_interface(lo::StuTuRegemm) = lo.adapt_scale ? SelfScaling() : ConsensusAnchored()
 
-# The keywords a caller spells: the fields, the width field as its two keys.
-_lo_keywords(::Type{T}) where {T} =
-    _lo_takes_width(T) ? [filter(!=(:width), collect(fieldnames(T))); :scale_multiple; :loss_width] :
-    collect(fieldnames(T))
+# The Barron shape α is the arm's identity, so it is positional.
+BarronHQ(α::Real; kw...) = lo_construct(BarronHQ; α, kw...)
 
-# `scale_multiple = m` / `loss_width = w` → the `width` field.
-function _lo_width_keywords(::Type{T}, kw) where {T}
-    _lo_takes_width(T) || return kw
-    hm, hw = haskey(kw, :scale_multiple), haskey(kw, :loss_width)
-    hm && hw && throw(ArgumentError("$T: give `scale_multiple` or `loss_width`, not both"))
-    hm || hw || return kw
-    rest = Dict{Symbol, Any}(k => v for (k, v) in kw if k ∉ (:scale_multiple, :loss_width))
-    rest[:width] = hm ? _lo_scale_multiple(T, kw[:scale_multiple]) : LossWidth(Float64(kw[:loss_width]))
-    return rest
-end
-_lo_scale_multiple(::Type, m) = ScaleMultiple(Float64(m))
-
-_lo_admits(::Type) = nothing
-_lo_admits(::Type{HQ{K}}) where {K} = _hq_admits_shape(K)
-_lo_admits(::Type{Gnc{S}}) where {S} = _gnc_admits(S)
-
-_lo_key(::Type, ::Val{F}) where {F} = _toml_key(F)
-_lo_key(::Type{<:HQ{SmoothTLSShape}}, ::Val{:max_iter}) = "max_iter_smooth_tls"   # the longer ψ̂ schedule
-
-_lo_field(::Type{T}, ::Val{F}, v) where {T, F} = convert(fieldtype(T, F), v)
-_lo_field(::Type, ::Val{:width}, w) = lo_width_value(w)
-
-function _lo_absent(::Type{T}, ::Val{F}) where {T, F}
-    _lo_has_default(T, F) || throw(UndefKeywordError(F))
-    return _from_toml(T, Val(F), _lo_table(T)[_lo_key(T, Val(F))])
-end
-# No width given: follow the scorer.
-_lo_absent(::Type, ::Val{:width}) = nothing
-# The strategy's `[local_optimization.<tag>]` table (empty for a strategy with
-# no fields), and whether it defaults a field.
-_lo_table(::Type{T}) where {T} = get(_TOML_DEFAULTS["local_optimization"], _lo_tag(T), Dict{String, Any}())
-_lo_has_default(::Type{T}, f::Symbol) where {T} = haskey(_lo_table(T), _lo_key(T, Val(f)))
-
-_lo_validate(lo) = lo
-function _lo_validate(lo::Gnc{S}) where {S}
+# The per-strategy exceptions, each a hook of the machinery.
+# Admission of a loss-parametric family, before any field is read.
+VgtkEstimation.lo_admits(::Type{<:HQ}, ::Type{K}) where {K} = _hq_admits_shape(K)
+VgtkEstimation.lo_admits(::Type{<:Gnc}, ::Type{S}) where {S} = _gnc_admits(S)
+# The longer ψ̂ schedule of the smooth-TLS lift defaults from its own key.
+VgtkEstimation.lo_key(::Type{<:HQ{SmoothTLSShape}}, ::Val{:max_iter}) = "max_iter_smooth_tls"
+function VgtkEstimation.lo_validate(lo::Gnc{S}) where {S}
     lo.budget in (:parity, :converged) || error("Gnc: budget must be :parity or :converged, got :$(lo.budget)")
     isnan(lo.entry) || S === Irls{WelschShape} ||
         error("Gnc: numeric entry is defined for the annealed-width (Irls{WelschShape}) family only")
     return lo
-end
-
-for (T, _, _, _, _, _, _, parametric) in _LO_REGISTRY
-    if T === BarronHQ
-        # The Barron shape α is the arm's identity, so it is positional.
-        @eval BarronHQ(α::Real; kw...) = _lo_construct(BarronHQ; α, kw...)
-    elseif parametric
-        @eval (::Type{$T{P}})(; kw...) where {P} = _lo_construct($T{P}; kw...)
-    else
-        @eval (::Type{$T})(; kw...) = _lo_construct($T; kw...)
-    end
 end

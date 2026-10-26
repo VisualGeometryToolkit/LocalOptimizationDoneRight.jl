@@ -20,7 +20,7 @@ using VisualGeometryToolkitCore: AbstractLocalOptimization, GemanMcclureShape, S
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitEstimation: Irls, config_dict, local_optimization_from_toml
 using LocalOptimizationDoneRight
-using LocalOptimizationDoneRight: LO_TAGS, BarronAdaptive, StuTuRegemm, _config_default, _TOML_DEFAULTS, _toml_key
+using LocalOptimizationDoneRight: LO_TAGS, BarronAdaptive, StuTuRegemm, _config_default, _TOML_DEFAULTS
 const RVG = VisualGeometryToolkitEstimation
 const LO = LocalOptimizationDoneRight
 
@@ -59,12 +59,12 @@ sm(lo) = VgtkCore.lo_width(lo).value
             for f in fieldnames(T)
                 f in get(required, tag, ()) && continue
                 f in VgtkCore.toml_skip_fields(T) && continue   # the width is not a config key
-                @test haskey(tbl, _toml_key(f))
+                @test haskey(tbl, VgtkCore.toml_key(T, f))
             end
         end
         # ...and the converse, asserted rather than assumed.
         for (tag, fields) in required, f in fields
-            @test !haskey(_TOML_DEFAULTS["local_optimization"][tag], _toml_key(f))
+            @test !haskey(_TOML_DEFAULTS["local_optimization"][tag], VgtkCore.toml_key(LO_TAGS[tag], f))
         end
     end
 
@@ -76,7 +76,7 @@ sm(lo) = VgtkCore.lo_width(lo).value
             takes_scale_multiple = :width in fieldnames(T) || hasfield(T, :scale_multiple)
             # the minimal table for this tag: only the keys it actually takes
             tbl = Dict{String, Any}("type" => tag)
-            LO._LO_PARAMETRIC[T] && (tbl["loss"] = "welsch")
+            RVG.lo_parametric(T) && (tbl["loss"] = "welsch")
             takes_scale_multiple && (tbl["scale_multiple"] = 1.0)
             tag == "barron_hq" && (tbl["alpha"] = 0.5)
             lo = load(tbl)
@@ -85,7 +85,7 @@ sm(lo) = VgtkCore.lo_width(lo).value
             @test d["type"] == tag
             for f in fieldnames(T)
                 f in VgtkCore.toml_skip_fields(T) && continue   # the width: not a config key
-                @test haskey(d, _toml_key(f))
+                @test haskey(d, VgtkCore.toml_key(T, f))
             end
             @test load(d) == lo
             # the table survives the file round trip too

@@ -331,7 +331,7 @@ end
     build(d) = local_optimization_from_toml(d; class = :essential, tags = TAGS)
     runlo(lo) = locally_optimize(p, E_seed; scoring = StudentTUniformScoring(p, 0.05), local_optimization = lo)
     # a registry entry's owner answers whether it takes a loss
-    parametric(T) = haskey(LO._LO_PARAMETRIC, T) ? LO._LO_PARAMETRIC[T] : RVGK._LO_PARAMETRIC[T]
+    parametric(T) = RVGK.lo_parametric(T)
     for (tag, T) in TAGS
         takes_scale_multiple = :width in fieldnames(T) || hasfield(T, :scale_multiple)   # WelschHQEcm: a plain multiple
         takes_loss = parametric(T)
