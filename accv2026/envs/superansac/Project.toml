@@ -20,6 +20,8 @@ TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 VisualGeometryToolkitCore = "96820d6b-1dad-4e77-ad4a-8276f2ec1ce7"
 
 [sources]
+# TEMPORARY: the unreleased 0.2 wave; replaced by the registered versions at release
+VisualGeometryToolkitCore = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/VisualGeometryToolkitCore"}
 
 [compat]
 CondaPkg = "0.2.36"
@@ -30,5 +32,5 @@ PythonCall = "0.9.36"
 StaticArrays = "1.9"
 Statistics = "1"
 TOML = "1"
-VisualGeometryToolkitCore = "0.1"
+VisualGeometryToolkitCore = "0.2"
 julia = "1.10"

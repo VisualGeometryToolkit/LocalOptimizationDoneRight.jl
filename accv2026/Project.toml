@@ -46,6 +46,13 @@ VisualGeometryToolkitEval = "86c88899-11c8-4b8e-8d7a-f01a8ab99b28"
 VisualGeometryToolkitIO = "0a7ae7e7-e931-45f8-9bba-03d07899cebc"
 
 [sources]
+# TEMPORARY: the unreleased 0.2 wave; replaced by the registered versions at release
+PoseLib = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/PoseLib"}
+RANSACScoringDoneRight = {path = "/home/jbpritts/src/rsdr-core-0.2"}
+VisualGeometryToolkitCore = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/VisualGeometryToolkitCore"}
+VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/VisualGeometryToolkitEstimation"}
+VisualGeometryToolkitEval = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/VisualGeometryToolkitEval"}
+VisualGeometryToolkitIO = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/VisualGeometryToolkitIO"}
 LocalOptimizationDoneRight = {path = ".."}
 RansacLibLO = {path = "lib/RansacLibLO"}
 
@@ -68,7 +75,7 @@ Printf = "1"
 Random = "1"
 RansacLibLO = "0.2.0"
 RANSACScoringDoneRight = "0.1"
-VisualGeometryToolkitEstimation = "0.1"
+VisualGeometryToolkitEstimation = "0.2"
 Rotations = "1.7"
 LocalOptimizationDoneRight = "0.1"
 StableRNGs = "1"
@@ -77,9 +84,9 @@ Statistics = "1"
 StructArrays = "0.7"
 Test = "1"
 TOML = "1"
-VisualGeometryToolkitCore = "0.1.2"
-VisualGeometryToolkitEval = "0.1"
-VisualGeometryToolkitIO = "0.1"
+VisualGeometryToolkitCore = "0.2"
+VisualGeometryToolkitEval = "0.2"
+VisualGeometryToolkitIO = "0.2"
 julia = "1.12"
 
 # Members of the repository workspace (../Project.toml): RansacLibLO and the
