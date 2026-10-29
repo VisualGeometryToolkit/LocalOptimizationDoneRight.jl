@@ -49,15 +49,6 @@ VisualGeometryToolkitIO = "0a7ae7e7-e931-45f8-9bba-03d07899cebc"
 LocalOptimizationDoneRight = {path = ".."}
 RansacLibLO = {path = "lib/RansacLibLO"}
 
-# TEMPORARY: the unreleased 0.2 wave; replaced by the registered versions at release
-PoseLib = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/PoseLib"}
-RANSACScoringDoneRight = {path = "/home/jbpritts/src/rsdr-core-0.2"}
-VisualGeometryToolkitCore = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/VisualGeometryToolkitCore"}
-VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/VisualGeometryToolkitEstimation"}
-VisualGeometryToolkitEval = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/VisualGeometryToolkitEval"}
-VisualGeometryToolkitIO = {path = "/home/jbpritts/src/vgtk-hand-eye-nlls/VisualGeometryToolkitIO"}
-# END TEMPORARY
-
 [compat]
 CUDA = "5.11"
 DataFrames = "1.8"
@@ -76,10 +67,10 @@ PoseLib = "0.1"
 Printf = "1"
 Random = "1"
 RansacLibLO = "0.2.0"
-RANSACScoringDoneRight = "0.1"
+RANSACScoringDoneRight = "0.2"
 VisualGeometryToolkitEstimation = "0.2"
 Rotations = "1.7"
-LocalOptimizationDoneRight = "0.1"
+LocalOptimizationDoneRight = "0.2"
 StableRNGs = "1"
 StaticArrays = "1.9"
 Statistics = "1"
