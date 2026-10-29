@@ -24,12 +24,6 @@ const DATA_POLICY_ALLOW = [
     # D3 — fig1's hand-bumped stamp. Fix: key the bundle directory by the run
     # key of its effective config (Miscalibration/miscal-sel-<run_key>).
     DataPolicyAllow("D3", "src/registry.jl", "EXP_SEL_MISCAL_TAG    = \"miscal-sel-allpairs-v5\""),
-    # D3 — wall-clock default stamps of the LO-sensitivity and basin-ladder
-    # tools. Fix: the stamp defaults to the run key of the effective arguments
-    # (the basin ladder's registry stamp is already derived; only the CLI
-    # default remains).
-    DataPolicyAllow("D3", "scripts/tools/run_lo_sensitivity.jl", "Dates.format(Dates.now(), \"yyyy-mm-ddTHHMMSS\")"),
-    DataPolicyAllow("D3", "scripts/tools/run_basin_ladder.jl", "Dates.format(Dates.now(), \"yyyy-mm-ddTHHMMSS\")"),
 ]
 
 @testset "data policy (D1–D3)" begin

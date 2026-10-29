@@ -29,7 +29,7 @@
 # =============================================================================
 
 using DrWatson; @quickactivate "ACCV2026"
-using CUDA, Random, Statistics, Printf, JLD2, Logging, Dates
+using CUDA, Random, Statistics, Printf, JLD2, Logging
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitEstimation: EssentialProblem
 using TOML
@@ -67,9 +67,9 @@ const LOSS_NAME = cli_option(ARGV, "loss", "welsch")                     # delta
 const SELECTORS = Symbol[selector_key(s) for s in split(cli_option(ARGV, "selectors", "student_t_uniform,msac"), ','; keepempty=false)]
 const PT       = EssentialProblem
 
-# Canonical timestamped output dir for the M-bundle (mirrors the production
-# results tree: ROOT/<dataset>/<matcher>/<problem>/<Experiment>/<stamp>/). The
-# offline renderer (plot_lo_sensitivity.jl) reads bundle.jld2 from here.
+# Canonical keyed output dir for the M-bundle (mirrors the production results
+# tree: ROOT/<dataset>/<matcher>/<problem>/<Experiment>/<stamp>/). The offline
+# renderer (plot_lo_sensitivity.jl) reads bundle.jld2 from here.
 # <results root>/accv2026 of the retired RVG_RESULTS_ROOT convention, else this
 # project's results_root() (data/README.md) — the same tree on the author's host.
 const RESULTS_ROOT = haskey(ENV, "RVG_RESULTS_ROOT") ? joinpath(ENV["RVG_RESULTS_ROOT"], "accv2026") : results_root()
@@ -78,7 +78,15 @@ const MATCHER  = cli_option(ARGV, "matcher", "sift")
 const PROBLEM  = cli_option(ARGV, "problem", "E")
 const EXPNAME  = MODE == "miscal" ? "Miscalibration" :
                  MODE == "delta"  ? "DeltaSweep" : "LOSensitivity"
-const STAMP    = cli_option(ARGV, "stamp", Dates.format(Dates.now(), "yyyy-mm-ddTHHMMSS"))
+# The run's effective arguments: everything that moves the bundle (--batch is
+# the on-device chunk size and --save a switch, so neither keys it). --stamp
+# defaults to their run key, so a rerun of the same arguments lands in the
+# same directory.
+const EFFECTIVE = Dict{String,Any}(
+    "pool_dir" => POOL_DIR, "mode" => MODE, "tuning" => TUNING, "spec" => tuning_hash(SPEC),
+    "zetas" => ZETAS, "n_miscal" => NMIS, "deltas" => DELTAS, "loss" => LOSS_NAME,
+    "selectors" => String.(SELECTORS), "dataset" => DATASET, "matcher" => MATCHER, "problem" => PROBLEM)
+const STAMP    = cli_option(ARGV, "stamp", lowercase(EXPNAME) * "-" * run_key(EFFECTIVE))
 const SAVE     = parse(Bool, cli_option(ARGV, "save", "true"))   # write the M-bundle
 const OUTDIR   = joinpath(RESULTS_ROOT, DATASET, MATCHER, PROBLEM, EXPNAME, STAMP)
 const BUNDLE   = SAVE ? joinpath(OUTDIR, "bundle.jld2") : nothing

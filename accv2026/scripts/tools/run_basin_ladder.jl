@@ -34,11 +34,11 @@
 #
 # paper-project: allow C1 a worker: scripts/fig2_basin.jl hands it every argument from its configs of record (configs/pt_e_basin.toml, configs/protocol.toml [basin_ladder]) through registry.jl
 # paper-project: allow P1 a worker of scripts/fig2_basin.jl: the bundle (ladder.jld2) records its operating-points sidecar, seed and protocol, and lives in the basin cell's keyed directory, whose run records the cell writes
-# paper-project: allow P2 fig2_basin.jl gives --stamp = basin-ladder-<the basin cell's keyed directory> (registry.jl EXP_LADDER_STAMP), so the bundle is keyed by that cell's run key; the wall-clock default is a deferred D3 entry
+# paper-project: allow P2 fig2_basin.jl gives --stamp = basin-ladder-<the basin cell's keyed directory> (registry.jl EXP_LADDER_STAMP), so the bundle is keyed by that cell's run key; without it the stamp is the run key of the effective arguments
 # =============================================================================
 
 using DrWatson; @quickactivate "ACCV2026"
-using Random, Statistics, Printf, JLD2, Logging, Dates, LinearAlgebra
+using Random, Statistics, Printf, JLD2, Logging, LinearAlgebra
 using StableRNGs: StableRNG
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitCore
@@ -65,14 +65,11 @@ const SEED     = parse(Int, cli_option(ARGV, "seed"))              # the ladder 
 const ZETA    = parse(Float64, cli_option(ARGV, "zeta", "1.0"))
 const ARMSF    = cli_option(ARGV, "arms", "")                       # comma list of roster names ("" = all)
 const NBOOT    = parse(Int, cli_option(ARGV, "nboot"))             # bootstrap resamples (registry.jl EXP_LADDER_NBOOT)
-const STAMP    = cli_option(ARGV, "stamp", Dates.format(Dates.now(), "yyyy-mm-ddTHHMMSS"))
 # <results root>/accv2026 of the retired RVG_RESULTS_ROOT convention, else this
 # project's results_root() (data/README.md) — the same tree on the author's host.
 const RESULTS_ROOT = haskey(ENV, "RVG_RESULTS_ROOT") ? joinpath(ENV["RVG_RESULTS_ROOT"], "accv2026") : results_root()
 const DATASET  = cli_option(ARGV, "dataset", "phototourism")
 const MATCHER  = cli_option(ARGV, "matcher", "sift")
-const OUTDIR   = joinpath(RESULTS_ROOT, DATASET, MATCHER, "E",
-                          "BasinLadder", STAMP)
 
 # (The fixed-constant LO_ROSTER table that used to live here was DEAD CODE: the
 #  roster comes from the sidecars below since 2026-07-18, and its
@@ -97,6 +94,16 @@ const TKPATH   = cli_option(ARGV, "operating-points", "")
 # and test bitwise-identical delivery; nat′ for the outlier half-width ones). --operating-points remains the composed deployed mode for
 # other uses. Exactly one of the two must be given.
 const SOLOPATH = cli_option(ARGV, "solo-cv", "")
+# The run's effective arguments: everything that moves the bundle. --stamp
+# (fig2_basin.jl gives the basin cell's) defaults to their run key, so a rerun
+# of the same arguments lands in the same directory.
+const EFFECTIVE = Dict{String,Any}(
+    "pool_dir" => POOL_DIR, "deltas" => DELTAS, "operating_scale_multiple" => OPERATING_MULTIPLE,
+    "succ_deg" => SUCCDEG, "seed" => SEED, "zeta" => ZETA, "arms" => ARMSF, "nboot" => NBOOT,
+    "operating_points" => TKPATH, "solo_cv" => SOLOPATH, "dataset" => DATASET, "matcher" => MATCHER)
+const STAMP    = cli_option(ARGV, "stamp", "basin-ladder-" * run_key(EFFECTIVE))
+const OUTDIR   = joinpath(RESULTS_ROOT, DATASET, MATCHER, "E",
+                          "BasinLadder", STAMP)
 (isempty(TKPATH) == isempty(SOLOPATH)) &&
     error("run_basin_ladder: exactly ONE of --operating-points=<sidecar> (composed deployed " *
           "config) or --solo-cv=<basin operating_points.jld2> is required; " *
