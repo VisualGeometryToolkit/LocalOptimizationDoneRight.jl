@@ -100,6 +100,14 @@ const ZETA_MAA_YLABEL = raw"mAA@$10^\circ$"
 "The grid of the budget, basin and time panels."
 const GRID_OPTS = raw"xmajorgrids, ymajorgrids, grid style={gray!20}"
 
+"Axis options of the polishing figure's ECDF of the per-pair error change (scripts/polish.jl), frozen at the camera-ready figure; `w` is the half-range in degrees."
+polish_diff_axis(w) =
+    "scale only axis, width=0.62\\linewidth, height=0.28\\linewidth, xmin=$(-w), xmax=$(w), ymin=0, ymax=1, " * GRID_OPTS * ", " *
+    raw"label style={font=\footnotesize}, tick label style={font=\scriptsize}, " *
+    raw"xlabel={change in pose error by the polish [$^\circ$]}, ylabel={fraction of pairs}, " *
+    raw"legend pos=south east, legend style={draw=none, font=\tiny, fill=none, inner sep=1pt, row sep=-2pt}, " *
+    raw"legend image code/.code={\draw[#1] (0cm,0cm) -- (0.35cm,0cm);}"
+
 # ---------------------------------------------------------------------------
 # THE PAPER STYLE — palette + summary rows (palette.jl), then the faceted arms
 # in facet order: the SAME label, colour, marker and dash as the faceted
