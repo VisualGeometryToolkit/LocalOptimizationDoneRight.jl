@@ -8,7 +8,7 @@ paper-project conventions (VisualGeometryToolkitEval `PaperProjects`). A
 package; the parent package is tracked through `[sources]` (`path = ".."`).
 
 ```
-julia --project=. -e 'using Pkg; Pkg.instantiate()'
+julia --project=. -e 'using Pkg; Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl"); Pkg.instantiate()'
 julia --project=. scripts/<experiment>.jl --plan   # the stage plan of one experiment
 julia --project=. scripts/<experiment>.jl          # run what is pending
 julia --project=. test/runtests.jl                 # the conventions + the project's tests

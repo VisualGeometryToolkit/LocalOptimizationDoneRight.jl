@@ -88,11 +88,15 @@ graduated non-convexity*
 
 ### The package
 
-`LocalOptimizationDoneRight` and the packages it builds on are registered in the
-Julia General registry (Julia 1.12+):
+`LocalOptimizationDoneRight` and PoseLib are in
+[CauRegistry](https://github.com/prittjam/CauRegistry.jl) until their General
+registrations merge; the rest of the stack is in General. Add CauRegistry once
+(Julia 1.12+):
 
 ```julia
-using Pkg; Pkg.add("LocalOptimizationDoneRight")
+using Pkg
+Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl")   # once
+Pkg.add("LocalOptimizationDoneRight")
 ```
 
 ### The paper's experiments

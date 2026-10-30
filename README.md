@@ -41,11 +41,15 @@ package's tests and docs, are one Pkg workspace: they resolve together, in one
 
 ## Install
 
-`LocalOptimizationDoneRight` and the packages it builds on are registered in the
-Julia General registry (Julia 1.12+):
+`LocalOptimizationDoneRight` and PoseLib are in
+[CauRegistry](https://github.com/prittjam/CauRegistry.jl) until their General
+registrations merge; the rest of the stack is in General. Add CauRegistry once
+(Julia 1.12+):
 
 ```julia
-using Pkg; Pkg.add("LocalOptimizationDoneRight")
+using Pkg
+Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl")   # once
+Pkg.add("LocalOptimizationDoneRight")
 ```
 
 To reproduce the paper, clone the repository and instantiate `accv2026/` (see
@@ -138,7 +142,7 @@ shim needs `git` and a C++17 `g++`; Eigen comes from `Eigen_jll` (set
 ```bash
 git clone https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl.git
 cd LocalOptimizationDoneRight.jl/accv2026
-julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.build("RansacLibLO")'
+julia --project=. -e 'using Pkg; Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl"); Pkg.instantiate(); Pkg.build("RansacLibLO")'
 julia --project=. scripts/fig3_composed_miscal.jl --plan
 ```
 
