@@ -64,7 +64,7 @@ comes from `Eigen_jll` (set `EIGEN_INCLUDE` to use another copy). From
 `accv2026/`:
 
 ```julia
-using Pkg; Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl"); Pkg.instantiate(); Pkg.build("RansacLibLO")
+using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl"); Pkg.instantiate(); Pkg.build("RansacLibLO")
 ```
 
 ### Loss width and frames

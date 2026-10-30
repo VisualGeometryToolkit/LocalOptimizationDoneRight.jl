@@ -95,6 +95,7 @@ registrations merge; the rest of the stack is in General. Add CauRegistry once
 
 ```julia
 using Pkg
+Pkg.Registry.add("General")
 Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl")   # once
 Pkg.add("LocalOptimizationDoneRight")
 ```

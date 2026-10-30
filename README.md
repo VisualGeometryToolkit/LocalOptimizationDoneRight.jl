@@ -48,6 +48,7 @@ registrations merge; the rest of the stack is in General. Add CauRegistry once
 
 ```julia
 using Pkg
+Pkg.Registry.add("General")
 Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl")   # once
 Pkg.add("LocalOptimizationDoneRight")
 ```
@@ -142,7 +143,7 @@ shim needs `git` and a C++17 `g++`; Eigen comes from `Eigen_jll` (set
 ```bash
 git clone https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl.git
 cd LocalOptimizationDoneRight.jl/accv2026
-julia --project=. -e 'using Pkg; Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl"); Pkg.instantiate(); Pkg.build("RansacLibLO")'
+julia --project=. -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl"); Pkg.instantiate(); Pkg.build("RansacLibLO")'
 julia --project=. scripts/fig3_composed_miscal.jl --plan
 ```
 
