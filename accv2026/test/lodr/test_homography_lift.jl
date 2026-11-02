@@ -151,8 +151,8 @@ const RVGL = VisualGeometryToolkitEstimation
         # model gap ≤ 4.9e-15 — FP re-association through the lift iterations,
         # not a different minimum. Same rule.
         # Re-pinned 2026-09-22 (RVG cleanup): the H LM and lift rows are VGC's
-        # whitened transfer rows (`transfer_whitening!` / `transfer_rows!` /
-        # `transfer_jacobian_rows!`, VGC 7443b90) along the chart directions of
+        # whitened transfer rows (a whitening frozen at the chart's anchor,
+        # VGC 7443b90; retired in VGC 0.4) along the chart directions of
         # `retract_jacobian(HomographyManifold8(H₀), a)`, replacing RVG's own
         # whitening and loops. Measured same-process against the old pins (which
         # the pre-switch source reproduced exactly): Welsch ≤ 231 ulp (max rel

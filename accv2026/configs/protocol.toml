@@ -82,9 +82,11 @@
 # inlier counts needs the residuals of a GEOMETRIC fit, and VisualGeometryToolkitEstimation
 # has one: a homography's `refit_kind` is `NonlinLsq` (chart_dof = 8), so its
 # default `refine!` is the chart-LM on the sl(3) chart minimising the
-# √w-weighted Sampson transfer rows (problems/homography.jl `residual_rows!` /
-# `residual_jacobian_rows!` on `ChartLm{<:HomographyManifold8, …}`, analytic
-# Jacobians, VGC's robust/lm_core.jl). With UNIT weights that is plain
+# √w-weighted Sampson rows of the transfer constraint (problems/sampson_lm.jl's
+# one `residual_rows!` / `residual_jacobian_rows!` for every Sampson-constraint
+# problem, on `ChartLm{<:HomographyManifold8, …}`: VGC's exact
+# `whitened_jacobian_rows!`, robust/lm_core.jl; until VGC 0.4 the rows froze the
+# whitening at the chart's anchor, as in the measurement below). With UNIT weights that is plain
 # nonlinear least squares on Sampson — the Gold Standard step — and it is the
 # same machinery every LO arm in this paper runs on (`Irls{K}`, `HQ{K}`,
 # `Gnc{…}`, the Welsch/Barron variants). The weighted ALGEBRAIC DLT

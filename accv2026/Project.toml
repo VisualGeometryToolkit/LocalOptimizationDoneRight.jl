@@ -49,6 +49,11 @@ VisualGeometryToolkitIO = "0a7ae7e7-e931-45f8-9bba-03d07899cebc"
 LocalOptimizationDoneRight = {path = ".."}
 RansacLibLO = {path = "lib/RansacLibLO"}
 
+# TEMPORARY: RANSACScoringDoneRight 0.3 (its VisualGeometryToolkitCore 0.4 adoption) is
+# unregistered; replaced by the registered version at release
+RANSACScoringDoneRight = {path = "/home/jbpritts/src/RansacScoringDoneRight.jl"}
+# END TEMPORARY
+
 [compat]
 CUDA = "5.11"
 DataFrames = "1.8"
@@ -67,8 +72,8 @@ PoseLib = "0.1"
 Printf = "1"
 Random = "1"
 RansacLibLO = "0.2.0"
-RANSACScoringDoneRight = "0.2"
-VisualGeometryToolkitEstimation = "0.2"
+RANSACScoringDoneRight = "0.3"
+VisualGeometryToolkitEstimation = "0.4"
 Rotations = "1.7"
 LocalOptimizationDoneRight = "0.2"
 StableRNGs = "1"
@@ -77,9 +82,9 @@ Statistics = "1"
 StructArrays = "0.7"
 Test = "1"
 TOML = "1"
-VisualGeometryToolkitCore = "0.2"
-VisualGeometryToolkitEval = "0.2"
-VisualGeometryToolkitIO = "0.2"
+VisualGeometryToolkitCore = "0.4"
+VisualGeometryToolkitEval = "0.4"
+VisualGeometryToolkitIO = "0.4"
 julia = "1.12"
 
 # Members of the repository workspace (../Project.toml): RansacLibLO and the
