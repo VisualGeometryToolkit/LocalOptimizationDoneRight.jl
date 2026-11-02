@@ -22,7 +22,7 @@ using LinearAlgebra: normalize
 using StaticArrays: SA, SVector
 using Rotations: RotZ
 using VisualGeometryToolkitCore: CameraModel, EssentialMat, Pinhole, Point2, TLSShape, cost, csponds, project, px,
-    signed_sampson_distance
+    sampson_residual
 using VisualGeometryToolkitEstimation: EssentialProblem
 
 export box_point, calibrated_pairs, perturbed_essential, stereo_pixel_pairs, truncated_sampson_cost,
@@ -96,7 +96,7 @@ end
 # The truncated least-squares cost (MSAC at the squared width `c2`) of F's
 # Sampson distances over the pairs `u₁[i] => u₂[i]`.
 truncated_sampson_cost(F, u₁, u₂; c2 = 1.0e-4) =
-    cost(TLSShape(), [signed_sampson_distance(F, u₁[i], u₂[i]) for i in eachindex(u₁)], c2, length(u₁))
+    cost(TLSShape(), [only(sampson_residual(F, u₁[i], u₂[i])) for i in eachindex(u₁)], c2, length(u₁))
 
 # The pixel camera the calibrated scenes are moved into. A realistic focal
 # length keeps the PIXEL tolerances (`COINCIDENT_PX` in the sample gate, an

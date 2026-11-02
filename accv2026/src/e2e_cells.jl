@@ -148,7 +148,7 @@ function e2e_summary_line(name, ζ, per; wall)
     m(f) = mean(f(r) for r in per)
     f3(x) = Printf.@sprintf("%.3f", x)
     return join([name, string(ζ), f3(m(r -> finite_median(r.err))),
-                 f3(m(r -> eligible_maa(r.err; T = maa_threshold()))), f3(m(r -> eligible_maa(r.err; T = 5.0))),
+                 f3(m(r -> eligible_maa(r.err; max_error = maa_threshold()))), f3(m(r -> eligible_maa(r.err; max_error = 5.0))),
                  string(round(Int, m(r -> median(r.trials)))), f3(m(r -> 1e3 * finite_median(wall(r))))], '\t')
 end
 

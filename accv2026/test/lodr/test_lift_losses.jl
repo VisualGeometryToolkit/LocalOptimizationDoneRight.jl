@@ -55,10 +55,6 @@ cal_problem(a, b) = essential_problem(IDCAM, a, b)
 
 
 const RVGK = VisualGeometryToolkitEstimation
-# From its OWNER: RVG no longer imports `signed_sampson_distance` — E's
-# scoring moved to the tangent Sampson and was its last user there, so the
-# quality gate refuses it as a stale explicit import. F still uses it.
-using VisualGeometryToolkitCore: signed_sampson_distance
 include("scenes.jl")   # the shared scenes, as modules
 using .EpipolarScenes, .Cameras
 

@@ -271,7 +271,7 @@ function number_value(s::BasinSource, m, _floors)
     vals = map(macro_arms(m)) do a
         mi = findfirst(==(a), methods)
         mi === nothing && error("$(m["name"]): arm $a not in $(s.path)")
-        _eligible_maa(view(d["errs"], :, j, mi), mask; T = d["succ_deg"])
+        _eligible_maa(view(d["errs"], :, j, mi), mask; max_error = d["succ_deg"])
     end
     return _reduce(m["op"], vals; what = m["name"])
 end
