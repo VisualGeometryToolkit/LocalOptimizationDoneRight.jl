@@ -101,9 +101,16 @@ const RVGL = VisualGeometryToolkitEstimation
         bits(lo) = reinterpret.(UInt64, collect(Tuple(estimate(refit(H₀, lo)))))
         PIN_ULPS = 256
         # entrywise ulp distance; a sign flip is never within the bound
-        near(got, pinned) = all(zip(got, pinned)) do (g, p)
-            (g >> 63) == (p >> 63) && abs(reinterpret(Int64, g) - reinterpret(Int64, p)) <= PIN_ULPS
+        near(got, pinned; ulps = PIN_ULPS) = all(zip(got, pinned)) do (g, p)
+            (g >> 63) == (p >> 63) && abs(reinterpret(Int64, g) - reinterpret(Int64, p)) <= ulps
         end
+        # The GM arm's LM stops at its tolerance on rows the 0.4 stack rounds in
+        # a compiler-dependent order: measured 2026-11-02, the same source lands
+        # up to 2.8e6 ulp apart on Julia 1.12.7 and 1.13.2 (max rel entry move
+        # 4.0e-10, normalized model gap 1.8e-11), while Welsch and GNC stay
+        # within 130 ulp. 2²⁴ ulp (≈ 4e-9 relative) still sits six orders of
+        # magnitude below a different minimum (~1e13 ulp).
+        GM_PIN_ULPS = 1 << 24
         # Re-pinned 2026-07-28 against RSDR 0.7.0 (UInt32 radix sort keys —
         # tie-order shift moved the trajectory 1-2 ulp from the 8ba8d72-era
         # values; verified identical on clean pre-Float32 RVG source, so the
@@ -201,7 +208,7 @@ const RVGL = VisualGeometryToolkitEstimation
             0x3fad01ea26e418d5, 0x3f7d0e9a0cdd71db, 0x3ed877da31d2e880,
             0xbf77e251d1c09a36, 0x3fac7b736044509c, 0x3ee9bcaa5479f6d5,
             0x3febaa6ec0269596, 0xbfdf85e2544a1023, 0x3fae8607a43eba3e,
-        ])
+        ]; ulps = GM_PIN_ULPS)
         @test near(bits(arm["Gnc{Irls{Welsch}}"]), UInt64[
             0x3fad363b24516e95, 0x3f7d3ece1405f846, 0x3ed8a4c4bc3b79d5,
             0xbf77c14ba69b92c8, 0x3facb6a297de4e82, 0x3eea4b173036fe53,
