@@ -49,11 +49,6 @@ VisualGeometryToolkitIO = "0a7ae7e7-e931-45f8-9bba-03d07899cebc"
 LocalOptimizationDoneRight = {path = ".."}
 RansacLibLO = {path = "lib/RansacLibLO"}
 
-# TEMPORARY: RANSACScoringDoneRight 0.3 (its VisualGeometryToolkitCore 0.4 adoption) is
-# unregistered; replaced by the registered version at release
-RANSACScoringDoneRight = {path = "/home/jbpritts/src/RansacScoringDoneRight.jl"}
-# END TEMPORARY
-
 [compat]
 CUDA = "5.11"
 DataFrames = "1.8"
