@@ -179,20 +179,33 @@ const RVGL = VisualGeometryToolkitEstimation
         # (6.2e-15, 3.6e-15), GNC ≤ 30 ulp (4.3e-15, 8.0e-16) — FP
         # re-association through the lift iterations, not a different minimum.
         # Same rule.
+        # Re-pinned 2026-11-02 (VGC/Estimation 0.4): the H chart-LM and the lift
+        # rows are the exact whitened Sampson rows of the transfer constraint
+        # (Estimation's one Sampson chart-rows method over VGC's
+        # `whitened_jacobian_rows!`), no longer a transfer whitening frozen at
+        # the chart's anchor. The objective changed, so every arm moved to a
+        # DIFFERENT MINIMUM, as that change predicts — larger here than the
+        # release's 1.3e-5 because this seed's anchor sits hundreds of px off.
+        # Measured against the previous pins: max rel entry move Welsch 7.5e-4,
+        # GM 6.8e-3, GNC 2.7e-3 (normalized model gap 4.3e-4 / 3.8e-3 / 1.0e-3);
+        # the corners move ≤ 0.013 / 0.17 / 0.11 px; corner error vs H_TRUE
+        # 0.869 → 0.860, 0.942 → 1.110, 1.479 → 1.592 px; GT-inlier Sampson RSS
+        # 52.88 → 52.68, 54.02 → 54.48, 63.74 → 64.06 (σ = 0.5 px, 150 inliers);
+        # the inlier set (|r| < 1.5 px) unchanged in every arm. Same rule.
         @test near(bits(arm["HQ{Welsch}"]), UInt64[
-            0x3face8fcd49a9be7, 0x3f7d0eaa8f6ff981, 0x3ed8a2633fdfa143,
-            0xbf77dccbe0df69f0, 0x3fac5f1f5badf439, 0x3ee990336ff44785,
-            0x3feb8a65aff9aaf3, 0xbfdff686f05949a4, 0x3fae6752b9639046,
+            0x3facea1158ca7c38, 0x3f7d0fb6aef7247e, 0x3ed8a2ec15827e3f,
+            0xbf77df22b868fa16, 0x3fac60117010bf3b, 0x3ee98f8ea2b51375,
+            0x3feb8c289781917f, 0xbfdff067b9a2dec3, 0x3fae689e4e955b66,
         ])
         @test near(bits(arm["HQ{GM}"]), UInt64[
-            0x3fad00bf2f9a232a, 0x3f7d165bf155204e, 0x3ed88e2472b6de4c,
-            0xbf77e51a283b128d, 0x3fac77954d43e5c2, 0x3ee9affc6a39ff0a,
-            0x3febb9efec7bcd3d, 0xbfdf4f4e174ba93a, 0x3fae8456acc76c80,
+            0x3fad01ea26e418d5, 0x3f7d0e9a0cdd71db, 0x3ed877da31d2e880,
+            0xbf77e251d1c09a36, 0x3fac7b736044509c, 0x3ee9bcaa5479f6d5,
+            0x3febaa6ec0269596, 0xbfdf85e2544a1023, 0x3fae8607a43eba3e,
         ])
         @test near(bits(arm["Gnc{Irls{Welsch}}"]), UInt64[
-            0x3fad36fb9b473012, 0x3f7d476575499a09, 0x3ed8b5f25f5fa8da,
-            0xbf77be638ff57663, 0x3facb65e46c95955, 0x3eea480372677140,
-            0x3feb1c2d6915e83a, 0xbfe0b1e8e6b2d741, 0x3faeb312faaad50c,
+            0x3fad363b24516e95, 0x3f7d3ece1405f846, 0x3ed8a4c4bc3b79d5,
+            0xbf77c14ba69b92c8, 0x3facb6a297de4e82, 0x3eea4b173036fe53,
+            0x3feb208c485134d9, 0xbfe0aacf322ee13b, 0x3faeb2f35fdac764,
         ])
     end
 
