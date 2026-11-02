@@ -50,8 +50,15 @@ end
 
 const refit_sq_loss_width = 1e-4    # squared Sampson loss width (noise 0.002 ⇒ ~5σ)
 
-# Squared first-order Sampson distances of all columns (test-side reference,
-# same 4-term denominator as the shim's EvaluateModelOnPoint).
+# Squared first-order Sampson distances of all columns: the test-side reference
+# for the C++ BASELINE's MSAC score, not a residual of the stack. It mirrors the
+# shim's `SampsonEpi2` (deps/ransaclib_wrapper/julia_wrapper.cpp, reached through
+# `EvaluateModelOnPoint`) term for term — the 4-term denominator AND its
+# `+ epsilon` floor — so the score-semantics test below can hold the shim to
+# rtol = 1e-9. It is deliberately not VisualGeometryToolkitCore's `sampson_distance`
+# (which has no floor: Inf/0 at a degenerate pair): RansacLibLO is the stack's
+# declared third-party pinhole island (conventions/bearings.md) and depends on no
+# stack package.
 function sampson²(P::AbstractMatrix, E::AbstractMatrix)
     n = size(P, 2)
     out = Vector{Float64}(undef, n)
