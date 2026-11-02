@@ -52,7 +52,8 @@ using LocalOptimizationDoneRight, VisualGeometryToolkitEstimation, VisualGeometr
 import PoseLib                # the PoseLib extension: the truncated refiners' solver calls
 using LocalOptimizationDoneRight: LiftState, _lift_hq_increment!, _lift_gnc_increment!, _seed_lift_z!,
     PoseLibLm, PoseLibLZ
-using VisualGeometryToolkitCore: RowsWorkspace, sampson_rows!, sampson_jacobian_rows!, retract, retract_directions,
+using VisualGeometryToolkitCore: RowsWorkspace, sampson_residuals!, sampson_jacobian_rows!, Csponds, withattrs,
+    retract, retract_directions,
     zero_tangent, backproject_with_jacobian, EssentialManifold5, deploy, external_workspace, refine_external!,
     LossWidth
 using StaticArrays, LinearAlgebra, Random
@@ -165,8 +166,11 @@ const GM = deploy(GemanMcclureShape(), 1.0; scale_multiple = 1.25)
 
 const aE = zero_tangent(CHE)
 const EE = retract(CHE, aE); const dE = retract_directions(CHE, aE)
-sampson_rows!(RWS.r, EE, F1, F2, RWS.onev; M₁ = M1, M₂ = M2)
-sampson_jacobian_rows!(RWS.J, EE, dE, F1, F2, RWS.onev; M₁ = M1, M₂ = M2)
+# The bearing pairs as a measurement set, their back-projection Jacobians as
+# attribute columns (unit weights: no `sqrt_weights` column).
+const XS = withattrs(Csponds(F1, F2); M₁ = M1, M₂ = M2)
+sampson_residuals!(RWS.r, EE, XS)
+sampson_jacobian_rows!(RWS.J, EE, dE, XS)
 _seed_lift_z!(LS, WELSCH, RWS.r, N, :flat)
 
 const KERNELS = [
