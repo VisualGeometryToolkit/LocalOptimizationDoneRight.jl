@@ -64,17 +64,12 @@ include(joinpath(@__DIR__, "..", "src", "config.jl"))   # the paper's arm roster
         end
     end
 
-    @testset "declared in the evaluation config; listed by --plan" begin
+    @testset "declared in the evaluation config" begin
         iface = TOML.parsefile(joinpath(root, "configs", "miscal_protocol.toml"))["anchoring_ablation"]["scale_interface"]
         @test iface == "fixed_scale" && SCALE_INTERFACE_TAGS[iface] === FixedScale
         driver = read(joinpath(root, "scripts", "tools", "run_sequential_cv.jl"), String)
         # the interface the driver delivers (it refuses any other)
         @test occursin("VgtkCore.SCALE_INTERFACE_TAGS[iface] === VgtkCore.FixedScale", driver)
-        # scratch data and results roots: the plan resolves the keyed paths,
-        # runs nothing, and so needs no data binding on this machine
-        cmd = `$(Base.julia_cmd()) --startup-file=no --project=$root $(joinpath(root, "scripts", "fig_anchoring.jl")) --plan`
-        out = read(addenv(cmd, "CAU_RESULTS_ROOT" => mktempdir(), "CAU_DATA_ROOT" => mktempdir()), String)
-        @test occursin("evaluation", out) && occursin("render", out)
-        @test occursin("anchoring_ablation-$(iface)", out)
     end
+    # `--plan` lists the evaluation stage: test_anchoring_plan.jl (a :data item)
 end

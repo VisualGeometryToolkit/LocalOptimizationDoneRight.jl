@@ -9,7 +9,7 @@
 # stays a library.
 #
 #   cd accv2026 && julia --project=. scripts/<exp>.jl --plan
-#   julia --project=. test/runtests.jl          # the project's tests
+#   julia --project=. test/runtests.jl          # the project's tests (ReTestItems)
 # =============================================================================
 name = "ACCV2026"
 
@@ -33,6 +33,7 @@ Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 RansacLibLO = "9f3d57fc-bc16-4e17-8696-c68eb0f587f4"
 RANSACScoringDoneRight = "084d9f33-8b05-4903-a655-8a8c4926d033"
+ReTestItems = "817f1d60-ba6b-4fd5-9520-3cf149f6a823"
 VisualGeometryToolkitEstimation = "9a478df9-9a37-4dc7-9070-58617efe7573"
 Rotations = "6038ab10-8711-5258-84ad-4b1120ba62dc"
 LocalOptimizationDoneRight = "87a2e6a3-7afc-471f-bd1b-aa3740a29cd9"
@@ -68,6 +69,7 @@ Printf = "1"
 Random = "1"
 RansacLibLO = "0.2.0"
 RANSACScoringDoneRight = "0.3"
+ReTestItems = "1.35"
 VisualGeometryToolkitEstimation = "0.4"
 Rotations = "1.7"
 LocalOptimizationDoneRight = "0.3"

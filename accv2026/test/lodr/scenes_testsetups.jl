@@ -1,10 +1,12 @@
 # =============================================================================
-# Shared synthetic scenes of the strategy tests — plain modules, one definition
-# each. They are VisualGeometryToolkitEstimation's test scenes (its test/scenes_testsetups.jl,
-# where they are ReTestItems setups), copied as modules so the tests that moved
-# here with the strategies draw the SAME scenes in the SAME RNG order (their
-# numeric pins depend on it). A test file includes this file into its own
-# module and `using`s the scene modules it needs.
+# Shared synthetic scenes of the strategy tests — ReTestItems `@testsetup`
+# modules, one definition each. They are VisualGeometryToolkitEstimation's test
+# scenes (its test/scenes_testsetups.jl), copied so the tests that moved here
+# with the strategies draw the SAME scenes in the SAME RNG order (their numeric
+# pins depend on it; every scene takes its RNG as an argument, so a setup
+# evaluated once per worker draws what a per-file copy drew). An item names the
+# scene modules it needs in `setup = [...]` (lodr/lodr_tests.jl), and its file
+# `using`s them.
 #
 # Every scene is built through the OWNERS' forward models — VisualGeometryToolkitCore's
 # `project`/`unproject` on a camera, `EssentialMat(R, t)`, `FundMat(E, K₁, K₂)`,
@@ -16,7 +18,7 @@
 # Two-view epipolar scenes: calibrated (normalized-plane) pairs, the pixel
 # cameras the E problems are stated in, and the stereo pixel pairs of F.
 # -----------------------------------------------------------------------------
-module EpipolarScenes
+@testsetup module EpipolarScenes
 using Random: AbstractRNG
 using LinearAlgebra: normalize
 using StaticArrays: SA, SVector
@@ -118,7 +120,7 @@ end
 # -----------------------------------------------------------------------------
 # The plane-induced homography scene
 # -----------------------------------------------------------------------------
-module HomographyScenes
+@testsetup module HomographyScenes
 using Random: AbstractRNG
 using LinearAlgebra: norm
 using StaticArrays: SA, SMatrix, SVector
@@ -175,7 +177,7 @@ end
 # Rigid poses: random draws, perturbations in the decoupled chart, and the
 # PnP scene's frustum points.
 # -----------------------------------------------------------------------------
-module PoseScenes
+@testsetup module PoseScenes
 using Random: AbstractRNG
 using LinearAlgebra: norm, normalize
 using StaticArrays: SVector
@@ -246,7 +248,7 @@ end
 # -----------------------------------------------------------------------------
 # Boards under a division lens (the radial-camera and focal-stack scenes)
 # -----------------------------------------------------------------------------
-module DivisionBoards
+@testsetup module DivisionBoards
 using Random: AbstractRNG
 using LinearAlgebra: norm
 using StaticArrays: SVector
@@ -323,7 +325,7 @@ end
 # camera (the identity camera `IDCAM` makes them calibrated coordinates), with
 # per-row √weights.
 # -----------------------------------------------------------------------------
-module P3PScenes
+@testsetup module P3PScenes
 using Random: AbstractRNG
 using StaticArrays: SA
 using Rotations: RotMatrix, MRP
@@ -356,7 +358,7 @@ end
 # -----------------------------------------------------------------------------
 # Cameras more than one item states its problems on.
 # -----------------------------------------------------------------------------
-module Cameras
+@testsetup module Cameras
 using StaticArrays: SA
 using VisualGeometryToolkitCore: CameraModel, Pinhole, Point2, backproject, project, px
 
@@ -374,7 +376,7 @@ end
 # Contaminated correspondence sets: inliers with target noise, then outliers,
 # optionally shuffled.
 # -----------------------------------------------------------------------------
-module Contamination
+@testsetup module Contamination
 using Random: AbstractRNG, randperm
 using StaticArrays: SA
 
@@ -414,7 +416,7 @@ end
 # the same LO arms through production `ransac()`, and from a perturbed seed
 # through `locally_optimize`.
 # -----------------------------------------------------------------------------
-module LiftChecks
+@testsetup module LiftChecks
 using Test: @test, @testset
 using Random: Random, MersenneTwister
 using VisualGeometryToolkitCore: GemanMcclureShape, WelschShape, converged, estimate

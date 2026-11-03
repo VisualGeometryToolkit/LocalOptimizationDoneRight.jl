@@ -22,7 +22,6 @@ using VisualGeometryToolkitEstimation: RadialHomographyProblem, RadialCameraProb
     minimal_sample_size, model_type, residuals!, data_size
 using LocalOptimizationDoneRight
 const RVG = VisualGeometryToolkitEstimation
-include("scenes.jl")   # the shared scenes, as modules
 using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination, .DivisionBoards
 
 # The paper's per-class Welsch HQ recipe (the find_* default before 2026-10).

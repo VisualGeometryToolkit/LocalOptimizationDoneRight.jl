@@ -23,9 +23,15 @@ defaults of record are `configs/default.toml`, read only through
 
 ## Testing
 
-Plain `@testset` (`test/runtests.jl`): `Pkg.test()` runs the whole suite; there
-is no per-item filter. The paper project has its own suite
-(`julia --project=accv2026 accv2026/test/runtests.jl`).
+ReTestItems (`test/runtests.jl`, items in `test/items_test.jl`): `Pkg.test()`
+runs every item across worker processes (`RETESTITEMS_NWORKERS`, default one
+per two logical CPUs; `0` runs serially in-process), and
+`Pkg.test(test_args = ["lift_core|schedules"])` the items whose name matches.
+Items share no bindings: each states its own imports. The `:timing` item (the
+opt-in LO timing gate) runs alone on one worker after the pool. The paper
+project has its own ReTestItems suite
+(`cd accv2026 && julia --project=. test/runtests.jl`): its `:data` items are
+skipped (a recorded skip) where no results root is bound.
 
 ## Git Commit Conventions
 

@@ -55,7 +55,6 @@ cal_problem(a, b) = essential_problem(IDCAM, a, b)
 
 
 const RVGK = VisualGeometryToolkitEstimation
-include("scenes.jl")   # the shared scenes, as modules
 using .EpipolarScenes, .Cameras
 
 # -----------------------------------------------------------------------------

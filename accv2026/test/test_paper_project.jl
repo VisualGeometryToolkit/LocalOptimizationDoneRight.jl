@@ -27,6 +27,12 @@ const PAPER_PROJECT_ALLOW = [
     # D3 — fig1's hand-bumped stamp. Fix: key the bundle directory by the run
     # key of its effective config (Miscalibration/miscal-sel-<run_key>).
     DataPolicyAllow("D3", "src/registry.jl", "EXP_SEL_MISCAL_TAG    = \"miscal-sel-allpairs-v5\""),
+    # L4 — the suite runs on ReTestItems: runtests.jl includes nothing, and the
+    # call is THIS file, the "paper project" item of accv2026_tests.jl, which
+    # ReTestItems discovers by name. L4's static walk follows `include` only.
+    # Fix (upstream, VisualGeometryToolkitEval PaperProjects): let L4 also
+    # follow the `*_tests.jl` files ReTestItems discovers under test/.
+    DataPolicyAllow("L4", "test/runtests.jl", "the suite does not call paper_project_violations"),
 ]
 
 @testset "paper-project conventions" begin

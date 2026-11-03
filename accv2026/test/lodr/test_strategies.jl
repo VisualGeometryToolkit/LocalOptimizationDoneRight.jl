@@ -21,7 +21,6 @@ using VisualGeometryToolkitEstimation: RansacConfig, RansacWorkspace, PosteriorL
 using LocalOptimizationDoneRight
 const RVG = VisualGeometryToolkitEstimation
 const LO = LocalOptimizationDoneRight
-include("scenes.jl")   # the shared scenes, as modules
 using .HomographyScenes, .EpipolarScenes
 
 @testset "weight-policy verbs available per adapter" begin

@@ -19,7 +19,6 @@ using VisualGeometryToolkitCore: HomographyManifold8, retract   # the sl(3) char
 using RANSACScoringDoneRight: StudentTUniformScoring   # owned and exported by RANSACScoringDoneRight
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
-include("scenes.jl")   # the shared scenes, as modules
 using .HomographyScenes, .Contamination, .LiftChecks
 const RVGL = VisualGeometryToolkitEstimation
 

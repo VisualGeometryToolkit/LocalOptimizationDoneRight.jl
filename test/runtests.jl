@@ -1,13 +1,21 @@
 # =============================================================================
 # LocalOptimizationDoneRight — the optimizer library's suite: the lift core and
 # its schedules, the tuning constants and the strategies' TOML, the PoseLib
-# refiners, plus the tooling gates. Plain `@testset`s: every file below runs in
-# a module of its own (no binding leaks between files). The paper's tests (and
-# its RansacLib LO baseline's) live in accv2026/test (a DrWatson project).
+# refiners, plus the tooling gates. ReTestItems: every file is one test item
+# (items_test.jl), evaluated in a module of its own on a pool of worker
+# processes — items share no bindings and run in no fixed order. The paper's
+# tests (and its RansacLib LO baseline's) live in accv2026/test (a DrWatson
+# project, ReTestItems too).
 #
 #   julia --project -e 'using Pkg; Pkg.test()'
-#   Pkg.test(test_args = ["lift_core|schedules"])   # the files whose name matches
+#   Pkg.test(test_args = ["lift_core|schedules"])   # the items whose name matches
+#   RETESTITEMS_NWORKERS=0 → serial, in-process      # for debugging
 #   LO_TIMING_GATE=1 (same) — the opt-in timing gate (test_lo_timing_gate.jl)
+#
+# Runs, by tag: the untagged items on the pool (RETESTITEMS_NWORKERS workers,
+# default one per two logical CPUs, 2 threads each); `:timing` — the LO timing
+# gate — on ONE single-threaded worker after the pool has exited, so a timing
+# gate shares no CPU with other items. testitem_timeout = 3600 s.
 #
 # The evaluation engine is VisualGeometryToolkitEval's (VisualGeometryToolkitEval.Evaluation,
 # tested there); its integration with these strategies and the paper's scorer
@@ -15,31 +23,29 @@
 # the paper's scorer (RANSACScoringDoneRight, which the stack allow-list keeps
 # out of this test target) live in accv2026/test/lodr/.
 # =============================================================================
-using Test
+using ReTestItems
 using LocalOptimizationDoneRight
 
-const _FILES = [
-    "test_lift_core.jl",
-    "test_schedules.jl",
-    "test_config_toml.jl",
-    "test_tuning_constants.jl",
-    "test_poselib_arms.jl",
-    "test_gates.jl",
-    "test_lo_timing_gate.jl",
-    "agent_docs.jl",
-]
+const NAME = isempty(ARGS) ? nothing : Regex(join(ARGS, "|"))
+const NWORKERS = parse(Int, get(ENV, "RETESTITEMS_NWORKERS", string(max(1, Sys.CPU_THREADS ÷ 2))))
+const ONE = NWORKERS == 0 ? 0 : 1          # the timing run: one worker (serial mode: in-process)
 
-# One file in a fresh module; `ARGS` (a test_args regex) selects files by name.
-function _run_file(file)
-    isempty(ARGS) || occursin(Regex(join(ARGS, "|")), file) || return nothing
-    m = Module(Symbol(splitext(file)[1]))
-    Core.eval(m, :(include(path) = Base.include($m, path)))
-    @testset "$file" begin
-        Base.include(m, joinpath(@__DIR__, file))
+# One run. With a name pattern a run may match no item, which ReTestItems
+# reports by throwing; that run is then skipped, and only a pattern that
+# matches no item in any run is an error. Items are found from the package
+# module, not a path: from test/ ReTestItems would take the unnamed workspace
+# member test/Project.toml for the project.
+const RAN = Ref(false)
+function run_items(select; kw...)
+    try
+        runtests(select, LocalOptimizationDoneRight; name = NAME, testitem_timeout = 3600, kw...)
+        RAN[] = true
+    catch e
+        (e isa ReTestItems.NoTestException && NAME !== nothing) || rethrow()
     end
-    return nothing
 end
 
-@testset "LocalOptimizationDoneRight" begin
-    foreach(_run_file, _FILES)
-end
+run_items(ti -> !(:timing in ti.tags); nworkers = NWORKERS, nworker_threads = 2)
+run_items(ti -> :timing in ti.tags; nworkers = ONE, nworker_threads = 1)
+
+RAN[] || error("no test item matches $(repr(NAME))")

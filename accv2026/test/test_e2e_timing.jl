@@ -12,30 +12,8 @@ using Test, TOML
 const _T_ROOT = normpath(joinpath(@__DIR__, ".."))
 _t_cfg(n) = TOML.parsefile(joinpath(_T_ROOT, "configs", n * ".toml"))
 
-@testset "e2e timing: the config of record" begin
-    include(joinpath(_T_ROOT, "src", "config.jl"))
-    include(joinpath(_T_ROOT, "src", "cell_stages.jl"))
-    include(joinpath(_T_ROOT, "src", "e2e_cells.jl"))
-    include(joinpath(_T_ROOT, "src", "e2e_timing.jl"))
-    raw = _t_cfg("pt_e_e2e_timing")
-    t = raw["timing"]
-    # the sample is a COMPLETE table of VisualGeometryToolkitEval's unit-sampling vocabulary
-    s = VgtkEval.Tuning.read_tuning(VgtkEval.Tuning.UnitSampling, t["sample"])
-    @test s isa VgtkEval.Tuning.StratifiedSampling
-    @test t["repeats"] >= 4 && t["warmup_pairs"] >= 1
-    @test t["pinning"]["julia_threads"] == 1 && t["pinning"]["gc_threads"] == 1
-    @test all(k -> haskey(t["pinning"], k), ("launcher", "cpu", "numa_node", "env"))
-    @test all(k -> t["pinning"]["env"][k] == "1", ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"))
-    cfg = e2e_timing_cell("pt_e_e2e_timing")
-    @test cfg["e2e_run"] == run_key(e2e_timed_cell(cfg))      # it times THE e2e cell of record
-    @test haskey(cfg, "superansac_run")
-    bad = deepcopy(raw); bad["timing"]["repeats"] = 3
-    @test_throws ErrorException fold_e2e_timing_cell!(bad)
-    bad = deepcopy(raw); bad["timing"]["pinning"]["julia_threads"] = 2
-    @test_throws ErrorException fold_e2e_timing_cell!(bad)
-    bad = deepcopy(raw); delete!(bad["timing"]["sample"], "seed")      # incomplete: no defaults inherited
-    @test_throws ArgumentError fold_e2e_timing_cell!(bad)
-end
+# "e2e timing: the config of record" loads the drivers, which bind the results
+# root: test_e2e_timing_cell.jl (a :data item).
 
 @testset "e2e timing: the drivers hold no timing setting" begin
     files = [joinpath(_T_ROOT, "scripts", "e2e_timing.jl"), joinpath(_T_ROOT, "scripts", "tools", "e2e_time_ours.jl"),

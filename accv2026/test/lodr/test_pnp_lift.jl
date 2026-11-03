@@ -26,7 +26,6 @@ using VisualGeometryToolkitCore: estimate, rotation, translation   # VGC accesso
 using RANSACScoringDoneRight: StudentTUniformScoring   # owned and exported by RANSACScoringDoneRight
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
-include("scenes.jl")   # the shared scenes, as modules
 using .PoseScenes, .Contamination, .LiftChecks
 const RVGP = VisualGeometryToolkitEstimation
 

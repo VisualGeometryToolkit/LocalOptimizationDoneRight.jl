@@ -25,7 +25,6 @@ using VisualGeometryToolkitEstimation: RansacWorkspace   # public, not exported
 using RANSACScoringDoneRight: StudentTUniformScoring, Predictive   # owned and exported by RANSACScoringDoneRight
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
-include("scenes.jl")   # the shared scenes, as modules
 using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination
 
 # The paper's per-class recipe.

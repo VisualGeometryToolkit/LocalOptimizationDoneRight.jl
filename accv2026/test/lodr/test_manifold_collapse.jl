@@ -20,7 +20,6 @@ using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 const RVGC = VisualGeometryToolkitEstimation
 const LODR = LocalOptimizationDoneRight
-include("scenes.jl")   # the shared scenes, as modules
 using .EpipolarScenes
 
 @testset "one code path — HQ/Gnc locally_optimize! method census" begin
