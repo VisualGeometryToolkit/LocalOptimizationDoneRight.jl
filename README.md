@@ -1,69 +1,30 @@
-# Robust Local Optimization Done Right — ACCV 2026
+# LocalOptimizationDoneRight.jl
 
-[![CI](https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/actions/workflows/CI.yml)
+[![CI](https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/actions/workflows/CI.yml)
 [![Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://localoptimizationdoneright.github.io)
 [![Coverage](https://codecov.io/gh/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/branch/main/graph/badge.svg)](https://app.codecov.io/gh/VisualGeometryToolkit/LocalOptimizationDoneRight.jl)
 
-## Abstract
+LocalOptimizationDoneRight provides the local optimizers of the ACCV 2026 paper
+[Robust Local Optimization Done Right](https://arxiv.org/abs/2610.05743)
+(James Pritts and Kevin Köser): half-quadratic lifts, graduated non-convexity,
+Student-t + uniform reweighting and PoseLib's truncated refiners, for the
+refinement step of a RANSAC. Each one implements VisualGeometryToolkitCore's
+local-optimization contract, so it composes with any scorer in
+VisualGeometryToolkitEstimation's `find_*` estimators.
 
-**[Robust Local Optimization Done Right](https://arxiv.org/abs/2610.05743)** — James Pritts and Kevin Köser. *ACCV 2026*. [Project page](https://localoptimizationdoneright.github.io).
+## Installation
 
-RANSAC scoring and local optimization (LO) impose different robustness
-requirements, motivating the separation of hypothesis selection from
-refinement. We systematically isolate the effects of robust-loss shape,
-incorrectly specified inlier scales, and optimization strategy on essential
-matrix, fundamental matrix, and homography estimation. A profile-marginal score
-marginalizes the nuisance inlier scale and selects an inlier partition, from
-which we estimate the scale that sets the LO loss width; this makes LO robust
-to an inlier scale specified too large, whereas one specified too small
-degrades selection itself. Refinement needs gradient from correspondences the
-seed currently rejects: optimizers that reweight from current residuals stay
-pinned to their seed, whereas methods with broad basins recover strongly
-perturbed seeds yet degrade accurate score-selected hypotheses, so basin size
-alone is insufficient to assess RANSAC LO. Joint half-quadratic optimization
-balances the two and is the most consistent strategy across model classes. An
-optimizer matched to the profile-marginal score, which never decreases it, does
-not reach the best accuracy, challenging the prescription that scoring and
-refinement objectives should match. Composed from these findings, our RANSAC
-reduces the median essential-matrix pose error of a state-of-the-art RANSAC on
-PhotoTourism from 2.23 degrees to 1.58 degrees with a correctly specified
-inlier scale and from 38 degrees to 6.2 degrees when it is grossly misspecified
-(128x too large).
-
-## Overview
-
-`LocalOptimizationDoneRight` holds the paper's local optimizers, ready to
-compose into any RANSAC of the VisualGeometryToolkit stack. The research
-project `accv2026/` in this repository produces every figure and table; the
-[documentation](https://localoptimizationdoneright.github.io) covers the
-strategies, the [reproduction](https://localoptimizationdoneright.github.io/guide/reproducing/)
-and the [classical baselines](https://localoptimizationdoneright.github.io/guide/baselines/).
-
-## Install
-
-The package requires Julia 1.12 or later. The example below also uses the
-stack packages it composes with (VisualGeometryToolkitCore,
-VisualGeometryToolkitEstimation and RANSACScoringDoneRight) and StaticArrays:
+The package requires Julia 1.12 or later. The example below also loads the
+packages it composes with:
 
 ```julia-repl
 pkg> add LocalOptimizationDoneRight VisualGeometryToolkitEstimation VisualGeometryToolkitCore RANSACScoringDoneRight StaticArrays
 ```
 
-Until the General registration of `LocalOptimizationDoneRight` merges, add
-[CauRegistry](https://github.com/prittjam/CauRegistry.jl) first:
+## Example
 
-```julia-repl
-pkg> registry add https://github.com/prittjam/CauRegistry.jl
-```
-
-## Use
-
-The strategies implement VisualGeometryToolkitCore's local-optimization contract, so
-they plug into VisualGeometryToolkitEstimation's `find_*` pipelines and `ransac` beside any
-scorer. The core default is MSAC with a truncated-least-squares IRLS; the
-paper's recipe swaps in RANSACScoringDoneRight's Student-t + uniform scorer and
-the Welsch half-quadratic lift at its cross-validated scale multiple. On a
-synthetic two-view scene:
+The paper's recipe, Student-t + uniform selection and Welsch half-quadratic
+refinement at its cross-validated scale multiple, on a synthetic two-view scene:
 
 ```julia
 using Random: MersenneTwister
@@ -99,12 +60,24 @@ rotation_error, translation_error =
     rad2deg.(minimum(pose_error(Rᵢ, tᵢ, R, t) for (Rᵢ, tᵢ) in motion(estimate(result))))
 ```
 
-From TOML, merge the strategy registries:
-`local_optimization_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.LO_TAGS))`.
 The [Overview](https://localoptimizationdoneright.github.io/overview/) introduces
 every strategy, its width modes and how it composes with a scorer.
 
-## Citation
+## Documentation
+
+- [Home](https://localoptimizationdoneright.github.io): the paper's results, installation and this example.
+- [Overview](https://localoptimizationdoneright.github.io/overview/): the strategies, their width modes, scorers and TOML configuration.
+- [Reproducing the paper](https://localoptimizationdoneright.github.io/guide/reproducing/): every figure and table from its config and driver.
+- [Baselines](https://localoptimizationdoneright.github.io/guide/baselines/): the classical LO arms (PoseLib, RansacLib).
+- [API Reference](https://localoptimizationdoneright.github.io/api/strategies/).
+
+The package builds on [VisualGeometryToolkitCore](https://visualgeometrytoolkit.github.io/VisualGeometryToolkitCore/stable/)
+(the contracts and losses) and [VisualGeometryToolkitEstimation](https://visualgeometrytoolkit.github.io/VisualGeometryToolkitEstimation/stable/)
+(the problems and the RANSAC loop); its scorer companion is
+[RANSACScoringDoneRight](https://ransacscoringdoneright.github.io). The
+[Visual Geometry Toolkit portal](https://visualgeometrytoolkit.github.io) links them all.
+
+## Citing
 
 ```bibtex
 @inproceedings{Pritts2026LocalOptimization,

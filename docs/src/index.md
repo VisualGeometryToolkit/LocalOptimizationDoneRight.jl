@@ -89,18 +89,10 @@ graduated non-convexity*
 ### The package
 
 The package requires Julia 1.12 or later. The Getting started example below
-also uses the stack packages it composes with (VisualGeometryToolkitCore,
-VisualGeometryToolkitEstimation and RANSACScoringDoneRight) and StaticArrays:
+also loads the packages it composes with:
 
 ```julia-repl
 pkg> add LocalOptimizationDoneRight VisualGeometryToolkitEstimation VisualGeometryToolkitCore RANSACScoringDoneRight StaticArrays
-```
-
-Until the General registration of `LocalOptimizationDoneRight` merges, add
-[CauRegistry](https://github.com/prittjam/CauRegistry.jl) first:
-
-```julia-repl
-pkg> registry add https://github.com/prittjam/CauRegistry.jl
 ```
 
 ### The paper's experiments
@@ -119,11 +111,6 @@ julia --project=. -e 'using Pkg; Pkg.instantiate(); Pkg.build("RansacLibLO")'
 ```
 
 ## Getting started
-
-The [Overview](overview.md) introduces the strategies, their width modes and
-how they compose with a scorer. [Reproducing the paper](guide/reproducing.md)
-maps every figure to its config and driver, and [Baselines](guide/baselines.md)
-covers the classical LO arms.
 
 The paper's recipe, Student-t + uniform selection and Welsch half-quadratic
 refinement at its cross-validated scale multiple, on a synthetic two-view scene:
@@ -164,6 +151,17 @@ rotation_error, translation_error =
 
 The evaluation engine the paper runs on (pair geometry, the refit layer, the
 sample-budget engine, rosters) is `VisualGeometryToolkitEval.Evaluation`.
+
+## Documentation
+
+- **Start here:** the example above.
+- **How to:** [Reproducing the paper](guide/reproducing.md) maps every figure
+  and table to its config and driver; [Baselines](guide/baselines.md) runs the
+  classical LO arms (PoseLib, RansacLib) under the same budget.
+- **Explanation:** the [Overview](overview.md) introduces the strategies, their
+  width modes and how they compose with a scorer.
+- **Reference:** [Strategies](api/strategies.md),
+  [Lift core and schedules](api/lift.md) and [Internals](api/internals.md).
 
 ## Method
 

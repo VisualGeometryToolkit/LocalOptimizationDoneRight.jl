@@ -2,34 +2,39 @@
 # and the Overview's recipe run as written, in a clean environment that holds
 # exactly what the README's install line adds. A reader's first contact with the
 # package is that code; it once used cameras, correspondences and an outlier
-# half-width it never defined (General registration review, 2026-11).
+# half-width it never defined (General registration review, #174579).
 #
 # The example composes this package with RANSACScoringDoneRight's scorer, which
 # the stack allow-list (VisualGeometryToolkitCore configs/stack_dependencies.toml)
 # keeps out of this test target. So the item builds a temporary environment —
-# this package by path, every other package of the install line from the
-# registries — and runs the blocks in a child Julia process there. The install
-# lines are `pkg>` blocks (```julia-repl), so they are not run as code: the
-# item checks instead that the `pkg> add` line names every non-standard-library
-# package the examples load, and nothing else.
+# this package by path, every other package of the install line from General —
+# and runs the blocks in a child Julia process there. The install line is a
+# `pkg>` block (```julia-repl), so it is not run as code: the item checks
+# instead that the `pkg> add` line names every non-standard-library package the
+# examples load, and nothing else, and that the landing page shows the same line.
+# A block that cannot run starts with `# Illustrative` and is left out; the
+# pinned counts of the blocks that do run make a new one a deliberate change.
 
 @testitem "readme" begin
     using Test
     root = pkgdir(LocalOptimizationDoneRight)
     julia_blocks(path) = [m[1] for m in eachmatch(r"^```julia\n(.*?)^```"ms, read(path, String))]
+    illustrative(block) = startswith(block, "# Illustrative")
     readme = read(joinpath(root, "README.md"), String)
-    example = julia_blocks(joinpath(root, "README.md"))
+    index_path = joinpath(root, "docs", "src", "index.md")
+    example = filter(!illustrative, julia_blocks(joinpath(root, "README.md")))
     # Getting started, then the Overview's recipe, which reuses its scene.
-    docs = [julia_blocks(joinpath(root, "docs", "src", "index.md"));
+    docs = [filter(!illustrative, julia_blocks(index_path));
             filter(b -> occursin("find_essential", b), julia_blocks(joinpath(root, "docs", "src", "overview.md")))]
-    @test length(example) == 1
+    @test length(example) == 1                      # pin the counts
     @test length(docs) == 2
     @test docs[1] == example[1]                     # one example, shown twice
 
-    # The install line adds exactly the packages the examples load.
-    install = match(r"^pkg> add (.+)$"m, readme)
-    @test install !== nothing
-    packages = split(install[1])
+    # The install line adds exactly the packages the examples load, and the
+    # landing page shows the same line.
+    install = [m[1] for m in eachmatch(r"^pkg> add (.+)$"m, readme)]
+    @test length(install) == 1
+    packages = split(only(install))
     loaded = Set{String}()
     for code in [example; docs], m in eachmatch(r"^(?:using|import)\s+([^:\n]+)"m, code)
         for part in split(m[1], ',')
@@ -38,6 +43,7 @@
     end
     stdlib(name) = isdir(joinpath(Sys.STDLIB, name))
     @test Set(filter(!stdlib, loaded)) == Set(packages)
+    @test occursin("pkg> add $(only(install))", read(index_path, String))
 
     env = mktempdir()
     write(joinpath(env, "readme_example.jl"), only(example))
@@ -65,10 +71,11 @@
         @test count(docs.result.inlier_mask) >= 195 # the Overview's recipe on it
     end
     """)
-    julia = joinpath(Sys.BINDIR, Base.julia_exename())
-    cmd = `$julia --startup-file=no --project=$env $script`
-    # A clean environment: none of the test run's load path or project.
-    proc = withenv("JULIA_LOAD_PATH" => nothing, "JULIA_PROJECT" => nothing) do
+    # Base.julia_cmd() carries the test run's flags (--depwarn=error, coverage).
+    # The load path is the project and the standard library only: no default
+    # environment (@v1.12) can supply a package the install line does not add.
+    cmd = `$(Base.julia_cmd()) --startup-file=no --project=$env $script`
+    proc = withenv("JULIA_LOAD_PATH" => "@:@stdlib", "JULIA_PROJECT" => nothing) do
         run(ignorestatus(cmd))
     end
     @test proc.exitcode == 0
