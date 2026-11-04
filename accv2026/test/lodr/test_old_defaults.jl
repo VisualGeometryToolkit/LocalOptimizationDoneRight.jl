@@ -68,8 +68,8 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
             @test r2.quality == r.quality
         end
 
-        # Below the minimal sample the wrapper returns nothing, it does not throw.
-        @test find_homography(StructArray(src[1:3] .=> dst[1:3]); scoring = hsc, local_optimization = welsch_hq(:homography), rng = MersenneTwister(136)) === nothing
+        # Below the minimal sample the wrapper returns a failed result (no estimate), it does not throw.
+        @test !converged(find_homography(StructArray(src[1:3] .=> dst[1:3]); scoring = hsc, local_optimization = welsch_hq(:homography), rng = MersenneTwister(136)))
     end
 
     @testset "find_fundmat" begin
@@ -123,9 +123,9 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         @test abs(s[1] - s[2]) / s[1] < 1.0e-6
         @test s[3] / s[1] < 1.0e-6
 
-        @test find_essential(
+        @test !converged(find_essential(
             ECAM, ECAM, csponds(topx.(u₁[1:4]), topx.(u₂[1:4])); scoring = esc, local_optimization = welsch_hq(:essential), rng = MersenneTwister(140)
-        ) === nothing
+        ))
         # The floor refusal: a threshold carried over in the OLD calibrated
         # units is rejected, not silently honoured 800x too tight.
         @test_throws ArgumentError find_essential(ECAM, ECAM, pxcs; threshold = 0.02)
@@ -153,7 +153,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         @test find_absolute_pose(cam, StructArray(src .=> dst); scoring = psc, workspace = ws, local_optimization = welsch_hq(:absolute_pose), rng = MersenneTwister(142)) !== nothing
         # fewer than the P3P minimal sample: no hypothesis; a minimal sample is
         # searched, and holds no consensus beyond itself
-        @test find_absolute_pose(cam, StructArray(src[1:2] .=> dst[1:2]); scoring = psc, local_optimization = welsch_hq(:absolute_pose), rng = MersenneTwister(143)) === nothing
+        @test !converged(find_absolute_pose(cam, StructArray(src[1:2] .=> dst[1:2]); scoring = psc, local_optimization = welsch_hq(:absolute_pose), rng = MersenneTwister(143)))
         @test !converged(find_absolute_pose(cam, StructArray(src[1:3] .=> dst[1:3]); scoring = psc, local_optimization = welsch_hq(:absolute_pose), rng = MersenneTwister(143)))
 
         # PREDICTIVE scoring, THROUGH the local optimization. The pose family's
