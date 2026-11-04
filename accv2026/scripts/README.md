@@ -1,4 +1,4 @@
-# ACCV 2026 experiments — "Score Sharp, Refine Soft, Polish Hard"
+# ACCV 2026 experiments — "Robust Local Optimization Done Right"
 
 One executable file per experiment; each file **is** the experiment: it
 declares its data inputs (`require_input` with provenance), runs idempotent

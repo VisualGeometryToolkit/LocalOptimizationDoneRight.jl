@@ -1,4 +1,4 @@
-# REPRODUCE — ACCV 2026 "Score Sharp, Refine Soft, Polish Hard"
+# REPRODUCE — ACCV 2026 "Robust Local Optimization Done Right"
 
 Every figure/table of the paper is produced by ONE executable experiment
 file under `scripts/` (stage-idempotent; `--plan` prints the stage plan,
@@ -76,10 +76,9 @@ and the first PhotoTourism pairs likewise) and far beyond a Zenodo record
 PT-E generation took days on one multi-GPU node).
 
 ```
-# Julia 1.12 (juliaup). The stack is registered in CauRegistry (and submitted to
-# General); until it is in General, add both registries once (General first: Pkg
-# adds it on its own only to an empty depot):
-julia -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl")'   # once per depot
+# Julia 1.12 (juliaup). Every dependency is in General; add it once per depot
+# (Pkg adds it on its own only to a depot with no registry):
+julia -e 'using Pkg; Pkg.Registry.add("General")'
 git clone https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl.git && cd LocalOptimizationDoneRight.jl/accv2026
 julia --project=. -e 'using Pkg; Pkg.instantiate()'
 julia --project=. scripts/fetch_data.jl            # the required artifacts

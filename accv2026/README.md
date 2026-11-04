@@ -1,4 +1,4 @@
-# ACCV 2026 — "Score Sharp, Refine Soft, Polish Hard"
+# ACCV 2026 — "Robust Local Optimization Done Right"
 
 The paper project of LocalOptimizationDoneRight: every figure, table and
 number of `paper/main.tex` and `paper/supplement.tex` comes from a driver under
@@ -8,7 +8,7 @@ paper-project conventions (VisualGeometryToolkitEval `PaperProjects`). A
 package; the parent package is tracked through `[sources]` (`path = ".."`).
 
 ```
-julia --project=. -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl"); Pkg.instantiate()'
+julia --project=. -e 'using Pkg; Pkg.Registry.add("General"); Pkg.instantiate()'
 julia --project=. scripts/<experiment>.jl --plan   # the stage plan of one experiment
 julia --project=. scripts/<experiment>.jl          # run what is pending
 julia --project=. test/runtests.jl                 # the conventions + the project's tests

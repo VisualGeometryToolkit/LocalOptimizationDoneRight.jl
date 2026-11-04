@@ -1,0 +1,33 @@
+# Dead-link check (lychee) over the README and the docs' Markdown sources, with
+# the exclusions and accepted codes in .lychee.toml. It checks the hosts the
+# docs build's linkcheck ignores (github.com, doi.org rate-limit a crawler)
+# with a token. Runs on PRs, pushes to main, weekly (links rot without a
+# commit), and by hand.
+name: Links
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '41 4 * * 1'
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+permissions:
+  contents: read
+jobs:
+  lychee:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          lycheeVersion: v0.24.2   # .lychee.toml uses this release's keys
+          fail: true
+          args: >-
+            --config .lychee.toml --no-progress
+            README.md 'docs/src/**/*.md'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # GitHub's API rate limit

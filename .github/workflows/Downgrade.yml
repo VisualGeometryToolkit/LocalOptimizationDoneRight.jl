@@ -33,9 +33,9 @@ jobs:
         with:
           version: '1.12'
       - uses: julia-actions/cache@v2
-      # CauRegistry as well as General until the stack is in General.
+      # General only: every dependency is registered there.
       - name: Registries
-        run: julia -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl")'
+        run: julia -e 'using Pkg; Pkg.Registry.add("General")'
       - name: Narrow the workspace to the package and test/
         run: julia -e 'using TOML; p = TOML.parsefile("Project.toml"); p["workspace"]["projects"] = ["test"]; open(io -> TOML.print(io, p), "Project.toml", "w")'
       - uses: julia-actions/julia-downgrade-compat@v2

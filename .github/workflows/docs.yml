@@ -29,9 +29,9 @@ jobs:
           version: '1.12'
       - uses: julia-actions/cache@v2
       - name: Install docs dependencies
-        # CauRegistry as well as General until the stack is in General.
+        # General only: every dependency is registered there.
         run: |
-          julia -e 'using Pkg; Pkg.Registry.add("General"); Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl")'
+          julia -e 'using Pkg; Pkg.Registry.add("General")'
           julia --project=docs -e 'using Pkg; Pkg.instantiate()'
       - name: Build and deploy docs
         env:
