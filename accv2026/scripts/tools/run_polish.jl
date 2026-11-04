@@ -32,7 +32,8 @@ using LocalOptimizationDoneRight: truncated_refit_pose, PoseLibLm
 using VisualGeometryToolkitEstimation: EssentialProblem, RansacWorkspace
 using RANSACScoringDoneRight: StudentTUniformScoring
 using VisualGeometryToolkitCore: EssentialMat, EuclideanMap, Vec3, cheiral_pose_fast, GaussianShape, best_pool_model,
-    score_model!, consensus_mask, external_workspace
+    score_model!, consensus_mask, external_workspace, translation_angle
+using Rotations: RotMatrix, rotation_angle
 using PoseLib: refine_relpose
 start_output_flush!()
 
@@ -60,8 +61,8 @@ const TLS_LO    = PoseLibLm(MAX_ITER)
 const CV        = sidecar_cross_validation(SIDECAR)
 
 const BAILS = Threads.Atomic{Int}(0)       # polishes that threw (E_LO kept)
-_angle(R1, R2) = rad2deg(acos(clamp((tr(R1' * R2) - 1) / 2, -1.0, 1.0)))
-_tangle(t1, t2) = rad2deg(acos(clamp(dot(t1, t2) / (norm(t1) * norm(t2)), -1.0, 1.0)))
+_angle(R1, R2) = rad2deg(rotation_angle(RotMatrix{3}(R1' * R2)))
+_tangle(t1, t2) = rad2deg(translation_angle(t1, t2))
 
 # One pair: every source's E_LO, then every polisher on it → (err_LO, [(err, disp) per polisher]).
 function pair_rows(pair, R)
