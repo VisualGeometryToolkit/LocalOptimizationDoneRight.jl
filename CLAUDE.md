@@ -64,9 +64,9 @@ The data binding, provenance record and data policy are VisualGeometryToolkitEva
 itself in `src/common.jl` (`set_project_root!(projectdir())`, asserted to be
 the accv2026 project).
 
-- Roots: `data_root()` = `CAU_DATA_ROOT` → `data/exp_raw` (DrWatson
+- Roots: `data_root()` = `VGTK_DATA_ROOT` → `data/exp_raw` (DrWatson
   `datadir("exp_raw")`: a per-machine link, or the artifact view);
-  `results_root()` = `CAU_RESULTS_ROOT` → `data/exp_pro`. Both are returned as
+  `results_root()` = `VGTK_RESULTS_ROOT` → `data/exp_pro`. Both are returned as
   the LINK paths, because every keyed path of this paper is spelled under them.
   Paths come from `projectdir`/`scriptsdir`/`datadir`, never from `@__DIR__`
   or a machine path. `paper/` is not yet DrWatson's `papers/` (deferred).
@@ -88,7 +88,7 @@ the accv2026 project).
     literals, `-smoke` siblings (smoke runs go to `datadir("sims")`) or
     unkeyed shared files.
 - Never write into the results tree of a running regeneration: point a
-  worktree's `data/exp_pro` (or `CAU_RESULTS_ROOT`) at a scratch directory
+  worktree's `data/exp_pro` (or `VGTK_RESULTS_ROOT`) at a scratch directory
   before running its tests or drivers.
 
 ## Coordinate Frames and Normalization

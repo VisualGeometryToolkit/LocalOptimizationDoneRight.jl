@@ -14,8 +14,8 @@ author's host two SYMLINKS:
 
 Resolution ladder (VisualGeometryToolkitEval.Experiments, experiments/data.jl;
 bound to this project by src/common.jl's set_project_root!(projectdir())):
-  data_root():    ENV["CAU_DATA_ROOT"]    -> data/exp_raw -> error
-  results_root(): ENV["CAU_RESULTS_ROOT"] -> data/exp_pro -> error
+  data_root():    ENV["VGTK_DATA_ROOT"]    -> data/exp_raw -> error
+  results_root(): ENV["VGTK_RESULTS_ROOT"] -> data/exp_pro -> error
 Both are returned as the link paths (every keyed path is spelled under them).
 Writers refuse a path under data_root() unless declared a producer (the pool
 cells); smoke runs go to data/sims (DrWatson datadir("sims"), gitignored).
@@ -46,8 +46,8 @@ downloads them once into the Julia depot and makes
     exp_pro/  a plain results directory, with the stored SupeRANSAC results of
               Tab. 3 linked in at configs/pt_e_superansac.toml [stored] dir.
 
-An existing binding always wins and is never written to: CAU_DATA_ROOT /
-CAU_RESULTS_ROOT, or an author's exp_raw/exp_pro symlink. To rebuild a view,
+An existing binding always wins and is never written to: VGTK_DATA_ROOT /
+VGTK_RESULTS_ROOT, or an author's exp_raw/exp_pro symlink. To rebuild a view,
 delete data/exp_raw and fetch again (the depot copy is reused).
 `ACCV2026_ARTIFACTS_TOML=<file>` points the fetch at another copy of the
 bindings (the same hashes, other URLs — e.g. local file:// tarballs in a test).

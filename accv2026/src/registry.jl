@@ -15,7 +15,7 @@ include(joinpath(@__DIR__, "common.jl"))   # binds the project root results_root
 include(joinpath(@__DIR__, "protocol_folds.jl"))   # keyed run dirs (miscal_sidecar_of)
 
 # --- roots -------------------------------------------------------------------
-# The per-cell results tree: VisualGeometryToolkitEval's `results_root()` (CAU_RESULTS_ROOT or the
+# The per-cell results tree: VisualGeometryToolkitEval's `results_root()` (VGTK_RESULTS_ROOT or the
 # project's data/exp_pro link → <results>/accv2026, data/README.md); ACCV_DATA —
 # the flat campaign root (<data root>/accv2026 unless set; on a fetched machine
 # inside the artifact view).

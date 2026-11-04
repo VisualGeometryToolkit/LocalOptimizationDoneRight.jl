@@ -10,8 +10,8 @@
 # only binds the catalog.
 #
 # Resolution ladder (data/README.md): the drivers read data_root() /
-# results_root() (VisualGeometryToolkitEval.Experiments): ENV CAU_DATA_ROOT /
-# CAU_RESULTS_ROOT, else the project's data/exp_raw / data/exp_pro. A machine
+# results_root() (VisualGeometryToolkitEval.Experiments): ENV VGTK_DATA_ROOT /
+# VGTK_RESULTS_ROOT, else the project's data/exp_raw / data/exp_pro. A machine
 # without either gets them from the artifacts: `fetch_artifacts!` makes
 # data/exp_raw an ARTIFACT VIEW (per-file links into the installed artifact
 # trees, marked by `.artifact_view`) and data/exp_pro a plain results

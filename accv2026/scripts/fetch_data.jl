@@ -14,7 +14,7 @@
 # verified) and linked file by file into its mount root: data artifacts into
 # data/exp_raw (made an artifact view when no data root is bound), results
 # artifacts into results_root() (data/exp_pro is created when no results root
-# is bound). An existing binding wins — CAU_DATA_ROOT / CAU_RESULTS_ROOT or
+# is bound). An existing binding wins — VGTK_DATA_ROOT / VGTK_RESULTS_ROOT or
 # the author's data/exp_raw symlink — and is never written to by this script
 # (VisualGeometryToolkitEval DataArtifacts `fetch_artifacts!`; data/README.md). A
 # split entry fetches all its parts; a file shipped in chunks (a sub-part of a

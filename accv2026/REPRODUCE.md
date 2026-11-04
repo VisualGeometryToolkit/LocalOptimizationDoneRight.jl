@@ -23,7 +23,7 @@ manuscript.
   project produces — the raw PhotoTourism/HEB/ETH3D inputs, the scoring pools
   once generated (frozen: a changed pool is a NEW tree, never an overwrite),
   the stored SupeRANSAC baseline — lives under the INPUT root `data_root()`
-  (DrWatson's `datadir("exp_raw")`, i.e. `data/exp_raw`, or `CAU_DATA_ROOT`).
+  (DrWatson's `datadir("exp_raw")`, i.e. `data/exp_raw`, or `VGTK_DATA_ROOT`).
   Configs name inputs by paths RELATIVE to it; code never spells an absolute
   data path and never resolves an artifact directly (`artifact"…"`): on the
   author's host `data/exp_raw` is a symlink to the primary copy, on any other
@@ -33,7 +33,7 @@ manuscript.
 - **Results are derived and DrWatson-keyed.** Every stage writes keyed run
   directories (`run_key` of the effective config; `_config.toml`,
   `_provenance.toml`) under the RESULTS root `results_root()`
-  (`datadir("exp_pro")`, i.e. `data/exp_pro`, or `CAU_RESULTS_ROOT`), add-only.
+  (`datadir("exp_pro")`, i.e. `data/exp_pro`, or `VGTK_RESULTS_ROOT`), add-only.
   No input path resolves into it. A published results snapshot, if any, is a
   separate, read-only artifact for re-rendering, never a location drivers write.
 - **Declared exception, pending the move:** the stored SupeRANSAC baseline's
@@ -350,7 +350,7 @@ frozen input remains: every file a driver consumes is produced by a stage.
   SP+LG correspondences); the ETH3D cells' configs name it in
   `experiment.pool_dir`.
 - **Results roots** — per-cell tree `<results root>/…`
-  (VisualGeometryToolkitEval `results_root()`: `CAU_RESULTS_ROOT` or the `data/exp_pro` link, see
+  (VisualGeometryToolkitEval `results_root()`: `VGTK_RESULTS_ROOT` or the `data/exp_pro` link, see
   `data/README.md`), flat campaign root `<data root>/accv2026/…`
   (`ACCV_DATA` overrides; `src/registry.jl` is the one place that binds these).
 - **Stored SupeRANSAC results** — `<results>/phototourism/sift/E/SupeRANSAC/stored-e2e-3ea0c00581858498/`
@@ -490,7 +490,7 @@ not match, so a floor computed on retired pools cannot be taken as current.
 ## Running on your own machine
 
 - Bind the data and results roots first (`data/README.md`: the `data/exp_raw`
-  and `data/exp_pro` links, or `CAU_DATA_ROOT` / `CAU_RESULTS_ROOT`). You need
+  and `data/exp_pro` links, or `VGTK_DATA_ROOT` / `VGTK_RESULTS_ROOT`). You need
   the inputs and the pools: fetch the published inputs and regenerate the
   PhotoTourism and HEB pools from them ("On a new machine" above). Each
   experiment file runs directly (`julia --project=. scripts/<exp>.jl`); the

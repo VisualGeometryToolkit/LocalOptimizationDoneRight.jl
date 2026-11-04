@@ -14,7 +14,7 @@ using Test, TOML
     # scratch data and results roots: the plan resolves the keyed paths,
     # runs nothing, and so needs no data binding on this machine
     cmd = `$(Base.julia_cmd()) --startup-file=no --project=$root $(joinpath(root, "scripts", "fig_anchoring.jl")) --plan`
-    out = read(addenv(cmd, "CAU_RESULTS_ROOT" => mktempdir(), "CAU_DATA_ROOT" => mktempdir()), String)
+    out = read(addenv(cmd, "VGTK_RESULTS_ROOT" => mktempdir(), "VGTK_DATA_ROOT" => mktempdir()), String)
     @test occursin("evaluation", out) && occursin("render", out)
     @test occursin("anchoring_ablation-$(iface)", out)
 end

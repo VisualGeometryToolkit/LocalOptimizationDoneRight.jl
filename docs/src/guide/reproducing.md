@@ -24,7 +24,7 @@ The package and the research project split by one rule:
 | `accv2026/scripts/tools/` | the CLIs the drivers launch: `run_sequential_cv.jl` (the tuning), `run_polish.jl`, the renderers, the pool builders, `make_facet_grid.py` |
 | `accv2026/scripts/slurm/` | an example Slurm wrapper (`run_experiment.sbatch`) and the pool launcher |
 | `accv2026/configs/` | the configs of record: one TOML per cell, and the protocols folded into every run key |
-| `accv2026/data/` | two per-machine symlinks: `exp_raw` (immutable inputs) and `exp_pro` (add-only results), or `CAU_DATA_ROOT` / `CAU_RESULTS_ROOT` |
+| `accv2026/data/` | two per-machine symlinks: `exp_raw` (immutable inputs) and `exp_pro` (add-only results), or `VGTK_DATA_ROOT` / `VGTK_RESULTS_ROOT` |
 | `accv2026/lib/RansacLibLO/` | the classical RansacLib LO baseline (vendored C++ shim, `Pkg.build("RansacLibLO")`) |
 | `accv2026/envs/` | auxiliary environments (SupeRANSAC) |
 | `accv2026/paper/` | the manuscript; renders land in `paper/figures/` |
@@ -131,7 +131,7 @@ cells (`scripts/pt_e_pools.jl`, `scripts/heb_h_pools.jl`,
 `scripts/scoring_pools.jl --config=<name>`) from the public datasets — IMC
 PhotoTourism, ETH3D, HEB — via `scripts/tools/generate_scoring_pools.jl`. The
 PhotoTourism E pool alone is about 2 TB. The data roots resolve through
-`CAU_DATA_ROOT` / `CAU_RESULTS_ROOT` or the `data/exp_raw` / `data/exp_pro`
+`VGTK_DATA_ROOT` / `VGTK_RESULTS_ROOT` or the `data/exp_raw` / `data/exp_pro`
 symlinks (`accv2026/data/README.md`). The cross-validation stages need a CUDA
 GPU. What the paper shows is tracked as the rendered `.tex` figures and tables
 under `accv2026/paper/figures/`; the result artifacts themselves are not yet
