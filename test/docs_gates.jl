@@ -1,4 +1,4 @@
-# docs_gates.jl — three docstring checks a package's suite runs (julia-docs-pass skill).
+# docs_gates.jl — three docstring checks a package's suite runs (the stack's docs skill).
 #
 #   undocumented_public(M)       public names of M (and its submodules) with no docstring
 #   signature_mismatches(M)      docstring signature lines that no method of the name accepts
