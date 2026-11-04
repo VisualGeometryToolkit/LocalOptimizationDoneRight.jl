@@ -48,7 +48,7 @@ function _summary()
             @sprintf("%.4f", eligible_maa(b)), @sprintf("%.4f", eligible_maa(e)),
             @sprintf("%.3f", finite_median(b)), @sprintf("%.3f", finite_median(e)),
             @sprintf("%.3f", mean(e[ok] .< b[ok] .- 1e-6)), @sprintf("%.3f", mean(e[ok] .> b[ok] .+ 1e-6)),
-            @sprintf("%.4f", median(filter(isfinite, m))), @sprintf("%.4f", quantile(filter(isfinite, m), 0.9)),
+            @sprintf("%.4f", finite_median(m)),@sprintf("%.4f", quantile(filter(isfinite, m), 0.9)),
             @sprintf("%.3f", mean(filter(isfinite, m) .> 0.1))], '\t'))
     end
     write(SUMF, join(lines, '\n') * "\n"); print(read(SUMF, String))

@@ -43,7 +43,7 @@ using VisualGeometryToolkitEstimation: NoLocalOptimization
 using RANSACScoringDoneRight: loss_spec, loss_scale_bounds, StudentTUniformScoring, SimFitPP, loss_width_scoring
 using VisualGeometryToolkitCore: AbstractLossShape, WidthAxis, LossWidth, OutlierHalfwidth, width_axis_name, width_axis,
     native_map, IGPrior, codimension, minimal_sample_size
-using VisualGeometryToolkitEval.Stats: reference_scale
+using VisualGeometryToolkitEval.Stats: reference_scale, finite_median
 using VisualGeometryToolkitEval.Tuning: TuningSpec, WindowedBootstrap, CoverageWindow, GridSpec, grid,
     grid_spec, save_tuning_artifact, fit_prior, ALL_PRIOR_SPECS
 using VisualGeometryToolkitEval.Evaluation: stream_selections, LoRefitSpec
@@ -90,7 +90,7 @@ function val_sigma2_by_scene(loaders, nval)
         kept = count(isfinite, out[si])
         @info "validation scale" scene = si pairs = length(out[si]) above_floor = kept #=
             =# min_gt_inliers = floor_in #=
-            =# s_hat_median = kept == 0 ? NaN : round(sqrt(median(filter(isfinite, out[si]))), sigdigits=4)
+            =# s_hat_median = kept == 0 ? NaN : round(sqrt(finite_median(out[si])), sigdigits=4)
         pp = nothing
         GC.gc()
     end
