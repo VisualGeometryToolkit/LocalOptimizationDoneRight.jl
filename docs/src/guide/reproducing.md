@@ -2,9 +2,18 @@
 
 The research project `accv2026/` produces every figure and table of the paper. It
 is a DrWatson project that devs the package by path (`[sources]` in
-`accv2026/Project.toml`) and pins its environment in a tracked `Manifest.toml`.
-`accv2026/REPRODUCE.md` is the authoritative experiment → artifact index and
-records the data provenance; this page summarizes it.
+`accv2026/Project.toml`). The package, its tests and docs, and `accv2026/` are
+one Pkg workspace: they resolve together, in one `Manifest.toml` at the
+repository root that is not committed. `accv2026/REPRODUCE.md` is the
+authoritative experiment → artifact index and records the data provenance; this
+page summarizes it.
+
+The package and the research project split by one rule:
+
+| Belongs in the package | Belongs in `accv2026/` |
+|:---|:---|
+| the local optimizers a second paper reuses | paper drivers, figures, arm rosters |
+| registered LO baselines (PoseLib) | the unregistered RansacLib baseline; anything that exists to make one comparison defensible |
 
 ## Layout
 
@@ -17,7 +26,16 @@ records the data provenance; this page summarizes it.
 | `accv2026/configs/` | the configs of record: one TOML per cell, and the protocols folded into every run key |
 | `accv2026/data/` | two per-machine symlinks: `exp_raw` (immutable inputs) and `exp_pro` (add-only results), or `CAU_DATA_ROOT` / `CAU_RESULTS_ROOT` |
 | `accv2026/lib/RansacLibLO/` | the classical RansacLib LO baseline (vendored C++ shim, `Pkg.build("RansacLibLO")`) |
+| `accv2026/envs/` | auxiliary environments (SupeRANSAC) |
 | `accv2026/paper/` | the manuscript; renders land in `paper/figures/` |
+| `accv2026/test/` | the project's tests (`julia --project=. test/runtests.jl`) |
+| `accv2026/REPRODUCE.md` | the experiment → artifact index and the data provenance |
+
+The package itself is `src/` (the strategies in `src/strategies/`, the joint-(θ,z)
+lift core and its continuation schedules in `src/lift/`, the cross-validated
+operating points in `src/tuning_constants.jl`, PoseLib's truncated refiners in
+`src/poselib_arms.jl`), `ext/` (the PoseLib extension), `configs/default.toml`
+(the strategies' defaults of record and tuning constants), `test/` and `docs/`.
 
 ## Drivers and stages
 
@@ -114,8 +132,11 @@ cells (`scripts/pt_e_pools.jl`, `scripts/heb_h_pools.jl`,
 PhotoTourism, ETH3D, HEB — via `scripts/tools/generate_scoring_pools.jl`. The
 PhotoTourism E pool alone is about 2 TB. The data roots resolve through
 `CAU_DATA_ROOT` / `CAU_RESULTS_ROOT` or the `data/exp_raw` / `data/exp_pro`
-symlinks (`accv2026/data/README.md`). With the produced artifacts synced, every
-`--stage=render` regenerates its committed panel on the CPU.
+symlinks (`accv2026/data/README.md`). The cross-validation stages need a CUDA
+GPU. What the paper shows is tracked as the rendered `.tex` figures and tables
+under `accv2026/paper/figures/`; the result artifacts themselves are not yet
+published. With the produced artifacts synced, every `--stage=render`
+regenerates its committed panel on the CPU.
 
 Rebuild the manuscript after rendering:
 

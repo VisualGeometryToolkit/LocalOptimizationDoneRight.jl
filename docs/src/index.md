@@ -106,7 +106,8 @@ pkg> registry add https://github.com/prittjam/CauRegistry.jl
 ### The paper's experiments
 
 Clone the repository and instantiate the research project `accv2026/`, which
-devs the package by path and pins its environment in a tracked `Manifest.toml`.
+devs the package by path; the repository is one Pkg workspace, resolved in one
+`Manifest.toml` at its root that is not committed.
 Its classical RansacLib baseline (`accv2026/lib/RansacLibLO`, unregistered)
 builds a small C++ shim, which needs `git` and a C++17 `g++` (Eigen comes from
 `Eigen_jll`):
