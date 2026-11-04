@@ -20,6 +20,7 @@ HQ
 WelschHQNewton
 WelschHQEcm
 BarronHQ
+GmHqEps
 Gnc
 ```
 

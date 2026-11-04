@@ -1,8 +1,8 @@
 """
     LocalOptimizationDoneRight
 
-The local optimizers of the ACCV 2026 paper "Score Sharp, Refine Soft, Polish
-Hard", on VisualGeometryToolkitCore's local-optimization contract and
+The local optimizers of the ACCV 2026 paper "Robust Local Optimization Done
+Right", on VisualGeometryToolkitCore's local-optimization contract and
 VisualGeometryToolkitEstimation's problems:
 
 - the joint-(θ,z) half-quadratic loss lifts ([`HQ`](@ref) and its research

@@ -133,7 +133,7 @@ end
     LiftZBlock
 
 The z-block of a joint-(θ,z) lift. [`JointGaussNewton`](@ref) (the default)
-reads the loss's closed forms through [`lift_zblock`](@ref);
+reads the loss's closed forms through [`lift_zblock`](@extref VisualGeometryToolkitCore.lift_zblock);
 [`WelschConvexNewton`](@ref) is the convexified-Newton z-block of the Welsch lift.
 """
 abstract type LiftZBlock end
@@ -159,7 +159,7 @@ Eq. 15). Per point, for Φᵢ = w‖rᵢ‖² + κ²(w), w = z², κ² the Welsc
     ∂Φ/∂θ = 2w Jᵀr,  ∂Φ/∂z = 2z(‖r‖² − rinv2),
     θθ = 2w JᵀJ,  θz = 4z Jᵀr,  zz = 2(‖r‖² − rinv2) + 4w·κ²″(w),
 
-with `rinv2` from [`lift_zblock`](@ref) and the z-block convexified to
+with `rinv2` from [`lift_zblock`](@extref VisualGeometryToolkitCore.lift_zblock) and the z-block convexified to
 `max(zz, 8‖r‖²) + μ` so the Schur-reduced θ-Hessian stays positive
 semidefinite. The curvature `w·κ²″(w)` is Welsch's own (it is `c²`), so the
 loss must be a deployed `WelschShape` (checked).
@@ -403,8 +403,8 @@ _seed_weighted_z!(z, loss, res, n::Int, hard::Bool) = throw(ArgumentError(
 
 Buffers for an `M`-node tabulated half-quadratic conjugate, filled by
 [`tabulate!`](@ref). A loss for the lift's Gauss–Newton z-block (any codimension): it
-answers [`lift_zblock`](@ref), [`lift_window`](@ref), [`lift_wmax`](@ref) and
-[`lift_conjugate`](@ref). `γ` scales the conjugate (the lifting regularizer's
+answers [`lift_zblock`](@extref VisualGeometryToolkitCore.lift_zblock), [`lift_window`](@ref), [`lift_wmax`](@extref VisualGeometryToolkitCore.lift_wmax) and
+[`lift_conjugate`](@extref VisualGeometryToolkitCore.lift_conjugate). `γ` scales the conjugate (the lifting regularizer's
 strength: `γ > 1` makes the lift more reluctant to switch points off).
 """
 mutable struct TabulatedLift
@@ -500,7 +500,7 @@ end
 
 The table's weight grid ends on the RAW (unnormalized) weight scale — the clamp
 window of a caller that works in raw weights; [`lift_window`](@ref) is the same
-window normalized by [`lift_wmax`](@ref).
+window normalized by [`lift_wmax`](@extref VisualGeometryToolkitCore.lift_wmax).
 """
 @inline lift_raw_window(tab::TabulatedLift) = (tab.wg[1], tab.wg[end])
 "The tabulated conjugate `γ·κ²(w)` at raw weight `w`."

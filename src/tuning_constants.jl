@@ -159,6 +159,8 @@ const _TUNING_CONSTANTS = _tuning_registry(_TOML_DEFAULTS["tuning_constants"])
     tuning_constant(problem::Symbol, shape::AbstractString;
                     features::Symbol = :any, dataset::Symbol = :any) -> TuningConstant
 
+The cross-validated scale multiple of a model class and loss shape.
+
 Resolve the cross-validated `scale_multiple` for `problem`
 (`:essential | :fundmat | :homography | :radial_homography | :radial_camera |
 :absolute_pose`) and loss `shape` (the tag vocabulary a strategy's `loss`
@@ -171,6 +173,18 @@ shape raises rather than serving a constant validated for a different one.
 Check `.validated` to see whether the returned value was cross-validated at
 its own key or transferred (`.transfer` names the source key), and `.tuning`
 for the product tuning that produced it.
+
+```jldoctest
+julia> using LocalOptimizationDoneRight
+
+julia> c = tuning_constant(:essential, "welsch");
+
+julia> c.scale_multiple, c.validated   # the class tier holds a transferred value
+(1.597, false)
+
+julia> c.scale_multiple == WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL
+true
+```
 """
 function tuning_constant(
         problem::Symbol, shape::AbstractString;
@@ -218,9 +232,11 @@ end
 """
     WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL
 
-The Welsch-HQ `scale_multiple` of the essential class (`VisualGeometryToolkitEstimation.find_essential`): the
+The Welsch-HQ `scale_multiple` of the essential class.
+
+For `VisualGeometryToolkitEstimation.find_essential`, it is the
 deployed optimum of the PT-E-SIFT-4K product tuning (the essential class tier
-transfers it from the `(:sift, :phototourism)` entry, the cell that tuned it).
+transfers it from the `(:sift, :phototourism)` entry, the one that tuned it).
 Equal to `tuning_constant(:essential, "welsch").scale_multiple`.
 """
 const WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL = tuning_constant(:essential, "welsch").scale_multiple
@@ -229,7 +245,7 @@ const WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL = tuning_constant(:essential, "welsch")
     WELSCH_HQ_SCALE_MULTIPLE_FUNDMAT
 
 The Welsch-HQ `scale_multiple` of the fundmat class (`VisualGeometryToolkitEstimation.find_fundmat`). TRANSFERRED
-from the essential cell — `tuning_constant(:fundmat, "welsch").validated` is `false`
+from the essential entry — `tuning_constant(:fundmat, "welsch").validated` is `false`
 until the PT-F cross-validation lands.
 """
 const WELSCH_HQ_SCALE_MULTIPLE_FUNDMAT = tuning_constant(:fundmat, "welsch").scale_multiple
@@ -238,7 +254,7 @@ const WELSCH_HQ_SCALE_MULTIPLE_FUNDMAT = tuning_constant(:fundmat, "welsch").sca
     WELSCH_HQ_SCALE_MULTIPLE_HOMOGRAPHY
 
 The Welsch-HQ `scale_multiple` of the homography class (`VisualGeometryToolkitEstimation.find_homography`).
-TRANSFERRED from the essential cell — `tuning_constant(:homography, "welsch").validated`
+TRANSFERRED from the essential entry — `tuning_constant(:homography, "welsch").validated`
 is `false` until the HEB-H re-CV succeeds at its gate.
 """
 const WELSCH_HQ_SCALE_MULTIPLE_HOMOGRAPHY = tuning_constant(:homography, "welsch").scale_multiple
@@ -247,7 +263,7 @@ const WELSCH_HQ_SCALE_MULTIPLE_HOMOGRAPHY = tuning_constant(:homography, "welsch
     WELSCH_HQ_SCALE_MULTIPLE_ABSOLUTE_POSE
 
 The Welsch-HQ `scale_multiple` of the absolute_pose class (`VisualGeometryToolkitEstimation.find_absolute_pose`).
-TRANSFERRED from the essential cell — no PnP cell has been cross-validated
+TRANSFERRED from the essential entry — no PnP entry has been cross-validated
 yet, so `tuning_constant(:absolute_pose, "welsch").validated` is `false`.
 """
 const WELSCH_HQ_SCALE_MULTIPLE_ABSOLUTE_POSE = tuning_constant(:absolute_pose, "welsch").scale_multiple

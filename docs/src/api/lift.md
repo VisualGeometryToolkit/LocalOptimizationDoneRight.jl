@@ -29,6 +29,10 @@ lift_raw_window
 
 ```@docs
 LoSchedule
+schedule_init
+scale_mult
+advance!
+isterminal
 NoSchedule
 MuLadder
 with_converged_rung

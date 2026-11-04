@@ -52,9 +52,42 @@ The contract (all four verbs; see the header for the consuming loop shape):
 """
 abstract type LoSchedule end
 
+"""
+    schedule_init(sched::LoSchedule, mu0, max_iter) -> state
+
+The mutable state of the schedule `sched` for one run: from the start
+multiplier `mu0` (derived from the seed) and the total inner-iteration budget
+`max_iter`. A schedule that splits the budget into rungs derives the rung
+length here. See [`LoSchedule`](@ref) for the consuming loop.
+"""
 function schedule_init end
+
+"""
+    scale_mult(state) -> Float64
+
+The current continuation multiplier of a schedule state: the GNC μ, or the
+loss-width multiplier (1 at the terminal objective of an anneal).
+"""
 function scale_mult end
+
+"""
+    advance!(state, stalled::Bool; open = true) -> nothing
+
+One iteration's bookkeeping of a schedule state. A scheduled advance moves the
+multiplier on; a stalled inner step (`stalled = true`) at a non-terminal
+position also advances it (a rung ladder moves to its next rung early, a
+time-indexed anneal jumps to its terminal width). `open` is the engine's
+observation that the schedule may still make progress; a schedule that does
+not read it ignores it.
+"""
 function advance! end
+
+"""
+    isterminal(state; open = true) -> Bool
+
+Whether the schedule state has reached its terminal objective. A stalled inner
+step may end the engine only when this holds; `open` as in [`advance!`](@ref).
+"""
 function isterminal end
 
 # -----------------------------------------------------------------------------
@@ -83,8 +116,10 @@ advance!(::NoScheduleState, stalled::Bool; open::Bool = true) = nothing
 """
     MuLadder(factor; direction = :down, cap = Inf)
 
-The GNC rung ladder: μ starts at a seed-derived `mu0` and moves by `factor`
-per rung toward its terminal value — `direction = :down` anneals μ → 1
+The GNC rung ladder, a schedule that moves μ by `factor` per rung.
+
+μ starts at a seed-derived `mu0` and moves toward its
+terminal value — `direction = :down` anneals μ → 1
 (GM / annealed-width Welsch surrogates; terminal at μ = 1), `direction = :up`
 anneals μ → `cap` (the TLS surrogate; terminal when the caller reports the
 middle band empty via `open = false`, or at μ ≥ `cap`).
@@ -183,14 +218,15 @@ end
 """
     gnc_schedule(loss, factor) -> MuLadder
 
-The rung ladder for a loss's graduation (moved from RVG scoring_glue.jl
-2026-07-18): a [`BandAnnealed`](@ref) shape anneals μ UP to the hard-surrogate
+The rung ladder for a loss's graduation.
+
+A [`BandAnnealed`](@extref VisualGeometryToolkitCore.BandAnnealed) shape anneals μ UP to the hard-surrogate
 cap (VisualGeometryToolkitCore's `gnc_mu_cap()` — the same cap `gnc_mu0` guards to); the
 μ-scaled families anneal μ DOWN to 1, the target loss. Only the
 direction/cap mapping is per-family — rung arithmetic (n_rungs, rung_len) is
 [`MuLadder`](@ref).
 
-Dispatches on [`gnc_surrogate`](@ref) like the rest of the `gnc_*` family, so a
+Dispatches on [`gnc_surrogate`](@extref VisualGeometryToolkitCore.gnc_surrogate) like the rest of the `gnc_*` family, so a
 shape with no graduation path is a `MethodError` rather than a tag that falls
 through to a default branch.
 """
@@ -206,6 +242,9 @@ _gnc_schedule(::MuScaled, factor::Float64) = MuLadder(factor)   # anneal μ → 
 
 """
     GeometricAnneal(octaves)
+
+A width multiplier that decays geometrically from `2^octaves` to 1 over the
+iteration budget.
 
 The time-indexed continuation of the scheduled-Welsch family: at iteration
 `t` of `T` the width multiplier is `2^{octaves·(1 − (t−1)/(T−1))}` — `2^oct`

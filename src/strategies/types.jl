@@ -56,7 +56,8 @@ end
 """
     StuTuBCD <: AbstractLocalOptimization
 
-Exact same-objective refinement for [`StudentTUniformScoring`](@ref): block-coordinate
+Exact same-objective refinement for RANSACScoringDoneRight's
+[`StudentTUniformScoring`](@extref RANSACScoringDoneRight.StudentTUniformScoring): block-coordinate
 ascent **on the scoring objective S itself**. Alternates
 
   (model)      θ⁺ = argmin_θ Σ_{i∈I} rᵢ(θ)²        — hard-inlier least squares
@@ -84,12 +85,15 @@ end
 """
     HQ{K<:AbstractLossShape} <: AbstractLocalOptimization
 
+Joint half-quadratic local optimization of the model and per-point weights
+under the robust loss `K`.
+
 Half-quadratic *lifted* local optimization on loss `K` (Zach 2014): the **genuine joint-(θ,z) Gauss-Newton** on the lifted
 residual `(zᵢ·rᵢ, κ(zᵢ²))` with the loss's closed-form Geman–Reynolds
 regularizer (`lift_zblock`, VGC's loss family). Per-point weight `zᵢ` is a
 free variable, initialized LARGE (all-inlier = smoothed cost) and **evolved
 jointly with θ**, Schur-eliminating `Δz` — this broadens the basin, escaping a
-poor seed where the static [`Irls`](@ref)/[`StudentTUniform`](@ref) is trapped,
+poor seed where the static [`Irls`](@extref VisualGeometryToolkitEstimation.Irls)/[`StudentTUniform`](@ref) is trapped,
 *without* annealing or quadrature. ONE code path for every loss AND every
 problem (`ManifoldLiftHQ` on VisualGeometryToolkitCore's chart-rows contract,
 lift/lifts.jl); `K` contributes only its closed-form z-block
@@ -121,7 +125,7 @@ never multiplied into a stored width:
 - `init::Symbol=:flat`: z₀ policy — `:flat` (all-in, default) | `:posterior`
   (soft seed weights) | `:consensus` (hard r½ mask)
 - `width::W`: the width mode (`scale_multiple = m` in the per-K currency above,
-  `loss_width = w`, or neither: follow the scorer), as [`Irls`](@ref)
+  `loss_width = w`, or neither: follow the scorer), as [`Irls`](@extref VisualGeometryToolkitEstimation.Irls)
 """
 struct HQ{K <: AbstractLossShape, W} <: AbstractLocalOptimization
     max_iter::Int
@@ -172,6 +176,9 @@ end
 """
     BarronHQ(α; scale_multiple, max_iter=25, μ=1e-9)
 
+The joint half-quadratic lift of [`HQ`](@ref) on Barron's loss at a fixed
+shape `α`.
+
 The α-DIAL lift (smooth-and-lift 3-ii): the same genuine joint-(θ,z)
 half-quadratic lift as [`HQ`](@ref) with the Barron family
 loss at fixed shape α, standardized in the FIXED-CORE-WIDTH currency —
@@ -206,6 +213,27 @@ end
 # ablation arm is `HQ{GemanMcclureShape}`. Runs on the generic ManifoldLiftHQ driver, so on
 # every liftable problem (`_manifold_hq!`, lift/lifts.jl).
 
+"""
+    GmHqEps(; scale_multiple | loss_width, max_iter = 40, μ = 1e-9)
+
+The Geman–McClure joint-(θ,z) half-quadratic lift, parameterized by its loss
+width: a research arm beside [`HQ{GemanMcclureShape}`](@ref HQ), which
+standardizes the same loss at its half-weight radius instead.
+
+The loss (VisualGeometryToolkitCore's `GemanMcclureShape`) is a soft-tailed
+redescender with a closed-form lift and a constant z-block Hessian; its tail
+decays polynomially and never reaches zero weight. At loss width `w` the
+half-weight radius is `√(√2 − 1)·w ≈ 0.6436·w`.
+
+The loss width is `scale_multiple·ŝ` (`ŝ` the consensus set's scale) or an
+absolute `loss_width` in the residuals' units; give at most one. With neither,
+the loss follows the scorer: its half-weight radius sits at the scorer's
+inlier threshold (a loss width of about 1.554 times the threshold). `max_iter` bounds the joint Gauss–Newton iterations and `μ`
+is their damping; the defaults are `configs/default.toml`'s
+`[local_optimization.gm_hq_eps]`. It runs on the generic lift driver, so on
+every liftable problem, and like every local optimizer it can end in a local
+minimum of its seed's basin.
+"""
 struct GmHqEps{W} <: AbstractLocalOptimization
     max_iter::Int
     μ::Float64
@@ -214,6 +242,8 @@ end
 
 """
     Gnc{S<:AbstractLocalOptimization} <: AbstractLocalOptimization
+
+Graduated non-convexity over the objective of the static strategy `S`.
 
 Graduated-non-convexity WRAPPER: canonical Yang–Carlone GNC (RA-L 2020) with
 the Black–Rangarajan surrogate weights, graduating the objective of the wrapped
@@ -418,9 +448,12 @@ end
     BarronAdaptive(; scale_multiple | loss_width, max_iter=25, α_min=-10.0,
                    truncation_multiple=10.0, n_sub=256)
 
+IRLS on Barron's loss whose shape is re-estimated from the residuals each
+iteration.
+
 Solver-matched ADAPTIVE-SHAPE robust IRLS: the identical
 `PosteriorIrlsMethod`/`block_coordinate_descent!` machinery as [`StudentTUniform`](@ref) /
-[`Irls{WelschShape}`](@ref Irls), with Barron's generalized loss ρ(r; α, loss_width)
+[`Irls{WelschShape}`](@extref VisualGeometryToolkitEstimation.Irls), with Barron's generalized loss ρ(r; α, loss_width)
 (CVPR 2019) whose SHAPE α is re-estimated each iteration from the current
 residuals by minimizing the truncated-partition negative log-likelihood of
 Chebrolu et al. (RA-L 2021, Eq. 11-15): 1-D grid search over
@@ -597,6 +630,8 @@ const _LO_REGISTRY = (
 
 """
     LO_TAGS
+
+The TOML tags of this package's local-optimization strategies.
 
 This package's local-optimization strategy registry (VisualGeometryToolkitCore's
 `TagRegistry`, built by VisualGeometryToolkitEstimation's `@lo_registry`): TOML

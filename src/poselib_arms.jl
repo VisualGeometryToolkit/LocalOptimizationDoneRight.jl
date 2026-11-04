@@ -35,6 +35,8 @@ end
 """
     PoseLibLmAdaptLossWidth(; max_iter, rounds, scale_multiple)
 
+PoseLib's truncated LM refiner with its loss width re-estimated between rounds.
+
 Consensus-anchored truncated refit (TLS-IRLS-ŝ): PoseLib LM over the truncated
 loss, its loss width re-formed between `rounds` LM rounds as
 `scale_multiple·ŝ` of the current model's within-width residual scale (outer
@@ -87,6 +89,8 @@ VgtkCore.lo_marker(::PoseLibLmAdaptLossWidth) = Symbol("square*")
 
 """
     truncated_refit_pose(lo, ws, problem, seed_E, loss_width) -> Union{Nothing, refined pose}
+
+The relative pose a PoseLib truncated refiner reaches from an essential-matrix seed.
 
 The E-branch optimizer body of a PoseLib truncated refiner WITHOUT a guard or
 scoring bracket: the seed's cheirality-resolved pose (fast strided vote on the
