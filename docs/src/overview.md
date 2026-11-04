@@ -27,18 +27,20 @@ minimal-sample hypotheses and must be sharp: a single wrong inlier set loses the
 pair. **Refinement** moves the selected hypothesis toward the solution and needs a
 soft objective: gradient from correspondences that the seed currently rejects.
 The stack keeps the two roles behind separate contracts, so a scorer and a local
-optimizer are chosen independently:
+optimizer are chosen independently. With the `camera` and the pixel
+correspondences `cs` of the [Getting started](index.md#Getting-started) scene:
 
 ```julia
 using VisualGeometryToolkitEstimation, RANSACScoringDoneRight, LocalOptimizationDoneRight
 using VisualGeometryToolkitCore: WelschShape
 
 # the core default: MSAC at the class's threshold + TLS-IRLS following it
-result = find_essential(cam1, cam2, pixel_pairs)
+result = find_essential(camera, camera, cs)
 
-# the paper's recipe: Student-t + uniform selection, Welsch-HQ refinement
-result = find_essential(cam1, cam2, pixel_pairs;
-    scoring = StudentTUniformScoring(EssentialProblem, outlier_halfwidth),
+# the paper's recipe: Student-t + uniform selection (outlier half-width 250 px),
+# Welsch-HQ refinement
+result = find_essential(camera, camera, cs;
+    scoring = StudentTUniformScoring(EssentialProblem, 250.0),
     local_optimization = HQ{WelschShape}(; scale_multiple = WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL))
 ```
 

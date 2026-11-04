@@ -41,16 +41,19 @@ package's tests and docs, are one Pkg workspace: they resolve together, in one
 
 ## Install
 
-`LocalOptimizationDoneRight` and PoseLib are in
-[CauRegistry](https://github.com/prittjam/CauRegistry.jl) until their General
-registrations merge; the rest of the stack is in General. Add CauRegistry once
-(Julia 1.12+):
+The package requires Julia 1.12 or later. The example below also uses the
+stack packages it composes with (VisualGeometryToolkitCore,
+VisualGeometryToolkitEstimation and RANSACScoringDoneRight) and StaticArrays:
 
-```julia
-using Pkg
-Pkg.Registry.add("General")
-Pkg.Registry.add(url = "https://github.com/prittjam/CauRegistry.jl")   # once
-Pkg.add("LocalOptimizationDoneRight")
+```julia-repl
+pkg> add LocalOptimizationDoneRight VisualGeometryToolkitEstimation VisualGeometryToolkitCore RANSACScoringDoneRight StaticArrays
+```
+
+Until the General registration of `LocalOptimizationDoneRight` merges, add
+[CauRegistry](https://github.com/prittjam/CauRegistry.jl) first:
+
+```julia-repl
+pkg> registry add https://github.com/prittjam/CauRegistry.jl
 ```
 
 To reproduce the paper, clone the repository and instantiate `accv2026/` (see
@@ -62,15 +65,41 @@ The strategies implement VisualGeometryToolkitCore's local-optimization contract
 they plug into VisualGeometryToolkitEstimation's `find_*` pipelines and `ransac` beside any
 scorer. The core default is MSAC with a truncated-least-squares IRLS; the
 paper's recipe swaps in RANSACScoringDoneRight's Student-t + uniform scorer and
-the Welsch half-quadratic lift at its cross-validated scale multiple:
+the Welsch half-quadratic lift at its cross-validated scale multiple. On a
+synthetic two-view scene:
 
 ```julia
-using VisualGeometryToolkitEstimation, RANSACScoringDoneRight, LocalOptimizationDoneRight
-using VisualGeometryToolkitCore: WelschShape
+using Random: MersenneTwister
+using StaticArrays: SA
+using VisualGeometryToolkitCore: CameraModel, Point2, WelschShape, estimate, motion, px
+using VisualGeometryToolkitCore.Synthetic: pose_error, sample_twoview_scene
+using VisualGeometryToolkitEstimation: EssentialProblem, find_essential
+using RANSACScoringDoneRight: StudentTUniformScoring
+using LocalOptimizationDoneRight: HQ, WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL
 
-result = find_essential(cam1, cam2, pixel_pairs;
-    scoring = StudentTUniformScoring(EssentialProblem, outlier_halfwidth),
-    local_optimization = HQ{WelschShape}(; scale_multiple = WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL))
+# Two 500 × 500 px views of one pinhole camera (focal length 600 px, principal
+# point at the image centre): 200 matches with 1 px noise, then 100 mismatches
+# drawn anywhere in the image.
+rng = MersenneTwister(1)
+R, t, _, _, matches = sample_twoview_scene(rng, 200; f = 600.0, c = 250.0)
+noisy(u) = u + Point2(randn(rng), randn(rng))
+anywhere() = Point2(500 * rand(rng), 500 * rand(rng))
+cs = [[u₁ => noisy(u₂) for (u₁, u₂) in matches]; [anywhere() => anywhere() for _ in 1:100]]
+camera = CameraModel(600.0px, SA[250.0px, 250.0px])
+
+# Student-t + uniform selection, its outlier half-width 250 px (half the image),
+# then Welsch half-quadratic refinement at its cross-validated multiple of the
+# consensus set's scale.
+result = find_essential(camera, camera, cs;
+    scoring = StudentTUniformScoring(EssentialProblem, 250.0),
+    local_optimization = HQ{WelschShape}(; scale_multiple = WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL),
+    rng = MersenneTwister(2))
+
+n_inliers = count(result.inlier_mask)   # the 200 matches, and the few mismatches that land on their epipolar lines
+# Rotation and translation-direction errors in degrees, against the closest of
+# the four motions (R, t) the estimated essential matrix factors into.
+rotation_error, translation_error =
+    rad2deg.(minimum(pose_error(Rᵢ, tᵢ, R, t) for (Rᵢ, tᵢ) in motion(estimate(result))))
 ```
 
 From TOML, merge the strategy registries:
