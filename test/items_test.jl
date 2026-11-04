@@ -23,6 +23,10 @@ end
     include("test_tuning_constants.jl")
 end
 
+@testitem "strategies" begin
+    include("test_strategies.jl")
+end
+
 @testitem "poselib_arms" begin
     include("test_poselib_arms.jl")
 end

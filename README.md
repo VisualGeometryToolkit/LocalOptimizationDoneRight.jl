@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/actions/workflows/CI.yml)
 [![Docs](https://img.shields.io/badge/docs-stable-blue.svg)](https://localoptimizationdoneright.github.io)
+[![Coverage](https://codecov.io/gh/VisualGeometryToolkit/LocalOptimizationDoneRight.jl/branch/main/graph/badge.svg)](https://app.codecov.io/gh/VisualGeometryToolkit/LocalOptimizationDoneRight.jl)
 
 ## Abstract
 
