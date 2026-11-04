@@ -124,12 +124,6 @@ struct SplitSource <: NumberSource
     pairs::Dict{String,Int}
 end
 
-function _read_tsv(path)
-    lines = filter(l -> !isempty(strip(l)) && !startswith(l, "#"), readlines(path))
-    hdr = split(lines[1], '\t')
-    return [Dict(String(h) => String(v) for (h, v) in zip(hdr, split(l, '\t'))) for l in lines[2:end]]
-end
-
 # The pairs of one scene of a pool tree: a ScoringPool's `scene_names` holds one
 # label per pair (VisualGeometryToolkitEval Pools, `length(scene_names) == length(pairs)`),
 # read without the pairs themselves.
@@ -201,13 +195,13 @@ function load_number_source(name, spec::AbstractDict)
         return PolishSource(path, JLD2.load(path))
     elseif kind == "e2e"
         need("end-to-end summary", "scripts/e2e_ransac.jl summary")
-        return TableSource(path, _read_tsv(path))
+        return TableSource(path, VgtkEval.Render.read_tsv(path))
     elseif kind == "e2e_timing"
         need("end-to-end time row", "scripts/e2e_timing.jl summary")
         dir = dirname(path)
         require_input(timing_sample_path(dir); what = "timing sample", provenance = "scripts/e2e_timing.jl inputs")
         scenes, drawn = read_timing_sample(dir)
-        return TimingSource(TableSource(path, _read_tsv(path)), timing_sample_path(dir),
+        return TimingSource(TableSource(path, VgtkEval.Render.read_tsv(path)), timing_sample_path(dir),
                             Dict(s => length(drawn[s]) for s in scenes),
                             Int(e2e_timing_cell(cfg_name)["timing"]["repeats"]))
     elseif kind == "selection"
