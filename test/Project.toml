@@ -18,8 +18,15 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 VisualGeometryToolkitCore = "96820d6b-1dad-4e77-ad4a-8276f2ec1ce7"
 
+# The stack lines are TEMPORARY, until the stack's 0.6 series is registered in
+# General: the unreleased stack from its monorepo checkout.
 [sources]
 LocalOptimizationDoneRight = {path = ".."}
+VisualGeometryToolkitCore = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitCore"}
+VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitEstimation"}
+# PoseLib 0.1.7 is unregistered too (the root names it only as a weakdep,
+# which [sources] cannot carry; the members that list it as a dep do).
+PoseLib = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/PoseLib"}
 
 [compat]
 Aqua = "0.8.18"
@@ -27,14 +34,14 @@ ExplicitImports = "1.15"
 FiniteDiff = "2.33"
 JET = "0.12.3"
 LinearAlgebra = "1"
-PoseLib = "0.1"
+PoseLib = "0.1.7"
 Random = "1"
 ReTestItems = "1.35"
-VisualGeometryToolkitEstimation = "0.6"
+VisualGeometryToolkitEstimation = "0.6.1"
 Rotations = "1.7"
 StaticArrays = "1.9"
 StructArrays = "0.7.4"
 Test = "1"
 TOML = "1.0.3"
-VisualGeometryToolkitCore = "0.5"
+VisualGeometryToolkitCore = "0.6"
 julia = "1.12"
