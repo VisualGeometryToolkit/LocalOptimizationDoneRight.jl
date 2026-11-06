@@ -49,10 +49,6 @@ VisualGeometryToolkitIO = "0a7ae7e7-e931-45f8-9bba-03d07899cebc"
 [sources]
 LocalOptimizationDoneRight = {path = ".."}
 RansacLibLO = {path = "lib/RansacLibLO"}
-# TEMPORARY until RSDR 0.4.1 registers (the registered 0.4.0 caps
-# VisualGeometryToolkitCore at 0.5): its checkout, which admits Core 0.6.
-# Remove before pushing LODR.
-RANSACScoringDoneRight = {path = "/home/jbpritts/src/RansacScoringDoneRight.jl"}
 
 [compat]
 CUDA = "5.11"
