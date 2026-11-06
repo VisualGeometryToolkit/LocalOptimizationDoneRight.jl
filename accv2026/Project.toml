@@ -46,18 +46,12 @@ VisualGeometryToolkitCore = "96820d6b-1dad-4e77-ad4a-8276f2ec1ce7"
 VisualGeometryToolkitEval = "86c88899-11c8-4b8e-8d7a-f01a8ab99b28"
 VisualGeometryToolkitIO = "0a7ae7e7-e931-45f8-9bba-03d07899cebc"
 
-# The stack lines are TEMPORARY, until the stack's 0.6 series is registered in
-# General: the unreleased stack from its monorepo checkout.
 [sources]
 LocalOptimizationDoneRight = {path = ".."}
 RansacLibLO = {path = "lib/RansacLibLO"}
-VisualGeometryToolkitCore = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitCore"}
-VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitEstimation"}
-VisualGeometryToolkitEval = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitEval"}
-VisualGeometryToolkitIO = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitIO"}
-PoseLib = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/PoseLib"}
-# RANSACScoringDoneRight 0.4.0 (registered) caps VisualGeometryToolkitCore at
-# 0.5; its checkout resolves here once its own compat admits Core 0.6.
+# TEMPORARY until RSDR 0.4.1 registers (the registered 0.4.0 caps
+# VisualGeometryToolkitCore at 0.5): its checkout, which admits Core 0.6.
+# Remove before pushing LODR.
 RANSACScoringDoneRight = {path = "/home/jbpritts/src/RansacScoringDoneRight.jl"}
 
 [compat]
@@ -78,7 +72,7 @@ PoseLib = "0.1.7"
 Printf = "1"
 Random = "1"
 RansacLibLO = "0.2.0"
-RANSACScoringDoneRight = "0.4"
+RANSACScoringDoneRight = "0.4.1"
 ReTestItems = "1.35"
 VisualGeometryToolkitEstimation = "0.6.1"
 Rotations = "1.7"
