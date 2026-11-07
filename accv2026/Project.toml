@@ -19,7 +19,6 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
-FileWatching = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
 DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
 HDF5 = "f67ccb44-e63f-5c2f-98bd-6dc0ccc4ba2f"
 JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
@@ -50,8 +49,7 @@ LocalOptimizationDoneRight = {path = ".."}
 RansacLibLO = {path = "lib/RansacLibLO"}
 # The lines below are TEMPORARY, until the stack's 0.7 series is registered in
 # General: the unreleased stack from its monorepo checkout, and
-# RANSACScoringDoneRight from its checkout (the registered 0.4.1 is on the 0.6
-# stack's names).
+# RANSACScoringDoneRight 0.5 (unregistered, on the 0.7 stack) from its checkout.
 VisualGeometryToolkitCore = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitCore"}
 VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitEstimation"}
 VisualGeometryToolkitEval = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitEval"}
@@ -63,7 +61,6 @@ RANSACScoringDoneRight = {path = "/home/jbpritts/src/RansacScoringDoneRight.jl"}
 CUDA = "5.11"
 DataFrames = "1.8"
 Dates = "1"
-FileWatching = "1"
 DrWatson = "2.19"
 HDF5 = "0.17.3"
 JLD2 = "0.6"
@@ -76,7 +73,7 @@ PoseLib = "0.1.7"
 Printf = "1"
 Random = "1"
 RansacLibLO = "0.2.0"
-RANSACScoringDoneRight = "0.4.1"
+RANSACScoringDoneRight = "0.5"
 ReTestItems = "1.35"
 VisualGeometryToolkitEstimation = "0.6.1"
 Rotations = "1.7"

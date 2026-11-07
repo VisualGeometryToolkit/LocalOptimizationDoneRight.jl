@@ -227,9 +227,9 @@ end
     cfg = SampleBudgetConfig(; sample_cap = 20, batch_size = 5, lo_every = 10, budget_unit = :models,
                              lo_strategy = StudentTUniform(max_iter = 2))
     methods = [SampleBudgetMethodSpec(:jeffreys, marginal(0.01)), SampleBudgetMethodSpec(:wide, marginal(0.03))]
-    msac = [MsacSpec(:msac, 0.1, PoseLibLm(lo_iteration_budget()))]
+    msac = [LossWidthSpec(:msac, MsacScoring(codimension(P)), 0.1, PoseLibLm(lo_iteration_budget()))]
     @testset "per pair: shapes, sample boundaries, the MSAC column" begin
-        res = evaluate_sample_budget(P, methods, [pair], [R]; pair_ids = ["synth-1"], msac_specs = msac, cfg)
+        res = evaluate_sample_budget(P, methods, [pair], [R]; pair_ids = ["synth-1"], loss_width_specs = msac, cfg)
         @test res.methods == [:jeffreys, :wide, :msac, :oracle]
         # one scale prior per evaluation: the per-pair context (and every refit) carries one template
         @test_throws ArgumentError evaluate_sample_budget(P,
@@ -242,7 +242,7 @@ end
                                    lo_strategy = StudentTUniform(max_iter = 2))
         starts = sample_starts(starts_pool([pair], 25))
         res_s = evaluate_sample_budget(P, methods[1:1], [pair], [R];
-                                       msac_specs = msac, cfg = cfg_s, sample_starts = starts)
+                                       loss_width_specs = msac, cfg = cfg_s, sample_starts = starts)
         msac_best = best_pool_model(MsacScoring(1; threshold = 0.1), subpair(pair, 1:22), R[:, 1:22])
         @test res_s.best_idx_batch[1, 2, end] == msac_best      # 20 samples reach model 22
         @test_throws DimensionMismatch evaluate_sample_budget(P, methods, [pair], typeof(R)[]; cfg)
@@ -345,7 +345,7 @@ end
     halfwidths = grid(1.0e-3, 1.0, LinearCount(7))
     loss_widths = grid(1.0e-3, 1.0, LinearCount(5))
     ig = TEMPLATE
-    msac = loss_width_scoring(:msac, codimension(P))
+    msac = loss_width_scoring("msac", codimension(P))
     refits_of = (idxs_of, _) -> [
         LoRefitSpec("IG  sel", NoLocalOptimization(), OutlierHalfwidth(), halfwidths, idxs_of[:ig]),
         LoRefitSpec("MSAC sel", NoLocalOptimization(), LossWidth(), loss_widths, idxs_of[:msac]),

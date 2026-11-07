@@ -19,7 +19,8 @@ using VisualGeometryToolkitCore.Synthetic: projective_distance
 using RANSACScoringDoneRight: StudentTUniformScoring
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitEstimation: RadialHomographyProblem, RadialCameraProblem, find_radial_homography, find_radial_camera,
-    minimal_sample_size, model_type, residuals!, data_size
+    minimal_sample_size, model_type, data_size
+using VisualGeometryToolkitCore: mahalanobis_distances!, signed_distance
 using LocalOptimizationDoneRight
 const RVG = VisualGeometryToolkitEstimation
 using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination, .DivisionBoards
@@ -297,7 +298,7 @@ _pd(a::RadialCamera, b::RadialCamera) = projective_distance(radial_rows(a), radi
         P_gt2, pairs2, gt2 = _board(MersenneTwister(3); σ = 0.3)
         est2 = find_radial_camera(pairs2; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs2; center = _CC), 5.0), local_optimization = StudentTUniform(), rng = MersenneTwister(2))
         @test est2 !== nothing
-        r2 = zeros(length(pairs2)); residuals!(r2, RadialCameraProblem(pairs2; center = _CC), estimate(est2))
+        r2 = zeros(length(pairs2)); mahalanobis_distances!(r2, RadialCameraProblem(pairs2; center = _CC), estimate(est2))
         @test median(abs.(r2[gt2])) < 0.5
     end
     @testset "the Welsch-HQ chart lift (the old default)" begin
@@ -307,7 +308,7 @@ _pd(a::RadialCamera, b::RadialCamera) = projective_distance(radial_rows(a), radi
         est = find_radial_camera(pairs; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs; center = _CC), 5.0), local_optimization = lo, rng = MersenneTwister(4))
         @test est !== nothing
         @test est.lo_retcode != :not_run
-        rr = zeros(length(pairs)); residuals!(rr, p, estimate(est))
+        rr = zeros(length(pairs)); mahalanobis_distances!(rr, p, estimate(est))
         @test median(abs.(rr[gt])) < 0.4
         @test count(est.inlier_mask .& .!gt) == 0
     end
@@ -327,8 +328,8 @@ end
         prob, θ₀ = _contaminated_line(MersenneTwister(57))
         r = locally_optimize(prob, θ₀; local_optimization = StudentTUniform(), scoring = StudentTUniformScoring(prob, 1.0))
         line = estimate(r)
-        @test abs(distance(line, Point2(0.0, 0.0))) < 0.006
-        @test abs(distance(line, Point2(56.0, 0.0))) < 0.006
+        @test abs(signed_distance(line, Point2(0.0, 0.0))) < 0.006
+        @test abs(signed_distance(line, Point2(56.0, 0.0))) < 0.006
         @test count(r.inlier_mask[1:57]) >= 55 && !any(r.inlier_mask[58:60])
     end
     @testset "StuTuBCD survives a failed refit" begin

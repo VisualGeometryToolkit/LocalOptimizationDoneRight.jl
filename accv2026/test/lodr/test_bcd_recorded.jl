@@ -65,17 +65,17 @@ function arm(p, sc, model::M, lo) where {M}
     elseif lo isa LO.StuTuBCD
         score, _ = V.score_model!(buf, sc, p, model)
         state = LO.ScoreBcdState{M}(Incumbent{M}(model, -Float64(score)), -Float64(score), false)
-        return state, LO.FixedWelschScale(), LO.ScoreBcdMethod(sc, ws.lo_ws, buf, lo.tol), p, model, lo.max_iter
+        return state, FrozenNuisance(), LO.ScoreBcdMethod(sc, ws.lo_ws, buf, lo.tol), p, model, lo.max_iter
     end
     prov = rows_provider(p)
     θ₀ = lift_init(prov, model)
     if lo isa LO.HQ
         method = LO.ManifoldLiftHQ(prov, lift_size(prov), R.lo_loss(lo, cs, sc, buf), lo.μ, LO.JointGaussNewton())
-        return LO._init_manifold_hq(method, θ₀, lo.init), LO.FixedWelschScale(), method, p, model, lo.max_iter
+        return LO._init_manifold_hq(method, θ₀, lo.init), FrozenNuisance(), method, p, model, lo.max_iter
     elseif lo isa LO.WelschHQNewton
         loss = V.loss_at(lo, WelschShape(), cs, sc, buf)
         method = LO.ManifoldLiftHQ(prov, lift_size(prov), loss, lo.μ, LO.WelschConvexNewton())
-        return LO._init_manifold_hq(method, θ₀, :flat), LO.FixedWelschScale(), method, p, model, lo.max_iter
+        return LO._init_manifold_hq(method, θ₀, :flat), FrozenNuisance(), method, p, model, lo.max_iter
     elseif lo isa LO.WelschHQEcm
         loss = V.deploy(WelschShape(), max(V.scale_s2(cs), eps()); scale_multiple = lo.scale_multiple)
         method = LO.ManifoldLiftHQ(prov, lift_size(prov), loss, lo.μ)
@@ -90,7 +90,7 @@ function arm(p, sc, model::M, lo) where {M}
                               V.gnc_entry_mu0(loss, r2max, lo.entry), lo.max_iter)
         cost0 = V.lift_cost(loss, res, lift_size(prov))
         state = LO.ManifoldLiftGncState(θ₀, cost0, Incumbent(θ₀, cost0), Inf, st, 0, false)
-        return state, LO.FixedWelschScale(), LO.ManifoldLiftGnc(prov, lift_size(prov), loss), p, model, lo.max_iter
+        return state, FrozenNuisance(), LO.ManifoldLiftGnc(prov, lift_size(prov), loss), p, model, lo.max_iter
     end
     prov, pws = LO._mixture_lift_setup(ws.lo_ws, p, model, cs, buf, sc)
     θ₀ = lift_init(prov, model)

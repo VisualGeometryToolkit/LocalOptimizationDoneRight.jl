@@ -72,7 +72,7 @@ const RVGL = VisualGeometryToolkitEstimation
     # the seed scale ~1e-7 which the lift's GN iterations amplify ~1e-4).
     refit(H₀, lo) = RVGL.locally_optimize(
         prob, H₀; local_optimization = lo, scoring = sc,
-        workspace = RVGL.RansacWorkspace(prob, sc, Float64)
+        workspace = RVGL.RansacWorkspace(Float64, prob, sc)
     )
     arm = Dict(arms)
 

@@ -16,7 +16,7 @@ import VisualGeometryToolkitEstimation as VgtkEstimation
 using Test, Random, LinearAlgebra, StaticArrays
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitCore
-using VisualGeometryToolkitCore: Synthetic, Csponds, consensus_set, residuals!, estimate, iterations, lo_width,
+using VisualGeometryToolkitCore: Synthetic, Csponds, consensus_set, mahalanobis_distances!, estimate, iterations, lo_width,
     minimal_sample_size, codimension
 using VisualGeometryToolkitEstimation: consensus_s2!
 using RANSACScoringDoneRight: StudentTUniformScoring
@@ -58,7 +58,7 @@ const _NIN = 120
 _marginal(h) = StudentTUniformScoring(_LOC_PROB, h)
 function _fit(E)
     r = Vector{Float64}(undef, length(_LOC.w1))
-    residuals!(r, _LOC_PROB, E)
+    mahalanobis_distances!(r, _LOC_PROB, E)
     θ = 3 * 0.002
     return (inliers = count(<(θ), view(r, 1:_NIN)), cost = sum(x -> min(x^2, θ^2), r))
 end

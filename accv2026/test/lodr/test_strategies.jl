@@ -24,7 +24,7 @@ const LO = LocalOptimizationDoneRight
 using .HomographyScenes, .EpipolarScenes
 
 @testset "weight-policy verbs available per adapter" begin
-    for T in (LO.BarronAdaptiveLikelihood, LO.FixedWelschScale, LO.WelschEcmScale,
+    for T in (LO.BarronAdaptiveLikelihood, FrozenNuisance, LO.WelschEcmScale,
               LO.LiftedMixtureLikelihood, LO.LiftedReGeMMLikelihood)
         @test hasmethod(update_nuisance!, Tuple{T})
         @test hasmethod(update_weights!, Tuple{T})
@@ -37,7 +37,7 @@ end
         @test T <: NormalizedWeightPolicy
     end
     # Loss-derived reweighting rules (bounded potentials / frozen scale): no.
-    for T in (LO.BarronAdaptiveLikelihood, LO.FixedWelschScale, LO.WelschEcmScale)
+    for T in (LO.BarronAdaptiveLikelihood, FrozenNuisance, LO.WelschEcmScale)
         @test T <: AbstractWeightPolicy
         @test !(T <: NormalizedWeightPolicy)
     end

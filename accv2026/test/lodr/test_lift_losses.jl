@@ -185,7 +185,7 @@ const _LIFT_REGRESSION = Dict(
         r = locally_optimize(
             p, E_seed; scoring = StudentTUniformScoring(p, 0.05),
             local_optimization = lo,
-            workspace = RansacWorkspace(p, StudentTUniformScoring(p, 0.05), Float64)
+            workspace = RansacWorkspace(Float64, p, StudentTUniformScoring(p, 0.05))
         )
         @test estimate(r) !== nothing
         @test projective_distance(estimate(r), _unhex9(_LIFT_REGRESSION[name])) < 1.0e-6

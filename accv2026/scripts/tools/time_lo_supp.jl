@@ -78,11 +78,12 @@ const SBP = TOML.parsefile(projectdir("configs", "sample_budget_protocol.toml"))
 cfgf(lo) = SampleBudgetConfig(; lo_strategy = lo, sample_cap = Int(SBP["sample_cap"]),
                               batch_size = Int(SBP["batch_size"]), lo_every = Int(SBP["lo_every"]),
                               budget_unit = Symbol(SBP["budget_unit"]))
-# A rider column's MSAC spec (evaluate_sample_budget's `msac_specs`): MSAC at
-# the deployed LOSS_WIDTH, refit by PoseLib's truncated refiner (TLS-LM, TLS-LZ)
-# at the evaluation's equal LO budget.
-const RIDER_SPECS = Dict(:msac   => MsacSpec(:msac, LOSS_WIDTH, PoseLibLm(lo_iteration_budget())),
-                         :lezach => MsacSpec(:lezach, LOSS_WIDTH, PoseLibLZ(lo_iteration_budget())))
+# A rider column's MSAC spec (evaluate_sample_budget's `loss_width_specs`): MSAC
+# at the deployed LOSS_WIDTH, refit by PoseLib's truncated refiner (TLS-LM,
+# TLS-LZ) at the evaluation's equal LO budget.
+const RIDER_MSAC = MsacScoring(codimension(EssentialProblem))
+const RIDER_SPECS = Dict(:msac   => LossWidthSpec(:msac, RIDER_MSAC, LOSS_WIDTH, PoseLibLm(lo_iteration_budget())),
+                         :lezach => LossWidthSpec(:lezach, RIDER_MSAC, LOSS_WIDTH, PoseLibLZ(lo_iteration_budget())))
 
 # One run per run tag: the arm whose :ig column the tag names supplies the
 # strategy (at SCALE_MULTIPLE on the shared grid; it barely affects per-call timing),
@@ -91,9 +92,9 @@ const RUN_TAGS = unique(tag for (tag, col) in values(TIMING_TAGS) if col === :ig
 runs = map(sort(RUN_TAGS)) do tag
     owner = only(k for (k, (t, c)) in TIMING_TAGS if t == tag && c === :ig)
     cols = Set(c for (t, c) in values(TIMING_TAGS) if t == tag && c !== :ig)
-    riders = MsacSpec[RIDER_SPECS[c] for c in (:msac, :lezach) if c in cols]
+    riders = LossWidthSpec[RIDER_SPECS[c] for c in (:msac, :lezach) if c in cols]
     (tag, evaluate_sample_budget(EssentialProblem, METHODS, sub, sub_R;
-                                 msac_specs = riders,
+                                 loss_width_specs = riders,
                                  cfg = cfgf(arm_strategy(ARM_TABLE[owner], SCALE_MULTIPLE))))
 end
 
