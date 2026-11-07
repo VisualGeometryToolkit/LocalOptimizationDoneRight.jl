@@ -20,6 +20,13 @@ VisualGeometryToolkitCore = "96820d6b-1dad-4e77-ad4a-8276f2ec1ce7"
 
 [sources]
 LocalOptimizationDoneRight = {path = ".."}
+# The stack lines are TEMPORARY, until the stack's 0.7 series is registered in
+# General: the unreleased stack from its monorepo checkout.
+VisualGeometryToolkitCore = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitCore"}
+VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitEstimation"}
+# PoseLib's unreleased calibrated_loss_width (the root names it only as a
+# weakdep, which [sources] cannot carry; the members that list it as a dep do).
+PoseLib = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/PoseLib"}
 
 [compat]
 Aqua = "0.8.18"

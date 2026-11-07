@@ -25,7 +25,7 @@ using StaticArrays: SA
 import VisualGeometryToolkitCore as VgtkCore
 using VisualGeometryToolkitCore: AbstractScoring, CameraModel, EssentialMat, GemanMcclureShape, MsacScoring,
     Point2, Rect, TLSShape, WelschShape, codimension, consensus_set, csponds, estimate, exp_so3, locally_optimize!,
-    minimal_sample_size, px, residuals!, retcode, score_model!
+    mahalanobis_distances!, minimal_sample_size, px, retcode, score_model!
 using VisualGeometryToolkitCore.Synthetic: projective_distance, sample_twoview_scene
 using VisualGeometryToolkitEstimation: BoundedProblem, EssentialProblem, Irls, RansacWorkspace
 using LocalOptimizationDoneRight
@@ -60,9 +60,9 @@ seed = EssentialMat(exp_so3(0.006 * normalize(SA[1.0, -1.0, 0.7])) * R, normaliz
 
 # The RMS Sampson error (px) over the true matches.
 function inlier_rms(E)
-    r = zeros(length(pairs_px))
-    residuals!(r, problem, E)
-    return sqrt(sum(abs2, view(r, 1:N_IN)) / N_IN)
+    d = zeros(length(pairs_px))
+    mahalanobis_distances!(d, problem, E)
+    return sqrt(sum(abs2, view(d, 1:N_IN)) / N_IN)
 end
 
 # One local optimization from `model`: score it, take its consensus set, refine.

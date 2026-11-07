@@ -33,9 +33,6 @@ _entry_to_toml(x::Float64) = isnan(x) ? "r_max" : x
 VgtkEstimation.lo_field_from_toml(::Type{<:Gnc}, ::Val{:entry}, v) = _entry_from_toml(v)
 VgtkCore.toml_field(lo::Gnc, ::Val{:entry}) = _entry_to_toml(lo.entry)
 
-const _LOSS_TAG_OF = Dict{Type, String}(shape => tag for (tag, shape) in LOSS_TAGS)
-_loss_tag(::Type{K}) where {K <: AbstractLossShape} = _LOSS_TAG_OF[K]
-
 # Gnc{S} wraps the inner static strategy `inner` (+ `loss`): concrete at
 # `Gnc{Irls{loss}}`. (HQ{K}, a plain strategy: Estimation's default.)
 function VgtkEstimation.lo_concrete(::Type{Gnc}, d::AbstractDict, sec::AbstractString; tags::TagRegistry)
@@ -55,7 +52,7 @@ for T in values(LO_TAGS)
     (:width in fieldnames(T) || :scale_multiple in fieldnames(T)) || continue
     @eval VgtkEstimation.lo_resolve_scale_multiple(::Type{<:$T}, K::Type, v::AbstractString; class::Symbol) =
         v == "cross_validated" ?
-        tuning_constant(class, _loss_tag(K)).scale_multiple :
+        tuning_constant(class, tag_of(LOSS_TAGS, K)).scale_multiple :
         throw(ArgumentError("scale_multiple must be a number or \"cross_validated\", got $(repr(v))"))
 end
 

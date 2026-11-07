@@ -550,7 +550,7 @@ function update_nuisance!(lh::BarronAdaptiveLikelihood)
         sh = _barron_grid_shape(α)
         s = 0.0; m = 0
         for i in 1:lh.stride:lh.n
-            s += VgtkCore.ρ(sh, sq_residuals(rws)[i] * lh.inv_sq_loss_width, 1.0)
+            s += VgtkCore.ρ(sh, sq_distances(rws)[i] * lh.inv_sq_loss_width, 1.0)
             m += 1
         end
         L = lh.logZ[ai] + 0.5 * s / m                 # unit loss = ½ρ (facet B)
@@ -564,7 +564,7 @@ function update_weights!(lh::BarronAdaptiveLikelihood)
     rws = lh.rws
     sh = _barron_grid_shape(lh.α)
     @inbounds for i in 1:lh.n
-        robust_weight(rws)[i] = weight(sh, sq_residuals(rws)[i] * lh.inv_sq_loss_width, 1.0)
+        robust_weight(rws)[i] = weight(sh, sq_distances(rws)[i] * lh.inv_sq_loss_width, 1.0)
     end
     return nothing
 end

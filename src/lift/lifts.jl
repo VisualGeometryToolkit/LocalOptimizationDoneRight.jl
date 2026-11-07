@@ -92,7 +92,7 @@ provider_lift_state(prov) = _lift_state_for(lift_rows(prov), lift_size(prov))
 _lift_state_for(::RowsWorkspace{D}, n::Int) where {D} = lift_state(Val(D), n)
 
 # `loss` is THE loss this iterate runs at. It starts as the method's and a
-# fixed-scale arm never moves it (`FixedWelschScale`); a self-scaling policy
+# fixed-scale arm never moves it (`FrozenNuisance`); a self-scaling policy
 # (`WelschEcmScale`, strategies/essential.jl) replaces it between iterations.
 mutable struct ManifoldLiftHQState{M, L <: DeployedLoss}
     θ::M
@@ -157,7 +157,7 @@ function _manifold_hq!(
     prov = rows_provider(problem)
     method = ManifoldLiftHQ(prov, lift_size(prov), loss, μ, zblock)
     state = _init_manifold_hq(method, lift_init(prov, model), init)
-    return block_coordinate_descent!(state, FixedWelschScale(), method, problem, model; max_iter)
+    return block_coordinate_descent!(state, FrozenNuisance(), method, problem, model; max_iter)
 end
 
 # The α-dial lift (BarronHQ): fixed-CORE-WIDTH standardization — the facet-B
@@ -309,5 +309,5 @@ function locally_optimize!(
     st = schedule_init(sched, μ0, lo.max_iter)
     cost0 = lift_cost(loss, res, n)
     state = reused_state(ManifoldLiftGncState{typeof(θ₀)}, (θ₀, cost0, Incumbent(θ₀, cost0), Inf, st, 0, false))
-    return block_coordinate_descent!(state, FixedWelschScale(), method, problem, model; max_iter = lo.max_iter)
+    return block_coordinate_descent!(state, FrozenNuisance(), method, problem, model; max_iter = lo.max_iter)
 end

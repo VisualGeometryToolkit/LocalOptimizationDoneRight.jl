@@ -15,11 +15,9 @@
 # (WelschHQNewton) or in the SCALE MODEL — the likelihood type
 # `update_nuisance!` dispatches on (WelschHQEcm).
 
-# Fixed scale (all closed-form loss arms): trivial likelihood, the loss stays
-# at the seed deployment.
-struct FixedWelschScale <: AbstractWeightPolicy end
-update_nuisance!(::FixedWelschScale) = nothing
-update_weights!(::FixedWelschScale) = nothing
+# Fixed scale (all closed-form loss arms): VisualGeometryToolkitCore's
+# `FrozenNuisance()`, the policy that holds nothing; the loss stays at the seed
+# deployment.
 
 # Welsch-CONSISTENT ECM (WelschHQEcm): the Welsch loss is not Gaussian and
 # not Student-t (Gaussian core, redescending tails), so the scale is re-estimated
@@ -40,7 +38,7 @@ update_weights!(::FixedWelschScale) = nothing
 # trajectory at the FINAL converged loss width, returning the argmin of that one
 # fixed objective (`_ecm_final_scale_incumbent`). The moving-objective
 # `post_iteration!` incumbent is DISCARDED for the ECM arm; the fixed-scale arms
-# (FixedWelschScale) are untouched (their tracked objective never moves). Cost:
+# (FrozenNuisance) are untouched (their tracked objective never moves). Cost:
 # ≤ max_iter extra residual evaluations at selection time.
 struct WelschEcmScale{St, Prov, M} <: AbstractWeightPolicy
     state::St; prov::Prov

@@ -72,7 +72,7 @@ function locally_optimize!(
     score = _bcd_seed_score(buf, scoring, problem, model, cs)
     method = ScoreBcdMethod(scoring, L, buf, lo.tol)
     state = reused_state(ScoreBcdState{M}, (Incumbent{M}(model, -Float64(score)), -Float64(score), false))
-    return block_coordinate_descent!(state, FixedWelschScale(), method, problem, model; max_iter = lo.max_iter)
+    return block_coordinate_descent!(state, FrozenNuisance(), method, problem, model; max_iter = lo.max_iter)
 end
 
 function _bcd_seed_score(buf, scoring, problem, model, cs::ConsensusSet)
