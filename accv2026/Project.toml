@@ -47,9 +47,6 @@ VisualGeometryToolkitIO = "0a7ae7e7-e931-45f8-9bba-03d07899cebc"
 [sources]
 LocalOptimizationDoneRight = {path = ".."}
 RansacLibLO = {path = "lib/RansacLibLO"}
-# TEMPORARY, until RANSACScoringDoneRight 0.5 (on the 0.7 stack) is registered
-# in General: from its checkout beside this repository. The stack is General's.
-RANSACScoringDoneRight = {path = "../../RansacScoringDoneRight.jl"}
 
 [compat]
 CUDA = "5.11"

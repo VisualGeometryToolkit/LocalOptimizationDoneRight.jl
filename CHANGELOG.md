@@ -1,12 +1,11 @@
 # LocalOptimizationDoneRight changelog
 
-## 0.5.0 (unreleased)
+## 0.5.0 (2026-11-07)
 
 The VisualGeometryToolkit 0.7 stack, from General: VisualGeometryToolkitCore 0.7
 and VisualGeometryToolkitEstimation 0.7, PoseLib 0.1.8, and in accv2026 also
-VisualGeometryToolkitEval 0.6 and VisualGeometryToolkitIO 0.7. accv2026 takes
-RANSACScoringDoneRight 0.5 from its checkout through a temporary `[sources]`
-entry until that version is registered.
+VisualGeometryToolkitEval 0.6, VisualGeometryToolkitIO 0.7 and
+RANSACScoringDoneRight 0.5.
 
 ### Breaking
 
