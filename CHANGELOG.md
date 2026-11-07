@@ -2,15 +2,11 @@
 
 ## 0.5.0 (unreleased)
 
-The VisualGeometryToolkit 0.7 stack. Until it is registered, the package, test,
-accv2026 and SupeRANSAC environments take VisualGeometryToolkitCore,
-VisualGeometryToolkitEstimation, VisualGeometryToolkitEval, VisualGeometryToolkitIO
-and PoseLib from a checkout of the monorepo, and accv2026 RANSACScoringDoneRight
-from its checkout, through a temporary `[sources]` block, removed at the
-release. The compat floors stay at the 0.6 series (Core `"0.6"`, Estimation
-`"0.6.1"`, PoseLib `"0.1.7"`): the monorepo's version fields are not bumped
-yet, so a `"0.7"` entry cannot resolve against them; they move with the stack's
-version bump.
+The VisualGeometryToolkit 0.7 stack, from General: VisualGeometryToolkitCore 0.7
+and VisualGeometryToolkitEstimation 0.7, PoseLib 0.1.8, and in accv2026 also
+VisualGeometryToolkitEval 0.6 and VisualGeometryToolkitIO 0.7. accv2026 takes
+RANSACScoringDoneRight 0.5 from its checkout through a temporary `[sources]`
+entry until that version is registered.
 
 ### Breaking
 

@@ -47,15 +47,9 @@ VisualGeometryToolkitIO = "0a7ae7e7-e931-45f8-9bba-03d07899cebc"
 [sources]
 LocalOptimizationDoneRight = {path = ".."}
 RansacLibLO = {path = "lib/RansacLibLO"}
-# The lines below are TEMPORARY, until the stack's 0.7 series is registered in
-# General: the unreleased stack from its monorepo checkout, and
-# RANSACScoringDoneRight 0.5 (unregistered, on the 0.7 stack) from its checkout.
-VisualGeometryToolkitCore = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitCore"}
-VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitEstimation"}
-VisualGeometryToolkitEval = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitEval"}
-VisualGeometryToolkitIO = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitIO"}
-PoseLib = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/PoseLib"}
-RANSACScoringDoneRight = {path = "/home/jbpritts/src/RansacScoringDoneRight.jl"}
+# TEMPORARY, until RANSACScoringDoneRight 0.5 (on the 0.7 stack) is registered
+# in General: from its checkout beside this repository. The stack is General's.
+RANSACScoringDoneRight = {path = "../../RansacScoringDoneRight.jl"}
 
 [compat]
 CUDA = "5.11"
@@ -69,13 +63,13 @@ Logging = "1"
 MAT = "0.12.1"
 PGFPlotsX = "1.6"
 Pkg = "1"
-PoseLib = "0.1.7"
+PoseLib = "0.1.8"
 Printf = "1"
 Random = "1"
 RansacLibLO = "0.2.0"
 RANSACScoringDoneRight = "0.5"
 ReTestItems = "1.35"
-VisualGeometryToolkitEstimation = "0.6.1"
+VisualGeometryToolkitEstimation = "0.7"
 Rotations = "1.7"
 LocalOptimizationDoneRight = "0.5"
 StableRNGs = "1"
@@ -84,9 +78,9 @@ Statistics = "1"
 StructArrays = "0.7"
 Test = "1"
 TOML = "1"
-VisualGeometryToolkitCore = "0.6"
-VisualGeometryToolkitEval = "0.5"
-VisualGeometryToolkitIO = "0.6"
+VisualGeometryToolkitCore = "0.7"
+VisualGeometryToolkitEval = "0.6"
+VisualGeometryToolkitIO = "0.7"
 julia = "1.12"
 
 # Members of the repository workspace (../Project.toml): RansacLibLO and the

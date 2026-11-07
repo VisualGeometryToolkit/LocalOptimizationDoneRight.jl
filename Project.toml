@@ -14,12 +14,6 @@ TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 VisualGeometryToolkitCore = "96820d6b-1dad-4e77-ad4a-8276f2ec1ce7"
 VisualGeometryToolkitEstimation = "9a478df9-9a37-4dc7-9070-58617efe7573"
 
-# TEMPORARY, until the stack's 0.7 series is registered in General: the
-# unreleased stack from its monorepo checkout. Removed at the release.
-[sources]
-VisualGeometryToolkitCore = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitCore"}
-VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitEstimation"}
-
 [weakdeps]
 PoseLib = "a8c7e0b4-3d2f-4f1c-9a1e-7b2d9c8f4a3b"
 
@@ -28,10 +22,10 @@ LocalOptimizationDoneRightPoseLibExt = "PoseLib"
 
 [compat]
 LinearAlgebra = "1"
-PoseLib = "0.1.7"
+PoseLib = "0.1.8"
 StaticArrays = "1.9"
 Statistics = "1"
 TOML = "1.0.3"
-VisualGeometryToolkitCore = "0.6"
-VisualGeometryToolkitEstimation = "0.6.1"
+VisualGeometryToolkitCore = "0.7"
+VisualGeometryToolkitEstimation = "0.7"
 julia = "1.12"

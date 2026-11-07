@@ -19,11 +19,6 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 TOML = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 VisualGeometryToolkitCore = "96820d6b-1dad-4e77-ad4a-8276f2ec1ce7"
 
-# TEMPORARY, until the stack's 0.7 series is registered in General: the
-# unreleased stack from its monorepo checkout.
-[sources]
-VisualGeometryToolkitCore = {path = "/home/jbpritts/src/VisualGeometryToolkit.jl/VisualGeometryToolkitCore"}
-
 [compat]
 CondaPkg = "0.2.36"
 Dates = "1"
@@ -33,5 +28,5 @@ PythonCall = "0.9.36"
 StaticArrays = "1.9"
 Statistics = "1"
 TOML = "1"
-VisualGeometryToolkitCore = "0.6"
+VisualGeometryToolkitCore = "0.7"
 julia = "1.10"
