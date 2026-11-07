@@ -20,8 +20,10 @@ const PAPER_PROJECT_ALLOW = [
     # D3 — oracle_floors.jld2: one unkeyed file at the top of the results tree,
     # rewritten by every cell's oracle stage. Fix: a keyed file per cell,
     # joinpath(<cell's keyed dir>, "oracle_floor.jld2"), read through one function.
-    DataPolicyAllow("D3", "src/common.jl", "oracle_floor_done(oracle_floors_path(), tag; kw...)"),
-    DataPolicyAllow("D3", "scripts/tools/compute_supp_oracle_floors.jl", "write_oracle_floor!(oracle_floors_path()"),
+    DataPolicyAllow("D3", "src/cell_stages.jl", "oracle_floor_done(oracle_floors_path(), tag;"),
+    DataPolicyAllow("D3", "src/paper_numbers.jl", "oracle_floor_done(oracle_floors_path(), String(s[\"oracle\"]);"),
+    DataPolicyAllow("D3", "scripts/fig3_composed_miscal.jl", "oracle_floor_done(oracle_floors_path(), \"PT_E\";"),
+    DataPolicyAllow("D3", "scripts/tools/compute_supp_oracle_floors.jl", "write_oracle_floor(oracle_floors_path()"),
     DataPolicyAllow("D3", "scripts/tools/render_miscal_faceted.jl", "JLD2.load(oracle_floors_path(), \"floors\")"),
     DataPolicyAllow("D3", "src/paper_numbers.jl", "JLD2.load(oracle_floors_path(), \"floors\")"),
     # D3 — fig1's hand-bumped stamp. Fix: key the bundle directory by the run

@@ -15,6 +15,7 @@ if !@isdefined(ACCV2026_PAPER_NUMBERS_LOADED)
 
 using JLD2, TOML, Printf, Statistics
 using VisualGeometryToolkitEval.Render: evaluation_curve, budget_curves
+using VisualGeometryToolkitEval.Pools: pool_size
 import VisualGeometryToolkitEval
 # The figures' statistics (qualified: the prelude binds neither name).
 const _eligible_maa = VgtkEval.Stats.eligible_maa
@@ -124,11 +125,6 @@ struct SplitSource <: NumberSource
     pairs::Dict{String,Int}
 end
 
-# The pairs of one scene of a pool tree: a ScoringPool's `scene_names` holds one
-# label per pair (VisualGeometryToolkitEval Pools, `length(scene_names) == length(pairs)`),
-# read without the pairs themselves.
-_pool_pair_count(pool_dir, scene) = jldopen(f -> length(f["scene_names"]), joinpath(pool_dir, scene * ".jld2"))
-
 """
     number_source_input(name, spec) -> String
 
@@ -217,7 +213,7 @@ function load_number_source(name, spec::AbstractDict)
         cv = tuning_spec(cfg, sequential_cv_scorer_entry(cfg["sequential_cv"], :ig)).scheme.cross_validation
         pool_dir = joinpath(data_root(), cfg["experiment"]["pool_dir"])
         sc = Dict("validation" => validation_scenes(cv), "test" => test_scenes(cv))
-        return SplitSource(String(cfg_name), sc, Dict(k => sum(s -> _pool_pair_count(pool_dir, s), v) for (k, v) in sc))
+        return SplitSource(String(cfg_name), sc, Dict(k => sum(s -> pool_size(joinpath(pool_dir, s * ".jld2")), v) for (k, v) in sc))
     end
     error("[sources.$name]: unknown kind $(repr(kind))")
 end
@@ -372,8 +368,9 @@ function paper_number_floors(cfg::AbstractDict)
         s["kind"] == "miscal" || continue
         c = fold_sequential_cv!(load_run_config(_cfg_path(s["config"])))
         cv = tuning_spec(c, sequential_cv_scorer_entry(c["sequential_cv"], :ig)).scheme.cross_validation
-        oracle_floor_done(String(s["oracle"]); pool_dir = joinpath(data_root(), c["experiment"]["pool_dir"]),
-                          problem = Symbol(c["experiment"]["problem"]), scenes = test_scenes(cv)) ||
+        oracle_floor_done(oracle_floors_path(), String(s["oracle"]);
+                          source = oracle_floor_source(joinpath(data_root(), c["experiment"]["pool_dir"]),
+                                                       Symbol(c["experiment"]["problem"]), test_scenes(cv))) ||
             error("[sources.$n]: oracle floor $(s["oracle"]) missing or computed on other pools/scenes — run its cell's oracle stage")
     end
     return JLD2.load(oracle_floors_path(), "floors")

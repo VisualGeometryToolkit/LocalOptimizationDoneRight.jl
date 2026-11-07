@@ -12,7 +12,7 @@
 # times, ours and SupeRANSAC alternating on the same CPU and the same pairs.
 # Every setting is the config's; this file and the driver hold none.
 #
-# THE STATISTIC (the accuracy summary's, `e2e_summary_line`): per pair the
+# THE STATISTIC (the accuracy summary's, `e2e_summary_row`): per pair the
 # median over the repeats of its wall time, per scene the median over its pairs,
 # then the mean over the scenes [ms]. The run-to-run spread is that statistic
 # computed from each repeat alone (min, max, (max − min)/median).
@@ -31,6 +31,9 @@ using Statistics: median, mean
 using DrWatson: projectdir, scriptsdir
 using VisualGeometryToolkitEval.Tuning: read_tuning, UnitSampling, sample_units, test_scenes, tuning_table
 using VisualGeometryToolkitEval.Evaluation: deployed_scalar_setting
+using VisualGeometryToolkitEval.Stats: scene_mean
+using VisualGeometryToolkitEval.Pools: pool_size
+using VisualGeometryToolkitEval.Render: fmt3, write_tsv
 include(joinpath(@__DIR__, "superansac.jl"))     # the SupeRANSAC cell (config, common, protocol folds)
 include(joinpath(@__DIR__, "timing_probe.jl"))   # the machine records of a repeat
 
@@ -101,9 +104,6 @@ timing_repeat_path(dir, system::AbstractString, r::Integer) = joinpath(dir, "$(s
 "The summary of the timing cell (THE time row of Tab. 3)."
 timing_summary_path(dir) = joinpath(dir, "timing.tsv")
 
-"The light-pool size of `scene` (its pairs counted without loading them)."
-_timing_pool_size(pool_dir, scene) = jldopen(f -> length(f["scene_names"]), joinpath(pool_dir, scene * ".jld2"))
-
 """
     draw_timing_sample(cfg) -> Dict{String,Vector{Int}}
 
@@ -115,7 +115,7 @@ function draw_timing_sample(cfg)
     e2e = e2e_timed_cell(cfg)
     cv = sidecar_cross_validation(miscal_sidecar_of(String(e2e["operating_points"]["miscal_config"])))
     pool = joinpath(data_root(), e2e["experiment"]["pool_dir"])
-    test = Dict(s => only(values(sample_units(cv.test, Dict(s => collect(1:_timing_pool_size(pool, s))))))
+    test = Dict(s => only(values(sample_units(cv.test, Dict(s => collect(1:pool_size(joinpath(pool, s * ".jld2")))))))
                 for s in test_scenes(cv))
     drawn = sample_units(read_tuning(UnitSampling, cfg["timing"]["sample"]), test)
     return Dict{String,Vector{Int}}(String(s) => sort!(collect(Int, v)) for (s, v) in drawn)
@@ -239,12 +239,12 @@ function timing_summary!(cfg, cfg_name::AbstractString, dir)
         end
     end
     systems = [[(a, "ours", "$(a)|") for a in arms]; ("SupeRANSAC", "superansac", "")]
-    stat(walls_by_scene) = mean(median(w) for w in walls_by_scene)   # mean over scenes of the per-scene median
-    lines = ["# $(cfg_name) — the end-to-end time row (Tab. 3): $(sum(length, values(drawn))) drawn pairs of " *
-             "$(length(scenes)) test scenes, $(R) pinned single-threaded repeats per system (CPU $(cfg["timing"]["pinning"]["cpu"]))",
-             "# med_wall_ms: mean over scenes of the per-scene median over pairs of each pair's median over the repeats",
-             join(["arm", "zeta", "med_wall_ms", "rep_min_ms", "rep_max_ms", "rep_spread_pct", "n_pairs", "repeats"], '\t')]
-    f3(x) = @sprintf("%.3f", x)
+    stat(walls_by_scene) = scene_mean(median, walls_by_scene)   # mean over scenes of the per-scene median
+    comments = ["$(cfg_name) — the end-to-end time row (Tab. 3): $(sum(length, values(drawn))) drawn pairs of " *
+                "$(length(scenes)) test scenes, $(R) pinned single-threaded repeats per system (CPU $(cfg["timing"]["pinning"]["cpu"]))",
+                "med_wall_ms: mean over scenes of the per-scene median over pairs of each pair's median over the repeats"]
+    header = ["arm", "zeta", "med_wall_ms", "rep_min_ms", "rep_max_ms", "rep_spread_pct", "n_pairs", "repeats"]
+    rows = Vector{String}[]
     for (name, sys, prefix) in systems, ζ in zetas
         key(s) = sys == "ours" ? "$(prefix)$(s)|$(ζ)" : superansac_key(s, ζ)
         rec(r, s) = runs[sys][r]["res"][key(s)]
@@ -253,9 +253,9 @@ function timing_summary!(cfg, cfg_name::AbstractString, dir)
             error("timing: a repeat of $name at ζ = $ζ holds another number of pairs than the sample")
         pooled = stat([[median(walls(r, s)[j] for r in 1:R) for j in eachindex(drawn[s])] for s in scenes])
         per_rep = [stat([walls(r, s) for s in scenes]) for r in 1:R]
-        push!(lines, join([name, string(ζ), f3(1e3 * pooled), f3(1e3 * minimum(per_rep)), f3(1e3 * maximum(per_rep)),
-                           f3(100 * (maximum(per_rep) - minimum(per_rep)) / median(per_rep)),
-                           string(sum(length, values(drawn))), string(R)], '\t'))
+        push!(rows, [name, string(ζ), fmt3(1e3 * pooled), fmt3(1e3 * minimum(per_rep)), fmt3(1e3 * maximum(per_rep)),
+                     fmt3(100 * (maximum(per_rep) - minimum(per_rep)) / median(per_rep)),
+                     string(sum(length, values(drawn))), string(R)])
     end
     open(joinpath(dir, "timing_repeats.toml"), "w") do io
         println(io, "# The machine around every timed repeat (src/timing_probe.jl): host, load averages and CPU shares.")
@@ -264,8 +264,7 @@ function timing_summary!(cfg, cfg_name::AbstractString, dir)
                    for (sys, ps) in runs for (r, p) in enumerate(ps))
         TOML.print(io, rec; sorted = true)
     end
-    write(timing_summary_path(dir), join(lines, '\n') * "\n")
-    return timing_summary_path(dir)
+    return write_tsv(timing_summary_path(dir), header, rows; comments)
 end
 
 const ACCV2026_E2E_TIMING_LOADED = true

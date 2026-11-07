@@ -218,15 +218,6 @@ end
     include("test_experiment_contracts.jl")
 end
 
-@testitem "oracle floors" default_imports = false begin
-    using Test
-    import VisualGeometryToolkitEval as VgtkEval
-    using VisualGeometryToolkitEval
-    using LocalOptimizationDoneRight
-    import VisualGeometryToolkitCore
-    include("test_oracle_floors.jl")
-end
-
 @testitem "config vocabulary" default_imports = false begin
     using Test
     import VisualGeometryToolkitEval as VgtkEval

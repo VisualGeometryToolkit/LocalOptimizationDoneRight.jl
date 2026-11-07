@@ -20,13 +20,13 @@ using VisualGeometryToolkitEstimation: Irls
 using LocalOptimizationDoneRight: HQ, Gnc, StuTuBCD, StudentTUniform, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth
 using VisualGeometryToolkitCore: WelschShape, GemanMcclureShape, SmoothTLSShape, TLSShape, MsacScoring, RansacScoring,
     codimension
-using RANSACScoringDoneRight: StudentTUniformScoring
+using RANSACScoringDoneRight: RANSACScoringDoneRight, StudentTUniformScoring
 using RansacLibLO: LebedaLOOptions, PRESET_REFERENCE   # the Lebeda ladder's options; RansacLib's defaults
 using VisualGeometryToolkitEval.Evaluation: ComposedSpec, SoloSpec, Roster, WidthSource, TunedWidth, SelectionWidth,
     problem_type
-using VisualGeometryToolkitCore: WidthAxis, ScaleMultiple, LossWidth, OutlierHalfwidth, TagRegistry
+using VisualGeometryToolkitCore: WidthAxis, ScaleMultiple, LossWidth, OutlierHalfwidth
 import PoseLib
-using VisualGeometryToolkitCore: lo_label
+using VisualGeometryToolkitCore: lo_label, decision_threshold
 # The classical RansacLib LO baseline (LebedaIterLO, LebedaLOPlus) over lib/RansacLibLO.
 include(joinpath(@__DIR__, "lebeda_lo.jl"))
 # The research-only zero-clamp Welsch shape (the "<key>@zc" variants below).
@@ -36,21 +36,43 @@ include(joinpath(@__DIR__, "welsch_zero_clamp.jl"))
 """
     SELECTOR_FAMILIES
 
-The selector families a config or command line names (VisualGeometryToolkitCore's
-`TagRegistry`, family suffix `Scoring`): the tag — `snake_case` of the
-family's scoring type (`StudentTUniformScoring` → `"student_t_uniform"`,
-`MlesacScoring` → `"mlesac"`, …) — to the family's SWEEP KEY, the symbol its
-grid, its selection row, its arms' `sel` and its persisted records carry
-(`:ig`, `:msac`, …). Retired tags name their successor.
+The selector families of this paper, keyed by their tag of the scoring
+families' registry (RANSACScoringDoneRight's `SCORING_TAGS`, VisualGeometryToolkitCore's
+merged with its own; the tag is `snake_case` of the scoring type,
+`StudentTUniformScoring` → `"student_t_uniform"`): each family's SWEEP KEY, the
+symbol its grid, its selection row, its arms' `sel` and its persisted records
+carry (`:ig`, `:msac`, …), and its display label (byte-identical to the
+bundles' labels). The registry owns the tags, their types and the retired
+spellings; only the paper's own names are here.
 """
-const SELECTOR_FAMILIES = TagRegistry(:selector, "Scoring",
-    "student_t_uniform" => :ig, "msac" => :msac, "ransac" => :ransac, "magsac" => :magsac,
-    "mlesac" => :gau, "welsch_cost" => :welsch, "geman" => :geman, "sim_fit_pp" => :simfitpp;
-    retired = ("ig" => "student_t_uniform", "gau" => "mlesac", "welsch" => "welsch_cost",
-               "simfitpp" => "sim_fit_pp"),
-    paths = [r"(^|\.)selectors\[\d+\]$"])
-"The sweep key of the selector family a config tag names (a retired tag is refused, naming its successor)."
-selector_key(tag) = SELECTOR_FAMILIES[String(tag)]
+const SELECTOR_FAMILIES = Dict(
+    "student_t_uniform" => (key = :ig, label = "IG "), "msac" => (key = :msac, label = "MSAC"),
+    "ransac" => (key = :ransac, label = "RANSAC"), "magsac" => (key = :magsac, label = "MAGSAC"),
+    "mlesac" => (key = :gau, label = "GAU"), "welsch_cost" => (key = :welsch, label = "WEL"),
+    "geman" => (key = :geman, label = "GEM"), "sim_fit_pp" => (key = :simfitpp, label = "SIMFIT"))
+
+"""
+    selector_key(tag) -> Symbol
+
+The sweep key of the selector family a config tag names: a tag of
+`SCORING_TAGS` (a retired tag is refused there, naming its successor) that is
+one of [`SELECTOR_FAMILIES`](@ref).
+"""
+function selector_key(tag)
+    RANSACScoringDoneRight.SCORING_TAGS[String(tag)]   # an unknown or retired tag is refused by the registry
+    fam = get(SELECTOR_FAMILIES, String(tag), nothing)
+    fam === nothing && throw(ArgumentError(
+        "scoring tag \"$tag\" is not a selector family of this paper (has: $(sort!(collect(keys(SELECTOR_FAMILIES)))))"))
+    return fam.key
+end
+
+"The `SCORING_TAGS` tag of the selector family with sweep key `fam`."
+function selector_tag(fam::Symbol)
+    for (tag, f) in SELECTOR_FAMILIES
+        f.key === fam && return tag
+    end
+    throw(ArgumentError("unknown selector family :$fam (known: $(sort!([f.key for f in values(SELECTOR_FAMILIES)])))"))
+end
 
 # --- the protocol of record (configs/protocol.toml [arms]) ----------------------
 # Every arm's LO budget is THE equal budget; every deviation is declared in
@@ -93,19 +115,6 @@ const _TLS_ADAPT_ROUNDS = let per = Int(protocol_value("arms.tls_adapt", "lm_ite
     r == 0 || throw(ArgumentError("[arms.tls_adapt] lm_iterations_per_round = $per does not divide the LO budget $LO_BUDGET"))
     rounds
 end
-
-"""
-    welsch_half_weight_depth(scale_multiple) -> Float64
-
-The half-weight depth `scale_multiple·√ln2` of a Welsch scale multiple: a
-Welsch loss of width `scale_multiple·ŝ` weighs a residual `r` by
-`e^{−r²/width²}`, which is ½ at `r = scale_multiple·√ln2·ŝ`. The GM static and
-lifted arms read their scale multiple in that half-weight currency (VGC
-`decision_width`), so mapping the shared scale-multiple grid through this
-function lets the GM rows of the relative-pose rosters tune on the same grid
-as the Welsch arms.
-"""
-welsch_half_weight_depth(scale_multiple) = scale_multiple * sqrt(log(2.0))
 
 # One arm. `lo(scale_multiple)` builds the relative-pose strategy at the loss's
 # OWN scale multiple (ignored by the self-scaling and fixed-external-scale arms,
@@ -168,11 +177,15 @@ const _ARM_DEFS = ArmDef[
     # SCHEDULE's start ([arms.gnc] entry: the anneal completes within the budget).
     ArmDef("IG  +GNC-W", :ig, ScaleMultiple(), scale_multiple -> Gnc{Irls{WelschShape}}(; max_iter = LO_BUDGET, scale_multiple, entry = _GNC_ENTRY);
            timing = ("Welsch-GNC", :ig)),
-    # Geman–McClure: same three mechanisms in the half-weight currency.
+    # Geman–McClure: same three mechanisms in the half-weight currency (VGC
+    # `decision_width`): the shared scale-multiple grid is mapped through the
+    # Welsch half-weight depth `decision_threshold(WelschShape(), m)` = m·√ln2
+    # (a Welsch loss of width m·ŝ weighs a residual ½ there), so the GM rows tune
+    # on the same grid as the Welsch arms.
     ArmDef("IG  +GM-Irls", :ig, ScaleMultiple(), scale_multiple -> Irls{GemanMcclureShape}(; max_iter = LO_BUDGET, scale_multiple);
-           strategy_scale_multiple = welsch_half_weight_depth, timing = ("GM-IRLS", :ig)),
+           strategy_scale_multiple = m -> decision_threshold(WelschShape(), m), timing = ("GM-IRLS", :ig)),
     ArmDef("IG  +GM-HQ",   :ig, ScaleMultiple(), scale_multiple -> HQ{GemanMcclureShape}(; max_iter = LO_BUDGET, scale_multiple);
-           strategy_scale_multiple = welsch_half_weight_depth, timing = ("GM-HQ", :ig)),
+           strategy_scale_multiple = m -> decision_threshold(WelschShape(), m), timing = ("GM-HQ", :ig)),
     ArmDef("IG  +GNC-GM",  :ig, ScaleMultiple(), scale_multiple -> Gnc{Irls{GemanMcclureShape}}(; max_iter = LO_BUDGET, scale_multiple);
            timing = ("GM-GNC", :ig)),
     # TLS: smooth-truncated HQ lift (the scale multiple is the truncation in ŝ units) and GNC.

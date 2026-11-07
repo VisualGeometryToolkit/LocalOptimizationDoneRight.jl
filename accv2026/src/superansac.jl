@@ -37,13 +37,11 @@ import VisualGeometryToolkitCore as VgtkCore
 using JLD2, TOML, Printf, Dates
 using DrWatson: projectdir   # configs/ of the active (accv2026) project
 using Statistics: median, mean
-using VisualGeometryToolkitEval.Pools: load_pool
+using VisualGeometryToolkitEval.Pools: load_pool, export_pixel_inputs
 using VisualGeometryToolkitEval.Tuning: layer_tuning, tuning_spec, tuning_table, grid_spec, sample_units,
     validation_scenes, test_scenes
 using VisualGeometryToolkitEval.Evaluation: coarse_fine_cv_batched, enforce_probe_interior,
     save_scalar_tuning_artifact, deployed_scalar_setting
-using VisualGeometryToolkitCore.Pools: pixel_csponds
-using VisualGeometryToolkitCore: sources, targets
 include(joinpath(@__DIR__, "config.jl"))           # the paper prelude (guarded)
 include(joinpath(@__DIR__, "common.jl"))           # run_driver's context: scripts/tools, this project
 include(joinpath(@__DIR__, "protocol_folds.jl"))   # operating_points_run, fold_sequential_cv!
@@ -176,18 +174,15 @@ superansac_worker(cfg, args...) =
 
 # --- the inputs -------------------------------------------------------------------
 
-# N×4 `[x₁ y₁ x₂ y₂]` rows of a pair's pixel csponds — the external estimator's input layout.
-_match_matrix(cs) = [reduce(hcat, collect.(sources(cs)))' reduce(hcat, collect.(targets(cs)))']
-
 """
     superansac_pixel_inputs!(path, scene, pool_dir, units_fn) -> path
 
 SupeRANSAC's raw-PIXEL input slice of `scene`: the pool pairs
-`units_fn(n_pairs)` (strictly increasing pool indices) of the light pool —
-`matches` (per pair an N×4 `[x₁ y₁ x₂ y₂]` matrix of pixel csponds, through
-the record's own maps, VisualGeometryToolkitCore `pixel_csponds`), the stored `snn`,
-the pixel `K1`/`K2` and the GT `R_gt`/`t_gt`, the indices (`pair_indices`),
-the pool's size (`pool_size`) and its `pool_key`. An existing file is kept.
+`units_fn(n_pairs)` (strictly increasing pool indices) of the light pool,
+written by VisualGeometryToolkitEval's `Pools.export_pixel_inputs` (its layout:
+per pair the N×4 `matches`, the stored `snn`, the pixel `K1`/`K2`, the GT
+`R_gt`/`t_gt`, and the slice's `pair_indices`, `pool_size` and `pool_key`). An
+existing file is kept.
 """
 function superansac_pixel_inputs!(path::AbstractString, scene::AbstractString, pool_dir::AbstractString, units_fn)
     isfile(path) && return path
@@ -199,20 +194,8 @@ end
 # The same slice from an already loaded light pool (the timing cell loads each pool once).
 function superansac_pixel_inputs!(path::AbstractString, scene::AbstractString, pool, units_fn)
     isfile(path) && return path
-    idx = collect(Int, units_fn(length(pool)))
-    isempty(idx) && throw(ArgumentError("superansac_pixel_inputs!: no pair indices for $scene"))
-    issorted(idx; lt = <=) || throw(ArgumentError("superansac_pixel_inputs!: pair indices of $scene must be strictly increasing"))
-    ps = pool.pairs[idx]
-    mkpath(dirname(path))
-    JLD2.jldsave(path; scene = String(scene), n_pairs = length(ps), pair_indices = idx, pool_size = length(pool),
-                 pool_key = pool.pool_key,
-                 matches = [Matrix{Float64}(_match_matrix(pixel_csponds(p))) for p in ps],
-                 snn = [Float64.(p.snn) for p in ps],
-                 K1 = [Matrix{Float64}(p.K1) for p in ps], K2 = [Matrix{Float64}(p.K2) for p in ps],
-                 R_gt = [Matrix{Float64}(p.R_gt) for p in ps], t_gt = [Vector{Float64}(p.t_gt) for p in ps],
-                 provenance = "load_pool($(scene)) pool_key $(pool.pool_key); pixel_csponds + snn + K/R/t " *
-                              "as stored; pool pairs $(idx); julia $(VERSION)",
-                 created = string(Dates.now()))
+    idx = units_fn(length(pool))
+    export_pixel_inputs(path, pool, idx; scene)
     @info "pixel inputs written" path n_pairs = length(idx)
     return path
 end

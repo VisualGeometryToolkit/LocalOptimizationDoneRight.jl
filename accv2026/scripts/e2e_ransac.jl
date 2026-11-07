@@ -91,23 +91,20 @@ end
 function _summary()
     d = JLD2.load(LIVE)
     pp = d["per_pair"]
-    lines = ["# $(CFG_NAME) — end-to-end RANSAC, arm × ζ, scene-averaged over the $(length(SCENES)) test scenes " *
-             "(mean of per-scene stats; every test pair: $(sum(length.(values(d["units"])))))",
-             "# operating points: $(SIDECAR)",
-             E2E_SUMMARY_HEADER]
-    for a in ARMS, ζ in ZETAS
-        push!(lines, e2e_summary_line(a, ζ, [pp["$(a)|$(s)|$(ζ)"] for s in SCENES]; wall = r -> r.wall_s))
-    end
+    comments = ["$(CFG_NAME) — end-to-end RANSAC, arm × ζ, scene-averaged over the $(length(SCENES)) test scenes " *
+                "(mean of per-scene stats; every test pair: $(sum(length.(values(d["units"])))))",
+                "operating points: $(SIDECAR)"]
+    rows = [e2e_summary_row(a, ζ, [pp["$(a)|$(s)|$(ζ)"] for s in SCENES]; wall = r -> r.wall_s) for a in ARMS for ζ in ZETAS]
     if SR !== nothing && isempty(SMOKE)   # a smoke run's pairs are not SupeRANSAC's
         src = superansac_results(SR, SCENES)
         @info "SupeRANSAC rows from $(src.source)"
-        insert!(lines, 3, "# SupeRANSAC: $(src.source)")
+        push!(comments, "SupeRANSAC: $(src.source)")
         sr = Dict(s => superansac_scene_results(src.files[s], s, d["units"][s], ZETAS) for s in SCENES)
         for (z, ζ) in enumerate(ZETAS)
-            push!(lines, e2e_summary_line("SupeRANSAC", ζ, [sr[s][z] for s in SCENES]; wall = r -> r.wall))
+            push!(rows, e2e_summary_row("SupeRANSAC", ζ, [sr[s][z] for s in SCENES]; wall = r -> r.wall))
         end
     end
-    write(SUMMARY, join(lines, '\n') * "\n")
+    write_tsv(SUMMARY, E2E_SUMMARY_HEADER, rows; comments)
     print(read(SUMMARY, String))
 end
 
@@ -138,7 +135,7 @@ if haskey(CFG, "render") && haskey(CFG["render"], "panel")
         error("$CFG_NAME: [render] time = $(TIMING_CFG[1]) times another e2e run than this one ($KEY)")
     const TIMING_TSV = TIMING_CFG === nothing ? SUMMARY : timing_summary_path(e2e_timing_dir(TIMING_CFG[2]))
     function _table()
-        recs, trecs = tsv_records(SUMMARY), tsv_records(TIMING_TSV)
+        recs, trecs = read_tsv(SUMMARY), read_tsv(TIMING_TSV)
         row(rs, arm, ζ, k) = parse(Float64, only(r for r in rs if r["arm"] == arm && parse(Float64, r["zeta"]) == ζ)[k])
         val(arm, ζ, k) = row(k == "med_wall_ms" ? trecs : recs, arm, ζ, k)
         # (arm, label lines): a label's k-th line heads the arm's k-th stat row,

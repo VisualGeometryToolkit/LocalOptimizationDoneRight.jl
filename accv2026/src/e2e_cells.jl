@@ -21,6 +21,8 @@
 using VisualGeometryToolkitEval.Evaluation: build_pair_ctx, live_runs, live_row, RefitHalfwidth,
     audit_operating_points, deployed_budget_settings
 using VisualGeometryToolkitEval.Pools: load_pool
+using VisualGeometryToolkitEval.Stats: scene_mean
+using VisualGeometryToolkitEval.Render: fmt3
 using VisualGeometryToolkitCore: ScaleMultiple, OutlierHalfwidth, width_axis_name, IGPrior
 using VisualGeometryToolkitCore.Pools: PoolPair
 using VisualGeometryToolkitEstimation: EssentialProblem, RansacConfig, GaussianSampler
@@ -133,23 +135,23 @@ function e2e_live(sidecar::AbstractString, arms, scenes, units_of; zetas, seed::
 end
 
 "The columns of an e2e cell's summary.tsv."
-const E2E_SUMMARY_HEADER = join(["arm", "zeta", "median_deg", "maa10", "maa5", "med_trials", "med_wall_ms"], '\t')
+const E2E_SUMMARY_HEADER = ["arm", "zeta", "median_deg", "maa10", "maa5", "med_trials", "med_wall_ms"]
 
 """
-    e2e_summary_line(name, ζ, per; wall) -> String
+    e2e_summary_row(name, ζ, per; wall) -> Vector{String}
 
-One summary.tsv row: system `name` at `ζ`, the MEAN over the scenes of
-`per` (one record per scene, with `err` [deg], `trials` and the wall times
-`wall(r)` [s]) of each scene's finite median error, mAA@10° (VisualGeometryToolkitEval
-`eligible_maa`, the threshold of record), mAA@5°, median trials and median
-wall time [ms]. Ours and SupeRANSAC's rows are both this line.
+One summary.tsv row (VisualGeometryToolkitEval `write_tsv`): system `name` at
+`ζ`, the mean over the scenes of `per` (`scene_mean`; one record per scene,
+with `err` [deg], `trials` and the wall times `wall(r)` [s]) of each scene's
+finite median error, mAA@10° (`eligible_maa`, the threshold of record),
+mAA@5°, median trials and median wall time [ms]. Ours and SupeRANSAC's rows
+are both this row.
 """
-function e2e_summary_line(name, ζ, per; wall)
-    m(f) = mean(f(r) for r in per)
-    f3(x) = Printf.@sprintf("%.3f", x)
-    return join([name, string(ζ), f3(m(r -> finite_median(r.err))),
-                 f3(m(r -> eligible_maa(r.err; max_error = maa_threshold()))), f3(m(r -> eligible_maa(r.err; max_error = 5.0))),
-                 string(round(Int, m(r -> median(r.trials)))), f3(m(r -> 1e3 * finite_median(wall(r))))], '\t')
+function e2e_summary_row(name, ζ, per; wall)
+    m(f) = scene_mean(f, per)
+    return [name, string(ζ), fmt3(m(r -> finite_median(r.err))),
+            fmt3(m(r -> eligible_maa(r.err; max_error = maa_threshold()))), fmt3(m(r -> eligible_maa(r.err; max_error = 5.0))),
+            string(round(Int, m(r -> median(r.trials)))), fmt3(m(r -> 1e3 * finite_median(wall(r))))]
 end
 
 """

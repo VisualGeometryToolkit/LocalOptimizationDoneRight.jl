@@ -72,6 +72,7 @@ using VisualGeometryToolkitCore: AbstractLocalOptimization, ExternalRefit, Fixed
 import VisualGeometryToolkitCore: external_workspace, refine_external!
 using StaticArrays: SMatrix
 using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem
+using PoseLib: calibrated_loss_width   # PoseLib's camera-aware width rule (robust.cc), stated once there
 
 """
     LebedaIterLO(opts::LebedaLOOptions, rng_seed::Integer)
@@ -141,8 +142,10 @@ _lebeda_model(::HomographyProblem, M) = HomographyMat(Tuple(M))
     LebedaWorkspace
 
 The per-pair workspace of a Lebeda arm: the 4×N point matrix of its track, the
-loss width's frame factor (E: PoseLib's camera-aware rule; F/H: 1), and the
-wrapper's own `(updates, ns)` of the last call ([`lebeda_last`](@ref)).
+loss width's frame factor (E: PoseLib's camera-aware rule, the calibrated width
+of a unit pool-frame width, `PoseLib.calibrated_loss_width(Kc1, Kc2, 1.0)` —
+the rule is linear in the width; F/H: 1), and the wrapper's own
+`(updates, ns)` of the last call ([`lebeda_last`](@ref)).
 """
 mutable struct LebedaWorkspace
     pts::Matrix{Float64}
@@ -160,27 +163,13 @@ lebeda_last(ws::LebedaWorkspace) = ws.last
 function external_workspace(::_LebedaLO, problem::EssentialProblem, frame, _scoring)
     f₁, f₂ = sources(problem.cs), targets(problem.cs)
     return LebedaWorkspace(_point_matrix(map(PerspectiveMap(), f₁), map(PerspectiveMap(), f₂)),
-                           _poselib_loss_width_scale(frame.Kc1, frame.Kc2), nothing)
+                           calibrated_loss_width(frame.Kc1, frame.Kc2, 1.0), nothing)
 end
 external_workspace(::_LebedaLO, ::Union{FundMatProblem, HomographyProblem}, frame, _scoring) =
     LebedaWorkspace(_point_matrix(sources(frame.cs), targets(frame.cs)), 1.0, nothing)
 
 # The 4×N layout RansacLibLO takes: column i = (x₁ᵢ; x₂ᵢ).
 _point_matrix(x₁, x₂) = Matrix{Float64}(stack(vcat(a, b) for (a, b) in zip(x₁, x₂)))
-
-"""
-    _poselib_loss_width_scale(Kc1, Kc2) -> Float64
-
-The factor that converts a pool-frame loss width to a calibrated one.
-It is EXACTLY PoseLib's camera-aware convention (`robust.cc`: `loss_scale · 0.5·(1/f₁ + 1/f₂)`, focal fᵢ = (fxᵢ+fyᵢ)/2 of the
-pool-frame intrinsics) — so the Lebeda arms and TLS-LM/LZ consume the same
-absolute pool-frame loss width on the E track.
-"""
-_poselib_loss_width_scale(Kc1, Kc2) =
-    0.5 * (
-    1.0 / ((Kc1[1, 1] + Kc1[2, 2]) / 2) +
-        1.0 / ((Kc2[1, 1] + Kc2[2, 2]) / 2)
-)
 
 # The refit: ONE wrapper call on the track's frame at the squared converted
 # loss width, the (updates, ns) side channel recorded in the workspace.

@@ -18,6 +18,7 @@ using VisualGeometryToolkitEval.Evaluation: PairCtx, problem_type, model_imc, re
 using VisualGeometryToolkitEstimation: EssentialProblem
 using RANSACScoringDoneRight: StudentTUniformScoring
 using VisualGeometryToolkitCore: CameraModel
+using PoseLib: calibrated_loss_width
 
 include(joinpath(@__DIR__, "test_lebeda_identity.jl"))
 
@@ -118,7 +119,7 @@ end
         a, b = track === :E ? (r.s.w1, r.s.w2) : (r.s.x1c, r.s.x2c)
         @test size(ws.pts) == (4, length(a))
         @test isapprox(ws.pts, stack(vcat(p, q) for (p, q) in zip(a, b)); atol = 1.0e-12)
-        @test ws.width_scale === (track === :E ? _poselib_loss_width_scale(r.s.K1, r.s.K2) : 1.0)
+        @test ws.width_scale === (track === :E ? calibrated_loss_width(r.s.K1, r.s.K2, 1.0) : 1.0)
     end
 end
 
@@ -130,7 +131,7 @@ end
 @testset "RansacLib LO arms: each track is the direct wrapper call" begin
     for track in (:E, :F, :H)
         s = _lebeda_scene(; planar = track === :H)
-        converted = (s.loss_width * _poselib_loss_width_scale(s.K1, s.K2))^2
+        converted = calibrated_loss_width(s.K1, s.K2, s.loss_width)^2
         track_sq_loss_width, other = track === :E ? (converted, s.loss_width^2) : (s.loss_width^2, converted)
         path = _lebeda_refit_run(LebedaIterLO(_FOUR_TRIALS, 0), track).err
         # E: the calibrated points differ from the scene's only by the Kc round-trip ulps

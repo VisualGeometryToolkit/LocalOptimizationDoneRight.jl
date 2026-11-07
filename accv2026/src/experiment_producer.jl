@@ -136,27 +136,19 @@ _selection_rows(selectors) = (idxs_of, _) ->
 # the sequential CV (run_sequential_cv.jl).
 # =============================================================================
 
-"Display tag of each selector family, by its sweep key (byte-identical to the bundles' labels)."
-const SELECTOR_TAGS = Dict(:ig => "IG ", :msac => "MSAC", :ransac => "RANSAC", :magsac => "MAGSAC",
-                           :gau => "GAU", :welsch => "WEL", :geman => "GEM", :simfitpp => "SIMFIT")
-
-# The RANSACScoringDoneRight loss-width family tag of a sweep key.
-const _LOSS_WIDTH_FAMILY = Dict(:msac => :msac, :ransac => :ransac, :magsac => :magsac,
-                                :gau => :mlesac, :welsch => :welsch_cost, :geman => :geman)
-
 """
     selector_scoring(fam, problem_type, prior)
 
-The scoring of selector family `fam` (a sweep key): the Student-t-uniform
-marginal at `prior` (`:ig`), SIMFIT++ (`:simfitpp`), or the loss-width
-family's scoring at the problem's codimension.
+The scoring of selector family `fam` (a sweep key of `SELECTOR_FAMILIES`):
+the Student-t-uniform marginal at `prior` (`:ig`), SIMFIT++ (`:simfitpp`), or
+the loss-width family its `SCORING_TAGS` tag names, at the problem's
+codimension (RANSACScoringDoneRight's `loss_width_scoring`).
 """
 function selector_scoring(fam::Symbol, problem_type, prior)
-    haskey(SELECTOR_TAGS, fam) ||
-        error("unknown selector family :$fam (known: $(sort!(collect(keys(SELECTOR_TAGS)))))")
+    tag = selector_tag(fam)
     fam === :ig && return StudentTUniformScoring(problem_type, 1.0; prior)   # the grid supplies the half-widths
     fam === :simfitpp && return SimFitPP()
-    return loss_width_scoring(_LOSS_WIDTH_FAMILY[fam], codimension(problem_type))
+    return loss_width_scoring(tag, codimension(problem_type))
 end
 
 """
@@ -170,7 +162,8 @@ function build_selectors(selectors::AbstractVector{Symbol}, prior, grids::Abstra
     for fam in selectors
         scoring = selector_scoring(fam, problem_type, prior)
         axis = width_axis(scoring)
-        push!(specs, SelectorSpec(fam, "$(SELECTOR_TAGS[fam]) sel", axis, grids[width_axis_name(axis)], scoring))
+        push!(specs, SelectorSpec(fam, "$(SELECTOR_FAMILIES[selector_tag(fam)].label) sel", axis,
+                                  grids[width_axis_name(axis)], scoring))
     end
     return specs
 end
@@ -214,14 +207,14 @@ abstract type StreamedExperiment end
 
 "Sample-budget (validation-size) sensitivity: test error vs val size (the spec's budget sizes)."
 struct ValidationBudgetExperiment <: StreamedExperiment
-    selectors::Vector{Symbol}   # selector roster (families of SELECTOR_TAGS)
+    selectors::Vector{Symbol}   # selector roster (sweep keys of SELECTOR_FAMILIES)
 end
 
 "Controlled miscalibration (accv §eq-29): test error vs scale corruption `ζ ∈ zetas`."
 struct MiscalibrationExperiment <: StreamedExperiment
     zetas::Vector{Float64}
     n::Union{Nothing,Int}       # val size; `nothing` = the full val pool
-    selectors::Vector{Symbol}   # selector roster (families of SELECTOR_TAGS)
+    selectors::Vector{Symbol}   # selector roster (sweep keys of SELECTOR_FAMILIES)
 end
 MiscalibrationExperiment(zetas, n) = MiscalibrationExperiment(zetas, n, [:ig, :msac])
 

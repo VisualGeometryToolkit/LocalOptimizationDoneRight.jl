@@ -55,52 +55,15 @@ if !haskey(ENV, "VGTK_DATA_ROOT") && !ispath(joinpath(EXP_PROJECT_ROOT, "data", 
           "`julia --project=. scripts/fetch_data.jl` (REPRODUCE.md, \"On a new machine\")" maxlog = 1
 end
 
-# ---- oracle floors: ONE writer, ONE done-predicate ---------------------------
-# oracle_floors.jld2 holds "floors" (tag => pool-best floor, tag*"_maa" =>
-# pool-best mAA ceiling) and "sources" (tag => the pool tree, problem and test
-# scenes the floor was computed on, plus npairs/driver/computed). A floor is
-# DONE for a cell only when its recorded source is the cell's CURRENT pool
-# tree and test scenes: by key presence alone, floors computed on the retired
-# vgc07 pool trees reported DONE (2026-09-08) and had to be deleted by hand.
-# The read-modify-write is serialized by a pid lock because the transfer
-# chains' oracle stages run concurrently on one node.
+# ---- oracle floors -----------------------------------------------------------
+# The sidecar oracle_floors.jld2 has ONE writer and ONE done-predicate,
+# VisualGeometryToolkitEval.Experiments' `write_oracle_floor` and
+# `oracle_floor_done(path, tag; source = oracle_floor_source(pool, problem,
+# scenes))`: a floor is DONE for a cell only when its recorded source is the
+# cell's CURRENT pool tree and test scenes.
 using JLD2, Dates
-using FileWatching.Pidfile: mkpidlock
-
-const ORACLE_FLOORS_NOTE = "median over test pairs of pool-best model error (<TAG> = floor; " *
-    "<TAG>_maa = mean pool-best mAA@10° ceiling); metric = problem-family model_imc; " *
-    "selection-only bound (LO may cross); sources[<TAG>] = the pools/scenes of record"
-
-oracle_floor_source(pool_dir, problem, scenes) = Dict{String,Any}(
-    "pool_dir" => String(pool_dir), "problem" => String(problem),
-    "scenes"   => sort(String.(collect(scenes))))
-
-function write_oracle_floor!(path, tag, floor_v, maa; source, npairs, driver)
-    mkpath(dirname(path))
-    mkpidlock(path * ".lock"; wait = true, stale_age = 600) do
-        f       = isfile(path) ? JLD2.load(path) : Dict{String,Any}()
-        floors  = get(f, "floors",  Dict{String,Float64}())
-        sources = get(f, "sources", Dict{String,Any}())
-        floors[tag]          = floor_v
-        floors["$(tag)_maa"] = maa
-        sources[tag] = merge(source, Dict{String,Any}("npairs" => npairs, "driver" => String(driver),
-                                                     "computed" => string(Dates.now())))
-        JLD2.jldsave(path; floors, sources, note = ORACLE_FLOORS_NOTE)
-    end
-    return path
-end
-
-function oracle_floor_done(path::AbstractString, tag; pool_dir, problem, scenes)
-    isfile(path) || return false
-    f = JLD2.load(path)
-    floors = f["floors"]
-    (haskey(floors, tag) && haskey(floors, "$(tag)_maa")) || return false
-    src = get(get(f, "sources", Dict{String,Any}()), tag, nothing)
-    src === nothing && return false
-    want = oracle_floor_source(pool_dir, problem, scenes)
-    return all(get(src, k, nothing) == v for (k, v) in want)
-end
-oracle_floor_done(tag; kw...) = oracle_floor_done(oracle_floors_path(), tag; kw...)
+using VisualGeometryToolkitEval.Experiments: oracle_floors_path, oracle_floor_source, write_oracle_floor,
+    oracle_floor_done
 
 
 const ACCV2026_EXPERIMENTS_COMMON_LOADED = true

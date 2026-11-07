@@ -27,7 +27,6 @@ function _ecdf(x, xmax; xmin = 0.0)
     stride = max(1, length(pts) ÷ 400)                      # ≤ ~400 vertices per curve
     return pts[vcat(1:stride:length(pts)-1, length(pts))]
 end
-_coords(pts) = join(("(" * @sprintf("%.4g", x) * "," * @sprintf("%.4f", y) * ")" for (x, y) in pts), " ")
 
 d = JLD2.load(TESTF); S = d["sources"]
 # The per-pair change e_polished − e_LO (the polisher is the config's first);
@@ -41,7 +40,8 @@ println(io, raw"\begin{tikzpicture}\begin{axis}[" * polish_diff_axis(W) * "]")
 println(io, raw"\draw[gray, line width=0.6pt] (axis cs:0,0) -- (axis cs:0,1);")
 for (i, a) in enumerate(S)
     b, e = d["err"]["$(a)|none"], d["err"]["$(a)|$(p)"]; ok = isfinite.(b) .& isfinite.(e)
-    println(io, "\\addplot[$(srcstyle[i]), mark=none] coordinates {$(_coords(_ecdf(e[ok] .- b[ok], W; xmin = -W)))};")
+    pts = _ecdf(e[ok] .- b[ok], W; xmin = -W)
+    println(io, "\\addplot[$(srcstyle[i]), mark=none] coordinates {$(pgf_coords(first.(pts), last.(pts); fmt = "(%.4g,%.4f)"))};")
     println(io, "\\addlegendentry{\\stuU{}+" * label_tex(a) * "}")
 end
 println(io, raw"\end{axis}\end{tikzpicture}")

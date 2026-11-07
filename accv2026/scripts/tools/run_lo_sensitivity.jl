@@ -62,7 +62,7 @@ const DELTAS   = parse.(Float64, split(cli_option(ARGV, "deltas", "0.25,0.5,1,2,
 const LOSS_NAME = cli_option(ARGV, "loss", "welsch")                     # delta-mode inlier loss
 # PROTOCOL INVARIANT (2026-07-09, PROTOCOL.md §3): base bundles are
 # SELECTION-ONLY — refined arms exist solely through the sequential CV (run_sequential_cv.jl).
-# Roster (validation_budget + miscal modes): the selector families (experiment_producer.jl SELECTOR_TAGS keys).
+# Roster (validation_budget + miscal modes): the selector families (arm_rosters.jl SELECTOR_FAMILIES tags).
 #   --selectors=student_t_uniform,msac,mlesac,welsch_cost,geman
 const SELECTORS = Symbol[selector_key(s) for s in split(cli_option(ARGV, "selectors", "student_t_uniform,msac"), ','; keepempty=false)]
 const PT       = EssentialProblem

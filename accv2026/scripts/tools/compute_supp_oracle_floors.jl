@@ -17,7 +17,7 @@
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
 include(srcdir("config.jl"))
-include(srcdir("common.jl"))   # write_oracle_floor! (THE floors writer)
+include(srcdir("common.jl"))   # write_oracle_floor (THE floors writer, VisualGeometryToolkitEval's)
 start_output_flush!()          # per-scene progress reaches the Slurm log
 
 const TAG      = cli_option(ARGS, "tag", "")
@@ -61,7 +61,7 @@ floor_v  = round(median(vals), digits = 3)     # Inf (no model) sorts last: a fa
 ceil_maa = round(eligible_maa(vals), digits = 3)
 @info "oracle" TAG floor = floor_v maa_ceiling = ceil_maa npairs = length(vals) pair_outcomes(vals)...
 
-path = write_oracle_floor!(oracle_floors_path(), TAG, floor_v, ceil_maa;
-                           source = oracle_floor_source(POOL_DIR, PROBLEM, SCENES),
-                           npairs = length(vals), driver = "compute_supp_oracle_floors.jl")
+path = write_oracle_floor(oracle_floors_path(), TAG, floor_v, ceil_maa;
+                          source = oracle_floor_source(POOL_DIR, PROBLEM, SCENES),
+                          npairs = length(vals), driver = "compute_supp_oracle_floors.jl")
 @info "floor written" path TAG floor_v ceil_maa

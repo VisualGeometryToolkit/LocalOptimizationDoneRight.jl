@@ -32,8 +32,8 @@ using LocalOptimizationDoneRight: truncated_refit_pose, PoseLibLm
 using VisualGeometryToolkitEstimation: EssentialProblem, RansacWorkspace
 using RANSACScoringDoneRight: StudentTUniformScoring
 using VisualGeometryToolkitCore: EssentialMat, EuclideanMap, Vec3, cheiral_pose_fast, GaussianShape, best_pool_model,
-    score_model!, consensus_mask, external_workspace, translation_angle
-using Rotations: RotMatrix, rotation_angle
+    score_model!, consensus_mask, external_workspace
+using VisualGeometryToolkitCore.Synthetic: pose_error
 using PoseLib: refine_relpose
 start_output_flush!()
 
@@ -61,8 +61,6 @@ const TLS_LO    = PoseLibLm(MAX_ITER)
 const CV        = sidecar_cross_validation(SIDECAR)
 
 const BAILS = Threads.Atomic{Int}(0)       # polishes that threw (E_LO kept)
-_angle(R1, R2) = rad2deg(rotation_angle(RotMatrix{3}(R1' * R2)))
-_tangle(t1, t2) = rad2deg(translation_angle(t1, t2))
 
 # One pair: every source's E_LO, then every polisher on it → (err_LO, [(err, disp) per polisher]).
 function pair_rows(pair, R)
@@ -79,7 +77,6 @@ function pair_rows(pair, R)
         E === nothing && return (NaN, [(NaN, NaN) for _ in POLISHERS])
         err_LO = Float64(model_imc(E, ctx))
         Rs, ts = cheiral_pose_fast(E, f₁, f₂)                       # static: what EuclideanMap takes
-        R0 = Matrix(Rs); t0 = Vector(ts)                            # dense copies for the angle checks
         ws = RansacWorkspace(ctx.ep, sc_sel)
         score_model!(ws.buf, sc_sel, ctx.ep, E)        # the consensus mask of E under the selection
         stutu = copy(consensus_mask(ws.buf))
@@ -96,7 +93,7 @@ function pair_rows(pair, R)
             ref === nothing && return (err_LO, 0.0)
             err = Float64(model_imc(EssentialMat(ref.R, ref.t), ctx))
             isfinite(err) || return (err_LO, 0.0)
-            (err, max(_angle(R0, Matrix(ref.R)), _tangle(t0, Vector(ref.t))))
+            (err, rad2deg(maximum(pose_error(Rs, ts, ref.R, ref.t))))
         end
         (err_LO, pol)
     end

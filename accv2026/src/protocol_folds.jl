@@ -17,8 +17,8 @@ if !@isdefined(ACCV2026_PROTOCOL_FOLDS_LOADED)
 
 using DrWatson: projectdir   # configs/ of the active (accv2026) project
 using TOML
-using VisualGeometryToolkitCore: ScaleMultiple, OutlierHalfwidth, LossWidth, width_axis_name
-using VisualGeometryToolkitEval.Tuning: layer_tuning, tuning_spec, TUNING_TAGS, CoarseFine
+using VisualGeometryToolkitCore: ScaleMultiple, OutlierHalfwidth, LossWidth, width_axis_name, check_keys
+using VisualGeometryToolkitEval.Tuning: layer_tuning, layered_tuning_entry, tuning_spec, TUNING_TAGS, CoarseFine
 using VisualGeometryToolkitEval.Experiments:
     load_run_config, run_key, experiment_dir
 include(joinpath(@__DIR__, "protocol.jl"))   # configs/protocol.toml: the arm protocol folded below
@@ -35,19 +35,12 @@ const TUNING_PROTOCOL = TOML.parsefile(_TUNING_PATH)
 
 The `[tuning.<name>]` entry of the tuning protocol of record, with the
 protocol's paper-level type defaults (`[types.<type>]`) layered beneath it —
-under every entry whose scheme holds a field of that name — and `over` (a
-cell's overrides) layered above it, all by VisualGeometryToolkitEval's `layer_tuning`.
+under every entry whose scheme holds a TOML key of that name — and `over` (a
+cell's overrides) layered above it: VisualGeometryToolkitEval's
+`layered_tuning_entry`.
 """
-function protocol_tuning(name::AbstractString; over::AbstractDict = Dict{String,Any}())
-    entries = TUNING_PROTOCOL["tuning"]
-    haskey(entries, name) ||
-        throw(ArgumentError("configs/tuning.toml has no [tuning.$name] (has: $(sort(collect(keys(entries)))))"))
-    entry = entries[name]
-    T = TUNING_TAGS["scheme"][entry["type"]]
-    types = Dict{String,Any}(k => v for (k, v) in get(TUNING_PROTOCOL, "types", Dict())
-                             if Symbol(k) in fieldnames(T))
-    return layer_tuning(layer_tuning(types, entry), over)
-end
+protocol_tuning(name::AbstractString; over::AbstractDict = Dict{String,Any}()) =
+    layered_tuning_entry(TUNING_PROTOCOL, name; under = get(TUNING_PROTOCOL, "types", Dict{String,Any}()), over)
 
 """
     tuning_config(name; over = Dict()) -> Dict
@@ -137,10 +130,8 @@ function fold_sequential_cv!(cfg)
     haskey(cfg, "protocol") && haskey(cfg["protocol"], "cv_section") ||
         error("fold_sequential_cv!: the config declares no [protocol] cv_section")
     sq = cfg["sequential_cv"]
-    known = ("roster", "scorer", "scorer_of", "refiner", "cache_validation", "decode_parallel", "plugin_scale", "prior",
-             "objective_matched", "zero_clamp")
-    bad = setdiff(keys(sq), known)
-    isempty(bad) || error("[sequential_cv]: unknown key(s) $(sort!(collect(bad))) (known: $(known))")
+    check_keys(sq, ("roster", "scorer", "scorer_of", "refiner", "cache_validation", "decode_parallel", "plugin_scale",
+                    "prior", "objective_matched", "zero_clamp"), "sequential_cv")
     ref = sq["refiner"]
     issetequal(keys(ref), SEQUENTIAL_CV_KINDS) ||
         error("[sequential_cv] refiner: name an entry for exactly the kinds $(SEQUENTIAL_CV_KINDS), got $(sort!(collect(keys(ref))))")
@@ -221,9 +212,7 @@ function fold_budget_cell!(cfg)
     haskey(cfg, "budget") && haskey(cfg["budget"], "protocol") && haskey(cfg["budget"], "selectors") ||
         error("fold_budget_cell!: the config declares no [budget] protocol (a " *
               "configs/sample_budget_protocol.toml section) and selectors")
-    known = ("protocol", "selectors", "objective_matched", "zero_clamp")
-    bad = setdiff(keys(cfg["budget"]), known)
-    isempty(bad) || error("[budget]: unknown key(s) $(sort!(collect(bad))) (known: $(known))")
+    check_keys(cfg["budget"], ("protocol", "selectors", "objective_matched", "zero_clamp"), "budget")
     name = String(cfg["budget"]["protocol"])
     sbp = TOML.parsefile(projectdir("configs", "sample_budget_protocol.toml"))
     haskey(sbp, name) || error("[budget] protocol = \"$name\": configs/sample_budget_protocol.toml has no such section")
@@ -270,10 +259,10 @@ function fold_e2e_cell!(cfg)
     test = get(e, "test", "")
     test == "operating_points" ||
         error("[e2e] test: expected \"operating_points\", got $(repr(test))")
-    known = ("arms", "test", "zetas", "seed", "stream", "ransac", "superansac")
+    check_keys(e, ("arms", "test", "zetas", "seed", "stream", "ransac", "superansac"), "e2e")
     required = ("arms", "test", "zetas", "seed", "stream")
-    all(k -> haskey(e, k), required) && all(k -> k in known, keys(e)) ||
-        error("[e2e]: keys $(sort!(collect(keys(e)))) — required $(required), allowed $(known)")
+    all(k -> haskey(e, k), required) ||
+        error("[e2e]: keys $(sort!(collect(keys(e)))) — required $(required)")
     e["arms"] isa AbstractVector && !isempty(e["arms"]) || error("[e2e] arms: a non-empty list of deployed arm names")
     cfg["operating_points_run"] = operating_points_run(String(cfg["operating_points"]["miscal_config"]))
     return fold_arm_protocol!(cfg)

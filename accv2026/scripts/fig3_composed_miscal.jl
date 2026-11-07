@@ -35,7 +35,7 @@ require_input(EXP_POOL_PT_E; what = "PT-E-SIFT-4K_pf3 scoring pool",
 const PANEL = joinpath(PAPER_FIGDIR, "panel_lo_miscal.tex")
 
 # The PT-E pool-best oracle bound (floor + mAA ceiling) of record for these pools and test scenes.
-_oracle_done() = oracle_floor_done("PT_E"; pool_dir = EXP_POOL_PT_E, problem = :E, scenes = split(TEST, ","))
+_oracle_done() = oracle_floor_done(oracle_floors_path(), "PT_E"; source = oracle_floor_source(EXP_POOL_PT_E, :E, split(TEST, ",")))
 
 STAGES = Stage[]
 # The PT-E composed tuning: the SEQUENTIAL CV (2026-10-04, notes/sequential_cv.md)

@@ -30,7 +30,6 @@
 import VisualGeometryToolkitCore as VgtkCore
 using DrWatson
 using JLD2, TOML
-using DelimitedFiles: readdlm
 import VisualGeometryToolkitCore   # check_keys: the figure configs' key check
 include(srcdir("config.jl"))
 include(srcdir("common.jl"))
@@ -112,7 +111,7 @@ function miscal_cell_stages(cfg_name::AbstractString;
     r       = cfg["render"]
     tag     = cfg["experiment"]["oracle_tag"]
     p       = _cell_problem(cfg)
-    floor_done() = oracle_floor_done(tag; pool_dir = pool, problem = p, scenes = test_sc)
+    floor_done() = oracle_floor_done(oracle_floors_path(), tag; source = oracle_floor_source(pool, p, test_sc))
     stages = Stage[sequential_cv_stage(cv_stage, cfg, cfg_path;
         inputs = ((joinpath(pool, "$(val_sc[1]).jld2"), pool_what, pool_provenance),))]
     push!(stages, Stage(:oracle,
@@ -333,22 +332,6 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString)
     return stages
 end
 
-# =============================================================================
-# Header-led TSVs (summary.tsv of the e2e cells): columns are always read BY
-# HEADER NAME through `tsv_records`, never by position.
-# =============================================================================
-"""
-    tsv_records(path) -> Vector{Dict{String,String}}
-
-The rows of a header-led tab-separated file, each keyed by the header names.
-Text from `#` to the end of a line is a comment (`readdlm`'s `comments`), so
-the provenance preamble is skipped; a value must never contain `#`.
-"""
-function tsv_records(path::AbstractString)
-    data, header = readdlm(path, '\t', String; header = true, comments = true, comment_char = '#')
-    names = vec(String.(header))
-    return [Dict(zip(names, String.(row))) for row in eachrow(data)]
-end
 
 # =============================================================================
 # The main-paper 3-by-3 grids (fig3_miscal_grid, fig4_budget_grid): one row per
