@@ -22,9 +22,9 @@ jobs:
         # Every workspace member with [compat]: a member left out keeps the old bound, and the workspace no longer resolves.
         run: julia -e 'using CompatHelper; CompatHelper.main(; subdirs = ["", "accv2026", "accv2026/envs/superansac", "accv2026/lib/RansacLibLO", "docs", "test"])'
       # CompatHelper's own open PRs (opened by github-actions, branch compathelper/…) merge themselves once the CI jobs
-      # required on main (branch protection) pass. Every other PR is untouched. Merging is not a release: the stack's
+      # required on main (branch protection) succeed. Every other PR is untouched. Merging is not a release: the stack's
       # cascade still bumps the version, narrows compat to the latest only, and registers.
-      - name: "Auto-merge CompatHelper's PRs once the required checks pass"
+      - name: "Auto-merge CompatHelper's PRs once the required checks succeed"
         run: |
           for pr in $(gh pr list --repo "$GITHUB_REPOSITORY" --state open --author app/github-actions \
                         --json number,headRefName --jq '.[] | select(.headRefName | startswith("compathelper/")) | .number'); do
