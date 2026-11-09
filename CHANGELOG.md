@@ -1,5 +1,12 @@
 # LocalOptimizationDoneRight changelog
 
+## 0.5.1 (2026-11-09)
+
+On the VisualGeometryToolkit 0.8 stack, from General: VisualGeometryToolkitCore 0.8 and
+VisualGeometryToolkitEstimation 0.8, PoseLib 0.1.9 (its compat floor, the first on Core
+0.8); accv2026 also IO 0.8, Eval 0.6.1 and RANSACScoringDoneRight 0.6. Nothing else
+changes.
+
 ## 0.5.0 (2026-11-07)
 
 The VisualGeometryToolkit 0.7 stack, from General: VisualGeometryToolkitCore 0.7
