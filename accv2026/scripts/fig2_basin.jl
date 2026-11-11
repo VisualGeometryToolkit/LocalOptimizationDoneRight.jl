@@ -15,7 +15,7 @@
 # multiple anywhere: a common multiple does not translate across losses.
 #
 # DATA INPUTS
-#   pool  : <ACCV_DATA>/data/PT-E-SIFT-4K_pf3/<scene>.jld2 (public IMC-PT via
+#   pool  : <data root>/accv2026/data/PT-E-SIFT-4K_pf3/<scene>.jld2 (public IMC-PT via
 #           scripts/tools/generate_scoring_pools.jl — see REPRODUCE.md)
 # STAGES
 #   basin_cv    (GPU, longest tuning of the campaign)  → EXP_BASIN_SIDECAR
@@ -43,19 +43,12 @@ sequential_cv_dir(PT_E_BASIN) == EXP_BASIN_DIR ||
 push!(STAGES, sequential_cv_stage(:basin_cv, PT_E_BASIN, PT_E_BASIN_PATH))
 push!(STAGES, Stage(:ladder_test,
         "δ-perturbed ladder on the 11 test scenes at the CV'd widths → $(EXP_LADDER_BUNDLE)",
-        () -> isfile(EXP_LADDER_BUNDLE),
+        () -> run_complete(EXP_LADDER_DIR; sidecar = basename(EXP_LADDER_BUNDLE)),
         () -> begin
             require_input(EXP_BASIN_SIDECAR; what = "basin operating points (the Table 1 arms)",
                           provenance = "stage basin_cv of this experiment")
             audit_operating_points(ROSTER, EXP_BASIN_SIDECAR)
-            run_driver("run_basin_ladder.jl",
-                       "--solo-cv=$(EXP_BASIN_SIDECAR)",
-                       "--pool-dir=$(EXP_POOL_PT_E)",
-                       "--deltas=$(EXP_LADDER_DELTAS)",
-                       "--seed=$(EXP_LADDER_SEED)", "--nboot=$(EXP_LADDER_NBOOT)",
-                       "--succ-deg=$(EXP_LADDER_SUCC)",
-                       "--stamp=$(EXP_LADDER_STAMP)",
-                       "--dataset=phototourism", "--matcher=sift")
+            run_driver("run_basin_ladder.jl", "--config=$(PT_E_BASIN_PATH)")
         end))
 push!(STAGES, Stage(:render,
         "faceted basin matrix → $(PANEL)",

@@ -1,9 +1,9 @@
 #!/usr/bin/env julia
 # =============================================================================
-# run_lo_sensitivity.jl — driver for the streamed experiments: --mode=validation_budget
+# run_lo_sensitivity.jl — driver for the streamed experiments ([sensitivity] mode of its config): validation_budget
 # (how many VALIDATION PAIRS the tuner needs — not the sample budget),
-# --mode=miscal (scale-corruption ζ sweep), and
-# --mode=delta (well-depth Δ sweep).
+# miscal (scale-corruption ζ sweep), and
+# delta (well-depth Δ sweep).
 #
 # Protocol: eval/protocol/PROTOCOL.md §3 (base bundles are SELECTION-ONLY),
 # §4 (fixed tuned efficiency constant miscal), §5 (validation_budget sweep).
@@ -18,14 +18,14 @@
 # Every tuning parameter (the native grids, the standardized display axis, the
 # budget sampling) and THE data (the cross-validation: its
 # registered validation/test scenes and per-scene pair samplings) is the
-# `[tuning.<name>]` spec read from --config
-# (default: the protocol of record, configs/tuning.toml) — `lo_sensitivity`
-# for --mode=validation_budget|delta, `lo_sensitivity_natural` for the unrestricted regime,
-# `lo_sensitivity_miscal` for --mode=miscal. The ζ ladder is the
+# `[tuning.<name>]` spec the config's [sensitivity] tuning names
+# (the protocol of record, configs/tuning.toml) — `lo_sensitivity`
+# for mode = validation_budget|delta, `lo_sensitivity_natural` for the unrestricted regime,
+# `lo_sensitivity_miscal` for mode = miscal. The ζ ladder is the
 # miscalibration protocol of record (configs/miscal_protocol.toml).
 #
 # GPU job:
-#   julia --project=. scripts/tools/run_lo_sensitivity.jl --pool-dir=<pool> --mode=validation_budget
+#   julia --project=. scripts/tools/run_lo_sensitivity.jl --config=configs/pt_e_sel_miscal.toml [--batch=600]
 # =============================================================================
 
 using DrWatson; @quickactivate "ACCV2026"
@@ -44,52 +44,35 @@ include(srcdir("protocol_folds.jl"))
 start_output_flush!()
 
 # =============================================================================
-# CLI
+# The config of record (--config=<configs/name.toml>, a `[sensitivity]` cell:
+# Fig 1's configs/pt_e_sel_miscal.toml), folded with its tuning spec and the ζ
+# ladder (src/protocol_folds.jl `fold_sensitivity_cell!`): everything that moves
+# the bundle keys its directory, `sensitivity_cell_dir`. --batch (the on-device
+# chunk size) is a resource knob and keys nothing.
 # =============================================================================
 const ARGV     = ARGS
-const POOL_DIR = cli_option(ARGV, "pool-dir")
+const CFG_PATH = cli_option(ARGV, "config")
+const CFG      = fold_sensitivity_cell!(load_run_config(CFG_PATH))
+const KEY      = run_key(CFG)
+const S        = CFG["sensitivity"]
 const NBATCH   = parse(Int, cli_option(ARGV, "batch", "600"))            # pairs staged on-device per chunk (bounds GPU/host)
-const MODE     = cli_option(ARGV, "mode", "validation_budget")                          # "validation_budget" (val-size sweep) | "miscal" (synthetic scale-corruption ζ) | "delta" (well-depth sweep)
-const TUNING   = cli_option(ARGV, "tuning", MODE == "miscal" ? "lo_sensitivity_miscal" : "lo_sensitivity")
-const CONFIG   = cli_option(ARGV, "config", "")
-const SPEC     = tuning_spec(isempty(CONFIG) ? tuning_config(TUNING) : TOML.parsefile(CONFIG), TUNING)
-const MP       = TOML.parsefile(projectdir("configs", "miscal_protocol.toml"))["protocol"]
-const NZETA    = parse(Int, cli_option(ARGV, "n-zeta", string(MP["n_zeta"])))               # # of ζ points (miscal)
-const ZETA_OCT = parse(Float64, cli_option(ARGV, "zeta-octaves", string(MP["zeta_octaves"])))   # ζ ∈ 2^[-ZETA_OCT, ZETA_OCT]
-const ZETAS    = collect(2.0 .^ range(-ZETA_OCT, ZETA_OCT; length = NZETA))
-const NMIS     = parse(Int, cli_option(ARGV, "n-miscal", "0"))           # val size for miscal sweep; 0 ⇒ full val pool
-const DELTAS   = parse.(Float64, split(cli_option(ARGV, "deltas", "0.25,0.5,1,2,4,8"), ','))  # well depths (delta)
-const LOSS_NAME = cli_option(ARGV, "loss", "welsch")                     # delta-mode inlier loss
+const POOL_DIR = joinpath(data_root(), CFG["experiment"]["pool_dir"])
+const MODE     = String(S["mode"])                                       # "validation_budget" | "miscal" | "delta"
+const TUNING   = String(S["tuning"])
+const SPEC     = tuning_spec(tuning_config(TUNING), TUNING)
+const ZETAS    = MODE == "miscal" ?
+    collect(2.0 .^ range(-Float64(CFG["miscal_protocol"]["zeta_octaves"]), Float64(CFG["miscal_protocol"]["zeta_octaves"]);
+                          length = Int(CFG["miscal_protocol"]["n_zeta"]))) : Float64[]
+const NMIS     = Int(get(S, "n_miscal", 0))                             # val size for the miscal sweep; 0 ⇒ the full val pool
+const DELTAS   = Float64.(get(S, "deltas", Float64[]))                   # well depths (delta mode)
+const LOSS_NAME = String(get(S, "loss", "welsch"))                       # delta-mode inlier loss
 # PROTOCOL INVARIANT (2026-07-09, PROTOCOL.md §3): base bundles are
 # SELECTION-ONLY — refined arms exist solely through the sequential CV (run_sequential_cv.jl).
-# Roster (validation_budget + miscal modes): the selector families (arm_rosters.jl SELECTOR_FAMILIES tags).
-#   --selectors=student_t_uniform,msac,mlesac,welsch_cost,geman
-const SELECTORS = Symbol[selector_key(s) for s in split(cli_option(ARGV, "selectors", "student_t_uniform,msac"), ','; keepempty=false)]
+# Roster: the selector families (arm_rosters.jl SELECTOR_FAMILIES tags).
+const SELECTORS = Symbol[selector_key(s) for s in S["selectors"]]
 const PT       = EssentialProblem
-
-# Canonical keyed output dir for the M-bundle (mirrors the production results
-# tree: ROOT/<dataset>/<matcher>/<problem>/<Experiment>/<stamp>/). The offline
-# renderer (plot_lo_sensitivity.jl) reads bundle.jld2 from here.
-# <results root>/accv2026 of the retired RVG_RESULTS_ROOT convention, else this
-# project's results_root() (data/README.md) — the same tree on the author's host.
-const RESULTS_ROOT = haskey(ENV, "RVG_RESULTS_ROOT") ? joinpath(ENV["RVG_RESULTS_ROOT"], "accv2026") : results_root()
-const DATASET  = cli_option(ARGV, "dataset", "phototourism")
-const MATCHER  = cli_option(ARGV, "matcher", "sift")
-const PROBLEM  = cli_option(ARGV, "problem", "E")
-const EXPNAME  = MODE == "miscal" ? "Miscalibration" :
-                 MODE == "delta"  ? "DeltaSweep" : "LOSensitivity"
-# The run's effective arguments: everything that moves the bundle (--batch is
-# the on-device chunk size and --save a switch, so neither keys it). --stamp
-# defaults to their run key, so a rerun of the same arguments lands in the
-# same directory.
-const EFFECTIVE = Dict{String,Any}(
-    "pool_dir" => POOL_DIR, "mode" => MODE, "tuning" => TUNING, "spec" => tuning_hash(SPEC),
-    "zetas" => ZETAS, "n_miscal" => NMIS, "deltas" => DELTAS, "loss" => LOSS_NAME,
-    "selectors" => String.(SELECTORS), "dataset" => DATASET, "matcher" => MATCHER, "problem" => PROBLEM)
-const STAMP    = cli_option(ARGV, "stamp", lowercase(EXPNAME) * "-" * run_key(EFFECTIVE))
-const SAVE     = parse(Bool, cli_option(ARGV, "save", "true"))   # write the M-bundle
-const OUTDIR   = joinpath(RESULTS_ROOT, DATASET, MATCHER, PROBLEM, EXPNAME, STAMP)
-const BUNDLE   = SAVE ? joinpath(OUTDIR, "bundle.jld2") : nothing
+const OUTDIR   = sensitivity_cell_dir(CFG)
+const BUNDLE   = joinpath(OUTDIR, "bundle.jld2")
 
 # =============================================================================
 # Stream scenes (scene-ordered: val first, then test) — the spec's
@@ -110,7 +93,7 @@ scenes = vcat(last.(SIDES.validation), last.(SIDES.test))   # zero-arg loaders
 if MODE == "miscal"
     # Synthetic miscalibration: scale the VAL supplied scale ŝ by ζ (×ζ² on σ̂²),
     # evaluate on unscaled test, sweep f. Isolates the eq-29 bias response.
-    BUNDLE === nothing || @info "bundle → $BUNDLE"
+    @info "bundle → $BUNDLE"
     mc = miscalibration_sweep(scenes, NVAL, ZETAS;
         n = NMIS == 0 ? nothing : NMIS, selectors = SELECTORS,
         problem_type = PT, spec = SPEC, batch = NBATCH,
@@ -126,7 +109,7 @@ elseif MODE == "delta"
            LOSS_NAME == "geman"     ? GemanMcclureShape() :
            LOSS_NAME == "smoothtls" ? SmoothTLSShape() :
            error("unknown --loss=$LOSS_NAME")
-    BUNDLE === nothing || @info "bundle → $BUNDLE"
+    @info "bundle → $BUNDLE"
     ds = delta_sweep(scenes, NVAL, loss, DELTAS;
         problem_type = PT, spec = SPEC, batch = NBATCH,
         save_bundle = BUNDLE, scene_ids = SCENE_IDS)
@@ -138,7 +121,7 @@ elseif MODE == "delta"
     end
     flush(stdout)
 else
-    BUNDLE === nothing || @info "bundle → $BUNDLE"
+    @info "bundle → $BUNDLE"
     out = lo_sensitivity_sweep(scenes, NVAL;
         problem_type = PT, spec = SPEC, batch = NBATCH, selectors = SELECTORS,
         save_bundle = BUNDLE, scene_ids = SCENE_IDS)
@@ -168,8 +151,8 @@ end
 # The renderer is pure-CPU (re-bootstraps the saved M via the package's
 # `compute_method_rows` → BCa CIs) and writes `summary.jld2` + PGFPlots panels
 # next to the bundle. Pure post-processing — safe to run at the tail of the job.
-if BUNDLE !== nothing && isfile(BUNDLE)
-    @info "auto-render → panels next to $BUNDLE"
-    include(srcdir("plot_lo_sensitivity.jl"))
-    Base.invokelatest(render_bundle, BUNDLE, PanelSpec(; legend_name = "lolegend"))
-end
+write_run_records(OUTDIR, CFG; driver = "run_lo_sensitivity.jl", config_source = CFG_PATH, key = KEY,
+                  inputs = [POOL_DIR])
+@info "auto-render → panels next to $BUNDLE"
+include(srcdir("plot_lo_sensitivity.jl"))
+Base.invokelatest(render_bundle, BUNDLE, PanelSpec(; legend_name = "lolegend"))

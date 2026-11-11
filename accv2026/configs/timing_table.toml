@@ -14,6 +14,9 @@ matcher = "sift"
 problem = "E"
 pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"   # the PT-E pool of record (pt_e_miscal.toml's)
 
+[operating_points]
+miscal_config = "pt_e_miscal"  # the deployed operating points it times (fig3's cell); its run keys this one
+
 [timing]
 tag = "pt_sift"                # the file is lo_timing_<tag>_<scene>.jld2
 sb_protocol = "phototourism"   # the configs/sample_budget_protocol.toml section the timing runs under

@@ -18,7 +18,7 @@ if !@isdefined(ACCV2026_PROTOCOL_FOLDS_LOADED)
 using DrWatson: projectdir   # configs/ of the active (accv2026) project
 using TOML
 using VisualGeometryToolkitCore: EfficiencyConstant, OutlierHalfwidth, LossWidth, width_axis_name, check_keys
-using VisualGeometryToolkitEval.Tuning: layer_tuning, layered_tuning_entry, tuning_spec, TUNING_TAGS, CoarseFine
+using VisualGeometryToolkitEval.Tuning: layer_tuning, layered_tuning_entry, tuning_spec, TUNING_TAGS, CoarseFine, tuning_hash
 using VisualGeometryToolkitEval.Experiments:
     load_run_config, run_key, experiment_dir,
     config_of_record, keyed_cell_dir   # configs/<name>.toml as a run config; <experiment_dir>/<experiment>/<kind>-<run_key>
@@ -318,6 +318,85 @@ stages together.
 sequential_cv_dir(cfg) =
     keyed_cell_dir(cfg, get(cfg["sequential_cv"], "roster", "composed") == "basin" ? "Basin" : "Miscalibration",
                    "sequential-cv")
+
+"""
+    fold_sensitivity_cell!(cfg) -> cfg
+
+The fold of a selection-only sensitivity cell (`[sensitivity]`: Fig 1's
+configs/pt_e_sel_miscal.toml; scripts/tools/run_lo_sensitivity.jl) into its run
+key: the hash of the configs/tuning.toml entry it tunes on (`[sensitivity]
+tuning`) and, for `mode = "miscal"`, the ζ ladder of configs/miscal_protocol.toml.
+"""
+function fold_sensitivity_cell!(cfg)
+    s = cfg["sensitivity"]
+    check_keys(s, ("mode", "tuning", "selectors", "n_miscal", "deltas", "loss"), "sensitivity")
+    mode = String(s["mode"])
+    mode in ("miscal", "delta", "validation_budget") ||
+        error("[sensitivity] mode = $(repr(mode)): expected miscal, delta or validation_budget")
+    cfg["tuning_spec_hash"] = tuning_hash(tuning_spec(tuning_config(String(s["tuning"])), String(s["tuning"])))
+    mode == "miscal" && (cfg["miscal_protocol"] = TOML.parsefile(_MP_PATH)["protocol"])
+    return cfg
+end
+
+"""
+    sensitivity_cell_dir(cfg) -> String
+
+The keyed directory of a folded sensitivity cell:
+`<results>/<dataset>/<matcher>/<problem>/<Miscalibration | DeltaSweep | LOSensitivity>/sel-<mode>-<run_key>`.
+"""
+function sensitivity_cell_dir(cfg)
+    mode = String(cfg["sensitivity"]["mode"])
+    experiment = mode == "miscal" ? "Miscalibration" : mode == "delta" ? "DeltaSweep" : "LOSensitivity"
+    return keyed_cell_dir(cfg, experiment, "sel-" * replace(mode, "_" => "-"))
+end
+
+"""
+    ladder_cell(config_name) -> Dict
+
+Fig 2's δ-perturbed ladder (scripts/tools/run_basin_ladder.jl) as a run
+config: the basin cell `config_name`'s `[experiment]` (its pool), the RUN of
+its operating points (that cell's run key — a re-tune re-keys the ladder) and
+the ladder protocol of record, configs/protocol.toml `[basin_ladder]`. Its
+keyed directory is [`ladder_cell_dir`](@ref).
+"""
+ladder_cell(config_name::AbstractString) = Dict{String,Any}(
+    "experiment" => config_of_record(config_name)["experiment"],
+    "operating_points" => Dict{String,Any}("miscal_config" => String(config_name)),
+    "operating_points_run" => operating_points_run(config_name),
+    "basin_ladder" => protocol_table("basin_ladder"))
+
+"""
+    ladder_cell_dir(cfg) -> String
+
+The keyed directory of a ladder cell: `<results>/<dataset>/<matcher>/<problem>/BasinLadder/basin-ladder-<run_key>`.
+"""
+ladder_cell_dir(cfg) = keyed_cell_dir(cfg, "BasinLadder", "basin-ladder")
+
+"""
+    fold_timing_cell!(cfg) -> cfg
+
+The fold of the timing cell (configs/timing_table.toml, scripts/timing_table.jl)
+into its run key: the configs/sample_budget_protocol.toml section it runs under
+(`[timing] sb_protocol`) and the RUN of the operating points it times
+(`[operating_points] miscal_config`, that cell's run key — a re-tune re-keys
+the timings).
+"""
+function fold_timing_cell!(cfg)
+    name = String(cfg["timing"]["sb_protocol"])
+    sbp = TOML.parsefile(projectdir("configs", "sample_budget_protocol.toml"))
+    haskey(sbp, name) || error("[timing] sb_protocol = \"$name\": configs/sample_budget_protocol.toml has no such section")
+    cfg["sample_budget_protocol"] = Dict(name => sbp[name])
+    cfg["operating_points_run"] = operating_points_run(String(cfg["operating_points"]["miscal_config"]))
+    return cfg
+end
+
+"""
+    timing_cell_dir(cfg) -> String
+
+The keyed directory of the folded timing cell:
+`<results>/<dataset>/<matcher>/<problem>/Timing/timing-<run_key>`.
+"""
+timing_cell_dir(cfg) = keyed_cell_dir(cfg, "Timing", "timing")
 
 const ACCV2026_PROTOCOL_FOLDS_LOADED = true
 end # include guard

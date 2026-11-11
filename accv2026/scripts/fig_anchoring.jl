@@ -28,7 +28,7 @@
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
 using JLD2
-include(srcdir("cell_stages.jl"))   # config + common + registry; zeta_ladder_args
+include(srcdir("cell_stages.jl"))   # config + common + registry
 
 const PANEL = joinpath(PAPER_FIGDIR, "panel_anchoring_paired.tex")
 

@@ -13,12 +13,10 @@
 # with pair-bootstrap BCa 95% bands.  Saves a JLD2 bundle of the raw
 # (pair × δ × method) error tensor for offline re-analysis.
 #
-#   julia --project=. scripts/tools/run_basin_ladder.jl --solo-cv=<sidecar> \
-#       --pool-dir=<pool> --seed=<s> --nboot=<b> \
-#       --deltas=<rad,...> --succ-deg=<deg> --stamp=<tag>
+#   julia --project=. scripts/tools/run_basin_ladder.jl --config=configs/pt_e_basin.toml
 #
-# fig2_basin.jl supplies every protocol argument from configs/protocol.toml
-# [basin_ladder] (registry.jl); the driver has no default for any of them.
+# Every ladder parameter is configs/protocol.toml [basin_ladder]; the config
+# names the basin cell whose operating points it deploys.
 #
 # The pairs are the TEST side of the sidecar's own cross-validation (its
 # persisted spec: the scenes its operating points were NOT tuned on). Draw
@@ -30,11 +28,8 @@
 # per-pair oracle scale ŝ² = gt_variance (this is the MECHANISM exhibit — the
 # oracle choice is stated in the caption; the production 2×2 uses plug-in);
 # outlier half-width = ŝ·√(π/2)·e^{m²/2} at the operating efficiency constant m
-# (paper eq-28 map, --operating-efficiency-constant).
+# (paper eq-28 map, at Eval's OPERATING_EFFICIENCY_CONSTANT).
 #
-# paper-project: allow C1 a worker: scripts/fig2_basin.jl hands it every argument from its configs of record (configs/pt_e_basin.toml, configs/protocol.toml [basin_ladder]) through registry.jl
-# paper-project: allow P1 a worker of scripts/fig2_basin.jl: the bundle (ladder.jld2) records its operating-points sidecar, seed and protocol, and lives in the basin cell's keyed directory, whose run records the cell writes
-# paper-project: allow P2 fig2_basin.jl gives --stamp = basin-ladder-<the basin cell's keyed directory> (registry.jl EXP_LADDER_STAMP), so the bundle is keyed by that cell's run key; without it the stamp is the run key of the effective arguments
 # =============================================================================
 
 using DrWatson; @quickactivate "ACCV2026"
@@ -48,81 +43,50 @@ using VisualGeometryToolkitEval.Tuning: corrupt_native
 # The paper config on top of the LO engine (PairCtx geometry, RefitFamily refit
 # layer, the PoseLib adaptive-loss-width custom engine).
 include(srcdir("config.jl"))
+include(srcdir("protocol_folds.jl"))   # ladder_cell, ladder_cell_dir, miscal_sidecar_of
 start_output_flush!()
 
 
+# =============================================================================
+# The config of record (--config=<configs/name.toml>): the BASIN cell whose
+# operating points the ladder deploys (Fig 2: configs/pt_e_basin.toml, roster
+# "basin") — its sidecar, `miscal_sidecar_of(name)`, is the roster and the tuned
+# widths, repackaged by deployed_basin_settings into SoloSpec views delivered
+# through the same delivery dispatch as the tuning itself (`solo_refit_imc!`:
+# the s2_override port for the loss-width arms — tuning and test bitwise-identical
+# delivery; nat′ for the outlier half-width ones). Every ladder parameter is the
+# protocol of record, configs/protocol.toml [basin_ladder]. The bundle's keyed
+# directory is `ladder_cell_dir(ladder_cell(name))` (src/protocol_folds.jl),
+# which folds that cell's run key: a re-tune re-keys the ladder.
+#
+# CROSS-VALIDATED DEPLOYMENT ONLY: every arm runs at its tuned operating point
+# applied to the per-pair oracle scale. There is NO fixed-multiple mode: a
+# common efficiency constant does not translate across losses.
+# =============================================================================
 const ARGV     = ARGS
-const POOL_DIR = cli_option(ARGV, "pool-dir")
-const DELTAS   = parse.(Float64, split(cli_option(ARGV, "deltas"), ','))      # the ladder protocol's δ (rad; registry.jl EXP_LADDER_DELTAS)
-const OPERATING_MULTIPLE = parse(Float64, cli_option(ARGV, "operating-efficiency-constant",
-                                              string(OPERATING_EFFICIENCY_CONSTANT)))   # eq-28 operating efficiency constant (outlier half-width ≈ 25ŝ)
-const SUCCDEG  = parse(Float64, cli_option(ARGV, "succ-deg"))      # the ladder protocol's success radius (registry.jl EXP_LADDER_SUCC)
-const SEED     = parse(Int, cli_option(ARGV, "seed"))              # the ladder protocol's (registry.jl EXP_LADDER_SEED)
-# Mechanism experiment: corrupt the supplied scale by ζ (ŝ → ζ·ŝ) BEFORE the
-# half-width map and every refiner's σ derivation; GT evaluation is untouched.
-# Frozen-σ arms inherit the corruption for all iterations; σ̂ arms start from
-# it but re-estimate.  ζ=1 is the standard ladder.
-const ZETA    = parse(Float64, cli_option(ARGV, "zeta", "1.0"))
-const ARMSF    = cli_option(ARGV, "arms", "")                       # comma list of roster names ("" = all)
-const NBOOT    = parse(Int, cli_option(ARGV, "nboot"))             # bootstrap resamples (registry.jl EXP_LADDER_NBOOT)
-# <results root>/accv2026 of the retired RVG_RESULTS_ROOT convention, else this
-# project's results_root() (data/README.md) — the same tree on the author's host.
-const RESULTS_ROOT = haskey(ENV, "RVG_RESULTS_ROOT") ? joinpath(ENV["RVG_RESULTS_ROOT"], "accv2026") : results_root()
-const DATASET  = cli_option(ARGV, "dataset", "phototourism")
-const MATCHER  = cli_option(ARGV, "matcher", "sift")
-
-# (The fixed-constant LO_ROSTER table that used to live here was DEAD CODE: the
-#  roster comes from the sidecars below since 2026-07-18, and its
-#  efficiency-constant-less constructors stopped loading when the efficiency constant
-#  became mandatory (RVG 0.15). Removed
-#  2026-09-07.)
-# =============================================================================
-# Ladder CONFIGURATION — CROSS-VALIDATED DEPLOYMENT ONLY.
-# Every arm runs at its tuned operating point (tuned on the val set with
-# NO perturbation, from the operating-points sidecar) applied to the per-pair
-# oracle scale. There is NO fixed-multiple mode: a common efficiency constant does
-# not translate across losses — a Welsch loss, a TLS truncation, and a
-# Geman--McClure width at the same multiple are different operating points, so
-# a shared multiple secretly un-matches the methods.
-# =============================================================================
-const TKPATH   = cli_option(ARGV, "operating-points", "")
-# --solo-cv=<basin operating_points.jld2>: the loss-width configuration (THE
-# Fig 2 config) — roster and tuned widths from the basin cell's sequential-CV
-# sidecar (configs/pt_e_basin.toml, mode "basin"), repackaged by deployed_basin_settings into SoloSpec
-# views delivered through the same delivery dispatch as the tuning itself
-# (`solo_refit_imc!`: the s2_override port for the loss-width arms — tuning
-# and test bitwise-identical delivery; nat′ for the outlier half-width ones). --operating-points remains the composed deployed mode for
-# other uses. Exactly one of the two must be given.
-const SOLOPATH = cli_option(ARGV, "solo-cv", "")
-# The run's effective arguments: everything that moves the bundle. --stamp
-# (fig2_basin.jl gives the basin cell's) defaults to their run key, so a rerun
-# of the same arguments lands in the same directory.
-const EFFECTIVE = Dict{String,Any}(
-    "pool_dir" => POOL_DIR, "deltas" => DELTAS, "operating_efficiency_constant" => OPERATING_MULTIPLE,
-    "succ_deg" => SUCCDEG, "seed" => SEED, "zeta" => ZETA, "arms" => ARMSF, "nboot" => NBOOT,
-    "operating_points" => TKPATH, "solo_cv" => SOLOPATH, "dataset" => DATASET, "matcher" => MATCHER)
-const STAMP    = cli_option(ARGV, "stamp", "basin-ladder-" * run_key(EFFECTIVE))
-const OUTDIR   = joinpath(RESULTS_ROOT, DATASET, MATCHER, "E",
-                          "BasinLadder", STAMP)
-(isempty(TKPATH) == isempty(SOLOPATH)) &&
-    error("run_basin_ladder: exactly ONE of --operating-points=<sidecar> (composed deployed " *
-          "config) or --solo-cv=<basin operating_points.jld2> is required; " *
-          "the fixed-multiple 'standardized' comparison was removed.")
+const CFG_PATH = cli_option(ARGV, "config")
+const CELL     = first(splitext(basename(CFG_PATH)))
+const LADDER   = ladder_cell(CELL)
+const KEY      = run_key(LADDER)
+const BL       = LADDER["basin_ladder"]
+const POOL_DIR = joinpath(data_root(), LADDER["experiment"]["pool_dir"])
+const DELTAS   = round.(deg2rad.(Float64.(BL["deltas_deg"])); digits = 6)   # the δ ladder, in radians
+const OPERATING_MULTIPLE = Float64(OPERATING_EFFICIENCY_CONSTANT)          # eq-28 operating efficiency constant (outlier half-width ≈ 25ŝ)
+const SUCCDEG  = Float64(BL["success_deg"])                                # the success radius (degrees)
+const SEED     = Int(BL["seed"])                                           # the perturbation and bootstrap seed
+const NBOOT    = Int(BL["n_bootstrap"])                                    # bootstrap resamples
+# ζ = 1: the standard ladder (the supplied scale uncorrupted; GT evaluation untouched).
+const ZETA     = 1.0
+const SOLOPATH = miscal_sidecar_of(CELL)
+const OUTDIR   = ladder_cell_dir(LADDER)
 # THE data: the test side of the sidecar's cross-validation.
-const TEST_SIDE = Dict(two_view_scene_loaders(sidecar_cross_validation(isempty(SOLOPATH) ? TKPATH : SOLOPATH), POOL_DIR).test)
+const TEST_SIDE = Dict(two_view_scene_loaders(sidecar_cross_validation(SOLOPATH), POOL_DIR).test)
 const SCENES = sort(collect(keys(TEST_SIDE)))
 
-# Roster = the evaluator's `deployed_arm_settings` over THE arm table
-# (ROSTER, arm_rosters.jl) at each arm's val tuned operating point; no label
-# heuristics here. Optional --arms filter.
-_deployed_roster(tkpath::AbstractString) = deployed_arm_settings(ROSTER, tkpath)
-# Solo roster: base => (spec, width) — a basin (mode "basin") sidecar ONLY,
-# repackaged by deployed_basin_settings (which refuses a
-# non-basin sidecar, another format and any boundary-clipped arm).
-_solo_roster(path::AbstractString) = collect(deployed_basin_settings(ROSTER, path))
-const LADDER_ROSTER = let r = isempty(SOLOPATH) ? _deployed_roster(TKPATH) : _solo_roster(SOLOPATH)
-    isempty(ARMSF) ? r : [pr for pr in r if first(pr) in split(ARMSF, ",")]
-end
+# The solo roster: base => (spec, width) — a basin (mode "basin") sidecar ONLY,
+# repackaged by deployed_basin_settings (which refuses a non-basin sidecar,
+# another format and any boundary-clipped arm).
+const LADDER_ROSTER = collect(deployed_basin_settings(ROSTER, SOLOPATH))
 const METHODS = vcat(["seed"], first.(LADDER_ROSTER))
 # The refinability probe's refiner: the paper's +LO arm itself (the arm table's
 # "IG  +LO", at the protocol's LO budget).
@@ -231,11 +195,10 @@ function run_ladder()
     JLD2.jldsave(bundle; errs, lo_ns=lons, refinable, deltas=collect(DELTAS), methods=METHODS,
                  scenes=collect(String.(SCENES)), operating_efficiency_constant=OPERATING_MULTIPLE,
                  succ_deg=SUCCDEG, seed=SEED, zeta=ZETA,
-                 config=isempty(SOLOPATH) ? "deployed" : "solo-cv",
-                 product_tuning_sidecar=TKPATH, solo_sidecar=SOLOPATH,
-                 scale_convention=isempty(SOLOPATH) ?
-                     "deployed CV optima (global natives; partition-read widths)" :
-                     "basin-tuned optima (ABSOLUTE natives; s2_override-delivered loss widths)")
+                 config="solo-cv", solo_sidecar=SOLOPATH,
+                 scale_convention="basin-tuned optima (ABSOLUTE natives; s2_override-delivered loss widths)")
+    write_run_records(OUTDIR, LADDER; driver = "run_basin_ladder.jl", config_source = CFG_PATH, key = KEY,
+                      inputs = [SOLOPATH, POOL_DIR])
     @info "bundle → $bundle"
     keep = findall(refinable)
     @info @sprintf("refinability mask: %d/%d pairs kept (%.0f%%)",

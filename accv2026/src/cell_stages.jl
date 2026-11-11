@@ -48,14 +48,9 @@ _cell_problem(cfg) = Symbol(cfg["experiment"]["problem"])
 # THE tuning protocol of record (configs/tuning.toml, folded by
 # protocol_folds.jl `fold_sequential_cv!`) is the one authority for every
 # tuning parameter, and the miscalibration protocol of record
-# (configs/miscal_protocol.toml) for the ζ evaluation ladder: every launch
-# derives its arguments from them, never a literal.
+# (configs/miscal_protocol.toml) for the ζ evaluation ladder, folded into each
+# cell's run key: every launch derives its arguments from them, never a literal.
 # =============================================================================
-const MISCAL_PROTOCOL = TOML.parsefile(projectdir("configs", "miscal_protocol.toml"))["protocol"]
-
-"The ζ ladder of the miscalibration protocol of record, as driver arguments."
-zeta_ladder_args(mp = MISCAL_PROTOCOL) =
-    ["--n-zeta=$(mp["n_zeta"])", "--zeta-octaves=$(mp["zeta_octaves"])"]
 
 """
     sequential_cv_stage(name, cfg, cfg_path; inputs = ()) -> Stage

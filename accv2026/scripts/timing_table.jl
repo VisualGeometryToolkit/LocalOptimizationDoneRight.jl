@@ -13,11 +13,10 @@
 # DATA INPUTS
 #   the PT-E pool + EXP_MISCAL_SIDECAR (fig3_composed_miscal.jl stage cv).
 # STAGES
-#   time_pt      (1 thread) → EXP_TIMING_DIR/lo_timing_pt_sift_*.jld2
+#   time_pt      (1 thread) → EXP_TIMING_DIR/lo_timing_pt_sift_*.jld2, EXP_TIMING_DIR the
+#                             keyed Timing/timing-<run key> directory of this config
+#                             (registry.jl; src/protocol_folds.jl `timing_cell_dir`)
 #   design_table (CPU)      → figures/table_design.tex
-#
-# paper-project: allow P1 the timing file lives in EXP_TIMING_DIR, the shared unkeyed directory of the deferred D2 entry (test/test_paper_project.jl); its provenance record moves with that fix (a keyed Timing/timing-<run key> directory under the results tree)
-# paper-project: allow P2 same deferral: the output directory becomes keyed by this config's run key with the D2 fix; the file name is keyed by [timing] tag and scene today
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
 using JLD2
@@ -27,8 +26,10 @@ include(srcdir("registry.jl"))
 
 # The configuration of record: the fixture and the protocol section.
 const CFG_PATH = projectdir("configs", "timing_table.toml")
-const CFG = load_run_config(CFG_PATH)
+const CFG = fold_timing_cell!(load_run_config(CFG_PATH))
+const KEY = run_key(CFG)
 const TIMING = CFG["timing"]
+timing_cell_dir(CFG) == EXP_TIMING_DIR || error("timing_table: the keyed directory disagrees with registry.jl EXP_TIMING_DIR")
 joinpath(data_root(), CFG["experiment"]["pool_dir"]) == EXP_POOL_PT_E ||
     error("configs/timing_table.toml pool_dir is not the PT-E pool of record ($(EXP_POOL_PT_E))")
 const PT_OUT = joinpath(EXP_TIMING_DIR, "lo_timing_$(TIMING["tag"])_$(TIMING["scene"]).jld2")
@@ -36,7 +37,7 @@ const PT_OUT = joinpath(EXP_TIMING_DIR, "lo_timing_$(TIMING["tag"])_$(TIMING["sc
 STAGES = Stage[]
 push!(STAGES, Stage(:time_pt,
         "PT per-call LO timing @ deployed optima (single-thread) → $(PT_OUT)",
-        () -> fresher(PT_OUT, EXP_MISCAL_SIDECAR),
+        () -> run_complete(EXP_TIMING_DIR; sidecar = basename(PT_OUT)),
         () -> begin
             # The Table 1 roster of record (fig3_composed_miscal.jl stage cv);
             # the timing driver reads its IG +LO / MSAC +PoseLib / IG +Lift optima.
@@ -47,6 +48,8 @@ push!(STAGES, Stage(:time_pt,
                        "--tag=$(TIMING["tag"])", "--sb-protocol=$(TIMING["sb_protocol"])", "--pool=$(EXP_POOL_PT_E)",
                        "--outdir=$(EXP_TIMING_DIR)", "--scene=$(TIMING["scene"])", "--npairs=$(TIMING["npairs"])",
                        "--operating-points=$(EXP_MISCAL_SIDECAR)"; threads = 1)
+            write_run_records(EXP_TIMING_DIR, CFG; driver = "time_lo_supp.jl", config_source = CFG_PATH,
+                              key = KEY, inputs = [EXP_MISCAL_SIDECAR, EXP_POOL_PT_E])
         end))
 # Main-paper Table 1 (2026-09-07): the optimizer taxonomy carries each arm's
 # PhotoTourism per-call time in its cell, generated from the same sidecar.

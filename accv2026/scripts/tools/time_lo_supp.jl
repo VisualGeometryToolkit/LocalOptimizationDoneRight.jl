@@ -18,8 +18,8 @@
 # to time on ScanNet at its own val-tuned operating point.
 # Output: $OUT/lo_timing_<tag>_<scene>.jld2 + a printed per-method table.
 #
-# paper-project: allow P1 a worker of scripts/timing_table.jl; the timing directory is the deferred D2 entry (test/test_paper_project.jl), and the record moves with it
-# paper-project: allow P2 the caller names the output directory (--outdir) and the file by tag and scene (configs/timing_table.toml); keyed with the D2 fix
+# paper-project: allow P1 a worker of scripts/timing_table.jl, which writes the run records of the keyed timing directory it hands over (--outdir)
+# paper-project: allow P2 the caller keys the directory (Timing/timing-<run key>, src/protocol_folds.jl timing_cell_dir) and names the file by tag and scene (configs/timing_table.toml); the worker writes only where --outdir says
 # =============================================================================
 
 using DrWatson; @quickactivate "ACCV2026"   # the project this tool runs under (srcdir/projectdir)

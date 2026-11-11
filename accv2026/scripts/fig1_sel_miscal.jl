@@ -15,8 +15,8 @@
 # tuning left no auditable boundary evidence — it is re-produced through the
 # current guarded engine (same protocol shape as production launch block A).
 #
-# DATA INPUTS
-#   pool : PT-E-SIFT-4K_pf3 (see REPRODUCE.md)
+# CONFIG OF RECORD
+#   configs/pt_e_sel_miscal.toml (the pool PT-E-SIFT-4K_pf3, the selectors, the tuning entry)
 # STAGES
 #   produce (GPU) → EXP_SEL_MISCAL_BUNDLE
 #   render  (CPU) → figures/panel_sel_miscal{,_maa}.tex (via figures_registry
@@ -26,34 +26,26 @@ using DrWatson; @quickactivate "ACCV2026"
 using JLD2
 include(srcdir("cell_stages.jl"))   # config + common + registry; THE miscal protocol's ζ ladder
 
-require_input(EXP_POOL_PT_E; what = "PT-E-SIFT-4K_pf3 scoring pool",
+const CFG_PATH = projectdir("configs", "pt_e_sel_miscal.toml")
+const CFG = fold_sensitivity_cell!(load_run_config(CFG_PATH))
+sensitivity_cell_dir(CFG) == EXP_SEL_MISCAL_DIR || error("fig1: the keyed directory disagrees with registry.jl EXP_SEL_MISCAL_DIR")
+require_input(joinpath(data_root(), CFG["experiment"]["pool_dir"]); what = "PT-E-SIFT-4K_pf3 scoring pool",
               provenance = "scripts/tools/generate_scoring_pools.jl --config=pt_e_pools (REPRODUCE.md)")
 
 const PANEL  = joinpath(PAPER_FIGDIR, "panel_sel_miscal.tex")
-# Fig 1 selector roster: the production block-A families + MAGSAC++/RANSAC
-# (job-2427 extension) + SIMFIT++ (2026-09-08: MSAC at a loss width re-estimated
-# per pair, its initial guess cross-validated on the loss-width axis); welsch_marg (WMG)
-# stays out — cut from the paper.
-const SELECTORS = "student_t_uniform,msac,mlesac,welsch_cost,geman,magsac,ransac,sim_fit_pp"
 
 STAGES = Stage[]
 push!(STAGES, Stage(:produce,
-        "selection-only miscal sweep (all pairs, $(SELECTORS)) → $(EXP_SEL_MISCAL_BUNDLE)",
-        () -> isfile(EXP_SEL_MISCAL_BUNDLE),
-        () -> run_driver("run_lo_sensitivity.jl",
-                         "--mode=miscal",
-                         "--pool-dir=$(EXP_POOL_PT_E)",
-                         "--selectors=$(SELECTORS)",
-                         "--tuning=lo_sensitivity_miscal", zeta_ladder_args()...,
-                         "--stamp=$(EXP_SEL_MISCAL_TAG)")))
+        "selection-only miscal sweep (all pairs, $(join(CFG["sensitivity"]["selectors"], ","))) → $(EXP_SEL_MISCAL_BUNDLE)",
+        () -> run_complete(EXP_SEL_MISCAL_DIR; sidecar = basename(EXP_SEL_MISCAL_BUNDLE)),
+        () -> run_driver("run_lo_sensitivity.jl", "--config=$(CFG_PATH)")))
 push!(STAGES, Stage(:render,
         "median + mAA panels via figures_registry (:fig1, :fig1_maa) → $(PANEL)",
         () -> fresher(PANEL, EXP_SEL_MISCAL_BUNDLE),
         () -> begin
             require_input(EXP_SEL_MISCAL_BUNDLE; what = "sel-miscal bundle",
                           provenance = "stage produce of this experiment")
-            run_driver("figures_registry.jl", "fig1", "fig1_maa";
-                       env = Dict("PAPER_FIGS" => PAPER_FIGDIR))
+            run_driver("figures_registry.jl", "fig1", "fig1_maa")
         end))
 
 run_stages("fig1_sel_miscal", STAGES)

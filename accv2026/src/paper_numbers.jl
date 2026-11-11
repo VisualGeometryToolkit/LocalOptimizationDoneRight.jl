@@ -255,7 +255,7 @@ function number_value(s::BasinSource, m, _floors)
     d = s.d
     mask = d["refinable"]
     m["op"] == "refinable" && return count(mask)
-    # the ladder stores δ in radians rounded to 6 digits (registry.jl EXP_LADDER_DELTAS)
+    # the ladder stores δ in radians rounded to 6 digits (scripts/tools/run_basin_ladder.jl DELTAS)
     j = _index(rad2deg.(Float64.(d["deltas"])), Float64(m["delta"]); what = "δ", rtol = 1e-4)
     methods = String.(d["methods"])
     vals = map(macro_arms(m)) do a

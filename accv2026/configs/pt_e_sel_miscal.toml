@@ -1,0 +1,29 @@
+# =============================================================================
+# pt_e_sel_miscal — MAIN-PAPER FIG 1 (fig:sel-miscal; scripts/fig1_sel_miscal.jl):
+# scoring-only miscalibration on PhotoTourism / SIFT / E. Every selector family
+# is tuned on the perturbed validation pool per ζ by the windowed machinery
+# ([tuning.lo_sensitivity_miscal] of configs/tuning.toml) and read out on the
+# untouched test pool at the fixed tuned width. Selection-only: no LO refits.
+#
+# The run's keyed directory is `sensitivity_cell_dir` of this config folded with
+# its tuning spec and the ζ ladder of configs/miscal_protocol.toml
+# (src/protocol_folds.jl `fold_sensitivity_cell!`):
+#   <results>/phototourism/sift/E/Miscalibration/sel-miscal-<run key>
+# It replaces the hand-bumped stamp `miscal-sel-allpairs-v5`.
+# =============================================================================
+
+[experiment]
+dataset = "phototourism"
+matcher = "sift"
+problem = "E"
+pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"   # the PT-E pool of record (pt_e_miscal.toml's)
+
+[sensitivity]
+mode = "miscal"                       # the ζ sweep (run_lo_sensitivity.jl: miscal | delta | validation_budget)
+tuning = "lo_sensitivity_miscal"      # the configs/tuning.toml entry the selectors are tuned on
+# The Fig 1 selector roster: the production block-A families + MAGSAC++/RANSAC
+# (job-2427 extension) + SIMFIT++ (2026-09-08: MSAC at a loss width re-estimated
+# per pair, its initial guess cross-validated on the loss-width axis); welsch_marg
+# (WMG) stays out — cut from the paper.
+selectors = ["student_t_uniform", "msac", "mlesac", "welsch_cost", "geman", "magsac", "ransac", "sim_fit_pp"]
+n_miscal = 0                          # validation pairs of the sweep; 0 = the full validation pool
