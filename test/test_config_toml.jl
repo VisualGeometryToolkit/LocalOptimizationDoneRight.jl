@@ -195,3 +195,32 @@ sm(lo) = VgtkCore.lo_width(lo).value
         @test TAGS isa TagRegistry
     end
 end
+
+# The Student-t keyword rule (owner ruling 2026-11-11): the Student-t + uniform scorer takes its outlier half-width
+# (`outlier_halfwidth`) and never a `threshold`; the threshold scorers take `threshold` and never `outlier_halfwidth`.
+# The posterior-weight strategies of this package read the half-width off the scorer (`required_outlier_halfwidth`),
+# so their own tables carry neither key.
+@testset "the Student-t path: outlier_halfwidth, never threshold" begin
+    P = RVG.EssentialProblem
+    # a Student-t scoring table with `threshold` is refused, by name
+    msg = try
+        RVG.scoring_from_toml(Dict("type" => "student_t_uniform", "threshold" => 3.0); problem = P); ""
+    catch e
+        sprint(showerror, e)
+    end
+    @test occursin("threshold", msg)
+    # and the constructor takes no `threshold` keyword
+    @test_throws MethodError VgtkCore.StudentTUniformScoring(P, 250.0; threshold = 3.0,
+        scale_prior = VgtkCore.JeffreysPrior(), label_prior = VgtkCore.FlatLabelPrior())
+    # a threshold scorer takes no `outlier_halfwidth`
+    @test_throws MethodError VgtkCore.MsacScoring(P; outlier_halfwidth = 3.0)
+    # the table's `outlier_halfwidth` reaches the scorer exactly, and is what the posterior-weight strategies read
+    sc = RVG.scoring_from_toml(Dict("type" => "student_t_uniform", "outlier_halfwidth" => 250.0); problem = P)
+    @test sc isa VgtkCore.StudentTUniformScoring
+    @test VgtkCore.outlier_halfwidth(sc) === 250.0
+    @test RVG.required_outlier_halfwidth(sc) === 250.0
+    # the strategies' own tables carry no width of the scorer's: neither key is accepted
+    for type in ("student_t_uniform", "stu_tu_bcd"), key in ("threshold", "outlier_halfwidth")
+        @test_throws ArgumentError load(Dict("type" => type, key => 3.0); class = :essential)
+    end
+end

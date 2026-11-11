@@ -140,8 +140,9 @@ variance problem rather than trading bias for variance).
   and `grids[:scale_multiple]` = the coarse (then fine) k grid.
   `apply_lo_refits` already batches all 14 arms x all k columns in ONE sweep, so
   the 14 refiner CVs share a pool sweep for free. No per-arm pool reads.
-- **Stage 3 is unchanged**: the evaluation phase already reads tau* as a native
-  value (artifact format 6) and builds its own {zeta_j . tau*} grid.
+- **Stage 3 is unchanged**: the evaluation phase already reads each tuned width w*
+  as a native value (artifact format 6: the Student-t's outlier half-width a*, a
+  threshold scorer's threshold) and builds its own {zeta_j . w*} grid.
 - **The rosters exist**: `solo_specs(:H; role = :selection)` is the scorer
   (`StudentTUniformScoring(P, a)`), `role = :refinement` the loss arms at unit multiple
   run at the absolute loss width (`LoRefitSpec` `widths`).

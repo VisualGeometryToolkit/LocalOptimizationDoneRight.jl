@@ -42,6 +42,19 @@ resolution (`loss_at` / `lo_loss` / `deploy` / `decision_width`), no private wid
 - [x] ext/LocalOptimizationDoneRightPoseLibExt.jl `PoseLibLmAdaptLossWidth`: the width built in place (`scale_multiple * sqrt(s2)`, twice) → `loss_width(deploy(TLSShape(), max(s2, eps()); scale_multiple))` (`_adapt_loss_width`), bit-identical. Decision: the within-width truncated moment IS the arm's definition (accv2026 configs/protocol.toml `[arms.tls_adapt]`: the width "re-anchored on the refined partition"; the docstring's "within-width residual scale"; `min_support` in configs/default.toml), so the partition |r| ≤ width and its support floor stay; its scale is Core's estimator `fit_scale(JeffreysPrior(), rss, ν)` = rss/ν. Width bit-identical; the moment alone now floors at eps where it returned 0.0 for an all-zero partition (the width already floored it) (this commit)
 No stack change is needed: VisualGeometryToolkitEstimation src/config_toml.jl `lo_from_toml` cites "LocalOptimizationDoneRight's Welsch-HQ-ECM" as its example of a plain `scale_multiple` FIELD; it stays accurate (the field stays).
 
+### The Student-t keyword (owner ruling 2026-11-11: "there is no threshold for the Student-t, only the outlier half-width")
+
+Every scorer takes its own keyword: `StudentTUniformScoring` its `outlier_halfwidth` (and its priors), never `threshold`; the
+threshold scorers (RANSAC, MSAC, the loss-width families) `threshold`, never `outlier_halfwidth`. Audit of the package, accv2026,
+its configs, scripts and paper (studentt-keyword-overload.md): every Student-t construction already takes a half-width
+(`StudentTUniformScoring(P, a)`, `a`/`halfwidth`/`outlier_halfwidth`/`sel` the variable), every config axis is
+`outlier_halfwidth` or `loss_width`, and no number crosses between the two meanings. The overloads left were prose.
+
+- [x] accv2026/notes/sequential_cv.md:143-144 "tau*" named the tuned native width of every selector, the Student-t's half-width included → "each tuned width w* (the Student-t's outlier half-width a*, a threshold scorer's threshold)" (this commit)
+- [x] test/readme_tests.jl:64 "the inlier band of their epipolar lines" for the README's Student-t + uniform scorer → "close enough to their epipolar lines for the Student-t + uniform scorer to take them as inliers" (this commit)
+- [x] test/test_config_toml.jl "the Student-t path: outlier_halfwidth, never threshold": a Student-t scoring table or constructor with `threshold` is refused, MSAC refuses `outlier_halfwidth`, the table's `outlier_halfwidth` reaches the scorer exactly (`===`) and is what the posterior-weight strategies read (`required_outlier_halfwidth`), and the strategies' own tables take neither key (this commit)
+- [ ] accv2026/test/lodr/test_old_defaults.jl:133 `find_essential(ECAM, ECAM, pxcs; threshold = 0.02)` (the sub-detector threshold refused) → `find_essential(ECAM, ECAM, pxcs; scoring = MsacScoring(threshold = 0.02))`: waits on the monorepo's find_* `scoring` API (hoists-09-pipelines); the [sources] point at hoists-09, which does not have it
+
 ## Not a duplicate
 
 - `_config_default` (src/config_defaults.jl, audit 20 "defaults readers"): a one-line binding of this package's

@@ -60,8 +60,9 @@
     Base.include(docs, $(repr(joinpath(env, "docs_example.jl"))))
     using Test
     @testset "README example" begin
-        # The 200 matches, and the few of the 100 mismatches that land within
-        # the inlier band of their epipolar lines.
+        # The 200 matches, and the few of the 100 mismatches that land close
+        # enough to their epipolar lines for the Student-t + uniform scorer to
+        # take them as inliers.
         @test 195 <= readme.n_inliers <= 215
         @test readme.rotation_error < 1.0           # degrees, at 1 px noise
         @test readme.translation_error < 3.0
