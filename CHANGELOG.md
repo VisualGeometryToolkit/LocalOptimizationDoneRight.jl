@@ -1,5 +1,20 @@
 # LocalOptimizationDoneRight changelog
 
+## Unreleased (the VisualGeometryToolkit 0.9 stack)
+
+On the VisualGeometryToolkit 0.9 stack: VisualGeometryToolkitCore 0.9 and
+VisualGeometryToolkitEstimation of that stack (PoseLib likewise); accv2026 also IO,
+Eval and RANSACScoringDoneRight on 0.9. The package's API is unchanged.
+
+- The docstring gates are VisualGeometryToolkitCore's `test_docs` (the copied
+  `test/docs_gates.jl` is deleted); the gates item runs Core's `test_duplication`.
+- accv2026: the strategy tests' scenes are VisualGeometryToolkitEstimation's
+  `test_scenes()` (its Test extension; the copied families are deleted, the draws
+  unchanged); the paper's number macros are written by VisualGeometryToolkitEval's
+  `PaperNumbers`/`write_numbers` and deployed by `deploy_assets`; SIMFIT++ is
+  imported from VisualGeometryToolkitEstimation and the scoring registry is
+  RANSACScoringDoneRight's `ALL_SCORING_TAGS` (both moved upstream).
+
 ## 0.5.1 (2026-11-09)
 
 On the VisualGeometryToolkit 0.8 stack, from General: VisualGeometryToolkitCore 0.8 and

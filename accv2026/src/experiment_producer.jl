@@ -39,8 +39,8 @@
 # =============================================================================
 
 using CUDA, Statistics, JLD2
-using VisualGeometryToolkitEstimation: NoLocalOptimization
-using RANSACScoringDoneRight: loss_spec, loss_scale_bounds, StudentTUniformScoring, SimFitPP, loss_width_scoring
+using VisualGeometryToolkitEstimation: NoLocalOptimization, SimFitPP   # SIMFIT++ is Estimation's
+using RANSACScoringDoneRight: loss_spec, loss_scale_bounds, StudentTUniformScoring, loss_width_scoring
 using VisualGeometryToolkitCore: AbstractLossShape, WidthAxis, LossWidth, OutlierHalfwidth, width_axis_name, width_axis,
     native_map, IGPrior, codimension, minimal_sample_size
 using VisualGeometryToolkitEval.Stats: reference_scale, finite_median
@@ -141,7 +141,7 @@ _selection_rows(selectors) = (idxs_of, _) ->
 
 The scoring of selector family `fam` (a sweep key of `SELECTOR_FAMILIES`):
 the Student-t-uniform marginal at `prior` (`:ig`), SIMFIT++ (`:simfitpp`), or
-the loss-width family its `SCORING_TAGS` tag names, at the problem's
+the loss-width family its `ALL_SCORING_TAGS` tag names, at the problem's
 codimension (RANSACScoringDoneRight's `loss_width_scoring`).
 """
 function selector_scoring(fam::Symbol, problem_type, prior)

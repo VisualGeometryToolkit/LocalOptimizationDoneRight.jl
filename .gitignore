@@ -66,3 +66,6 @@ __pycache__/
 
 # private reviewer correspondence; kept on disk, never committed
 accv2026/rebuttal/
+
+# Slurm suite logs of the port (local)
+/logs/

@@ -37,7 +37,7 @@ include(joinpath(@__DIR__, "welsch_zero_clamp.jl"))
     SELECTOR_FAMILIES
 
 The selector families of this paper, keyed by their tag of the scoring
-families' registry (RANSACScoringDoneRight's `SCORING_TAGS`, VisualGeometryToolkitCore's
+families' registry (RANSACScoringDoneRight's `ALL_SCORING_TAGS`, VisualGeometryToolkitCore's
 merged with its own; the tag is `snake_case` of the scoring type,
 `StudentTUniformScoring` → `"student_t_uniform"`): each family's SWEEP KEY, the
 symbol its grid, its selection row, its arms' `sel` and its persisted records
@@ -55,18 +55,18 @@ const SELECTOR_FAMILIES = Dict(
     selector_key(tag) -> Symbol
 
 The sweep key of the selector family a config tag names: a tag of
-`SCORING_TAGS` (a retired tag is refused there, naming its successor) that is
+`ALL_SCORING_TAGS` (a retired tag is refused there, naming its successor) that is
 one of [`SELECTOR_FAMILIES`](@ref).
 """
 function selector_key(tag)
-    RANSACScoringDoneRight.SCORING_TAGS[String(tag)]   # an unknown or retired tag is refused by the registry
+    RANSACScoringDoneRight.ALL_SCORING_TAGS[String(tag)]   # an unknown or retired tag is refused by the registry
     fam = get(SELECTOR_FAMILIES, String(tag), nothing)
     fam === nothing && throw(ArgumentError(
         "scoring tag \"$tag\" is not a selector family of this paper (has: $(sort!(collect(keys(SELECTOR_FAMILIES)))))"))
     return fam.key
 end
 
-"The `SCORING_TAGS` tag of the selector family with sweep key `fam`."
+"The `ALL_SCORING_TAGS` tag of the selector family with sweep key `fam`."
 function selector_tag(fam::Symbol)
     for (tag, f) in SELECTOR_FAMILIES
         f.key === fam && return tag
