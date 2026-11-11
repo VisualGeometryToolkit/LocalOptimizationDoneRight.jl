@@ -44,9 +44,9 @@ No stack change is needed: VisualGeometryToolkitEstimation src/config_toml.jl `l
 
 ### The robust-estimation contract (A3 efficiency_constant, currency retirement; the optimization-strategy family)
 
-- [x] the per-shape currency hooks: `deployed_scale`-style methods for HQ (GM's half-weight depth through Estimation's retired currency map), Gnc (identity), BarronHQ (m/√2) and GmHqEps (identity + the m ≤ 0 refusal, now `EfficiencyConstant`'s own), and `deployed_shape` for HQ/Gnc/BarronHQ, are deleted with Core's generic: one width rule, `loss_at` deploying c·ŝ for every shape
+- [x] the per-shape currency hooks: `deployed_scale`-style methods for HQ (GM's half-weight depth through Estimation's retired currency map), Gnc (identity), BarronHQ (m/√2) and GmHqEps (identity + the m ≤ 0 refusal, now `EfficiencyConstant`'s own), and the deployed-shape methods for HQ/Gnc/BarronHQ, are deleted with Core's generic: one width rule, `loss_at` deploying c·ŝ for every shape
 - [x] the stored values migrated once at full precision, bit-identical: GM `m` → `decision_width(GemanMcclureShape(), m)` (test/test_strategies.jl, accv2026 test_lift_losses / scenes_testsetups / test_bcd_recorded / lo_timing bench), BarronHQ `m` → `m / sqrt(2.0)` (test/test_strategies.jl, test_lift_losses); the GM roster arms' grid map is `_gm_at_welsch_depth(m) = decision_width(GM, decision_boundary(Welsch, m))` (arm_rosters.jl), the grid spec unchanged. Before/after capture: identical width², estimate, retcode and iterations on 14 sites
-- [x] `NoLocalOptimization` → `nothing` (accv2026 experiment_producer, run_sequential_cv, test_engine_integration; TOML `"none"`)
+- [x] the no-local-optimization type → `nothing` (accv2026 experiment_producer, run_sequential_cv, test_engine_integration; TOML `"none"`)
 
 ### The Student-t keyword (owner ruling 2026-11-11: "there is no threshold for the Student-t, only the outlier half-width")
 
