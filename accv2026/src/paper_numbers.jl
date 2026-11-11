@@ -359,21 +359,25 @@ typeset_number(v::Tuple, f) = _typeset1(v[1], f) * raw"\text{--}" * _typeset1(v[
 """
     paper_number_floors(cfg) -> Dict
 
-The oracle selection bounds the `oracle_gap` macros read (oracle_floors.jld2,
-THE floors file of the cells' oracle stages), each checked to be the one of
-its cell's CURRENT pools and test scenes (`oracle_floor_done`).
+The oracle selection bounds the `oracle_gap` macros read: each miscal source's
+cell's floors file (oracle_floors.jld2 in its keyed sequential-CV directory,
+written by its oracle stage), each checked to be the one of its cell's CURRENT
+pools and test scenes (`oracle_floor_done`), merged.
 """
 function paper_number_floors(cfg::AbstractDict)
+    floors = Dict{String,Any}()
     for (n, s) in cfg["sources"]
         s["kind"] == "miscal" || continue
         c = fold_sequential_cv!(load_run_config(_cfg_path(s["config"])))
         cv = tuning_spec(c, sequential_cv_scorer_entry(c["sequential_cv"], :ig)).scheme.cross_validation
-        oracle_floor_done(oracle_floors_path(), String(s["oracle"]);
+        path = oracle_floors_path(sequential_cv_dir(c))
+        oracle_floor_done(path, String(s["oracle"]);
                           source = oracle_floor_source(joinpath(data_root(), c["experiment"]["pool_dir"]),
                                                        Symbol(c["experiment"]["problem"]), test_scenes(cv))) ||
             error("[sources.$n]: oracle floor $(s["oracle"]) missing or computed on other pools/scenes — run its cell's oracle stage")
+        merge!(floors, JLD2.load(path, "floors"))
     end
-    return JLD2.load(oracle_floors_path(), "floors")
+    return floors
 end
 
 """

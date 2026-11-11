@@ -11,7 +11,7 @@
 # so the bound and the curves share one metric by construction.
 #
 # Codified: invoked by supp_{F,H}_miscal.jl stage :oracle via run_driver.
-#   --tag=PT_F --problem=F --pool-dir=DIR --scenes=a,b,c
+#   --tag=PT_F --problem=F --pool-dir=DIR --scenes=a,b,c --floors=<the cell's keyed dir>/oracle_floors.jld2
 # The tag MUST end in the model-class letter (_F/_H): render_miscal_faceted.jl
 # derives the legend's model-class letter from it.
 # =============================================================================
@@ -21,6 +21,7 @@ include(srcdir("common.jl"))   # write_oracle_floor (THE floors writer, VisualGe
 start_output_flush!()          # per-scene progress reaches the Slurm log
 
 const TAG      = cli_option(ARGS, "tag", "")
+const FLOORS   = cli_option(ARGS, "floors")   # the floors file of the caller's keyed cell directory
 const PROBLEM  = Symbol(uppercase(cli_option(ARGS, "problem", "")))
 const POOL_DIR = cli_option(ARGS, "pool-dir", "")
 const SCENES   = String.(split(cli_option(ARGS, "scenes", ""), ','; keepempty = false))
@@ -61,7 +62,7 @@ floor_v  = round(median(vals), digits = 3)     # Inf (no model) sorts last: a fa
 ceil_maa = round(eligible_maa(vals), digits = 3)
 @info "oracle" TAG floor = floor_v maa_ceiling = ceil_maa npairs = length(vals) pair_outcomes(vals)...
 
-path = write_oracle_floor(oracle_floors_path(), TAG, floor_v, ceil_maa;
+path = write_oracle_floor(FLOORS, TAG, floor_v, ceil_maa;
                           source = oracle_floor_source(POOL_DIR, PROBLEM, SCENES),
                           npairs = length(vals), driver = "compute_supp_oracle_floors.jl")
 @info "floor written" path TAG floor_v ceil_maa

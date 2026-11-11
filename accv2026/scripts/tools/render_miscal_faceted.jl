@@ -19,7 +19,7 @@ OUT = cli_option(ARGS, "out", "/tmp/faceted_miscal_body.tex")
 # deployed panels while the computed PT_E values were 0.469/0.852 — a missing
 # tag or entry is now a hard error, and there is no value-override path.
 ORACLE_TAG = cli_option(ARGS, "oracle-tag")
-let floors = JLD2.load(oracle_floors_path(), "floors")
+let floors = JLD2.load(cli_option(ARGS, "oracle-floors"), "floors")   # the cell's keyed floors file
     haskey(floors, ORACLE_TAG) ||
         error("oracle_floors.jld2 has no entry $(ORACLE_TAG) — run the oracle compute driver first")
     haskey(floors, "$(ORACLE_TAG)_maa") ||

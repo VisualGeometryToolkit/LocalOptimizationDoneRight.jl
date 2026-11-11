@@ -107,16 +107,17 @@ function miscal_cell_stages(cfg_name::AbstractString;
     r       = cfg["render"]
     tag     = cfg["experiment"]["oracle_tag"]
     p       = _cell_problem(cfg)
-    floor_done() = oracle_floor_done(oracle_floors_path(), tag; source = oracle_floor_source(pool, p, test_sc))
+    floors  = oracle_floors_path(sequential_cv_dir(cfg))   # the cell's own keyed directory
+    floor_done() = oracle_floor_done(floors, tag; source = oracle_floor_source(pool, p, test_sc))
     stages = Stage[sequential_cv_stage(cv_stage, cfg, cfg_path;
         inputs = ((joinpath(pool, "$(val_sc[1]).jld2"), pool_what, pool_provenance),))]
     push!(stages, Stage(:oracle,
-            "$tag pool-best oracle bound (floor + mAA ceiling) -> oracle_floors.jld2[$tag]",
+            "$tag pool-best oracle bound (floor + mAA ceiling) -> $(floors)[$tag]",
             floor_done,
             () -> run_driver("compute_supp_oracle_floors.jl",
                              "--tag=$(tag)", "--problem=$p",
                              "--pool-dir=$(pool)",
-                             "--scenes=$(test)")))
+                             "--scenes=$(test)", "--floors=$(floors)")))
     # The cell's row of the main-paper Fig 3 grid (configs/fig3_miscal_grid.toml):
     # the `[render.main]` table — `panel` and the one statistic of `rows` it draws —
     # drawn with the Table 1 roster gate (the renderer's MAIN_ARMS + EXTRA_ARMS
@@ -133,7 +134,7 @@ function miscal_cell_stages(cfg_name::AbstractString;
                 floor_done() ||
                     error("oracle floor $(tag): missing or computed on other pools/scenes — run --stage=oracle first")
                 run_driver("render_miscal_faceted.jl", "--sidecar=$(sidecar)", "--out=$(out)",
-                                      "--deploy=$(r["deploy"] ? "1" : "")", "--oracle-tag=$(tag)",
+                                      "--deploy=$(r["deploy"] ? "1" : "")", "--oracle-tag=$(tag)", "--oracle-floors=$(floors)",
                                       "--rows=$(row)")
             end))
     return stages
