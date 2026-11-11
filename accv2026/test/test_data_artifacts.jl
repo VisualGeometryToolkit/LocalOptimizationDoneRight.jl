@@ -8,7 +8,7 @@ include(joinpath(@__DIR__, "..", "src", "data_artifacts.jl"))
 
 @testset "data artifacts: catalog ⇔ Artifacts.toml" begin
     # Checked against the COMMITTED bindings, whatever ACCV2026_ARTIFACTS_TOML says.
-    cat = withenv(artifact_catalog, "ACCV2026_ARTIFACTS_TOML" => nothing)
+    cat = withenv(project_catalog, "ACCV2026_ARTIFACTS_TOML" => nothing)
     @test cat.artifacts_toml == normpath(joinpath(@__DIR__, "..", "Artifacts.toml"))
     # VisualGeometryToolkitEval DataArtifacts: catalog ⇔ bindings, every entry complete,
     # every URL its record's on Zenodo (the id once it has one) — never file://
@@ -77,6 +77,6 @@ end
     # The artifacts mount into data_root(); the ONE declared exception is the stored
     # SupeRANSAC baseline (configs/pt_e_superansac.toml [stored] dir is relative to the
     # results root, where the author's copy sits) — to move with the data-policy audit.
-    cat = artifact_catalog()
+    cat = project_catalog()
     @test Set(n for (n, a) in cat.artifacts if a["mount"] == "results") == Set(["pt_e_superansac_stored"])
 end

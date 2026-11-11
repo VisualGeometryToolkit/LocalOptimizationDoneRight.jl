@@ -1,6 +1,6 @@
 # =============================================================================
 # Shared synthetic scenes of the strategy tests — ReTestItems `@testsetup`
-# modules. The scenes are VisualGeometryToolkitEstimation's `test_scenes()` (its
+# modules. The scenes are VisualGeometryToolkitEstimation's `synthetic_scenes()` (its
 # Test extension), the ONE definition every stack package's tests draw from;
 # each setup below is one family, re-exported, so an item names the families
 # it needs in `setup = [...]` (lodr/lodr_tests.jl) and its file `using`s them.
@@ -10,58 +10,66 @@
 
 @testsetup module EpipolarScenes
 using Test: Test                                       # loads the extension
-using VisualGeometryToolkitEstimation: test_scenes
-const _Family = test_scenes().EpipolarScenes
+using VisualGeometryToolkitEstimation: synthetic_scenes
+const _Family = synthetic_scenes().EpipolarScenes
 using ._Family
 eval(Expr(:export, setdiff(names(_Family), [:EpipolarScenes])...))
 end
 
 @testsetup module HomographyScenes
 using Test: Test                                       # loads the extension
-using VisualGeometryToolkitEstimation: test_scenes
-const _Family = test_scenes().HomographyScenes
+using VisualGeometryToolkitEstimation: synthetic_scenes
+const _Family = synthetic_scenes().HomographyScenes
 using ._Family
 eval(Expr(:export, setdiff(names(_Family), [:HomographyScenes])...))
 end
 
 @testsetup module PoseScenes
 using Test: Test                                       # loads the extension
-using VisualGeometryToolkitEstimation: test_scenes
-const _Family = test_scenes().PoseScenes
+using VisualGeometryToolkitEstimation: synthetic_scenes
+const _Family = synthetic_scenes().PoseScenes
 using ._Family
 eval(Expr(:export, setdiff(names(_Family), [:PoseScenes])...))
 end
 
 @testsetup module DivisionBoards
 using Test: Test                                       # loads the extension
-using VisualGeometryToolkitEstimation: test_scenes
-const _Family = test_scenes().DivisionBoards
+using VisualGeometryToolkitEstimation: synthetic_scenes
+const _Family = synthetic_scenes().DivisionBoards
 using ._Family
 eval(Expr(:export, setdiff(names(_Family), [:DivisionBoards])...))
 end
 
 @testsetup module P3PScenes
 using Test: Test                                       # loads the extension
-using VisualGeometryToolkitEstimation: test_scenes
-const _Family = test_scenes().P3PScenes
+using VisualGeometryToolkitEstimation: synthetic_scenes
+const _Family = synthetic_scenes().P3PScenes
 using ._Family
 eval(Expr(:export, setdiff(names(_Family), [:P3PScenes])...))
 end
 
 @testsetup module Cameras
 using Test: Test                                       # loads the extension
-using VisualGeometryToolkitEstimation: test_scenes
-const _Family = test_scenes().Cameras
+using VisualGeometryToolkitEstimation: synthetic_scenes
+const _Family = synthetic_scenes().Cameras
 using ._Family
 eval(Expr(:export, setdiff(names(_Family), [:Cameras])...))
 end
 
 @testsetup module Contamination
 using Test: Test                                       # loads the extension
-using VisualGeometryToolkitEstimation: test_scenes
-const _Family = test_scenes().Contamination
+using VisualGeometryToolkitEstimation: synthetic_scenes
+const _Family = synthetic_scenes().Contamination
 using ._Family
 eval(Expr(:export, setdiff(names(_Family), [:Contamination])...))
+end
+
+@testsetup module RadialScenes
+using Test: Test                                       # loads the extension
+using VisualGeometryToolkitEstimation: synthetic_scenes
+const _Family = synthetic_scenes().RadialScenes
+using ._Family
+eval(Expr(:export, setdiff(names(_Family), [:RadialScenes])...))
 end
 
 # -----------------------------------------------------------------------------

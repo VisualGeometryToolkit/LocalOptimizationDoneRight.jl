@@ -19,11 +19,11 @@ VisualGeometryToolkitEstimation = "9a478df9-9a37-4dc7-9070-58617efe7573"
 [sources]
 LocalOptimizationDoneRight = {path = ".."}
 # TEMPORARY: the 0.9 stack is not registered yet; replace by [compat] 0.9 from the registry before any push or registration
-VisualGeometryToolkitCore = {path = "/home/jpr/src/vgtk-09/VisualGeometryToolkitCore"}
+VisualGeometryToolkitCore = {path = "/home/jpr/src/vgtk-hoists/VisualGeometryToolkitCore"}
 # TEMPORARY: the 0.9 stack is not registered yet; replace by [compat] 0.9 from the registry before any push or registration
-VisualGeometryToolkitEstimation = {path = "/home/jpr/src/vgtk-09/VisualGeometryToolkitEstimation"}
+VisualGeometryToolkitEstimation = {path = "/home/jpr/src/vgtk-hoists/VisualGeometryToolkitEstimation"}
 # TEMPORARY: the 0.9 stack is not registered yet; replace by [compat] 0.9 from the registry before any push or registration
-PoseLib = {path = "/home/jpr/src/vgtk-09/PoseLib"}
+PoseLib = {path = "/home/jpr/src/vgtk-hoists/PoseLib"}
 
 [compat]
 Aqua = "0.8.18"

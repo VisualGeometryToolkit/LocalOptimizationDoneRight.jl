@@ -25,7 +25,7 @@ using VisualGeometryToolkitEval: cli_option
 include(srcdir("common.jl"))
 include(srcdir("data_artifacts.jl"))
 
-const CAT = artifact_catalog()
+const CAT = project_catalog()
 
 if "--list" in ARGS
     meta = isfile(CAT.artifacts_toml) ? TOML.parsefile(CAT.artifacts_toml) : Dict{String,Any}()

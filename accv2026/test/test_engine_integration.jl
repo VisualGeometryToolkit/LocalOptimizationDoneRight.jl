@@ -48,22 +48,12 @@ marginal(a) = StudentTUniformScoring(P, a; prior = PRIOR)
 const TEMPLATE = marginal(1.0)
 const CPU = RANSACScoringDoneRight.KernelAbstractions.CPU()
 
-# A one-scene ScoringPool of `pairs` stamped with `total` minimal samples: what
-# VisualGeometryToolkitEval's `sample_starts` certifies its boundaries against.
-starts_pool(pairs, total) = ScoringPool(pairs, :E, "synthetic"; scene_names = fill("synthetic", length(pairs)),
-    stamps = (gt_convention = GT_CONVENTION, pool_rng = "LehmerRNG", julia_version = string(VERSION),
-              total_samples = total, total_solutions = sum(num_models, pairs), mean_solutions_per_sample = 1.0,
-              provenance = Dict{String,Any}()))
-# The pair restricted to the stored models `cols`.
-subpair(pair, cols) = PoolPair{FundMat{Float64}}(; (f => getfield(pair, f) for f in fieldnames(typeof(pair)))...,
-    models = pair.models[cols], sample_indices = pair.sample_indices[:, cols],
-    errors_r = pair.errors_r[cols], errors_t = pair.errors_t[cols])
-
-# THE synthetic E pool pair of the engine items: 30 noisy correspondences, 12
-# single-model minimal samples, σ̂² = 4e-6. Returns `(pair, residuals)`.
-const EPAIR_GT_VARIANCE = 4.0e-6
-epair(rng) = synthetic_e_pool_pair(rng; sibling_counts = fill(1, 12), noise = 0.002, δ_rot = 0.2,
-                                   t_jitter = 0.1, gt_variance = EPAIR_GT_VARIANCE)
+# The engine's shared test fixtures (VisualGeometryToolkitEval's Test extension):
+# EPAIR_GT_VARIANCE and `epair` (THE synthetic E pool pair), `starts_pool`,
+# `subpair`, `engine_scene`, `roster_tuning` and `write_roster_sidecar`.
+import VisualGeometryToolkitEval
+const EngineFixtures = VisualGeometryToolkitEval.engine_fixtures()
+using .EngineFixtures
 
 # A wide-FOV calibrated pair in a fake pool frame: 1600×1200 images, focal 800
 # px, half diagonal s = 1000 px, so the pool-frame camera is Kc = diag(f/s, f/s,
@@ -340,8 +330,7 @@ end
     rng = MersenneTwister(20261001)
     prs = [epair(rng) for _ in 1:3]
     pairs = first.(prs); Rs = last.(prs)
-    scene(r) = ((pairs = pairs[r],), PoolResiduals("k", :tangent_sampson, Rs[r]))
-    loaders = [() -> scene(1:2), () -> scene(3:3)]
+    loaders = [() -> engine_scene(pairs, Rs, 1:2), () -> engine_scene(pairs, Rs, 3:3)]
     halfwidths = grid(1.0e-3, 1.0, LinearCount(7))
     loss_widths = grid(1.0e-3, 1.0, LinearCount(5))
     ig = TEMPLATE
@@ -406,23 +395,9 @@ end
         ComposedSpec("IG  +PoseLib", :ig, OutlierHalfwidth(), LossWidth(), _ -> PoseLibLm(25)),
     ]
     roster = Roster(composed, (p; role = :refinement) -> SoloSpec[], basin)
-    spec = tuning_spec(Dict{String,Any}("tuning" => Dict{String,Any}("t" => Dict{String,Any}(
-        "type" => "windowed_bootstrap", "scale_multiple_window" => Dict("lo" => 1.0, "hi" => 3.3),
-        "cross_validation" => Dict{String,Any}("scene_split" => Dict{String,Any}(
-            "type" => "registered", "name" => "phototourism"))))), "t")
-    gs = Dict{Symbol,GridSpec}(:outlier_halfwidth => SpacedGrid(0.01, 0.1, LinearCount(5)),
-                               :loss_width => SpacedGrid(0.001, 0.01, LinearCount(5)),
-                               :scale_multiple => SpacedGrid(1.0, 3.3, LinearCount(5)))
-    g = Dict(k => grid(v) for (k, v) in gs)
-    window = ScaleMultipleWindow(1.0, 3.3)
-    function write_sidecar(path, arms; mode, hits = Dict(a.base => String[] for a in arms))
-        save_tuning_artifact(path, spec; grids = gs, unit = PairUnit(), code = (LODR,), mode, problem = "E",
-            d_g = 1, s0 = 0.001, arms = [a.base for a in arms],
-            tuned_selection = Dict(a.base => g[width_axis_name(a.selection)][3] for a in arms),
-            tuned_width = Dict(a.base => g[width_axis_name(a.kind)][3] for a in arms),
-            tuned_objective = Dict(a.base => 0.0 for a in arms), boundary_hits = hits,
-            windows = Dict(a.base => tuning_table(window) for a in arms))
-    end
+    rt = roster_tuning()
+    spec, gs, g = rt.spec, rt.grids, rt.values
+    write_sidecar(path, arms; kw...) = write_roster_sidecar(path, rt, arms; code = (LODR,), kw...)
     mktempdir() do dir
         cpath = joinpath(dir, "composed.jld2"); write_sidecar(cpath, composed(:E); mode = "miscal")
         bud = Dict(deployed_budget_settings(roster, cpath))

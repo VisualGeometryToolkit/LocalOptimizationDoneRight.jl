@@ -37,7 +37,7 @@ haskey(ENV, "ACCV2026_ARTIFACTS_TOML") && error(
     "make_zenodo_artifacts binds the committed accv2026/Artifacts.toml: unset ACCV2026_ARTIFACTS_TOML")
 const STAGE_DIR = cli_option(ARGS, "stage", "")
 isempty(STAGE_DIR) && error("make_zenodo_artifacts: --stage=<dir> is required (a scratch directory with room for the tarballs)")
-const CATALOG = artifact_catalog()
+const CATALOG = project_catalog()
 const ONLY = filter(!isempty, split(cli_option(ARGS, "only", ""), ','))
 const NAMES = isempty(ONLY) ? sort(collect(keys(CATALOG.artifacts))) : String.(ONLY)
 const RECORD_IDS = Dict(String(first(kv)) => String(last(kv))

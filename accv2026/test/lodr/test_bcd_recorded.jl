@@ -23,20 +23,7 @@ const R = VisualGeometryToolkitEstimation
 const V = VisualGeometryToolkitCore
 const LO = LocalOptimizationDoneRight
 using VisualGeometryToolkitCore: rows_provider, lift_init, lift_refresh!, lift_residuals, lift_size
-
-K = SA[800.0 0 320; 0 820.0 240; 0 0 1]
-function two_view(rng, n; planar)
-    Rm = SMatrix{3, 3, Float64, 9}(RotXYZ(0.05, -0.1, 0.03)); t = SA[1.0, 0.1, 0.05]
-    u1 = Point2{Float64}[]; u2 = Point2{Float64}[]
-    for _ in 1:n
-        X = SA[2 * (rand(rng) - 0.5), 1.5 * (rand(rng) - 0.5), planar ? 4.0 : 3.0 + 2 * rand(rng)]
-        p1 = K * X; p2 = K * (Rm * X + t)
-        push!(u1, Point2{Float64}(p1[1] / p1[3], p1[2] / p1[3]))
-        push!(u2, rand(rng) < 0.4 ? Point2{Float64}(640 * rand(rng), 480 * rand(rng)) :
-                  Point2{Float64}(p2[1] / p2[3] + 0.5 * randn(rng), p2[2] / p2[3] + 0.5 * randn(rng)))
-    end
-    return csponds(u1, u2)
-end
+using .EpipolarScenes: contaminated_pixel_pairs, PIXEL_PAIRS_K   # Estimation's shared two-view pixel scene
 
 # The consensus set of `model`, as `_locally_optimize_seed!` hands it to the
 # local optimizer (`_lo_on_partition!`), on a workspace composed for `lo`.
@@ -106,46 +93,12 @@ function arm(p, sc, model::M, lo) where {M}
     end
 end
 
-# Everything a state holds that a run moves (numbers, arrays, incumbents, the
-# GNC ladder), not the shared workspaces it points into.
-snap(x::Union{Number, Symbol, Nothing}) = x
-snap(x::AbstractArray{<:Number}) = collect(x)
-snap(x::StaticArray) = Tuple(x)
-snap(x::Attributed{<:Any, @NamedTuple{cost::Float64}}) = (snap(x.value), x.cost)   # a best iterate
-snap(x) = isbits(x) ? x : nameof(typeof(x)) in (:PosteriorWeightState, :_PositionalDivisionState, :MuLadderState) ?
-    Tuple(snap(getfield(x, i)) for i in 1:fieldcount(typeof(x))) : :skipped
-snap_state(st) = Tuple(snap(getfield(st, i)) for i in 1:fieldcount(typeof(st)))
-fp(res) = (snap(estimate(res)), retcode(res), iterations(res))
-
-function check_recorded(mk)
-    # the full run, bare and recorded
-    st, lh, m, p, θ₀, max_iter = mk()
-    bare = block_coordinate_descent!(st, lh, m, p, θ₀; max_iter)
-    bare_state = snap_state(st)
-    st2, lh2, m2, p2, θ₀2, _ = mk()
-    rec = Recorded(st2)
-    @test isequal(fp(block_coordinate_descent!(rec, lh2, m2, p2, θ₀2; max_iter)), fp(bare))
-    @test isequal(snap_state(st2), bare_state)
-    @test rec.reason[] === retcode(bare)
-    k_run = iterations(bare)
-    k_rec = length(rec.iterates)
-    @test k_rec == (retcode(bare) === :solve_failed ? k_run - 1 : k_run)
-    @test length(rec.cost) == length(rec.s2) == k_rec
-    # iterate for iterate: the bare run truncated after k is the recorded run's k-th entry
-    for k in 1:k_rec
-        stk, lhk, mk_, pk, θk, _ = mk()
-        resk = block_coordinate_descent!(stk, lhk, mk_, pk, θk; max_iter = k)
-        @test isequal(current_cost(stk), rec.cost[k])
-        @test iterations(resk) == k
-        k == k_rec && @test isequal(snap_state(stk), bare_state)
-    end
-    return k_rec
-end
+# Recorded == bare, iterate for iterate: VisualGeometryToolkitCore's `test_recorded`.
 
 problems = (
-    (:H, R.HomographyProblem(two_view(Xoshiro(101), 300; planar = true))),
-    (:F, R.FundMatProblem(two_view(Xoshiro(111), 300; planar = false))),
-    (:E, R.EssentialProblem(CameraModel(K), CameraModel(K), two_view(Xoshiro(121), 300; planar = false))),
+    (:H, R.HomographyProblem(contaminated_pixel_pairs(Xoshiro(101), 300; planar = true))),
+    (:F, R.FundMatProblem(contaminated_pixel_pairs(Xoshiro(111), 300; planar = false))),
+    (:E, R.EssentialProblem(CameraModel(PIXEL_PAIRS_K), CameraModel(PIXEL_PAIRS_K), contaminated_pixel_pairs(Xoshiro(121), 300; planar = false))),
 )
 arms(kind) = Any[
     LO.StudentTUniform(), LO.BarronAdaptive(scale_multiple = 2.0),
@@ -157,5 +110,5 @@ arms(kind) = Any[
 @testset "Recorded == bare: $kind $(nameof(typeof(lo)))" for (kind, p) in problems, lo in arms(kind)
     sc = StudentTUniformScoring(p, 50.0)
     θ = estimate(R.ransac(p, sc; rng = Xoshiro(1), config = R.RansacConfig(max_trials = 200)))
-    @test check_recorded(() -> arm(p, sc, θ, lo)) >= 1
+    @test V.test_recorded(() -> arm(p, sc, θ, lo)) >= 1
 end

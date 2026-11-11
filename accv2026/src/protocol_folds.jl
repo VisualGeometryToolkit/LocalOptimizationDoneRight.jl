@@ -20,25 +20,9 @@ using TOML
 using VisualGeometryToolkitCore: ScaleMultiple, OutlierHalfwidth, LossWidth, width_axis_name, check_keys
 using VisualGeometryToolkitEval.Tuning: layer_tuning, layered_tuning_entry, tuning_spec, TUNING_TAGS, CoarseFine
 using VisualGeometryToolkitEval.Experiments:
-    load_run_config, run_key, experiment_dir
+    load_run_config, run_key, experiment_dir,
+    config_of_record, keyed_cell_dir   # configs/<name>.toml as a run config; <experiment_dir>/<experiment>/<kind>-<run_key>
 include(joinpath(@__DIR__, "protocol.jl"))   # configs/protocol.toml: the arm protocol folded below
-
-"""
-    config_of_record(name) -> Dict
-
-The config of record `name` (configs/<name>.toml), loaded as a run config
-(VisualGeometryToolkitEval's `load_run_config`), not yet folded.
-"""
-config_of_record(name::AbstractString) = load_run_config(projectdir("configs", name * ".toml"))
-
-"""
-    keyed_cell_dir(cfg, experiment, kind) -> String
-
-The keyed directory of a folded cell of `kind` under its experiment's
-`experiment` results: `<experiment_dir(cfg)>/<experiment>/<kind>-<run_key>`.
-"""
-keyed_cell_dir(cfg, experiment::AbstractString, kind::AbstractString) =
-    joinpath(experiment_dir(cfg), experiment, kind * "-" * run_key(cfg))
 
 const _CVP_PATH    = projectdir("configs", "cv_protocol.toml")
 const _MP_PATH     = projectdir("configs", "miscal_protocol.toml")

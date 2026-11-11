@@ -20,7 +20,7 @@
     include("test_strategies.jl")
 end
 
-@testitem "lodr: BCD recorded" default_imports = false begin
+@testitem "lodr: BCD recorded" default_imports = false setup = [EpipolarScenes] begin
     using Test
     include("test_bcd_recorded.jl")
 end
@@ -45,7 +45,7 @@ end
     include("test_pnp_lift.jl")
 end
 
-@testitem "lodr: problem arms" default_imports = false setup = [EpipolarScenes, HomographyScenes, PoseScenes, Contamination, DivisionBoards] begin
+@testitem "lodr: problem arms" default_imports = false setup = [EpipolarScenes, HomographyScenes, PoseScenes, Contamination, DivisionBoards, RadialScenes] begin
     using Test
     include("test_problem_arms.jl")
 end

@@ -23,7 +23,7 @@ using VisualGeometryToolkitEstimation: RadialHomographyProblem, RadialCameraProb
 using VisualGeometryToolkitCore: mahalanobis_distances!, signed_distance
 using LocalOptimizationDoneRight
 const RVG = VisualGeometryToolkitEstimation
-using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination, .DivisionBoards
+using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination, .DivisionBoards, .RadialScenes
 
 # The paper's per-class Welsch HQ recipe (the find_* default before 2026-10).
 welsch_hq(class) = HQ{WelschShape}(scale_multiple = tuning_constant(class, "welsch").scale_multiple)
@@ -67,18 +67,9 @@ const _SCENES = Dict(
     "division2" => (RotMatrix(RotXYZ(0.35, -0.35, 0.2)), Vec3{Float64}(850.0, 250.0, 350.0), 1100.0),
     "brown_conrady" => (RotMatrix(RotXYZ(0.35, -0.55, 0.2)), Vec3{Float64}(280.0, -60.0, 420.0), 650.0),
 )
-function _board_scene(rng, cam, R, t; σ = 0.3, n_out = 40)
-    board = [Point3{Float64}(X, Y, 0.0) for X in -160.0:20.0:160.0 for Y in -120.0:20.0:120.0]
-    inliers = [Xw => SVector{2, Float64}(project(cam, R * SVector(Xw) + t)) for Xw in board]
-    pairs, gt = contaminated_pairs(
-        rng, filter(c -> all(isfinite, c.second), inliers); σ, n_out, shuffle = true,
-        outlier = (rng, _) -> Point3{Float64}(320 * rand(rng) - 160, 240 * rand(rng) - 120, 0.0) => SVector(4240 * rand(rng), 2832 * rand(rng))
-    )
-    return first.(pairs), last.(pairs), gt
-end
 @testset "absolute pose through a distorting lens — $name" for (name, cam) in _CAMS_L
     R_gt, t_gt, rim = _SCENES[name]
-    src, dst, gt = _board_scene(MersenneTwister(21), cam, R_gt, t_gt)
+    src, dst, gt = lens_board_scene(MersenneTwister(21), cam, R_gt, t_gt)
     c = SVector(2120.0, 1416.0)
     radius = [norm(SVector{2, Float64}(d) - c) for d in dst]
     arms = (
@@ -165,7 +156,7 @@ const _CAM₁ = CameraModel(; focal = 500.0, pp = (320.0, 240.0))
 const _CAM₂ = CameraModel(; focal = 600.0, pp = (300.0, 250.0))
 const _R = RotY(0.15)
 const _T = SA[1.0, 0.2, 0.1]
-_box(rng) = SA[4.0 * (rand(rng) - 0.5), 3.0 * (rand(rng) - 0.5), 5.0 + 3.0 * rand(rng)]
+_box(rng) = box_point(rng; width = 4.0, height = 3.0, near = 5.0, far = 8.0)
 function make_fundmat_data(; n_inliers = 100, n_outliers = 30, noise = 0.5, seed = 42)
     source_pts, target_pts = stereo_pixel_pairs(
         MersenneTwister(seed), _CAM₁, _CAM₂, _R, _T;
@@ -195,37 +186,18 @@ end
 # Radial homography (radial_homography): the old default (the class's Welsch
 # HQ recipe, stated explicitly) and the Student-t + uniform IRLS.
 # -----------------------------------------------------------------------------
-const _RW, _RH = 1200.0, 900.0
-_rdiag() = hypot(_RW, _RH)
-function _gt_model(k_norm)
-    H0 = SMatrix{3, 3, Float64}(4.0, -0.2, 5.0e-5, 0.3, 4.2, -4.0e-5, 260.0, 200.0, 1.0)
-    return RadialHomography{Float64}(HomographyMat{Float64}(Tuple(H0)), k_norm / _rdiag()^2, SVector(_RW / 2, _RH / 2))
-end
-function _make_scene(rng, m_gt; n_in = 70, n_out = 30, σ = 0.0)
-    function inlier(rng, _)
-        while true
-            s = SVector(200 * rand(rng), 150 * rand(rng))
-            d = radial_transfer(m_gt, s)
-            d === nothing && continue
-            (0 < d[1] < _RW && 0 < d[2] < _RH) && return s => SVector(d[1], d[2])
-        end
-    end
-    return contaminated_pairs(
-        rng, inlier, n_in; σ, n_out, shuffle = true,
-        outlier = (rng, _) -> SVector(200 * rand(rng), 150 * rand(rng)) => SVector(_RW * rand(rng), _RH * rand(rng))
-    )
-end
+const _RW, _RH = RADIAL_HOMOGRAPHY_FRAME   # Estimation's RadialScenes: radial_homography, radial_homography_pairs
 
 @testset "radial homography" begin
     # the battery's RNG stream: its problem-level scene draws first
     rng = MersenneTwister(1234)
-    m_gt = _gt_model(-0.25)
-    _make_scene(rng, m_gt; n_in = 20, n_out = 0)
+    m_gt = radial_homography(-0.25)
+    radial_homography_pairs(rng, m_gt; n_in = 20, n_out = 0)
     @testset "find_radial_homography: exact data + outliers ($loname)" for (loname, lo) in (
             ("HQ-Welsch (the old default)", welsch_hq(:radial_homography)),
             ("StudentTUniform", StudentTUniform()),
         )
-        pairs, gt_mask = _make_scene(rng, m_gt; n_in = 70, n_out = 30)
+        pairs, gt_mask = radial_homography_pairs(rng, m_gt; n_in = 70, n_out = 30)
         res = find_radial_homography(
             pairs; center = (_RW / 2, _RH / 2),
             scoring = StudentTUniformScoring(RadialHomographyProblem(pairs; center = (_RW / 2, _RH / 2)), 2.0),
@@ -244,7 +216,7 @@ end
         @test count(i -> !gt_mask[i] && is_map_inlier(w[i]), eachindex(w)) <= 2
     end
     @testset "noise: recovers sign and magnitude of k (the old default)" begin
-        pairs, _ = _make_scene(rng, m_gt; n_in = 120, n_out = 20, σ = 0.4)
+        pairs, _ = radial_homography_pairs(rng, m_gt; n_in = 120, n_out = 20, σ = 0.4)
         res = find_radial_homography(
             pairs; center = (_RW / 2, _RH / 2),
             scoring = StudentTUniformScoring(RadialHomographyProblem(pairs; center = (_RW / 2, _RH / 2)), 2.5),
@@ -256,7 +228,7 @@ end
         @test abs(division_coeff(estimate(res)) - division_coeff(m_gt)) / abs(division_coeff(m_gt)) < 0.3
     end
     @testset "minimal = :homography — the (H, k) optimizer is the Student-t + uniform IRLS" begin
-        pairs, gt = _make_scene(MersenneTwister(77), m_gt; n_in = 80, n_out = 25, σ = 0.3)
+        pairs, gt = radial_homography_pairs(MersenneTwister(77), m_gt; n_in = 80, n_out = 25, σ = 0.3)
         est = find_radial_homography(
             pairs; center = (_RW / 2, _RH / 2), minimal = :homography,
             scoring = StudentTUniformScoring(RadialHomographyProblem(pairs; center = (_RW / 2, _RH / 2), minimal = :homography), 3.0),
@@ -275,34 +247,25 @@ end
 # partition-anchored Welsch-HQ lift on the 5-dof complement chart at the
 # transferred operating point (the class's old default).
 # -----------------------------------------------------------------------------
-const _CW, _CH = 4000.0, 3000.0
-const _CC = SVector(_CW / 2, _CH / 2)
-function _board(rng; f = 900.0, k = -2.0e-7, n_out = 20, σ = 0.0)
-    cam = board_camera(RotXYZ(0.35, -0.25, 0.15), SVector(40.0, -30.0, 600.0); f, ks = (k,), center = _CC)
-    pairs, gt = contaminated_pairs(
-        rng, board_pixels(cam; grid = -100.0:25.0:100.0); σ, n_out, shuffle = true,
-        outlier = (rng, _) -> SVector(200 * rand(rng) - 100, 200 * rand(rng) - 100) => SVector(_CW * rand(rng), _CH * rand(rng))
-    )
-    return RadialCamera(cam), pairs, gt
-end
+const _CC = RADIAL_BOARD_CENTER   # Estimation's DivisionBoards: radial_board
 _pd(a::RadialCamera, b::RadialCamera) = projective_distance(radial_rows(a), radial_rows(b))
 
 @testset "radial camera" begin
     @testset "RANSAC + the Student-t + uniform IRLS recovers the camera under distortion" begin
-        P_gt, pairs, gt = _board(MersenneTwister(7))
+        P_gt, pairs, gt = radial_board(MersenneTwister(7))
         est = find_radial_camera(pairs; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs; center = _CC), 5.0), local_optimization = StudentTUniform(), rng = MersenneTwister(1))
         @test est !== nothing
         @test _pd(estimate(est), P_gt) < sqrt(2 * 1.0e-6)
         m = est.inlier_mask
         @test count(m .& gt) >= count(gt) - 2 && count(m .& .!gt) == 0
-        P_gt2, pairs2, gt2 = _board(MersenneTwister(3); σ = 0.3)
+        P_gt2, pairs2, gt2 = radial_board(MersenneTwister(3); σ = 0.3)
         est2 = find_radial_camera(pairs2; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs2; center = _CC), 5.0), local_optimization = StudentTUniform(), rng = MersenneTwister(2))
         @test est2 !== nothing
         r2 = zeros(length(pairs2)); mahalanobis_distances!(r2, RadialCameraProblem(pairs2; center = _CC), estimate(est2))
         @test median(abs.(r2[gt2])) < 0.5
     end
     @testset "the Welsch-HQ chart lift (the old default)" begin
-        P_gt, pairs, gt = _board(MersenneTwister(11); σ = 0.2)
+        P_gt, pairs, gt = radial_board(MersenneTwister(11); σ = 0.2)
         p = RadialCameraProblem(pairs; center = _CC)
         lo = welsch_hq(:radial_camera)
         est = find_radial_camera(pairs; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs; center = _CC), 5.0), local_optimization = lo, rng = MersenneTwister(4))
@@ -319,13 +282,8 @@ end
 # and StuTuBCD on a problem with no weighted refit.
 # -----------------------------------------------------------------------------
 @testset "lines" begin
-    function _contaminated_line(rng)
-        pts = [Point2{Float64}(Float64(i), 0.01 * randn(rng)) for i in 0:56]
-        append!(pts, [Point2{Float64}(Float64(x), 0.5) for x in (10, 30, 50)])
-        return LineFittingProblem(pts), Line2D{Float64}(SVector(0.0, 1.0, -0.025))
-    end
     @testset "StudentTUniform recovers the line through its soft weights" begin
-        prob, θ₀ = _contaminated_line(MersenneTwister(57))
+        prob, θ₀ = contaminated_line(MersenneTwister(57))
         r = locally_optimize(prob, θ₀; local_optimization = StudentTUniform(), scoring = StudentTUniformScoring(prob, 1.0))
         line = estimate(r)
         @test abs(signed_distance(line, Point2(0.0, 0.0))) < 0.006

@@ -18,8 +18,9 @@
 # correspondences, the pool frame of VisualGeometryToolkitEval's PT-E-SIFT pool) × 3
 # RANSAC LO-checkpoint seeds each (the first, middle and last checkpoint of the
 # Welsch-IRLS run of record), the camera matrices and the selection's outlier
-# half-width. Little-endian binary, written once (the same file
-# VisualGeometryToolkitEstimation's gate times its core arms on):
+# half-width. Little-endian binary, written once: VisualGeometryToolkitEstimation's
+# test/lo_timing/ holds it and its one reader, call_set.jl (its gate times its
+# core arms on the same file):
 #
 #   "LOFX0001" | npairs::Int64 | nseeds::Int64 | outlier_halfwidth::Float64 |
 #   per pair: n::Int64, Kc1 (9, column-major), Kc2 (9), x1 (2n), x2 (2n),
@@ -58,20 +59,19 @@ using VisualGeometryToolkitCore: RowsWorkspace, sampson_residuals!, sampson_jaco
     LossWidth
 using StaticArrays, LinearAlgebra, Random
 
-const FIXTURE = joinpath(@__DIR__, "lo_calls_phototourism_e.bin")
 const OUT = ARGS[1]
 const REPS = length(ARGS) >= 2 ? parse(Int, ARGS[2]) : 7
 
 Threads.nthreads() == 1 || error("bench.jl: run single-threaded (julia -t 1); got $(Threads.nthreads()) threads")
 
-include(joinpath(@__DIR__, "call_set.jl"))   # read_fixture, pool_csponds, problem_of
+include(joinpath(pkgdir(VisualGeometryToolkitEstimation), "test", "lo_timing", "call_set.jl"))   # CALL_SET_FIXTURE, read_fixture, pool_csponds, problem_of: the call set's one reader (VisualGeometryToolkitEstimation's)
 include(joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "bench_record.jl"))   # calibration_spread, kernel_arm, write_bench_record: the record the gate reads (VisualGeometryToolkitCore's)
 
 # =============================================================================
 # The PoseLib arms on the recorded call set, through the external-refit contract
 # =============================================================================
 const BUDGET = 25
-const PAIRS, HALFWIDTH = read_fixture(FIXTURE)
+const PAIRS, HALFWIDTH = read_fixture(CALL_SET_FIXTURE)
 const PROBS = [problem_of(pr) for pr in PAIRS]
 const NCALLS = sum(length(pr.seeds) for pr in PAIRS)
 
@@ -109,26 +109,8 @@ end
 # =============================================================================
 const SWEEPS = 200            # sweeps per rep (one "call" = one sweep)
 const N = 1000
-const RNG = Xoshiro(20261007)
-const K = SMatrix{3, 3, Float64, 9}(800, 0, 0, 0, 800, 0, 640, 480, 1)
-const R = SMatrix{3, 3, Float64, 9}(exp([0 -0.1 0.05; 0.1 0 -0.02; -0.05 0.02 0]))
-const T = normalize(SVector(1.0, 0.1, 0.05))
-function scene()
-    u1 = Point2{Float64}[]; u2 = Point2{Float64}[]
-    while length(u1) < N
-        X = SVector(4 * rand(RNG) - 2, 3 * rand(RNG) - 1.5, 4 + 4 * rand(RNG))
-        Y = R * X + T
-        p1 = K * X; p2 = K * Y
-        if rand(RNG) < 0.3
-            push!(u1, Point2(1280 * rand(RNG), 960 * rand(RNG))); push!(u2, Point2(1280 * rand(RNG), 960 * rand(RNG)))
-        else
-            push!(u1, Point2(p1[1] / p1[3], p1[2] / p1[3]) + Point2(0.5 * randn(RNG), 0.5 * randn(RNG)))
-            push!(u2, Point2(p2[1] / p2[3], p2[2] / p2[3]) + Point2(0.5 * randn(RNG), 0.5 * randn(RNG)))
-        end
-    end
-    return u1, u2
-end
-const U1, U2 = scene()
+const SCENE = essential_bench_scene(Xoshiro(20261007); n = N)   # the seeded E scene (VisualGeometryToolkitCore's bench_record.jl)
+const U1, U2, K, R, T = SCENE.u₁, SCENE.u₂, SCENE.K, SCENE.R, SCENE.t
 const CAM = CameraModel(K)
 const FM1 = [backproject_with_jacobian(CAM, u) for u in U1]
 const FM2 = [backproject_with_jacobian(CAM, u) for u in U2]

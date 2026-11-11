@@ -17,9 +17,10 @@
 # (346–1094 correspondences, the pool frame of VisualGeometryToolkitEval's PT-E-SIFT
 # pool) × 3 RANSAC LO-checkpoint seeds each (the first, middle and last
 # checkpoint of the Welsch-IRLS run of record), the camera matrices and the
-# selection's outlier half-width. Little-endian binary, written once (the same
-# file VisualGeometryToolkitEstimation's and LocalOptimizationDoneRight's gates time
-# their arms on):
+# selection's outlier half-width. Little-endian binary, written once:
+# VisualGeometryToolkitEstimation's test/lo_timing/ holds it and its one reader,
+# call_set.jl (VisualGeometryToolkitEstimation's and LocalOptimizationDoneRight's
+# gates time their arms on the same file):
 #
 #   "LOFX0001" | npairs::Int64 | nseeds::Int64 | outlier_halfwidth::Float64 |
 #   per pair: n::Int64, Kc1 (9, column-major), Kc2 (9), x1 (2n), x2 (2n),
@@ -39,7 +40,6 @@ using VisualGeometryToolkitEstimation: RansacWorkspace, Irls
 using VisualGeometryToolkitCore: IGPrior
 using StaticArrays, LinearAlgebra, Random
 
-const FIXTURE = joinpath(@__DIR__, "lo_calls_phototourism_e.bin")
 const OUT = ARGS[1]
 const REPS = length(ARGS) >= 2 ? parse(Int, ARGS[2]) : 7
 
@@ -48,7 +48,7 @@ Threads.nthreads() == 1 || error("bench.jl: run single-threaded (julia -t 1); go
 # =============================================================================
 # The Table 1 arms on the recorded call set
 # =============================================================================
-include(joinpath(pkgdir(LocalOptimizationDoneRight), "test", "lo_timing", "call_set.jl"))   # read_fixture, pool_csponds, problem_of (the package bench's)
+include(joinpath(pkgdir(VisualGeometryToolkitEstimation), "test", "lo_timing", "call_set.jl"))   # CALL_SET_FIXTURE, read_fixture, pool_csponds, problem_of: the call set's one reader (VisualGeometryToolkitEstimation's)
 include(joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "bench_record.jl"))   # calibration_spread, kernel_arm, write_bench_record: the record the gate reads (VisualGeometryToolkitCore's)
 
 # The Table 1 arms at the equal LO budget. The scale multiples are the Welsch
@@ -67,7 +67,7 @@ const ARMS = [
     "Stu-tU-BCD"  => () -> StuTuBCD(; max_iter = BUDGET),
 ]
 
-const PAIRS, HALFWIDTH = read_fixture(FIXTURE)
+const PAIRS, HALFWIDTH = read_fixture(CALL_SET_FIXTURE)
 const PROBS = [problem_of(pr) for pr in PAIRS]
 const SCORINGS = [StudentTUniformScoring(EssentialProblem, HALFWIDTH; prior = IGPrior(0.0, 0.0)) for _ in PROBS]
 const WORKSPACES = [RansacWorkspace(PROBS[i], SCORINGS[i]) for i in eachindex(PROBS)]
