@@ -18,8 +18,8 @@ VisualGeometryToolkitEstimation's problems:
   [`PoseLibLmAdaptLossWidth`](@ref)) as external refiners (their solver calls
   load with PoseLib, a package extension);
 - the cross-validated operating points ([`tuning_constant`](@ref)) and the
-  strategies' TOML registry ([`STRATEGY_TAGS`](@ref)), merged with the core's to load:
-  `optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, STRATEGY_TAGS))`.
+  strategies' TOML registry ([`LODR_STRATEGY_TAGS`](@ref)), merged with the core's to load:
+  `optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LODR_STRATEGY_TAGS))`.
 
 Compose one with any scorer: `find_essential(cam1, cam2, pairs; local_optimization_strategy
 = HQ{WelschShape}(efficiency_constant = WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL))`.
@@ -63,7 +63,7 @@ using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation, Irls, Lo
 include("config_defaults.jl")          # configs/default.toml → `_DEFAULTS_OF_RECORD`, `_config_default`
 include("lift/schedules.jl")           # LoSchedule, MuLadder, GeometricAnneal, gnc_schedule
 include("lift/lift_core.jl")           # the lift θ/z-blocks, LiftState, TabulatedLift
-include("strategies/types.jl")         # the strategies, their identity and registry (STRATEGY_TAGS)
+include("strategies/types.jl")         # the strategies, their identity and registry (LODR_STRATEGY_TAGS)
 include("lift/lifts.jl")               # ManifoldLiftHQ / ManifoldLiftGnc and the HQ/GNC locally_optimize!
 include("strategies/irls.jl")          # StudentTUniform, BarronAdaptive, StuTuBCD
 include("strategies/essential.jl")     # the essential-matrix research lifts
@@ -88,7 +88,7 @@ export tuning_constant, WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL, WELSCH_HQ_EFFIC
 
 # Public, not exported: the registry, the provenance records, the lift
 # machinery a research arm builds on, and the continuation schedules.
-public STRATEGY_TAGS, CONTRACT_GENERICS, TuningConstant, TuningProvenance, BarronAdaptiveLikelihood,
+public LODR_STRATEGY_TAGS, CONTRACT_GENERICS, TuningConstant, TuningProvenance, BarronAdaptiveLikelihood,
     LiftState, lift_state, LiftZBlock, JointGaussNewton, WelschConvexNewton, TabulatedLift,
     tabulate!, cubic_hermite, lift_window, lift_raw_window,
     LoSchedule, NoSchedule, MuLadder, GeometricAnneal, gnc_schedule, schedule_init, scale_mult,

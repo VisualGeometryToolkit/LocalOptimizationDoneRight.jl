@@ -68,7 +68,7 @@ end
     c_seed = sqcost(F_seed)
     rf = RVGC.locally_optimize(
         pf, F_seed; scoring = StudentTUniformScoring(pf, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-        local_optimization_strategy = LODR.Gnc{RVGC.Irls{RVGC.WelschShape}}(efficiency_constant = 1.0)
+        local_optimization_strategy = LODR.Gnc{VgtkCore.Irls{VgtkCore.WelschShape}}(efficiency_constant = 1.0)
     )
     @test estimate(rf) !== nothing
     @test retcode(rf) in (:converged, :max_iterations)

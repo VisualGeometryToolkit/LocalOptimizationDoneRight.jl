@@ -9,7 +9,7 @@
 #
 # and loaded through the core's one entry with the two registries merged:
 #
-#     optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, STRATEGY_TAGS))
+#     optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LODR_STRATEGY_TAGS))
 #
 # `loss` (HQ, Gnc) selects the robust loss from the core's LOSS_TAGS; `gnc`
 # wraps an inner static strategy named by `inner` + `loss`. A width is
@@ -47,7 +47,7 @@ end
 # shape being deployed raises there — a Welsch-tuned value is never handed to a
 # GM arm. (A number is the caller's own and is taken as given, by Estimation's
 # method.)
-for T in values(STRATEGY_TAGS)
+for T in values(LODR_STRATEGY_TAGS)
     # only a strategy with a width, or Welsch-HQ-ECM's plain efficiency constant, has one to resolve
     (:width in fieldnames(T) || :efficiency_constant in fieldnames(T)) || continue
     @eval VgtkEstimation.lo_resolve_efficiency_constant(::Type{<:$T}, K::Type, v::AbstractString; class::Symbol) =

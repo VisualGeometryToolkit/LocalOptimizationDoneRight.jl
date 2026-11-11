@@ -3,7 +3,7 @@
 # scoring_glue.jl): the half-quadratic lifts HQ{K} and their research
 # variants, GNC, the Student-t + uniform IRLS and its score-matched BCD, the
 # Barron arms — their types, identity, width modes, the strategy registry
-# (`STRATEGY_TAGS`) and the one keyword constructor.
+# (`LODR_STRATEGY_TAGS`) and the one keyword constructor.
 #
 # They implement VisualGeometryToolkitCore's local-optimization contract
 # (`locally_optimize!`, `lo_width`, `with_width`) on
@@ -623,7 +623,7 @@ const _STRATEGY_ROWS = (
 )
 
 """
-    STRATEGY_TAGS
+    LODR_STRATEGY_TAGS
 
 The TOML tags of this package's local-optimization strategies.
 
@@ -631,9 +631,9 @@ This package's local-optimization strategy registry (VisualGeometryToolkitCore's
 `TagRegistry`, built by VisualGeometryToolkitEstimation's `@lo_registry`): TOML
 tag → strategy type or loss-parametric family, the tag `snake_case` of the
 type's name. Retired tags name their successor. Merge it with the core's to
-load either: `merge(VisualGeometryToolkitEstimation.LO_TAGS, STRATEGY_TAGS)`.
+load either: `merge(VisualGeometryToolkitEstimation.LO_TAGS, LODR_STRATEGY_TAGS)`.
 """
-const STRATEGY_TAGS = VgtkEstimation.@lo_registry _STRATEGY_ROWS defaults = _DEFAULTS_OF_RECORD["optimization_strategy"] retired = (
+const LODR_STRATEGY_TAGS = VgtkEstimation.@lo_registry _STRATEGY_ROWS defaults = _DEFAULTS_OF_RECORD["optimization_strategy"] retired = (
     "stutu_bcd" => "stu_tu_bcd", "stutu_hq_tabulated" => "stu_tu_hq_tabulated", "stutu_regemm" => "stu_tu_regemm",
 )
 

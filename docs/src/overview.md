@@ -99,13 +99,13 @@ cross-validated efficiency constant of a loss on a model class, with its provena
 (the accv2026 config that produced it); the `WELSCH_HQ_EFFICIENCY_CONSTANT_*`
 constants are its Welsch-HQ entries.
 
-[`STRATEGY_TAGS`](@ref) registers the strategies' TOML tags. Merge it with the core's
+[`LODR_STRATEGY_TAGS`](@ref) registers the strategies' TOML tags. Merge it with the core's
 to read a strategy table of either package, such as a `find_*` pipeline's
 `local_optimization_strategy = { type = "hq", loss = "welsch", … }`:
 
 ```julia
 lo = optimization_strategy_from_toml(d; class = :essential,
-    tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.STRATEGY_TAGS))
+    tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.LODR_STRATEGY_TAGS))
 ```
 
 In such a table, `efficiency_constant = "cross_validated"` resolves through
@@ -129,7 +129,7 @@ so an edit forces a recompile.
 
 | table | holds |
 |:---|:---|
-| `[optimization_strategy.<tag>]` | each strategy's defaults (`max_iter`, damping, schedule), keyed by its `STRATEGY_TAGS` tag |
+| `[optimization_strategy.<tag>]` | each strategy's defaults (`max_iter`, damping, schedule), keyed by its `LODR_STRATEGY_TAGS` tag |
 | `[optimization_strategy.poselib]` | `cheirality_vote_points`: points in the cheirality vote of an E decomposition |
 | `[optimization_strategy.poselib_adapt]` | [`PoseLibLmAdaptLossWidth`](@ref)'s total budget, rounds, `min_support` and operating efficiency constant |
 | `[[tuning_constants]]` | the cross-validated operating points with their provenance |

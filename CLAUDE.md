@@ -7,7 +7,7 @@ registered package — the paper's local optimizers on VisualGeometryToolkitCore
 local-optimization contract and VisualGeometryToolkitEstimation's problems (`src/`: the
 HQ/GNC lifts and their lift core and schedules in `src/lift/`, the strategies —
 `HQ`, `Gnc`, `StudentTUniform`, `StuTuBCD`, `BarronAdaptive`, the research
-variants — their TOML registry `STRATEGY_TAGS` in `src/strategies/`, the
+variants — their TOML registry `LODR_STRATEGY_TAGS` in `src/strategies/`, the
 cross-validated `tuning_constant`s, and the PoseLib truncated refiners, whose
 solver calls are the PoseLib package extension in `ext/`) — and the research
 project `accv2026/` that produces every figure and table. The evaluation engine

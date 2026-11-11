@@ -8,10 +8,11 @@ Eval and RANSACScoringDoneRight on 0.9.
 
 ### Breaking
 
-- **`LO_TAGS` is renamed `STRATEGY_TAGS`** (VisualGeometryToolkitEstimation owns the
-  name `LO_TAGS`, its core registry). The registry is unchanged. Migration:
+- **`LO_TAGS` is renamed `LODR_STRATEGY_TAGS`** (VisualGeometryToolkitEstimation owns the
+  name `LO_TAGS`, its core registry, and VisualGeometryToolkitCore `STRATEGY_TAGS`, the
+  registry of its core strategies). The registry is unchanged. Migration:
   `merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.LO_TAGS)` →
-  `merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.STRATEGY_TAGS)`.
+  `merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.LODR_STRATEGY_TAGS)`.
 - **`scale_multiple` is `efficiency_constant`** (VisualGeometryToolkitCore's
   `ScaleMultiple` is `EfficiencyConstant`): every strategy keyword and field, the TOML
   key, `[[tuning_constants]] efficiency_constant`, the `WELSCH_HQ_EFFICIENCY_CONSTANT_*`

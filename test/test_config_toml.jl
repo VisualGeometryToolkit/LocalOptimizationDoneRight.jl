@@ -3,7 +3,7 @@
 # this package's strategies, and they load through VisualGeometryToolkitEstimation's one
 # entry over the MERGED registry:
 #
-#     optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, STRATEGY_TAGS))
+#     optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LODR_STRATEGY_TAGS))
 #
 # What this pins: the shipped file is what the constructors default to and is
 # complete over every strategy field; every tag round-trips through
@@ -20,11 +20,11 @@ using VisualGeometryToolkitCore: AbstractOptimizationStrategy, GemanMcclureShape
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitEstimation: Irls, config_dict, optimization_strategy_from_toml
 using LocalOptimizationDoneRight
-using LocalOptimizationDoneRight: STRATEGY_TAGS, BarronAdaptive, StuTuRegemm, _config_default, _DEFAULTS_OF_RECORD
+using LocalOptimizationDoneRight: LODR_STRATEGY_TAGS, BarronAdaptive, StuTuRegemm, _config_default, _DEFAULTS_OF_RECORD
 const RVG = VisualGeometryToolkitEstimation
 const LO = LocalOptimizationDoneRight
 
-const TAGS = merge(RVG.LO_TAGS, LO.STRATEGY_TAGS)
+const TAGS = merge(RVG.LO_TAGS, LO.LODR_STRATEGY_TAGS)
 load(d; class = :homography) = optimization_strategy_from_toml(d; class, tags = TAGS)
 # A width-carrying strategy's efficiency constant (its `EfficiencyConstant` width mode).
 sm(lo) = VgtkCore.lo_width(lo).value
@@ -54,7 +54,7 @@ sm(lo) = VgtkCore.lo_width(lo).value
             "welsch_hq_newton" => (:efficiency_constant,), "welsch_hq_ecm" => (:efficiency_constant,),
             "barron_adaptive" => (:efficiency_constant,), "gm_hq_eps" => (:efficiency_constant,),
         )
-        for (tag, T) in STRATEGY_TAGS
+        for (tag, T) in LODR_STRATEGY_TAGS
             tbl = _DEFAULTS_OF_RECORD["optimization_strategy"][tag]
             for f in fieldnames(T)
                 f in get(required, tag, ()) && continue
@@ -64,16 +64,16 @@ sm(lo) = VgtkCore.lo_width(lo).value
         end
         # ...and the converse, asserted rather than assumed.
         for (tag, fields) in required, f in fields
-            @test !haskey(_DEFAULTS_OF_RECORD["optimization_strategy"][tag], VgtkCore.toml_key(STRATEGY_TAGS[tag], f))
+            @test !haskey(_DEFAULTS_OF_RECORD["optimization_strategy"][tag], VgtkCore.toml_key(LODR_STRATEGY_TAGS[tag], f))
         end
     end
 
     @testset "round trip: every tag, through the merged registry" begin
         # Both registries' tags, no overlap ("none", no strategy, is the core's alone).
-        @test isempty(intersect(collect(keys(RVG.LO_TAGS)), collect(keys(STRATEGY_TAGS))))
-        @test !haskey(STRATEGY_TAGS, "none") && RVG.LO_TAGS["none"] === nothing
-        @test sort(collect(keys(TAGS))) == sort([collect(keys(RVG.LO_TAGS)); collect(keys(STRATEGY_TAGS))])
-        for (tag, T) in STRATEGY_TAGS
+        @test isempty(intersect(collect(keys(RVG.LO_TAGS)), collect(keys(LODR_STRATEGY_TAGS))))
+        @test !haskey(LODR_STRATEGY_TAGS, "none") && RVG.LO_TAGS["none"] === nothing
+        @test sort(collect(keys(TAGS))) == sort([collect(keys(RVG.LO_TAGS)); collect(keys(LODR_STRATEGY_TAGS))])
+        for (tag, T) in LODR_STRATEGY_TAGS
             takes_efficiency_constant = :width in fieldnames(T) || hasfield(T, :efficiency_constant)
             # the minimal table for this tag: only the keys it actually takes
             tbl = Dict{String, Any}("type" => tag)
