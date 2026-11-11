@@ -12,7 +12,7 @@
 "The defaults of record (configs/default.toml)."
 const DEFAULTS_PATH = normpath(joinpath(@__DIR__, "..", "configs", "default.toml"))
 include_dependency(DEFAULTS_PATH)
-const _TOML_DEFAULTS = TOML.parsefile(DEFAULTS_PATH)
+const _DEFAULTS_OF_RECORD = TOML.parsefile(DEFAULTS_PATH)
 
 """
     _config_default(table, key)
@@ -20,4 +20,4 @@ const _TOML_DEFAULTS = TOML.parsefile(DEFAULTS_PATH)
 The default `key` of `[table]` (a dotted path, `"local_optimization.poselib_adapt"`)
 in configs/default.toml. Throws a `KeyError` naming a missing table or key.
 """
-_config_default(table::AbstractString, key::AbstractString) = toml_default(_TOML_DEFAULTS, table, key)
+_config_default(table::AbstractString, key::AbstractString) = toml_default(_DEFAULTS_OF_RECORD, table, key)

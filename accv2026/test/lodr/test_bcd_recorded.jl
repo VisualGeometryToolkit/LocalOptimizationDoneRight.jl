@@ -14,7 +14,7 @@
 using Test, Random, LinearAlgebra, StaticArrays
 using Rotations: RotXYZ
 using VisualGeometryToolkitCore
-using VisualGeometryToolkitCore: CameraModel, Point2, Vec3, csponds, estimate, retcode, iterations, Incumbent,
+using VisualGeometryToolkitCore: CameraModel, Point2, Vec3, csponds, estimate, retcode, iterations, Attributed,
     WelschShape, GemanMcclureShape, HuberShape, block_coordinate_descent!, Recorded, current_cost
 using RANSACScoringDoneRight: StudentTUniformScoring
 using VisualGeometryToolkitEstimation
@@ -64,7 +64,7 @@ function arm(p, sc, model::M, lo) where {M}
         return state, lh, R.PosteriorIrlsMethod(ws.lo_ws.refine), p, model, lo.max_iter
     elseif lo isa LO.StuTuBCD
         score, _ = V.score_model!(buf, sc, p, model)
-        state = LO.ScoreBcdState{M}(Incumbent{M}(model, -Float64(score)), -Float64(score), false)
+        state = LO.ScoreBcdState{M}(Attributed{M, @NamedTuple{cost::Float64}}(model, (; cost = -Float64(score))), -Float64(score), false)
         return state, FrozenNuisance(), LO.ScoreBcdMethod(sc, ws.lo_ws, buf, lo.tol), p, model, lo.max_iter
     end
     prov = rows_provider(p)
@@ -89,7 +89,7 @@ function arm(p, sc, model::M, lo) where {M}
         st = LO.schedule_init(LO.with_converged_rung(LO.gnc_schedule(loss, lo.factor), lo.budget === :converged),
                               V.gnc_entry_mu0(loss, r2max, lo.entry), lo.max_iter)
         cost0 = V.lift_cost(loss, res, lift_size(prov))
-        state = LO.ManifoldLiftGncState(θ₀, cost0, Incumbent(θ₀, cost0), Inf, st, 0, false)
+        state = LO.ManifoldLiftGncState(θ₀, cost0, Attributed(θ₀, (; cost = Float64(cost0))), Inf, st, 0, false)
         return state, FrozenNuisance(), LO.ManifoldLiftGnc(prov, lift_size(prov), loss), p, model, lo.max_iter
     end
     prov, pws = LO._mixture_lift_setup(ws.lo_ws, p, model, cs, buf, sc)
@@ -111,7 +111,7 @@ end
 snap(x::Union{Number, Symbol, Nothing}) = x
 snap(x::AbstractArray{<:Number}) = collect(x)
 snap(x::StaticArray) = Tuple(x)
-snap(x::Incumbent) = (snap(x.θ), x.cost)
+snap(x::Attributed) = (snap(x.value), x.cost)
 snap(x) = isbits(x) ? x : nameof(typeof(x)) in (:PosteriorWeightState, :_PositionalDivisionState, :MuLadderState) ?
     Tuple(snap(getfield(x, i)) for i in 1:fieldcount(typeof(x))) : :skipped
 snap_state(st) = Tuple(snap(getfield(st, i)) for i in 1:fieldcount(typeof(st)))

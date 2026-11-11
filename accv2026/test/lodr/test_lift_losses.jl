@@ -30,7 +30,7 @@ using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: WelschHQEcm, WelschHQNewton
 const LO = LocalOptimizationDoneRight
 # The merged strategy registry: the core's tags and this package's.
-const TAGS = merge(VgtkEstimation.LO_TAGS, LocalOptimizationDoneRight.LO_TAGS)
+const TAGS = merge(VgtkEstimation.LO_TAGS, LocalOptimizationDoneRight.STRATEGY_TAGS)
 # NOT exported: under the old serial suite this was visible because an earlier
 # `include` had imported it into the shared namespace. Items get their own
 # module, so it must be named here.
@@ -315,7 +315,7 @@ end
 # the code behind it: `BarronAdaptive` was built by two testsets and run by
 # none, so a half-applied field rename (of the inverse squared loss width) made every
 # one of its local optimizations a FieldError while the suite stayed green
-# (2026-09-21 audit). So: every LO_TAGS entry, and every loss each
+# (2026-09-21 audit). So: every STRATEGY_TAGS entry, and every loss each
 # loss-parametric mechanism admits, is built through the TOML loader and run
 # end to end on E. The two eval-only PoseLib arms have no native-loop path by
 # design and must say so; a loss a mechanism cannot run is refused at LOAD.

@@ -3,7 +3,7 @@
 # this package's strategies, and they load through VisualGeometryToolkitEstimation's one
 # entry over the MERGED registry:
 #
-#     local_optimization_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LO_TAGS))
+#     local_optimization_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, STRATEGY_TAGS))
 #
 # What this pins: the shipped file is what the constructors default to and is
 # complete over every strategy field; every tag round-trips through
@@ -20,11 +20,11 @@ using VisualGeometryToolkitCore: AbstractLocalOptimization, GemanMcclureShape, S
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitEstimation: Irls, config_dict, local_optimization_from_toml
 using LocalOptimizationDoneRight
-using LocalOptimizationDoneRight: LO_TAGS, BarronAdaptive, StuTuRegemm, _config_default, _TOML_DEFAULTS
+using LocalOptimizationDoneRight: STRATEGY_TAGS, BarronAdaptive, StuTuRegemm, _config_default, _DEFAULTS_OF_RECORD
 const RVG = VisualGeometryToolkitEstimation
 const LO = LocalOptimizationDoneRight
 
-const TAGS = merge(RVG.LO_TAGS, LO.LO_TAGS)
+const TAGS = merge(RVG.LO_TAGS, LO.STRATEGY_TAGS)
 load(d; class = :homography) = local_optimization_from_toml(d; class, tags = TAGS)
 # A width-carrying strategy's scale multiple (its `ScaleMultiple` width mode).
 sm(lo) = VgtkCore.lo_width(lo).value
@@ -54,8 +54,8 @@ sm(lo) = VgtkCore.lo_width(lo).value
             "welsch_hq_newton" => (:scale_multiple,), "welsch_hq_ecm" => (:scale_multiple,),
             "barron_adaptive" => (:scale_multiple,), "gm_hq_eps" => (:scale_multiple,),
         )
-        for (tag, T) in LO_TAGS
-            tbl = _TOML_DEFAULTS["local_optimization"][tag]
+        for (tag, T) in STRATEGY_TAGS
+            tbl = _DEFAULTS_OF_RECORD["local_optimization"][tag]
             for f in fieldnames(T)
                 f in get(required, tag, ()) && continue
                 f in VgtkCore.toml_skip_fields(T) && continue   # the width is not a config key
@@ -64,15 +64,15 @@ sm(lo) = VgtkCore.lo_width(lo).value
         end
         # ...and the converse, asserted rather than assumed.
         for (tag, fields) in required, f in fields
-            @test !haskey(_TOML_DEFAULTS["local_optimization"][tag], VgtkCore.toml_key(LO_TAGS[tag], f))
+            @test !haskey(_DEFAULTS_OF_RECORD["local_optimization"][tag], VgtkCore.toml_key(STRATEGY_TAGS[tag], f))
         end
     end
 
     @testset "round trip: every tag, through the merged registry" begin
         # Both registries' tags, no overlap.
-        @test isempty(intersect(collect(keys(RVG.LO_TAGS)), collect(keys(LO_TAGS))))
-        @test sort(collect(keys(TAGS))) == sort([collect(keys(RVG.LO_TAGS)); collect(keys(LO_TAGS))])
-        for (tag, T) in LO_TAGS
+        @test isempty(intersect(collect(keys(RVG.LO_TAGS)), collect(keys(STRATEGY_TAGS))))
+        @test sort(collect(keys(TAGS))) == sort([collect(keys(RVG.LO_TAGS)); collect(keys(STRATEGY_TAGS))])
+        for (tag, T) in STRATEGY_TAGS
             takes_scale_multiple = :width in fieldnames(T) || hasfield(T, :scale_multiple)
             # the minimal table for this tag: only the keys it actually takes
             tbl = Dict{String, Any}("type" => tag)

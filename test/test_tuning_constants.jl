@@ -12,7 +12,7 @@ const LO = LocalOptimizationDoneRight
 
 @testset "tuning constants" begin
 @testset "the registry IS the [[tuning_constants]] array" begin
-    @test length(LO._TOML_DEFAULTS["tuning_constants"]) == length(LO._TUNING_CONSTANTS)
+    @test length(LO._DEFAULTS_OF_RECORD["tuning_constants"]) == length(LO._TUNING_CONSTANTS)
     @test WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL == tuning_constant(:essential, "welsch").scale_multiple == 1.597
     @test tuning_constant(:radial_homography, "welsch").scale_multiple == tuning_constant(:homography, "welsch").scale_multiple
     @test !tuning_constant(:radial_homography, "welsch").validated
@@ -41,7 +41,7 @@ end
     # working resolution from one that always falls through. (It used to
     # compare the call with itself, which no resolution bug could fail.)
     specific = only(
-        e for e in LO._TOML_DEFAULTS["tuning_constants"]
+        e for e in LO._DEFAULTS_OF_RECORD["tuning_constants"]
             if e["problem"] == "essential" && e["features"] == "splg" &&
             e["dataset"] == "scannet1500" && e["shape"] == "welsch"
     )
@@ -69,7 +69,7 @@ end
     @test cls.scale_multiple == pt.scale_multiple && cls.tuning == pt.tuning
     rh = tuning_constant(:radial_homography, "welsch")          # a two-link chain
     @test rh.transfer == (:homography, :any, :any) && rh.scale_multiple == pt.scale_multiple && rh.tuning == pt.tuning
-    @test all(!haskey(e, "scale_multiple") for e in LOD._TOML_DEFAULTS["tuning_constants"] if haskey(e, "transfer"))
+    @test all(!haskey(e, "scale_multiple") for e in LOD._DEFAULTS_OF_RECORD["tuning_constants"] if haskey(e, "transfer"))
     # The loader refuses what the schema forbids.
     val(; kw...) = merge(Dict{String,Any}("problem" => "essential", "features" => "any", "dataset" => "any",
         "shape" => "welsch", "scale_multiple" => 1.0, "tuning" => Dict("config" => "c.toml", "name" => "n",

@@ -94,12 +94,12 @@ cross-validated scale multiple of a loss on a model class, with its provenance
 (the accv2026 config that produced it); the `WELSCH_HQ_SCALE_MULTIPLE_*`
 constants are its Welsch-HQ entries.
 
-[`LO_TAGS`](@ref) registers the strategies' TOML tags. Merge it with the core's
+[`STRATEGY_TAGS`](@ref) registers the strategies' TOML tags. Merge it with the core's
 to load a `[local_optimization]` table of either package:
 
 ```julia
 lo = local_optimization_from_toml(d; class = :essential,
-    tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.LO_TAGS))
+    tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.STRATEGY_TAGS))
 ```
 
 In such a table, `scale_multiple = "cross_validated"` resolves through
@@ -123,7 +123,7 @@ so an edit forces a recompile.
 
 | table | holds |
 |:---|:---|
-| `[local_optimization.<tag>]` | each strategy's defaults (`max_iter`, damping, schedule), keyed by its `LO_TAGS` tag |
+| `[local_optimization.<tag>]` | each strategy's defaults (`max_iter`, damping, schedule), keyed by its `STRATEGY_TAGS` tag |
 | `[local_optimization.poselib]` | `cheirality_vote_points`: points in the cheirality vote of an E decomposition |
 | `[local_optimization.poselib_adapt]` | [`PoseLibLmAdaptLossWidth`](@ref)'s total budget, rounds, `min_support` and operating scale multiple |
 | `[[tuning_constants]]` | the cross-validated operating points with their provenance |

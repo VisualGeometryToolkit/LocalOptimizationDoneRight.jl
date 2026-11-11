@@ -18,8 +18,8 @@ VisualGeometryToolkitEstimation's problems:
   [`PoseLibLmAdaptLossWidth`](@ref)) as external refiners (their solver calls
   load with PoseLib, a package extension);
 - the cross-validated operating points ([`tuning_constant`](@ref)) and the
-  strategies' TOML registry ([`LO_TAGS`](@ref)), merged with the core's to load:
-  `local_optimization_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LO_TAGS))`.
+  strategies' TOML registry ([`STRATEGY_TAGS`](@ref)), merged with the core's to load:
+  `local_optimization_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, STRATEGY_TAGS))`.
 
 Compose one with any scorer: `find_essential(cam1, cam2, pairs; local_optimization
 = HQ{WelschShape}(scale_multiple = WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL))`.
@@ -43,7 +43,7 @@ using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractLocalOptimiz
     BandAnnealed, GaussianShape, WelschShape, GemanMcclureShape, SmoothTLSShape,
     BarronShape, ConsensusSet, consensus_score, is_predictive, ScoreBuffers, ScaleMultiple, LossWidth, TagRegistry, tag_of,
     SelfScaling, ConsensusAnchored, FixedScale, ExternalRefit, scale_s2, inlier_count, inlier_threshold,
-    outlier_halfwidth, score_model!, loss_at, width_scale_interface, lo_estimate, Incumbent,
+    outlier_halfwidth, score_model!, loss_at, width_scale_interface, lo_estimate, Attributed,
     keep_best, StoppingCriterion, PosteriorWeightState, reset_posterior!, StudentTMixture, posterior_weight,
     posterior_weight_derivative, mixture_ecm!, mixture_nll, s_hat_sq, student_t_dof,
     sq_distances, robust_weight, FrozenNuisance, truncated_log_normaliser, data_size, codimension,
@@ -60,10 +60,10 @@ using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation, Irls, Lo
     posterior_irls!, consensus_posterior, required_outlier_halfwidth, lo_loss, strategy_loss,
     plain_scale_multiple, lo_width_value, lo_construct, LOSS_TAGS
 
-include("config_defaults.jl")          # configs/default.toml → `_TOML_DEFAULTS`, `_config_default`
+include("config_defaults.jl")          # configs/default.toml → `_DEFAULTS_OF_RECORD`, `_config_default`
 include("lift/schedules.jl")           # LoSchedule, MuLadder, GeometricAnneal, gnc_schedule
 include("lift/lift_core.jl")           # the lift θ/z-blocks, LiftState, TabulatedLift
-include("strategies/types.jl")         # the strategies, their identity and registry (LO_TAGS)
+include("strategies/types.jl")         # the strategies, their identity and registry (STRATEGY_TAGS)
 include("lift/lifts.jl")               # ManifoldLiftHQ / ManifoldLiftGnc and the HQ/GNC locally_optimize!
 include("strategies/irls.jl")          # StudentTUniform, BarronAdaptive, StuTuBCD
 include("strategies/essential.jl")     # the essential-matrix research lifts
@@ -88,7 +88,7 @@ export tuning_constant, WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL, WELSCH_HQ_SCALE_MULT
 
 # Public, not exported: the registry, the provenance records, the lift
 # machinery a research arm builds on, and the continuation schedules.
-public LO_TAGS, CONTRACT_GENERICS, TuningConstant, TuningProvenance, BarronAdaptiveLikelihood,
+public STRATEGY_TAGS, CONTRACT_GENERICS, TuningConstant, TuningProvenance, BarronAdaptiveLikelihood,
     LiftState, lift_state, LiftZBlock, JointGaussNewton, WelschConvexNewton, TabulatedLift,
     tabulate!, cubic_hermite, lift_window, lift_raw_window,
     LoSchedule, NoSchedule, MuLadder, GeometricAnneal, gnc_schedule, schedule_init, scale_mult,

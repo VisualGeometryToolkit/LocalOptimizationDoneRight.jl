@@ -153,7 +153,7 @@ end
 # rather than a fallback.
 # Built from configs/default.toml's [[tuning_constants]] array at precompile —
 # the file is the one home of these constants; this Dict is its index.
-const _TUNING_CONSTANTS = _tuning_registry(_TOML_DEFAULTS["tuning_constants"])
+const _TUNING_CONSTANTS = _tuning_registry(_DEFAULTS_OF_RECORD["tuning_constants"])
 
 """
     tuning_constant(problem::Symbol, shape::AbstractString;

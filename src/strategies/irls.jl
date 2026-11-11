@@ -71,7 +71,7 @@ function locally_optimize!(
     # retiring `cs` (unused past this point — the mask is read).
     score = _bcd_seed_score(buf, scoring, problem, model, cs)
     method = ScoreBcdMethod(scoring, L, buf, lo.tol)
-    state = reused_state(ScoreBcdState{M}, (Incumbent{M}(model, -Float64(score)), -Float64(score), false))
+    state = reused_state(ScoreBcdState{M}, (Attributed{M, @NamedTuple{cost::Float64}}(model, (; cost = -Float64(score))), -Float64(score), false))
     return block_coordinate_descent!(state, FrozenNuisance(), method, problem, model; max_iter = lo.max_iter)
 end
 
@@ -96,7 +96,7 @@ struct ScoreBcdMethod{S, L <: LoBuffers, B <: ScoreBuffers} <: AbstractBlockCoor
 end
 
 mutable struct ScoreBcdState{M}
-    best::Incumbent{M}   # cost = −S
+    best::Attributed{M, @NamedTuple{cost::Float64}}   # cost = −S
     cur_cost::Float64    # −S at the last refit
     improved::Bool       # the last iteration raised S by more than `tol`
 end
@@ -119,7 +119,7 @@ end
 # stop verdict: an iteration that does not make it ends the run.
 function post_iteration!(state::ScoreBcdState{M}, method::ScoreBcdMethod, prob, θ, iter) where {M}
     state.improved = state.cur_cost < state.best.cost - method.tol
-    state.improved && (state.best = Incumbent{M}(θ, state.cur_cost))
+    state.improved && (state.best = Attributed{M, @NamedTuple{cost::Float64}}(θ, (; cost = Float64(state.cur_cost))))
     return nothing
 end
 
@@ -127,4 +127,4 @@ stopping_criterion(::ScoreBcdMethod) = StopWhenNoImprovement(1, 1)
 current_cost(state::ScoreBcdState) = state.cur_cost
 
 block_coordinate_result(state::ScoreBcdState, ::ScoreBcdMethod, prob, θ, stop_reason, final_iter) =
-    lo_estimate(state.best.θ, stop_reason; iterations = final_iter)
+    lo_estimate(state.best.value, stop_reason; iterations = final_iter)

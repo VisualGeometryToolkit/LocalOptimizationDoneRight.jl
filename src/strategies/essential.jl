@@ -77,11 +77,11 @@ end
 # Reuses the provider's residual buffer; ≤ (max_iter + 1) residual evaluations.
 function _ecm_final_scale_incumbent(prov, θ₀, traj::Vector, final_loss::DeployedLoss)
     cost(θ) = (lift_refresh!(prov, θ); lift_cost(final_loss, lift_residuals(prov), lift_size(prov)))
-    inc = Incumbent(θ₀, Float64(cost(θ₀)))
+    inc = Attributed(θ₀, (; cost = Float64(cost(θ₀))))
     for θ in traj
         inc, _ = keep_best(inc, θ, cost(θ))
     end
-    return inc.θ
+    return inc.value
 end
 
 function locally_optimize!(
@@ -209,7 +209,7 @@ LiftedMixtureMethod(prov, n::Int, μ::Float64, patience::Int, table::TabulatedLi
 mutable struct LiftedMixtureState{M}
     θ::M
     seed_nll::Float64; cur_cost::Float64
-    best::Incumbent{M}
+    best::Attributed{M, @NamedTuple{cost::Float64}}
     no_improve::Int; built::Bool; Δθnorm::Float64
 end
 
@@ -231,7 +231,7 @@ function _init_lifted_mixture(method::LiftedMixtureMethod, θ₀)
     prov = method.prov; n = method.n
     _seed_lift_z!(method.ls, method.table, lift_residuals(prov), n, :flat)
     seed_nll = _seed_mixture!(prov, method.pws, method.table, θ₀, n)
-    return reused_state(LiftedMixtureState{typeof(θ₀)}, (θ₀, seed_nll, seed_nll, Incumbent(θ₀, seed_nll), 0, true, Inf))
+    return reused_state(LiftedMixtureState{typeof(θ₀)}, (θ₀, seed_nll, seed_nll, Attributed(θ₀, (; cost = Float64(seed_nll))), 0, true, Inf))
 end
 
 # The model block is THE joint-(θ,z) lift update (`update_model!` on
@@ -353,7 +353,7 @@ end
 mutable struct LiftedReGeMMState{M}
     θ::M
     cur_cost::Float64
-    best::Incumbent{M}
+    best::Attributed{M, @NamedTuple{cost::Float64}}
 end
 
 struct LiftedReGeMMLikelihood{St, Me} <: NormalizedWeightPolicy
@@ -386,7 +386,7 @@ function _init_lifted_regemm(method::LiftedReGeMMMethod, θ₀)
     end
     # The shared mixture seed (faithful to the standalone round-1 ordering).
     seed_nll = _seed_mixture!(prov, pws, tab, θ₀, n)
-    return reused_state(LiftedReGeMMState{typeof(θ₀)}, (θ₀, seed_nll, Incumbent(θ₀, seed_nll)))
+    return reused_state(LiftedReGeMMState{typeof(θ₀)}, (θ₀, seed_nll, Attributed(θ₀, (; cost = Float64(seed_nll)))))
 end
 
 function update_model!(state::LiftedReGeMMState, method::LiftedReGeMMMethod, prob, θ)

@@ -64,7 +64,7 @@ WELSCH_HQ_SCALE_MULTIPLE_ABSOLUTE_POSE
 ## TOML registry
 
 ```@docs
-LO_TAGS
+STRATEGY_TAGS
 ```
 
 ## Index

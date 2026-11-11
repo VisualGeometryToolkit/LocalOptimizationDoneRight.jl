@@ -12,8 +12,8 @@
 #
 # Every lift method (the HQ and GNC drivers below; the
 # mixture and ReGeMM arms, strategies/essential.jl) runs on a provider `prov` and a mutable state holding
-# the current chart `θ`, its cost `cur_cost` and the incumbent `best` (VGC
-# `Incumbent`). They share ONE best-tracking update, ONE step-norm stop rule and
+# the current chart `θ`, its cost `cur_cost` and the incumbent `best` (`Attributed(θ, (; cost))`,
+# VGC's `keep_best`). They share ONE best-tracking update, ONE step-norm stop rule and
 # ONE result hook: the incumbent's model.
 
 abstract type AbstractLiftMethod <: AbstractBlockCoordinateMethod end
@@ -61,7 +61,7 @@ function update_residuals!(state, method::AbstractLiftMethod, prob, θ)
 end
 
 block_coordinate_result(state, method::AbstractLiftMethod, prob, θ, stop_reason, final_iter) =
-    lo_estimate(lift_model(method.prov, state.best.θ), stop_reason; iterations = final_iter)
+    lo_estimate(lift_model(method.prov, state.best.value), stop_reason; iterations = final_iter)
 
 
 # =============================================================================
@@ -97,7 +97,7 @@ _lift_state_for(::RowsWorkspace{D}, n::Int) where {D} = lift_state(Val(D), n)
 mutable struct ManifoldLiftHQState{M, L <: DeployedLoss}
     θ::M
     cur_cost::Float64
-    best::Incumbent{M}
+    best::Attributed{M, @NamedTuple{cost::Float64}}
     Δθnorm::Float64
     loss::L
 end
@@ -109,7 +109,7 @@ function _init_manifold_hq(method::ManifoldLiftHQ, θ₀, init::Symbol)
     lift_refresh!(prov, θ₀)
     _seed_lift_z!(method.ls, method.loss, lift_residuals(prov), lift_size(prov), init)
     cur = lift_cost(method.loss, lift_residuals(prov), method.n)
-    return reused_state(ManifoldLiftHQState{typeof(θ₀), typeof(method.loss)}, (θ₀, cur, Incumbent(θ₀, cur), Inf, method.loss))
+    return reused_state(ManifoldLiftHQState{typeof(θ₀), typeof(method.loss)}, (θ₀, cur, Attributed(θ₀, (; cost = Float64(cur))), Inf, method.loss))
 end
 
 # THE joint-(θ,z) model block of every half-quadratic lift — this driver and
@@ -227,7 +227,7 @@ ManifoldLiftGnc(prov, n::Int, loss::DeployedLoss) = ManifoldLiftGnc(prov, n, los
 mutable struct ManifoldLiftGncState{M}
     θ::M
     cur_cost::Float64
-    best::Incumbent{M}
+    best::Attributed{M, @NamedTuple{cost::Float64}}
     Δθnorm::Float64
     st::MuLadderState     # VGC μ-ladder state (rung bookkeeping)
     band::Int             # TLS middle-band count (0 < w < 1) of the last iteration
@@ -308,6 +308,6 @@ function locally_optimize!(
     sched = with_converged_rung(gnc_schedule(loss, lo.factor), lo.budget === :converged)
     st = schedule_init(sched, μ0, lo.max_iter)
     cost0 = lift_cost(loss, res, n)
-    state = reused_state(ManifoldLiftGncState{typeof(θ₀)}, (θ₀, cost0, Incumbent(θ₀, cost0), Inf, st, 0, false))
+    state = reused_state(ManifoldLiftGncState{typeof(θ₀)}, (θ₀, cost0, Attributed(θ₀, (; cost = Float64(cost0))), Inf, st, 0, false))
     return block_coordinate_descent!(state, FrozenNuisance(), method, problem, model; max_iter = lo.max_iter)
 end
