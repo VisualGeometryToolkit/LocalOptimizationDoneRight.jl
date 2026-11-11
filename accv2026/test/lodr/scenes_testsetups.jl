@@ -80,7 +80,7 @@ end
 @testsetup module LiftChecks
 using Test: @test, @testset
 using Random: Random, MersenneTwister
-using VisualGeometryToolkitCore: GemanMcclureShape, WelschShape, converged, estimate
+using VisualGeometryToolkitCore: GemanMcclureShape, WelschShape, converged, estimate, decision_width
 using VisualGeometryToolkitEstimation: Irls, RansacConfig, ransac
 using LocalOptimizationDoneRight: Gnc, HQ
 
@@ -96,7 +96,7 @@ depth of Welsch's 1.5 — and the GNC arm at `gnc_efficiency_constant`.
 lift_arms(; welsch_efficiency_constant, gnc_efficiency_constant) = (
     "Irls{Welsch}" => Irls{WelschShape}(efficiency_constant = 1.5),
     "HQ{Welsch}" => HQ{WelschShape}(efficiency_constant = welsch_efficiency_constant),
-    "HQ{GM}" => HQ{GemanMcclureShape}(efficiency_constant = VisualGeometryToolkitCore.decision_width(GemanMcclureShape(), 1.5 * sqrt(log(2.0)))),   # half-weight depth, migrated
+    "HQ{GM}" => HQ{GemanMcclureShape}(efficiency_constant = decision_width(GemanMcclureShape(), 1.5 * sqrt(log(2.0)))),   # half-weight depth, migrated
     "Gnc{Irls{Welsch}}" => Gnc{Irls{WelschShape}}(efficiency_constant = gnc_efficiency_constant),
 )
 

@@ -328,8 +328,9 @@ end
     # a registry entry's owner answers whether it takes a loss
     parametric(T) = RVGK.lo_parametric(T)
     for (tag, T) in TAGS
-        takes_efficiency_constant = :width in fieldnames(T) || hasfield(T, :efficiency_constant)   # WelschHQEcm: a plain multiple
-        takes_loss = parametric(T)
+        # "none" (no local optimization) selects `nothing`: no width, no loss
+        takes_efficiency_constant = T !== nothing && (:width in fieldnames(T) || hasfield(T, :efficiency_constant))   # WelschHQEcm: a plain multiple
+        takes_loss = T !== nothing && parametric(T)
         takes_loss && continue                         # the loss families: below
         d = Dict{String, Any}("type" => tag)
         takes_efficiency_constant && (d["efficiency_constant"] = 1.5)
