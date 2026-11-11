@@ -1,6 +1,6 @@
 # The public-facing files name no machine: no absolute host paths, home
 # directories or cluster hosts in the READMEs, the docs, REPRODUCE.md or the
-# project's code, configs and launchers (scripts/slurm included). Paths come
+# project's code, configs and launchers (scripts/reproduce included). Paths come
 # from data_root() / results_root() (data/README.md) or environment variables.
 using Test
 

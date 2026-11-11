@@ -13,7 +13,7 @@ consumption, and ends by rendering its figure/table into the paper repo's
 
 ```
 julia --project=. scripts/<exp>.jl --plan   # structural check
-sbatch [shape overrides] scripts/slurm/run_experiment.sbatch <exp>.jl [args]
+bash scripts/reproduce/reproduce_results_dgx.sh --only=<exp> [--dry-run]   # the runner (configs/reproduce.toml)
 ```
 
 The experiment → artifact index, data provenance and the CV-path contract
@@ -45,4 +45,4 @@ stage files). Layout (DrWatson: `@quickactivate "ACCV2026"`, then
   end-to-end cell has no workers of its own: its stages call the LO engine's
   live-RANSAC runs directly. Scoring pools come from
   `tools/generate_scoring_pools.jl` (see `../REPRODUCE.md`);
-- `slurm/`: the launchers and the one sbatch template.
+- `reproduce/`: the launchers of VisualGeometryToolkitEval's runner on `../configs/reproduce.toml`.

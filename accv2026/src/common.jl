@@ -26,7 +26,7 @@ using TOML
 # project fails here instead of resolving into the wrong tree. Layout
 # (2026-09-09): src/ = the shared prelude (config.jl entry), scripts/ = the
 # experiment drivers, scripts/tools/ = the CLIs the drivers launch through
-# run_driver, scripts/slurm/ = launchers, envs/ = auxiliary environments.
+# run_driver, scripts/reproduce/ = the runner's launchers, envs/ = auxiliary environments.
 isfile(projectdir("src", "registry.jl")) && occursin(r"(?m)^name = \"ACCV2026\"", read(projectdir("Project.toml"), String)) ||
     error("DrWatson's projectdir() is $(projectdir()), not the accv2026 project: run drivers with " *
           "`--project=<accv2026>` (the active project is $(Base.active_project())).")

@@ -18,7 +18,6 @@ using DrWatson; @quickactivate "ACCV2026"
 @isdefined(render_bundle) || include(srcdir("plot_lo_sensitivity.jl"))
 
 @isdefined(PAPER_FIGDIR) || include(srcdir("registry.jl"))
-const PAPER_FIGS = PAPER_FIGDIR          # the paper's figures directory (registry.jl; PAPER_FIGS env overrides)
 
 # Welsch-marginal (WMG) was cut from the paper long ago; both Fig 1 panels drop
 # it on every re-render so it never creeps back from the bundle roster.
@@ -59,13 +58,13 @@ const FIGURES = Dict{Symbol,NamedTuple}(
 )
 
 """
-    render_figures(ids::Symbol...; deploy = true, figdir = PAPER_FIGS)
+    render_figures(ids::Symbol...; deploy = true, figdir = PAPER_FIGDIR)
 
 Render the registered figures `ids` and (with `deploy`) copy the artifacts
 into `figdir`. Known ids: `keys(FIGURES)`.
 """
 function render_figures(ids::Symbol...; deploy::Bool = true,
-                        figdir::AbstractString = PAPER_FIGS)
+                        figdir::AbstractString = PAPER_FIGDIR)
     isempty(ids) &&
         error("render_figures: no ids (known: $(sort!(collect(keys(FIGURES)))))")
     deploy && mkpath(figdir)

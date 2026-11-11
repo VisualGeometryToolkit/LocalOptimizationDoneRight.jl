@@ -1,0 +1,211 @@
+# =============================================================================
+# reproduce — the stage graph of record of the ACCV 2026 paper: every result and
+# figure from the published inputs, in one command (VisualGeometryToolkitEval
+# Reproduce, the runner). This file is data only: which driver runs on which
+# config of record, after what. How a stage runs (Slurm or here, the CPUs, the
+# GPUs) is the site's, a machine profile shipped with VisualGeometryToolkitEval
+# (configs/sites/dgx01.toml, desktop.toml); where the data and the results are is
+# the site environment's binding, VGTK_DATA_ROOT and VGTK_RESULTS_ROOT (this file
+# names no machine path).
+#
+#   bash accv2026/scripts/reproduce/reproduce_results_dgx.sh [--dry-run] [--only=<stage>,…] [--no-deps] [status]
+#   bash accv2026/scripts/reproduce/reproduce_results_desktop.sh [--dry-run] [--only=<stage>,…] [--no-deps] [status]
+#
+# Without --only: every stage below that is not `default = false`. --only=<stage>,…
+# runs those and what they run after; --no-deps those alone. A finished stage is
+# reused by its run key (the runner's manifests), and every driver skips its own
+# complete keyed stages (Eval's run_complete). Each driver stays callable on its
+# own: julia --project=accv2026 accv2026/scripts/<driver>.jl [--plan | --stage=NAME].
+# Paths are relative to the repository root, where the jobs are submitted from.
+# =============================================================================
+
+[project]
+name = "accv2026"
+workdir = "../.."
+julia_project = "accv2026"
+data_env = "VGTK_DATA_ROOT"
+results_env = "VGTK_RESULTS_ROOT"
+# the code every stage runs: a change here re-keys every stage (the drivers then
+# reuse their own complete runs by their keys); a change elsewhere (the paper's
+# text, the docs) reuses the finished stages
+code = ["Project.toml", "src", "ext", "configs", "accv2026/Project.toml", "accv2026/src", "accv2026/scripts",
+        "accv2026/configs", "accv2026/lib/RansacLibLO/src", "accv2026/lib/RansacLibLO/Project.toml"]
+
+# ---- the environment -------------------------------------------------------------
+[[stage]]
+name = "setup"
+what = "the accv2026 environment, inside the scheduler: Pkg.instantiate, the RansacLib LO shim (Pkg.build RansacLibLO), precompile"
+command = ["julia", "--project=accv2026", "-e", "using Pkg; Pkg.instantiate(); Pkg.build(\"RansacLibLO\"); Pkg.precompile()"]
+
+# ---- the pools (POOL PRODUCER cells; CPU-threaded, days on one node) --------------
+[[stage]]
+name = "pt_e_pools"
+what = "the PhotoTourism E scoring pools PT-E-SIFT-4K_pf3 (stages pools, audit); bit-identical to the pools of record"
+after = ["setup"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/pt_e_pools.jl"]
+driver = "accv2026/scripts/pt_e_pools.jl"
+config = "accv2026/configs/pt_e_pools.toml"
+
+[[stage]]
+name = "heb_h_pools"
+what = "the HEB homography scoring pools HEB-H-SIFT-4K_pf3 (stages pools, audit)"
+after = ["setup"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/heb_h_pools.jl"]
+driver = "accv2026/scripts/heb_h_pools.jl"
+config = "accv2026/configs/heb_h_pools.toml"
+
+# ---- the tunings and their rows (Fig. 2 and its cells) -------------------------------
+[[stage]]
+name = "fig3_composed_miscal"
+what = "the PT-E full-roster sequential CV (THE deployed operating points every PT-E cell reads), its oracle bound and the PhotoTourism row of Fig. 2"
+after = ["pt_e_pools"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/fig3_composed_miscal.jl"]
+driver = "accv2026/scripts/fig3_composed_miscal.jl"
+config = "accv2026/configs/pt_e_miscal.toml"
+gpu = true
+
+[[stage]]
+name = "supp_ETH_F_miscal"
+what = "the ETH3D F sequential CV, its oracle bound and the ETH3D row of Fig. 2"
+after = ["setup"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/supp_ETH_F_miscal.jl"]
+driver = "accv2026/scripts/supp_ETH_F_miscal.jl"
+config = "accv2026/configs/accv2026_eth_f_miscal.toml"
+gpu = true
+
+[[stage]]
+name = "supp_H_miscal"
+what = "the HEB H sequential CV (inverse-gamma prior), its oracle bound and the HEB row of Fig. 2"
+after = ["heb_h_pools"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/supp_H_miscal.jl"]
+driver = "accv2026/scripts/supp_H_miscal.jl"
+config = "accv2026/configs/heb_h_miscal.toml"
+gpu = true
+
+[[stage]]
+name = "fig3_miscal_grid"
+what = "Fig. 2: the miscalibration grid composed from its three rows"
+after = ["fig3_composed_miscal", "supp_ETH_F_miscal", "supp_H_miscal"]
+command = ["julia", "--project=accv2026", "accv2026/scripts/fig3_miscal_grid.jl"]
+driver = "accv2026/scripts/fig3_miscal_grid.jl"
+config = "accv2026/configs/fig3_miscal_grid.toml"
+
+[[stage]]
+name = "fig2_basin"
+what = "Fig. 1: the basin cell's sequential CV, the δ-perturbed ladder and its panel"
+after = ["pt_e_pools"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/fig2_basin.jl"]
+driver = "accv2026/scripts/fig2_basin.jl"
+config = "accv2026/configs/pt_e_basin.toml"
+gpu = true
+
+[[stage]]
+name = "fig1_sel_miscal"
+what = "the supplement's scoring-only miscalibration sweep and its two panels"
+after = ["pt_e_pools"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/fig1_sel_miscal.jl"]
+driver = "accv2026/scripts/fig1_sel_miscal.jl"
+config = "accv2026/configs/pt_e_sel_miscal.toml"
+gpu = true
+
+# ---- the sample budget (Fig. 3) and Table 1 ----------------------------------------
+[[stage]]
+name = "timing_table"
+what = "Table 1: the per-call LO timings at the deployed operating points (single thread; run on a quiet node) and the design table"
+after = ["fig3_composed_miscal"]
+command = ["julia", "--project=accv2026", "accv2026/scripts/timing_table.jl"]
+driver = "accv2026/scripts/timing_table.jl"
+config = "accv2026/configs/timing_table.toml"
+
+[[stage]]
+name = "fig4_budget"
+what = "the PhotoTourism row of Fig. 3 and its time panel, at the deployed operating points"
+after = ["fig3_composed_miscal", "timing_table"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/fig4_budget.jl"]
+driver = "accv2026/scripts/fig4_budget.jl"
+config = "accv2026/configs/pt_e_budget.toml"
+
+[[stage]]
+name = "supp_ETH_F_budget"
+what = "the ETH3D row of Fig. 3"
+after = ["supp_ETH_F_miscal"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/supp_ETH_F_budget.jl"]
+driver = "accv2026/scripts/supp_ETH_F_budget.jl"
+config = "accv2026/configs/accv2026_eth_f_budget.toml"
+
+[[stage]]
+name = "supp_H_budget"
+what = "the HEB row of Fig. 3, at heb_h_miscal's operating points"
+after = ["supp_H_miscal"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/supp_H_budget.jl"]
+driver = "accv2026/scripts/supp_H_budget.jl"
+config = "accv2026/configs/heb_h_budget.toml"
+
+[[stage]]
+name = "fig4_budget_grid"
+what = "Fig. 3: the sample-budget grid composed from its three rows"
+after = ["fig4_budget", "supp_ETH_F_budget", "supp_H_budget"]
+command = ["julia", "--project=accv2026", "accv2026/scripts/fig4_budget_grid.jl"]
+driver = "accv2026/scripts/fig4_budget_grid.jl"
+config = "accv2026/configs/fig4_budget_grid.toml"
+
+# ---- the end-to-end table (Tab. 3), the ablations, the dataset numbers -------------
+[[stage]]
+name = "superansac_e2e"
+what = "SupeRANSAC's rows of Tab. 3 (its loss-width CV and evaluation; an OUTSIDE dependency, envs/superansac): without it the table reads the stored rows"
+after = ["pt_e_pools"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/superansac_e2e.jl", "--config=pt_e_superansac"]
+driver = "accv2026/scripts/superansac_e2e.jl"
+config = "accv2026/configs/pt_e_superansac.toml"
+default = false
+
+[[stage]]
+name = "e2e_timing"
+what = "the time row of Tab. 3: ours and SupeRANSAC, pinned single-threaded repeats (needs SupeRANSAC and a quiet machine)"
+after = ["fig3_composed_miscal"]
+command = ["julia", "--project=accv2026", "accv2026/scripts/e2e_timing.jl", "--config=pt_e_e2e_timing"]
+driver = "accv2026/scripts/e2e_timing.jl"
+config = "accv2026/configs/pt_e_e2e_timing.toml"
+default = false
+
+[[stage]]
+name = "e2e_ransac"
+what = "Tab. 3: our deployed pipeline end to end on every PhotoTourism test pair, beside SupeRANSAC's rows"
+after = ["fig3_composed_miscal"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/e2e_ransac.jl", "--config=pt_e_e2e_table"]
+driver = "accv2026/scripts/e2e_ransac.jl"
+config = "accv2026/configs/pt_e_e2e_table.toml"
+
+[[stage]]
+name = "polish"
+what = "the polishing figure: every source's LO output polished on the test side"
+after = ["fig3_composed_miscal"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/polish.jl", "--config=polish_pt_e"]
+driver = "accv2026/scripts/polish.jl"
+config = "accv2026/configs/polish_pt_e.toml"
+
+[[stage]]
+name = "fig_anchoring"
+what = "the partition-anchoring ablation: fig3's operating points evaluated without the consensus anchor, and the paired panel"
+after = ["fig3_composed_miscal"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/fig_anchoring.jl"]
+driver = "accv2026/scripts/fig_anchoring.jl"
+config = "accv2026/configs/pt_e_miscal.toml"
+gpu = true
+
+[[stage]]
+name = "heb_inlier_stats"
+what = "the per-pair correspondence and GT-inlier counts behind the HEB dataset statistics of Sec. 4"
+after = ["heb_h_pools"]
+command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/heb_inlier_stats.jl"]
+driver = "accv2026/scripts/heb_inlier_stats.jl"
+config = "accv2026/configs/heb_stats.toml"
+
+[[stage]]
+name = "paper_numbers"
+what = "THE number macros of both papers (paper_numbers.tex), from every cell's results of record: run last"
+after = ["fig3_miscal_grid", "fig2_basin", "fig1_sel_miscal", "fig4_budget_grid", "e2e_ransac", "polish", "fig_anchoring",
+         "heb_inlier_stats"]
+command = ["julia", "--project=accv2026", "accv2026/scripts/paper_numbers.jl"]
+driver = "accv2026/scripts/paper_numbers.jl"
+config = "accv2026/configs/paper_numbers.toml"

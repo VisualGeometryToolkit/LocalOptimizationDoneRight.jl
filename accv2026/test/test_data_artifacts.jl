@@ -35,7 +35,7 @@ end
 
 const _ROOT = normpath(joinpath(@__DIR__, ".."))
 _code_files() = [joinpath(r, f) for d in ("src", "scripts", "configs") for (r, _, fs) in walkdir(joinpath(_ROOT, d))
-                 for f in fs if (endswith(f, ".jl") || endswith(f, ".toml")) && !occursin("slurm", r)]
+                 for f in fs if (endswith(f, ".jl") || endswith(f, ".toml"))]
 _code_lines(f) = [(i, l) for (i, l) in enumerate(eachline(f)) if !startswith(lstrip(l), "#")]
 
 @testset "data policy: no artifact\"…\" lookups — inputs resolve through data_root()" begin
@@ -44,7 +44,6 @@ _code_lines(f) = [(i, l) for (i, l) in enumerate(eachline(f)) if !startswith(lst
 end
 
 @testset "data policy: no hard-coded absolute data paths in src/, scripts/, configs/" begin
-    # The Slurm launchers (scripts/slurm/) are host-specific by construction and exempt.
     pat = r"[\"'=]\s*/(raid|home|mnt|scratch|data|nfs)/"
     hits = [(relpath(f, _ROOT), i, strip(l)) for f in _code_files() for (i, l) in _code_lines(f)
             if occursin(pat, l) && !occursin(r"^\s*#", l)]

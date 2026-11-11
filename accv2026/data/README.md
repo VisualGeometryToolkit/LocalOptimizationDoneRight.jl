@@ -24,7 +24,7 @@ The data policy (CLAUDE.md "Data") is checked by the paper-project check, test/t
 Configs state pool_dir RELATIVE to data_root(), so a run key and its
 sidecars are machine-portable (staging tree ≡ any mirror of the root).
 The manuscript is in-tree (paper/); renders deploy to paper/figures
-(PAPER_FIGDIR in src/registry.jl, overridable with PAPER_FIGS).
+(PAPER_FIGDIR in src/registry.jl).
 
 ## A machine without the data: the published artifacts
 

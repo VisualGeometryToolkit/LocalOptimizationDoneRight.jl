@@ -22,7 +22,7 @@ The package and the research project split by one rule:
 | `accv2026/src/` | the shared prelude: `config.jl` (entry), `registry.jl` (every path), `arm_rosters.jl` (THE arm table and the paper's `Roster`), `protocol_folds.jl` (the run-key fold recipe), `cell_stages.jl` (the shared stage builders), `figure_style.jl`, … |
 | `accv2026/scripts/` | one executable driver per experiment: `fig*`, `supp_*`, the pool producers, the table drivers (`timing_table.jl`, `e2e_ransac.jl`), the SupeRANSAC cell `superansac_e2e.jl`, `polish.jl`, `heb_inlier_stats.jl` |
 | `accv2026/scripts/tools/` | the CLIs the drivers launch: `run_sequential_cv.jl` (the tuning), `run_polish.jl`, the renderers, the pool builders, `make_facet_grid.py` |
-| `accv2026/scripts/slurm/` | an example Slurm wrapper (`run_experiment.sbatch`) and the pool launcher |
+| `accv2026/scripts/reproduce/` | the launchers of VisualGeometryToolkitEval's runner on the stage graph of record, `configs/reproduce.toml` (`reproduce_results_dgx.sh` on Slurm, `reproduce_results_desktop.sh` locally; `--dry-run`, `--only=…`) |
 | `accv2026/configs/` | the configs of record: one TOML per cell, and the protocols folded into every run key |
 | `accv2026/data/` | two per-machine symlinks: `exp_raw` (immutable inputs) and `exp_pro` (add-only results), or `VGTK_DATA_ROOT` / `VGTK_RESULTS_ROOT` |
 | `accv2026/lib/RansacLibLO/` | the classical RansacLib LO baseline (vendored C++ shim, `Pkg.build("RansacLibLO")`) |
@@ -54,8 +54,9 @@ julia --project=. scripts/fig3_composed_miscal.jl --stage=cv
 Each driver declares its data inputs (`require_input`, with provenance), tunes
 only through the single cross-validation path, audits every tuning artifact before
 consuming it (`audit_operating_points`, VisualGeometryToolkitEval's `Evaluation`), and ends by rendering its panel
-into `paper/figures/`. On a Slurm cluster, `scripts/slurm/run_experiment.sbatch`
-wraps the same command and only sets the resource shape.
+into `paper/figures/`. The whole paper is one command of the runner,
+`bash accv2026/scripts/reproduce/reproduce_results_dgx.sh` (or `_desktop.sh`); its
+`--dry-run` lists every stage and every missing input first.
 
 ## Config-driven cells and keyed output directories
 

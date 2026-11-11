@@ -3,16 +3,20 @@
 Every figure/table of the paper is produced by ONE executable experiment
 file under `scripts/` (stage-idempotent; `--plan` prints the stage plan,
 `--stage=NAME`/`--force` control execution). Each file runs directly with
-`julia --project=. scripts/<exp>.jl`; on a Slurm cluster,
-`scripts/slurm/run_experiment.sbatch` is a generic wrapper that only sets the
-resource shape.
+`julia --project=. scripts/<exp>.jl`. The whole paper is one command of
+VisualGeometryToolkitEval's runner on the stage graph of record,
+`configs/reproduce.toml`: `scripts/reproduce/reproduce_results_dgx.sh` (Slurm) or
+`scripts/reproduce/reproduce_results_desktop.sh` (local), with `--dry-run`,
+`--only=<stage>,…`, `--no-deps` and `status`. The dry run lists every stage and
+every missing input before anything runs.
 
 ## Layout
 
 DrWatson project: `src/` holds the shared prelude (`config.jl` is the entry;
 every driver starts with `using DrWatson; @quickactivate "ACCV2026"` and
 `include(srcdir("config.jl"))`), `scripts/` the drivers, `scripts/tools/` the
-CLIs they launch through `run_driver`, `scripts/slurm/` the launchers,
+CLIs they launch through `run_driver`, `scripts/reproduce/` the launchers of the
+runner (`configs/reproduce.toml` is the stage graph),
 `configs/` the configs of record, `envs/` auxiliary environments (`envs/superansac`,
 SupeRANSAC's), `data/` the `exp_raw`/`exp_pro` symlinks, `paper/` the
 manuscript.
@@ -113,7 +117,7 @@ grids compose (`paper/figures/README.md`); nothing else is rendered.
 
 ```
 julia --project=. scripts/<exp>.jl --plan
-sbatch [shape] scripts/slurm/run_experiment.sbatch <exp>.jl [--stage=NAME]
+bash scripts/reproduce/reproduce_results_dgx.sh --only=<stage> [--dry-run]
 ```
 
 ### Asset index
@@ -134,7 +138,7 @@ asset fails it. The narrative tables below say what each experiment is.
 | `fig:sample-budget` | `paper/figures/panel_sample_budget_grid.tex` | generated | `scripts/fig4_budget_grid.jl` | `configs/fig4_budget_grid.toml` | the rows of `scripts/fig4_budget.jl`, `scripts/supp_ETH_F_budget.jl`, `scripts/supp_H_budget.jl` | stage `compose` |
 | `fig:polish` | `paper/figures/panel_polish_diff.tex` | generated | `scripts/polish.jl` | `configs/polish_pt_e.toml` | PT-E-SIFT-4K_pf3 test side, the pt_e_miscal operating points | stages `test`, `summary`, `render` |
 | `tab:e2e` | `paper/figures/table_e2e.tex` | generated | `scripts/e2e_ransac.jl` | `configs/pt_e_e2e_table.toml` | PT-E-SIFT-4K_pf3 test pairs; SupeRANSAC's rows from `scripts/superansac_e2e.jl` (`configs/pt_e_superansac.toml`) or its stored results; the time row from `scripts/e2e_timing.jl` (`configs/pt_e_e2e_timing.toml`, `[render] time`) | stages `live`, `summary`, `table` |
-| `fig:supp-sel-miscal` | `paper/figures/panel_sel_miscal.tex`, `paper/figures/panel_sel_miscal_maa.tex` | generated | `scripts/fig1_sel_miscal.jl` | `configs/tuning.toml` | PT-E-SIFT-4K_pf3, all pairs | stages `produce`, `render` |
+| `fig:supp-sel-miscal` | `paper/figures/panel_sel_miscal.tex`, `paper/figures/panel_sel_miscal_maa.tex` | generated | `scripts/fig1_sel_miscal.jl` | `configs/pt_e_sel_miscal.toml` | PT-E-SIFT-4K_pf3, all pairs | stages `produce`, `render` |
 | `fig:supp-anchoring` | `paper/figures/panel_anchoring_paired.tex` | generated | `scripts/fig_anchoring.jl` | `configs/pt_e_miscal.toml` | PT-E-SIFT-4K_pf3 test side | `configs/miscal_protocol.toml` `[anchoring_ablation]` |
 | `fig:supp-budget-time` | `paper/figures/panel_sample_budget_faceted_time.tex` | generated | `scripts/fig4_budget.jl` | `configs/pt_e_budget.toml` | the pt_e_budget curves and the `scripts/timing_table.jl` per-call times | stage `render_time` |
 
@@ -170,7 +174,7 @@ asset fails it. The narrative tables below say what each experiment is.
 
 Two-view scoring pools are produced by POOL PRODUCER cells like every other
 artifact: a config of record plus a stage-idempotent experiment file, launched
-directly or through the Slurm wrapper. NOTHING is stated on a command line.
+directly or as the runner's stages `pt_e_pools` / `heb_h_pools`. NOTHING is stated on a command line.
 
 | experiment file | config of record | tree |
 |---|---|---|
@@ -179,23 +183,15 @@ directly or through the Slurm wrapper. NOTHING is stated on a command line.
 | `scripts/scoring_pools.jl` | `--config=<name>`, any two-view pool config (`configs/*_pools.toml`) | the config's `pool_dir` |
 
 ```
-scripts/slurm/launch_pool_regen.sh heb_h_pools pt_e_pools     # both cells, in parallel
-sbatch [shape] scripts/slurm/run_experiment.sbatch pt_e_pools.jl [--stage=pools|audit]
+bash scripts/reproduce/reproduce_results_dgx.sh --only=pt_e_pools,heb_h_pools   # both cells, in parallel
+julia --project=. -t auto scripts/pt_e_pools.jl [--stage=pools|audit]
 ```
 
-`scripts/slurm/launch_pool_regen.sh` is the launcher of record: one Slurm chain
-per cell (its stages `--dependency=afterok`), the cells in parallel, every
-stage `--gres=gpu:0` (pool generation is CPU-threaded, and a days-long pools
-job must not hold a GPU the cv stages need — `run_experiment.sbatch` defaults
-to `gpu:1`). Resource shapes live in the launcher, NOT in the cells' TOMLs:
-`run_key` hashes the effective config, so a cpu count stated there would
-re-key the pools it generates. Skip-if-done makes re-launching the whole thing
-the way to resume an interrupted generation.
-
-It takes each cell's stage list from `--plan`, not from a grep of the driver
-text: a grep for `Stage(:name` (the retired fleet launcher's method) yields an
-EMPTY chain — zero jobs submitted, no error — for a config-driven driver whose
-stages are built in `src/cell_stages.jl`.
+The two pool stages are CPU stages of the graph (no `gpu`): a days-long pools
+job never holds a GPU the cv stages need. Resource shapes are the site
+profile's, NOT the cells' TOMLs: `run_key` hashes the effective config, so a
+cpu count stated there would re-key the pools it generates. Skip-if-done makes
+re-launching the whole thing the way to resume an interrupted generation.
 
 Both delegate to `scripts/tools/generate_scoring_pools.jl`, THE two-view pool
 driver (VisualGeometryToolkitEval's dataset readers → VisualGeometryToolkitCore's
@@ -311,10 +307,10 @@ simply runs:
 | artifact | producing stage |
 |---|---|
 | PT-E `scorer_cv.jld2` → `refiner_cv.jld2` → `operating_points.jld2` (the sequential CV, 2026-10-04) in the KEYED dir `phototourism/sift/E/Miscalibration/sequential-cv-<key>/` of `configs/pt_e_miscal.toml` (`src/registry.jl` derives `EXP_MISCAL_DIR` by `miscal_sidecar_of("pt_e_miscal")`, the one rule of every cell — no stamp) | `fig3_composed_miscal.jl --stage=cv` |
-| basin `operating_points.jld2` (mode "basin") in `phototourism/sift/E/Basin/sequential-cv-<key>/` of `configs/pt_e_basin.toml` — its scorer READ from PT-E's (`scorer_of`) — then the ladder `basin-ladder-sequential-cv-<key>/ladder.jld2` (stamp derived from the basin cell's key; the sidecar's test side; perturbations from `stable_seed(EXP_LADDER_SEED, scene, pair, δ)`) | `fig2_basin.jl --stage=basin_cv`, `--stage=ladder_test` |
+| basin `operating_points.jld2` (mode "basin") in `phototourism/sift/E/Basin/sequential-cv-<key>/` of `configs/pt_e_basin.toml` — its scorer READ from PT-E's (`scorer_of`) — then the ladder `BasinLadder/basin-ladder-<key>/ladder.jld2` (keyed by the basin cell's run and `configs/protocol.toml` `[basin_ladder]`, src/protocol_folds.jl `ladder_cell`; the sidecar's test side; perturbations from `stable_seed(seed, scene, pair, δ)`) | `fig2_basin.jl --stage=basin_cv`, `--stage=ladder_test` |
 | HEB-H `operating_points.jld2` in `heb/sift/H/Miscalibration/sequential-cv-<key>/` of `configs/heb_h_miscal.toml` | `supp_H_miscal.jl` (all stages) |
 | ETH3D-F `operating_points.jld2` in the keyed dir of `configs/accv2026_eth_f_miscal.toml` (its pools regenerated at the current pool format first) | `supp_ETH_F_miscal.jl --stage=cv` |
-| the selection-only M-bundle `miscal-sel-allpairs-v5/bundle.jld2` | `fig1_sel_miscal.jl --stage=produce` |
+| the selection-only M-bundle `Miscalibration/sel-miscal-<key>/bundle.jld2` of `configs/pt_e_sel_miscal.toml` | `fig1_sel_miscal.jl --stage=produce` |
 | the polishing run `Polish/polish-<key>/polish_test.jld2` (nothing tuned; E_LO checked pair for pair against pt_e_miscal's sidecar) | `polish.jl` |
 | the partition-anchoring ablation evaluation `anchoring_ablation-fixed/zeta_evaluation.jld2` inside fig3's keyed dir (NEW: the anchoring figure's WITHOUT side is now regenerated — see below) | `fig_anchoring.jl --stage=evaluation` (GPU), then `--stage=render` — AFTER `fig3_composed_miscal.jl --stage=cv` |
 | everything consuming the above: the keyed `budget-<key>` cells, the oracle floors (the floors' `sources` check refuses a floor computed on other pools or test scenes), the timing runs, the keyed end-to-end cell `e2e-<key>` and the SupeRANSAC cell `superansac-<key>` (its inputs, `loss_width_cv.jld2`, `zeta_<scene>.jld2`) | `fig4_budget.jl`, `supp_*_budget.jl`, `supp_*_miscal.jl --stage=oracle`, `timing_table.jl`, `e2e_ransac.jl --config=pt_e_e2e_table`, `superansac_e2e.jl` (all stages) |
@@ -350,8 +346,8 @@ frozen input remains: every file a driver consumes is produced by a stage.
   `experiment.pool_dir`.
 - **Results roots** — per-cell tree `<results root>/…`
   (VisualGeometryToolkitEval `results_root()`: `VGTK_RESULTS_ROOT` or the `data/exp_pro` link, see
-  `data/README.md`), flat campaign root `<data root>/accv2026/…`
-  (`ACCV_DATA` overrides; `src/registry.jl` is the one place that binds these).
+  `data/README.md`); every output is a keyed directory there, and nothing is
+  written under the data root (`src/registry.jl` binds the paths of record).
 - **Stored SupeRANSAC results** — `<results>/phototourism/sift/E/SupeRANSAC/stored-e2e-3ea0c00581858498/`
   (`configs/pt_e_superansac.toml` `[stored] dir`): the per-scene ζ sweeps,
   loss-width tuning artifact and tuning units behind the published Tab. 3,
@@ -475,8 +471,8 @@ regenerates here.
 
 ## Oracle floors (provenance)
 
-`<results root>/accv2026/oracle_floors.jld2` — the pool-best selection bound
-drawn on every miscalibration panel — has ONE writer,
+`oracle_floors.jld2` in each miscalibration cell's keyed sequential-CV
+directory — the pool-best selection bound drawn on its panel — has ONE writer,
 `scripts/tools/compute_supp_oracle_floors.jl`, invoked only by a driver's `oracle`
 stage (`fig3_composed_miscal.jl` for PT_E, `supp_*_miscal.jl` for the other
 cells). Besides `floors[<TAG>]` / `floors[<TAG>_maa]` it records
@@ -492,13 +488,13 @@ not match, so a floor computed on retired pools cannot be taken as current.
   and `data/exp_pro` links, or `VGTK_DATA_ROOT` / `VGTK_RESULTS_ROOT`). You need
   the inputs and the pools: fetch the published inputs and regenerate the
   PhotoTourism and HEB pools from them ("On a new machine" above). Each
-  experiment file runs directly (`julia --project=. scripts/<exp>.jl`); the
-  sbatch wrapper only sets the resource shape. The cross-validation stages
+  experiment file runs directly (`julia --project=. scripts/<exp>.jl`), and the
+  runner runs the graph (`scripts/reproduce/`). The cross-validation stages
   expect a CUDA GPU.
 - Renders are pure CPU + the sidecars/bundles: with the produced artifacts
   synced, `--stage=render` regenerates every committed panel byte-for-byte.
-- The manuscript (`paper/`) receives the panels in `figures/` (`PAPER_FIGS`
-  overrides); recompile `main.tex` afterwards.
+- The manuscript (`paper/`) receives the panels in `figures/`; recompile
+  `main.tex` afterwards.
 
 ## Protocols of record (folded into every run key)
 

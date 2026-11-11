@@ -79,8 +79,8 @@ the accv2026 project).
   `produce_or_load` for an artifact of record: it swallows save errors.
 - Policy, enforced by the paper-project check (`test/test_paper_project.jl`,
   which `test/runtests.jl` includes; no deferred allowance):
-  - D1: no machine paths in code or launchers (Slurm: `$SLURM_SUBMIT_DIR`,
-    `$ACCV_LOG_DIR`).
+  - D1: no machine paths in code or launchers (the runner's graph
+    `configs/reproduce.toml` names none: each site's environment binds the roots).
   - D2: nothing writes under `data_root()` except a declared producer
     (`producer = true`: the pool cells); the writers' runtime guard refuses
     the rest.

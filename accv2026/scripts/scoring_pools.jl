@@ -8,7 +8,7 @@
 # and every generation constant), run through `scoring_pool_stages` (src/cell_stages.jl). Nothing
 # else is stated here: a new dataset or variant is a new config, not a driver.
 #
-#   sbatch ... scripts/slurm/run_experiment.sbatch scoring_pools.jl --config=eth_f_pools
+#   julia --project=. -t auto scripts/scoring_pools.jl --config=eth_f_pools
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
 include(srcdir("cell_stages.jl"))

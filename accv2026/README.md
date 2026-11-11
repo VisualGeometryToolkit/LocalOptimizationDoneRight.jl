@@ -18,7 +18,7 @@ julia --project=. test/runtests.jl                 # the conventions + the proje
 |---|---|
 | `REPRODUCE.md` | the asset index (every file the papers read → generator, config, data) and how to rerun each experiment |
 | `configs/` | the configs of record (TOML); `run_key` hashes each effective config, `[render]` excluded |
-| `scripts/` | the drivers, one per experiment, stage-idempotent (`--plan`, `--stage=NAME`, `--force`); `scripts/tools/` the CLIs they launch, `scripts/slurm/` the launchers |
+| `scripts/` | the drivers, one per experiment, stage-idempotent (`--plan`, `--stage=NAME`, `--force`); `scripts/tools/` the CLIs they launch, `scripts/reproduce/` the runner's launchers (`configs/reproduce.toml`: the stage graph) |
 | `src/` | the shared prelude (`config.jl` is the entry) |
 | `test/` | the suite; `test/test_paper_project.jl` runs `paper_project_violations` |
 | `paper/` | the manuscript; generated assets under `paper/figures/` |
