@@ -26,7 +26,7 @@ const RVG = VisualGeometryToolkitEstimation
 using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination, .DivisionBoards, .RadialScenes
 
 # The paper's per-class Welsch HQ recipe (the find_* default before 2026-10).
-welsch_hq(class) = HQ{WelschShape}(scale_multiple = tuning_constant(class, "welsch").scale_multiple)
+welsch_hq(class) = HQ{WelschShape}(efficiency_constant = tuning_constant(class, "welsch").efficiency_constant)
 
 @testset "F: the joint-(θ,z) Welsch lift (F-lift, 2026-07-09)" begin
     # the scene of VisualGeometryToolkitEstimation's Bartoli–Sturm refit battery
@@ -45,7 +45,7 @@ welsch_hq(class) = HQ{WelschShape}(scale_multiple = tuning_constant(class, "wels
     sc = StudentTUniformScoring(typeof(prob), 0.05; scale_prior = IGPrior(0.0, 0.0), label_prior = FlatLabelPrior())
     ws = RVG.RansacWorkspace(prob, sc)
     rlift = RVG.locally_optimize(
-        prob, F_seed; local_optimization = HQ{WelschShape}(max_iter = 25, scale_multiple = 1.5),
+        prob, F_seed; local_optimization_strategy = HQ{WelschShape}(max_iter = 25, efficiency_constant = 1.5),
         scoring = sc, workspace = ws
     )
     @test estimate(rlift) !== nothing
@@ -74,11 +74,11 @@ const _SCENES = Dict(
     radius = [norm(SVector{2, Float64}(d) - c) for d in dst]
     arms = (
         "StudentTUniform" => StudentTUniform(),
-        "HQ{Welsch}" => HQ{WelschShape}(scale_multiple = 1.597),
+        "HQ{Welsch}" => HQ{WelschShape}(efficiency_constant = 1.597),
     )
     @testset "$lo_name" for (lo_name, lo) in arms
         est = find_absolute_pose(cam, src .=> dst; scoring = StudentTUniformScoring(AbsolutePoseProblem(cam, src .=> dst), 5.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-                                 local_optimization = lo, rng = MersenneTwister(3))
+                                 local_optimization_strategy = lo, rng = MersenneTwister(3))
         @test est !== nothing
         @test rotation_error_deg(estimate(est), R_gt) < 0.05
         @test translation_error(estimate(est), t_gt) < 1.0
@@ -101,7 +101,7 @@ end
     problem = HomographyProblem(csponds(source_pts, target_pts))
     result = ransac(
         problem, StudentTUniformScoring(problem, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior());
-        local_optimization = StudentTUniform(),
+        local_optimization_strategy = StudentTUniform(),
         config = RansacConfig(max_trials = 3000, min_trials = 200),
         rng = MersenneTwister(128)
     )
@@ -130,8 +130,8 @@ const mapped_test_pts = [SA[300.0, 400.0], SA[600.0, 300.0], SA[450.0, 550.0], S
     pu = HomographyProblem(cs)
     for lo in (StudentTUniform(), welsch_hq(:homography))
         cfg = RansacConfig(max_trials = 3000, min_trials = 200)
-        rm = ransac(pm, StudentTUniformScoring(pm, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()); local_optimization = lo, config = cfg, rng = MersenneTwister(129))
-        ru = ransac(pu, StudentTUniformScoring(pu, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()); local_optimization = lo, config = cfg, rng = MersenneTwister(129))
+        rm = ransac(pm, StudentTUniformScoring(pm, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()); local_optimization_strategy = lo, config = cfg, rng = MersenneTwister(129))
+        ru = ransac(pu, StudentTUniformScoring(pu, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()); local_optimization_strategy = lo, config = cfg, rng = MersenneTwister(129))
         @test converged(rm)
         @test estimate(rm) isa model_type(pm)
         @test sum(rm.inlier_mask[1:n_inliers]) >= 0.9 * n_inliers
@@ -144,7 +144,7 @@ const mapped_test_pts = [SA[300.0, 400.0], SA[600.0, 300.0], SA[450.0, 550.0], S
     # `locally_optimize` from a perturbed model-frame seed.
     Hs = _to_model(HomographyMat{Float64}(Tuple(SMatrix{3, 3, Float64, 9}(H_true) .* (1 .+ 1.0e-3 .* SMatrix{3, 3, Float64, 9}(1, -2, 1, 2, -1, 1, -1, 1, 0)))))
     for lo in (StudentTUniform(), welsch_hq(:homography))
-        r = RVG.locally_optimize(pm, Hs; scoring = StudentTUniformScoring(pm, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization = lo)
+        r = RVG.locally_optimize(pm, Hs; scoring = StudentTUniformScoring(pm, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization_strategy = lo)
         @test max_transfer_error(_to_px(estimate(r)), H_true, mapped_test_pts) < 1.0
     end
 end
@@ -171,7 +171,7 @@ end
     result = ransac(
         problem,
         StudentTUniformScoring(minimal_sample_size(problem), 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior());
-        local_optimization = StudentTUniform(),
+        local_optimization_strategy = StudentTUniform(),
         config = RansacConfig(max_trials = 5000, min_trials = 500),
         rng = MersenneTwister(192)
     )
@@ -201,7 +201,7 @@ const _RW, _RH = RADIAL_HOMOGRAPHY_FRAME   # Estimation's RadialScenes: radial_h
             pairs; center = (_RW / 2, _RH / 2),
             scoring = StudentTUniformScoring(RadialHomographyProblem(pairs; center = (_RW / 2, _RH / 2)), 2.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
             max_trials = 4000, min_trials = 200,
-            rng = MersenneTwister(99), local_optimization = lo
+            rng = MersenneTwister(99), local_optimization_strategy = lo
         )
         @test res !== nothing
         @test converged(res)
@@ -219,7 +219,7 @@ const _RW, _RH = RADIAL_HOMOGRAPHY_FRAME   # Estimation's RadialScenes: radial_h
         res = find_radial_homography(
             pairs; center = (_RW / 2, _RH / 2),
             scoring = StudentTUniformScoring(RadialHomographyProblem(pairs; center = (_RW / 2, _RH / 2)), 2.5; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-            max_trials = 4000, rng = MersenneTwister(7), local_optimization = welsch_hq(:radial_homography)
+            max_trials = 4000, rng = MersenneTwister(7), local_optimization_strategy = welsch_hq(:radial_homography)
         )
         @test res !== nothing
         @test converged(res)
@@ -231,7 +231,7 @@ const _RW, _RH = RADIAL_HOMOGRAPHY_FRAME   # Estimation's RadialScenes: radial_h
         est = find_radial_homography(
             pairs; center = (_RW / 2, _RH / 2), minimal = :homography,
             scoring = StudentTUniformScoring(RadialHomographyProblem(pairs; center = (_RW / 2, _RH / 2), minimal = :homography), 3.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-            local_optimization = StudentTUniform(), rng = MersenneTwister(5)
+            local_optimization_strategy = StudentTUniform(), rng = MersenneTwister(5)
         )
         @test est !== nothing
         m = est.inlier_mask
@@ -252,13 +252,13 @@ _pd(a::RadialCamera, b::RadialCamera) = projective_distance(radial_rows(a), radi
 @testset "radial camera" begin
     @testset "RANSAC + the Student-t + uniform IRLS recovers the camera under distortion" begin
         P_gt, pairs, gt = radial_board(MersenneTwister(7))
-        est = find_radial_camera(pairs; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs; center = _CC), 5.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization = StudentTUniform(), rng = MersenneTwister(1))
+        est = find_radial_camera(pairs; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs; center = _CC), 5.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization_strategy = StudentTUniform(), rng = MersenneTwister(1))
         @test est !== nothing
         @test _pd(estimate(est), P_gt) < sqrt(2 * 1.0e-6)
         m = est.inlier_mask
         @test count(m .& gt) >= count(gt) - 2 && count(m .& .!gt) == 0
         P_gt2, pairs2, gt2 = radial_board(MersenneTwister(3); σ = 0.3)
-        est2 = find_radial_camera(pairs2; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs2; center = _CC), 5.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization = StudentTUniform(), rng = MersenneTwister(2))
+        est2 = find_radial_camera(pairs2; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs2; center = _CC), 5.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization_strategy = StudentTUniform(), rng = MersenneTwister(2))
         @test est2 !== nothing
         r2 = zeros(length(pairs2)); mahalanobis_distances!(r2, RadialCameraProblem(pairs2; center = _CC), estimate(est2))
         @test median(abs.(r2[gt2])) < 0.5
@@ -267,7 +267,7 @@ _pd(a::RadialCamera, b::RadialCamera) = projective_distance(radial_rows(a), radi
         P_gt, pairs, gt = radial_board(MersenneTwister(11); σ = 0.2)
         p = RadialCameraProblem(pairs; center = _CC)
         lo = welsch_hq(:radial_camera)
-        est = find_radial_camera(pairs; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs; center = _CC), 5.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization = lo, rng = MersenneTwister(4))
+        est = find_radial_camera(pairs; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs; center = _CC), 5.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization_strategy = lo, rng = MersenneTwister(4))
         @test est !== nothing
         @test est.lo_retcode != :not_run
         rr = zeros(length(pairs)); mahalanobis_distances!(rr, p, estimate(est))
@@ -283,7 +283,7 @@ end
 @testset "lines" begin
     @testset "StudentTUniform recovers the line through its soft weights" begin
         prob, θ₀ = contaminated_line(MersenneTwister(57))
-        r = locally_optimize(prob, θ₀; local_optimization = StudentTUniform(), scoring = StudentTUniformScoring(prob, 1.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()))
+        r = locally_optimize(prob, θ₀; local_optimization_strategy = StudentTUniform(), scoring = StudentTUniformScoring(prob, 1.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()))
         line = estimate(r)
         @test abs(signed_distance(line, Point2(0.0, 0.0))) < 0.006
         @test abs(signed_distance(line, Point2(56.0, 0.0))) < 0.006
@@ -295,7 +295,7 @@ end
         rng = MersenneTwister(59)
         pts = [SVector(Float64(i), 1.0 + 0.5i + 0.01 * randn(rng)) for i in 1:40]
         prob = InhomLineFittingProblem(pts)
-        r = ransac(prob, StudentTUniformScoring(prob, 1.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()); local_optimization = StuTuBCD(), rng = MersenneTwister(60))
+        r = ransac(prob, StudentTUniformScoring(prob, 1.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()); local_optimization_strategy = StuTuBCD(), rng = MersenneTwister(60))
         @test converged(r)
         @test r.lo_retcode === :solve_failed
     end

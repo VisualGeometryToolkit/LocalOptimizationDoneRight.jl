@@ -24,7 +24,7 @@ pkg> add LocalOptimizationDoneRight VisualGeometryToolkitEstimation VisualGeomet
 ## Example
 
 The paper's recipe, Student-t + uniform selection and Welsch half-quadratic
-refinement at its cross-validated scale multiple, on a synthetic two-view scene:
+refinement at its cross-validated efficiency constant, on a synthetic two-view scene:
 
 ```julia
 using Random: MersenneTwister
@@ -33,7 +33,7 @@ using VisualGeometryToolkitCore: CameraModel, Point2, WelschShape, estimate, mot
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior
 using VisualGeometryToolkitCore.Synthetic: pose_error, sample_twoview_scene
 using VisualGeometryToolkitEstimation: EssentialProblem, find_essential
-using LocalOptimizationDoneRight: HQ, WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL
+using LocalOptimizationDoneRight: HQ, WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL
 
 # Two 500 × 500 px views of one pinhole camera (focal length 600 px, principal
 # point at the image centre): 200 matches with 1 px noise, then 100 mismatches
@@ -51,7 +51,7 @@ camera = CameraModel(600.0px, SA[250.0px, 250.0px])
 # consensus set's scale.
 result = find_essential(camera, camera, cs;
     scoring = StudentTUniformScoring(EssentialProblem, 250.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-    local_optimization = HQ{WelschShape}(; scale_multiple = WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL),
+    local_optimization_strategy = HQ{WelschShape}(; efficiency_constant = WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL),
     rng = MersenneTwister(2))
 
 n_inliers = count(result.inlier_mask)   # the 200 matches, and the few mismatches that land on their epipolar lines

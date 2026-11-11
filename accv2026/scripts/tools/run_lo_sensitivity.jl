@@ -6,7 +6,7 @@
 # --mode=delta (well-depth Δ sweep).
 #
 # Protocol: eval/protocol/PROTOCOL.md §3 (base bundles are SELECTION-ONLY),
-# §4 (fixed tuned scale multiple miscal), §5 (validation_budget sweep).
+# §4 (fixed tuned efficiency constant miscal), §5 (validation_budget sweep).
 #
 # File-specific: THIN CALLER of the shared producers (`lo_sensitivity_sweep` /
 # `miscalibration_sweep` / `delta_sweep` in eval/experiment_producer.jl) — the
@@ -144,8 +144,8 @@ else
         save_bundle = BUNDLE, scene_ids = SCENE_IDS)
     M, s0, grids = out.M, out.s0, out.grids
 
-    # Per-scale-multiple diagnostic: pool-median imc° on the standardized display
-    # axis (the spec's scale_multiple grid; evaluation at s0), one column per
+    # Per-efficiency-constant diagnostic: pool-median imc° on the standardized display
+    # axis (the spec's efficiency_constant grid; evaluation at s0), one column per
     # roster label. Grid choice follows the label's selector family
     # (outlier-half-width families: "IG "/"WMG"; everything else a loss width).
     # The n-sweep table (with BCa CIs) is printed by the auto-render below.
@@ -153,9 +153,9 @@ else
     cmM = Dict(k => cm(v) for (k, v) in M)
     labels = sort(collect(keys(M)))
     _is_ig(l) = startswith(l, "IG ") || startswith(l, "WMG")
-    println("\n=== pose imc° vs scale multiple (pool median; evaluation at s0) ===")
+    println("\n=== pose imc° vs efficiency constant (pool median; evaluation at s0) ===")
     @printf("%5s |%s\n", "mult", join((@sprintf(" %12s", l) for l in labels)))
-    for m in grids[:scale_multiple]
+    for m in grids[:efficiency_constant]
         ci = nearest_column(grids[:outlier_halfwidth], out.to_native_outlier_halfwidth(m, s0))
         cm_ = nearest_column(grids[:loss_width], out.to_native_loss_width(m, s0))
         @printf("%5.2f |%s\n", m,

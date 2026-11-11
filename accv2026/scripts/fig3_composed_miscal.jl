@@ -3,7 +3,7 @@
 # scripts/fig3_composed_miscal.jl — the PhotoTourism row of MAIN-PAPER FIG 3
 # (fig:miscal, figures/panel_lo_miscal.tex): composed score+LO miscalibration
 # (ζ sweep), objective-faceted {Welsch | TLS | GM} at mAA@10°, every arm at its
-# tuned operating point, scale-multiple arms PARTITION-ANCHORED
+# tuned operating point, efficiency-constant arms PARTITION-ANCHORED
 # (the loss scale rides the seed partition; it never slides with the
 # ζ-corrupted plug-in).
 #

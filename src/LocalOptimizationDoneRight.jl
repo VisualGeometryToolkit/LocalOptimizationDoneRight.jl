@@ -19,10 +19,10 @@ VisualGeometryToolkitEstimation's problems:
   load with PoseLib, a package extension);
 - the cross-validated operating points ([`tuning_constant`](@ref)) and the
   strategies' TOML registry ([`STRATEGY_TAGS`](@ref)), merged with the core's to load:
-  `local_optimization_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, STRATEGY_TAGS))`.
+  `optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, STRATEGY_TAGS))`.
 
-Compose one with any scorer: `find_essential(cam1, cam2, pairs; local_optimization
-= HQ{WelschShape}(scale_multiple = WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL))`.
+Compose one with any scorer: `find_essential(cam1, cam2, pairs; local_optimization_strategy
+= HQ{WelschShape}(efficiency_constant = WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL))`.
 """
 module LocalOptimizationDoneRight
 
@@ -35,13 +35,13 @@ using Statistics: Statistics
 using TOML: TOML
 
 # --- Upstream stack: public names only ----------------------------------------
-using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractLocalOptimization, AbstractLossShape, AbstractBlockCoordinateMethod,
+using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractOptimizationStrategy, AbstractLossShape, AbstractBlockCoordinateMethod,
     AbstractWeightPolicy, NormalizedWeightPolicy, AnyLoss, DeployedLoss, rescale,
     sq_loss_width, loss_shape, liftable, weight, conjugate_curvature,
     lift_weight, lift_cost, loss_family, loss_label,
     gnc_surrogate, gnc_weight, gnc_entry_mu0, gnc_mu_cap, band_signal, NoSurrogate, MuScaled,
     BandAnnealed, GaussianShape, WelschShape, GemanMcclureShape, SmoothTLSShape,
-    BarronShape, ConsensusSet, consensus_score, is_predictive, ScoreBuffers, ScaleMultiple, TagRegistry, tag_of,
+    BarronShape, ConsensusSet, consensus_score, is_predictive, ScoreBuffers, EfficiencyConstant, TagRegistry, tag_of,
     SelfScaling, ConsensusAnchored, FixedScale, ExternalRefit, scale_s2, inlier_count,
     outlier_halfwidth, score_model!, loss_at, width_scale_interface, lo_estimate, Attributed,
     keep_best, StoppingCriterion, PosteriorWeightState, reset_posterior!, StudentTMixture, posterior_weight,
@@ -58,7 +58,7 @@ import VisualGeometryToolkitCore: locally_optimize!, update_model!, update_resid
 using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation, Irls, LoBuffers, LiftableProblem,
     BoundedProblem, EssentialProblem, PosteriorLikelihood, StopWhenNoImprovement,
     posterior_irls!, consensus_posterior, required_outlier_halfwidth, lo_loss, strategy_loss,
-    plain_scale_multiple, lo_width_value, lo_construct, LOSS_TAGS
+    lo_width_value, lo_construct, LOSS_TAGS
 
 include("config_defaults.jl")          # configs/default.toml → `_DEFAULTS_OF_RECORD`, `_config_default`
 include("lift/schedules.jl")           # LoSchedule, MuLadder, GeometricAnneal, gnc_schedule
@@ -83,8 +83,8 @@ const CONTRACT_GENERICS = (truncated_refit_pose,)
 export HQ, Gnc, StudentTUniform, StuTuBCD, BarronAdaptive, BarronHQ, GmHqEps,
     WelschHQNewton, WelschHQEcm, StuTuHQTabulated, StuTuRegemm
 export PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth, truncated_refit_pose
-export tuning_constant, WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL, WELSCH_HQ_SCALE_MULTIPLE_FUNDMAT,
-    WELSCH_HQ_SCALE_MULTIPLE_HOMOGRAPHY, WELSCH_HQ_SCALE_MULTIPLE_ABSOLUTE_POSE
+export tuning_constant, WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL, WELSCH_HQ_EFFICIENCY_CONSTANT_FUNDMAT,
+    WELSCH_HQ_EFFICIENCY_CONSTANT_HOMOGRAPHY, WELSCH_HQ_EFFICIENCY_CONSTANT_ABSOLUTE_POSE
 
 # Public, not exported: the registry, the provenance records, the lift
 # machinery a research arm builds on, and the continuation schedules.

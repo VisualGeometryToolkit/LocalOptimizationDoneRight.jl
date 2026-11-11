@@ -240,7 +240,7 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString)
                                batch_size = Int(sbp["batch_size"]), lo_every = Int(sbp["lo_every"]),
                                budget_unit = Symbol(sbp["budget_unit"]), nat_ref, nat_axis)
         # The arm's kind (the roster's) is the axis its tuned native lives on.
-        arm_cfg(s) = s.kind isa ScaleMultiple ? cfgf(s.lo) : cfgf(s.lo; nat_ref = s.ref, nat_axis = s.kind)
+        arm_cfg(s) = s.kind isa EfficiencyConstant ? cfgf(s.lo) : cfgf(s.lo; nat_ref = s.ref, nat_axis = s.kind)
         mkpath(outdir)
         for (sc, load_test) in test_loaders()
             out_f = joinpath(outdir, "$sc.jld2")

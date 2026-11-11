@@ -17,7 +17,7 @@ if !@isdefined(ACCV2026_PROTOCOL_FOLDS_LOADED)
 
 using DrWatson: projectdir   # configs/ of the active (accv2026) project
 using TOML
-using VisualGeometryToolkitCore: ScaleMultiple, OutlierHalfwidth, LossWidth, width_axis_name, check_keys
+using VisualGeometryToolkitCore: EfficiencyConstant, OutlierHalfwidth, LossWidth, width_axis_name, check_keys
 using VisualGeometryToolkitEval.Tuning: layer_tuning, layered_tuning_entry, tuning_spec, TUNING_TAGS, CoarseFine
 using VisualGeometryToolkitEval.Experiments:
     load_run_config, run_key, experiment_dir,
@@ -107,7 +107,7 @@ miscal_sidecar_of(config_name::AbstractString) =
 # --- the sequential CV (notes/sequential_cv.md) ----------------------------------
 
 "The width kinds a refiner can be tuned on, each its own `[sequential_cv] refiner` entry."
-const SEQUENTIAL_CV_KINDS = map(a -> String(width_axis_name(a)), (ScaleMultiple(), OutlierHalfwidth(), LossWidth()))
+const SEQUENTIAL_CV_KINDS = map(a -> String(width_axis_name(a)), (EfficiencyConstant(), OutlierHalfwidth(), LossWidth()))
 "The sequential CV's three artifacts, in stage order; the last is the cell's sidecar."
 const SEQUENTIAL_CV_SCORER  = "scorer_cv.jld2"
 const SEQUENTIAL_CV_REFINER = "refiner_cv.jld2"

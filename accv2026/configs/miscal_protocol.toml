@@ -21,7 +21,7 @@ zeta_octaves = 7.0
 
 # The consensus-anchoring ABLATION evaluation (scripts/fig_anchoring.jl, stage
 # evaluation — the panel's dashed WITHOUT side): fig3's tuned operating points
-# read out on the same ladder, test scenes and seeds, with the scale-multiple
+# read out on the same ladder, test scenes and seeds, with the efficiency-constant
 # arms' loss width delivered through `scale_interface` instead of the consensus
 # set. "fixed_scale": a fixed external scale (VisualGeometryToolkitEval
 # `miscal_evaluation_refit` `plugin_scale`), the plug-in being the tuning's

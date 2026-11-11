@@ -128,7 +128,7 @@ min_gt_inliers_for_scale = 80
 # PoseLib truncated LM; the classical LO's linear solves). Per-arm deviations
 # are declared in the arm's own table below, with their reason.
 # An EXPLICIT override of LocalOptimizationDoneRight's library default
-# (configs/default.toml [local_optimization] max_iter, the same value today),
+# (configs/default.toml [optimization_strategy.*] max_iter, the same value today),
 # declared here on purpose: the paper's budget is part of its protocol of
 # record — folded into every arm-building cell's run key and supplied to every
 # engine explicitly — so a change of the library default must not move the

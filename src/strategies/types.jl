@@ -6,12 +6,12 @@
 # (`STRATEGY_TAGS`) and the one keyword constructor.
 #
 # They implement VisualGeometryToolkitCore's local-optimization contract
-# (`locally_optimize!`, `lo_width`, `with_width`, `deployed_scale_multiple`) on
+# (`locally_optimize!`, `lo_width`, `with_width`) on
 # VisualGeometryToolkitEstimation's problems and its public posterior-weight iteration.
 # =============================================================================
 
 """
-    StudentTUniform <: AbstractLocalOptimization
+    StudentTUniform <: AbstractOptimizationStrategy
 
 The paper's **Stu-tU-IRLS**: posterior-weighted IRLS under the Student-t +
 uniform mixture (the same model family as the profile-marginal score).
@@ -19,7 +19,7 @@ Computes posterior inlier probabilities from the marginal score partition,
 uses them as soft weights for a WLS refit, re-scores, and iterates over a
 fixed Student-t + uniform likelihood. Self-scaling: it re-estimates its own
 scale each iteration (contrast with the consensus-anchored `Irls{K}`/`HQ{K}`/
-`Gnc{S}` strategies, whose loss width is frozen at `scale_multiple·ŝ` from the
+`Gnc{S}` strategies, whose loss width is frozen at `efficiency_constant·ŝ` from the
 consensus set).
 
 It needs the scorer's uniform outlier model (`outlier_halfwidth`).
@@ -27,7 +27,7 @@ It needs the scorer's uniform outlier model (`outlier_halfwidth`).
 # Fields
 - `max_iter::Int=5`: Max IRLS iterations per hypothesis
 """
-struct StudentTUniform <: AbstractLocalOptimization
+struct StudentTUniform <: AbstractOptimizationStrategy
     max_iter::Int
 end
 
@@ -54,7 +54,7 @@ function _hq_admits_shape(::Type{K}) where {K}
 end
 
 """
-    StuTuBCD <: AbstractLocalOptimization
+    StuTuBCD <: AbstractOptimizationStrategy
 
 Exact same-objective refinement for RANSACScoringDoneRight's
 [`StudentTUniformScoring`](@extref RANSACScoringDoneRight.StudentTUniformScoring): block-coordinate
@@ -77,13 +77,13 @@ the current partition exert no force on the pose (`RSS_I` sees only I).
 - `max_iter::Int=25`: max block-coordinate sweeps per hypothesis
 - `tol::Float64=0.0`: minimum score increase to keep iterating
 """
-struct StuTuBCD <: AbstractLocalOptimization
+struct StuTuBCD <: AbstractOptimizationStrategy
     max_iter::Int
     tol::Float64
 end
 
 """
-    HQ{K<:AbstractLossShape} <: AbstractLocalOptimization
+    HQ{K<:AbstractLossShape} <: AbstractOptimizationStrategy
 
 Joint half-quadratic local optimization of the model and per-point weights
 under the robust loss `K`.
@@ -101,33 +101,30 @@ quantities and tracked cost. Implemented for every liftable problem (the
 `MinimalSolveProblem` family: its lift provider supplies the chart).
 
 The loss width is frozen at setup by the width mode (VisualGeometryToolkitCore's
-`loss_at`): at the consensus set's Student-t scale `ŝ` the `scale_multiple` is
-read in the loss's OWN currency (VisualGeometryToolkitEstimation's `plain_scale_multiple`,
-shared with `Irls{K}`), which
-converts it to the plain multiple that goes in a deployment's `scale_multiple`
-slot — the loss width is then `scale_multiple·ŝ` and `sq_loss_width` is
-`scale_multiple²·ŝ²`, with the multiple and the noise variance stored apart and
-never multiplied into a stored width:
+`loss_at`): at the consensus set's Student-t scale `ŝ` the `efficiency_constant` is
+the PLAIN multiple for every loss (as for `Irls{K}`), so the loss width is
+`efficiency_constant·ŝ` and `sq_loss_width` is `efficiency_constant²·ŝ²`, with the multiple
+and the noise variance stored apart and never multiplied into a stored width:
 
-- `K = WelschShape`: `loss_width = scale_multiple·ŝ` (1.5 was the pre-anchoring point)
-- `K = SmoothTLSShape`: hard cutoff `loss_width = scale_multiple·ŝ` (historically
+- `K = WelschShape`: `loss_width = efficiency_constant·ŝ` (1.5 was the pre-anchoring point)
+- `K = SmoothTLSShape`: hard cutoff `loss_width = efficiency_constant·ŝ` (historically
   2.0 = the statistically natural 2σ cutoff; no width follows the scorer's
   decision point). Default `max_iter = 40` (historical ψ̂ arm).
-- `K ∈ {GemanMcclureShape, CauchyShape}`: the shared half-weight ablation currency
-  `loss_width = decision_width(K(), scale_multiple·ŝ)` (historically 1.5·√ln2 —
-  the deployed Welsch arm's evidence depth). NOTE the roster's GM arm keeps its
-  CONSTRUCTOR-level convention `scale_multiple = κ·√ln2` (κ the shared Welsch
-  grid value).
+- `K ∈ {GemanMcclureShape, CauchyShape}`: `loss_width = efficiency_constant·ŝ` too. The
+  half-weight currency these losses were once read in is retired (robust
+  contract, 2026-11-11): a value stated as a half-weight depth `m_½` is
+  converted once, `efficiency_constant = decision_width(K(), m_½)` (the roster's GM
+  arms compose it into their grid map; the identity for Cauchy).
 
 # Fields
 - `max_iter::Int`: max joint-GN iterations (25; 40 for `SmoothTLSShape`)
 - `μ::Float64=1e-9`: Gauss-Newton damping
 - `init::Symbol=:flat`: z₀ policy — `:flat` (all-in, default) | `:posterior`
   (soft seed weights) | `:consensus` (hard r½ mask)
-- `width::W`: the width mode (`scale_multiple = m` in the per-K currency above,
+- `width::W`: the width mode (`efficiency_constant = m`, the plain multiple,
   `loss_width = w`, or neither: follow the scorer), as [`Irls`](@extref VisualGeometryToolkitEstimation.Irls)
 """
-struct HQ{K <: AbstractLossShape, W} <: AbstractLocalOptimization
+struct HQ{K <: AbstractLossShape, W} <: AbstractOptimizationStrategy
     max_iter::Int
     μ::Float64
     init::Symbol
@@ -135,18 +132,18 @@ struct HQ{K <: AbstractLossShape, W} <: AbstractLocalOptimization
 end
 HQ{K}(max_iter::Integer, μ::Real, init::Symbol, width::W) where {K, W} = HQ{K, W}(Int(max_iter), Float64(μ), init, width)
 """
-    WelschHQNewton(; scale_multiple, max_iter=25, μ=1e-9)
+    WelschHQNewton(; efficiency_constant, max_iter=25, μ=1e-9)
 
 Welsch half-quadratic lift refined with the **convexified Newton** joint-(θ,z) step
 (Zach & Bourmaud, ECCV 2018, Eq. 15) instead of the Gauss-Newton step of
 [`HQ{WelschShape}`](@ref HQ). Identical fixed-scale setup (`loss_width =
-scale_multiple·ŝ` from the seed partition); the only difference is the
+efficiency_constant·ŝ` from the seed partition); the only difference is the
 second-order z-block with the convexification
 `h_z = max(2r² + 4·loss_width²·(1+ln z), 8r²)`. Intended as the A/B partner of the GN lift — it
 should match on easy seeds and (per the paper) reach better minima on hard,
 barrier-crossing seeds. `EssentialProblem` only.
 """
-struct WelschHQNewton{W} <: AbstractLocalOptimization
+struct WelschHQNewton{W} <: AbstractOptimizationStrategy
     max_iter::Int
     μ::Float64
     width::W
@@ -154,43 +151,44 @@ end
 
 
 """
-    WelschHQEcm <: AbstractLocalOptimization
+    WelschHQEcm <: AbstractOptimizationStrategy
 
 Ablation sibling of [`HQ{WelschShape}`](@ref HQ): the **same closed-form Welsch
-joint-(θ,z) lift**, but the loss width `scale_multiple·√ŝ²` is **re-estimated each iteration**
+joint-(θ,z) lift**, but the loss width `efficiency_constant·√ŝ²` is **re-estimated each iteration**
 by the same Student-t + uniform ECM the mixture uses (`_mix_ecm`), instead of fixed
 at the seed. Closed-form κ² ⇒ no LUT, so the only added cost is the O(n) ECM sweep.
 Kept a separate LO strategy so fixed-vs-ECM scale can be ablated head-to-head.
 
 # Fields
 - `max_iter::Int=25`: max joint-GN iterations
-- `scale_multiple::Float64`: the loss width as a multiple of ŝ (`scale_multiple·√ŝ²`, ŝ² re-estimated per iter)
+- `efficiency_constant::Float64`: the loss width as a multiple of ŝ (`efficiency_constant·√ŝ²`, ŝ² re-estimated per iter)
 - `μ::Float64=1e-9`: Gauss-Newton damping
 """
-struct WelschHQEcm <: AbstractLocalOptimization
+struct WelschHQEcm <: AbstractOptimizationStrategy
     max_iter::Int
-    scale_multiple::Float64
+    efficiency_constant::Float64
     μ::Float64
 end
 
 """
-    BarronHQ(α; scale_multiple, max_iter=25, μ=1e-9)
+    BarronHQ(α; efficiency_constant, max_iter=25, μ=1e-9)
 
 The joint half-quadratic lift of [`HQ`](@ref) on Barron's loss at a fixed
 shape `α`.
 
 The α-DIAL lift (smooth-and-lift 3-ii): the same genuine joint-(θ,z)
 half-quadratic lift as [`HQ`](@ref) with the Barron family
-loss at fixed shape α, standardized in the FIXED-CORE-WIDTH currency —
-the facet-B Barron loss width is scale_multiple·ŝ/√2, which holds the near-zero
+loss at fixed shape α, standardized at a FIXED CORE WIDTH —
+the facet-B Barron loss width is efficiency_constant·ŝ (a value stated in the retired
+`m/√2` currency is migrated once, ×1/√2), which holds the near-zero
 (Gaussian-core) curvature IDENTICAL across every α, so the dial isolates
 tail steepness (retirement profile) only. Anchor identities (mandatory
 gates, lift_losses_tests.jl): α → −∞ runs the SAME iteration as
-`HQ{WelschShape}(; scale_multiple)`; α = −2 matches the GM lift and α = 0 the Cauchy
+`HQ{WelschShape}(; efficiency_constant = √2·efficiency_constant)`; α = −2 matches the GM lift and α = 0 the Cauchy
 lift at their convention-mapped scales. Runs on the generic ManifoldLiftHQ
 driver, so on every liftable problem.
 """
-struct BarronHQ{W} <: AbstractLocalOptimization
+struct BarronHQ{W} <: AbstractOptimizationStrategy
     α::Float64
     max_iter::Int
     μ::Float64
@@ -207,14 +205,14 @@ end
 # Hessian h_reg=w²). Steeper core than ψ̂ (≈1−2s/w² near 0) AND a soft
 # polynomial tail (~w⁴/s², never 0) — the "tight + inclusive" profile. Tested
 # against Welsch (soft exp tail, 1.91) and ψ̂ (hard cut, 2.20) in the SHARED
-# half-weight currency r_½/ŝ. loss_width = scale_multiple·ŝ (a `ScaleMultiple`
+# half-weight radius r_½/ŝ. loss_width = efficiency_constant·ŝ (an `EfficiencyConstant`
 # width mode), an absolute `LossWidth`, or the scorer's decision point (no
 # width). This strategy is the ε-parameterized arm; the half-weight-standardized
 # ablation arm is `HQ{GemanMcclureShape}`. Runs on the generic ManifoldLiftHQ driver, so on
 # every liftable problem (`_manifold_hq!`, lift/lifts.jl).
 
 """
-    GmHqEps(; scale_multiple | loss_width, max_iter = 40, μ = 1e-9)
+    GmHqEps(; efficiency_constant | loss_width, max_iter = 40, μ = 1e-9)
 
 The Geman–McClure joint-(θ,z) half-quadratic lift, parameterized by its loss
 width: a research arm beside [`HQ{GemanMcclureShape}`](@ref HQ), which
@@ -225,23 +223,23 @@ redescender with a closed-form lift and a constant z-block Hessian; its tail
 decays polynomially and never reaches zero weight. At loss width `w` the
 half-weight radius is `√(√2 − 1)·w ≈ 0.6436·w`.
 
-The loss width is `scale_multiple·ŝ` (`ŝ` the consensus set's scale) or an
+The loss width is `efficiency_constant·ŝ` (`ŝ` the consensus set's scale) or an
 absolute `loss_width` in the residuals' units; give at most one. With neither,
 the loss follows the scorer: its half-weight radius sits at the scorer's
 inlier threshold (a loss width of about 1.554 times the threshold). `max_iter` bounds the joint Gauss–Newton iterations and `μ`
 is their damping; the defaults are `configs/default.toml`'s
-`[local_optimization.gm_hq_eps]`. It runs on the generic lift driver, so on
+`[optimization_strategy.gm_hq_eps]`. It runs on the generic lift driver, so on
 every liftable problem, and like every local optimizer it can end in a local
 minimum of its seed's basin.
 """
-struct GmHqEps{W} <: AbstractLocalOptimization
+struct GmHqEps{W} <: AbstractOptimizationStrategy
     max_iter::Int
     μ::Float64
-    width::W   # ScaleMultiple(m): loss_width = m·ŝ (half-weight radius r_½ = √(√2 − 1)·loss_width ≈ 0.6436·loss_width)
+    width::W   # EfficiencyConstant(m): loss_width = m·ŝ (half-weight radius r_½ = √(√2 − 1)·loss_width ≈ 0.6436·loss_width)
 end
 
 """
-    Gnc{S<:AbstractLocalOptimization} <: AbstractLocalOptimization
+    Gnc{S<:AbstractOptimizationStrategy} <: AbstractOptimizationStrategy
 
 Graduated non-convexity over the objective of the static strategy `S`.
 
@@ -261,7 +259,7 @@ NOT implemented here, the LO dispatch covers `Gnc{<:Irls}`
 only). The GNC arms run through the same `locally_optimize!` contract as
 every IRLS/lift strategy — one code path, one width resolution.
 
-**Width** (VisualGeometryToolkitCore's `loss_at`): under `ScaleMultiple(m)` the
+**Width** (VisualGeometryToolkitCore's `loss_at`): under `EfficiencyConstant(m)` the
 terminal (target) loss width is `c̄ = m·ŝ` with `ŝ` the consensus set's
 Student-t scale (exactly the width the lifted loss arms freeze); under
 `LossWidth(w)` it is `w`; with neither it follows the scorer's inlier
@@ -292,7 +290,7 @@ loss (true TLS cost / true GM ρ / fixed-width Welsch cost at c̄) — graduatio
 shapes exploration only. Implemented for every liftable problem (the
 `MinimalSolveProblem` family), like `HQ{K}`.
 """
-struct Gnc{S <: AbstractLocalOptimization, W} <: AbstractLocalOptimization
+struct Gnc{S <: AbstractOptimizationStrategy, W} <: AbstractOptimizationStrategy
     max_iter::Int        # TOTAL model-update budget across all rungs (parity: 25),
     # or the SAFETY CEILING under budget = :converged
     factor::Float64      # μ-schedule factor (canonical 1.4)
@@ -301,7 +299,7 @@ struct Gnc{S <: AbstractLocalOptimization, W} <: AbstractLocalOptimization
     # (Welsch family only — smooth-and-lift dose axis 1)
     budget::Symbol       # :parity (rung budget split) | :converged (rung runs to
     # stall; Yang–Carlone-faithful)
-    width::W             # target loss width c̄: ScaleMultiple(m) → m·ŝ | LossWidth | nothing (the scorer's)
+    width::W             # target loss width c̄: EfficiencyConstant(m) → m·ŝ | LossWidth | nothing (the scorer's)
 end
 Gnc{S}(max_iter::Integer, factor::Real, entry::Real, budget::Symbol, width::W) where {S, W} =
     Gnc{S, W}(Int(max_iter), Float64(factor), Float64(entry), budget, width)
@@ -346,24 +344,9 @@ VgtkCore.lo_label(lo::Union{HQ, Gnc}) =
     loss_label(strategy_loss(lo)) * "-" * path_suffix(optimization_path(lo))
 VgtkCore.loss_family(lo::Union{HQ, Gnc}) = loss_family(strategy_loss(lo))
 
-# The scale-multiple currency (VisualGeometryToolkitEstimation's `plain_scale_multiple`,
-# the one table): `HQ{K}` reads its `scale_multiple` in its loss's currency,
-# as `Irls{K}` does; GNC is the ONE mechanism exception — Yang–Carlone's
-# schedules are stated in the TARGET loss width c̄ = scale_multiple·ŝ for every
-# surrogate, so a GNC `scale_multiple` is a width multiple whatever the shape
-# (the GNC-GM arm is CV'd in that currency; a half-weight read would move it by
-# 1/√(√2−1) ≈ 1.55).
-VgtkCore.deployed_scale_multiple(::HQ, shape, m::Float64, _s2, _scoring) = plain_scale_multiple(shape, m)
-VgtkCore.deployed_scale_multiple(::Gnc, _shape, m::Float64, _s2, _scoring) = m
-# The fixed-core Barron dial: the facet-B width is scale_multiple·ŝ/√2.
-VgtkCore.deployed_scale_multiple(::BarronHQ, _shape, m::Float64, _s2, _scoring) = m / sqrt(2.0)
-
-# The shape `fixed_width` hands the currency hook.
-VgtkEstimation.deployed_shape(lo::Union{HQ, Gnc}) = strategy_loss(lo)()
-VgtkEstimation.deployed_shape(lo::BarronHQ) = BarronShape(lo.α)
 
 """
-    StuTuHQTabulated <: AbstractLocalOptimization
+    StuTuHQTabulated <: AbstractOptimizationStrategy
 
 Half-quadratic lifted LO using the **exact** Student-t + uniform mixture loss
 `ρ(r)=−log(π_in t_ν(r;ŝ²)+π_out(2a)^{−d})`. Same genuine joint-(θ,z) weight-lift
@@ -393,7 +376,7 @@ plateau choice (near the per-scene minima, non-edge).
   rebuild cost. `γ` remains the sole regularizer knob — grid coarseness is no longer
   an accuracy lever (the inflation trap of a coarse *linear* table is avoided).
 """
-struct StuTuHQTabulated <: AbstractLocalOptimization
+struct StuTuHQTabulated <: AbstractOptimizationStrategy
     max_iter::Int
     γ::Float64
     μ::Float64
@@ -405,7 +388,7 @@ end
 # which with a high `lut_points` recovers the accurate-math regime.
 
 """
-    StuTuRegemm <: AbstractLocalOptimization
+    StuTuRegemm <: AbstractOptimizationStrategy
 
 Half-quadratic LO for the same Student-t + uniform mixture loss as
 [`StuTuHQTabulated`](@ref), but solved by **relaxed generalized
@@ -430,7 +413,7 @@ lighter tail. `EssentialProblem` only.
 - `η::Float64=0.5`: diminishing-gap fraction (Zach & Le use η=1/2; `η→1` ⇒ touching/standard MM = IRLS)
 - `lut_points::Int=128`: `κ²` lookup-table resolution
 """
-struct StuTuRegemm <: AbstractLocalOptimization
+struct StuTuRegemm <: AbstractOptimizationStrategy
     max_iter::Int
     η::Float64
     lut_points::Int
@@ -445,7 +428,7 @@ end
 # =============================================================================
 
 """
-    BarronAdaptive(; scale_multiple | loss_width, max_iter=25, α_min=-10.0,
+    BarronAdaptive(; efficiency_constant | loss_width, max_iter=25, α_min=-10.0,
                    truncation_multiple=10.0, n_sub=256)
 
 IRLS on Barron's loss whose shape is re-estimated from the residuals each
@@ -459,7 +442,7 @@ residuals by minimizing the truncated-partition negative log-likelihood of
 Chebrolu et al. (RA-L 2021, Eq. 11-15): 1-D grid search over
 α ∈ [α_min, 2], with `Z̃(α) = ∫_{-T}^{T} e^{-ρ(x, α, 1)} dx`, `T =
 truncation_multiple` (the normaliser's domain, in units of the loss width). The
-loss width is `scale_multiple·ŝ`, frozen at the seed partition's Student-t
+loss width is `efficiency_constant·ŝ`, frozen at the seed partition's Student-t
 scale — Chebrolu et al. fix the width for exactly the scale/shape confounding
 our partition anchor resolves. `n_sub` caps the residual subsample used by the
 α grid search (strided; the full set is used when n ≤ n_sub).
@@ -468,7 +451,7 @@ This is the "adaptive-static" cell of the loss taxonomy: the loss adapts
 its shape within the solve (no lift, no graduation) — the strongest
 representative of "why not adapt instead of lift?".
 """
-struct BarronAdaptive{W} <: AbstractLocalOptimization
+struct BarronAdaptive{W} <: AbstractOptimizationStrategy
     max_iter::Int
     α_min::Float64
     truncation_multiple::Float64
@@ -477,13 +460,12 @@ struct BarronAdaptive{W} <: AbstractLocalOptimization
 end
 
 # The squared loss width the Barron α-fit runs at: VGC's `loss_at` at the arm's
-# REFERENCE shape — `ScaleMultiple(m)` → m²·ŝ², `LossWidth((m₀, s2))` → m₀²·s2
+# REFERENCE shape — `EfficiencyConstant(m)` → m²·ŝ², `LossWidth((m₀, s2))` → m₀²·s2
 # (the scale floored at eps), no width → the reference shape's decision width at
 # the scorer's threshold (`decision_width`), squared. The width is frozen while
 # α moves, so it is resolved once, at a fixed shape: Barron's α = 0 (Cauchy),
 # whose facet-B decision width t/√2 is the Cauchy loss deciding at the scorer's
-# threshold t. (The identity default of `deployed_scale_multiple` keeps the
-# scale-multiple currency the plain width multiple.)
+# threshold t.
 const _BARRON_REFERENCE_SHAPE = BarronShape(0.0)
 _barron_sq_width(lo::BarronAdaptive, cs, scoring, buf) =
     sq_loss_width(loss_at(lo, _BARRON_REFERENCE_SHAPE, cs, scoring, buf))
@@ -521,13 +503,13 @@ Likelihood adapter for [`BarronAdaptive`](@ref). `update_nuisance!` is the
 `log Z̃(α) + mean ρ(rᵢ/c; α)` on the (strided) residual subsample.
 `update_weights!` sets the Barron IRLS weights at the current (α, c).
 Only the SHAPE α moves here; the WIDTH is frozen at construction from the
-arm's `(scale_multiple, ŝ²)` pair (`sq_loss_width`) and is stored as its reciprocal because
+arm's `(efficiency_constant, ŝ²)` pair (`sq_loss_width`) and is stored as its reciprocal because
 the unit-scale α math divides by it.
 """
 mutable struct BarronAdaptiveLikelihood <: AbstractWeightPolicy
     rws::PosteriorWeightState
     n::Int
-    inv_sq_loss_width::Float64    # 1/(scale_multiple²·ŝ²) — a squared WIDTH, not a variance
+    inv_sq_loss_width::Float64    # 1/(efficiency_constant²·ŝ²) — a squared WIDTH, not a variance
     α::Float64
     α_lo_idx::Int                 # lower bound index into _BARRON_ALPHA_GRID
     logZ::Vector{Float64}
@@ -589,12 +571,12 @@ VgtkCore.with_width(lo::BarronAdaptive, w) =
     BarronAdaptive(lo.max_iter, lo.α_min, lo.truncation_multiple, lo.n_sub, lo_width_value(w))
 
 # The self-scaling Welsch-HQ-ECM deploys its loss through the same `loss_at`
-# at its ONE width mode: `ScaleMultiple(scale_multiple)`, the multiple at which
+# at its ONE width mode: `EfficiencyConstant(efficiency_constant)`, the multiple at which
 # the ECM re-estimates ŝ² every iteration. An absolute width (`LossWidth`, a
 # multiple of 1 from a `loss_width` key) or the scorer's width would be replaced
 # by 1·ŝ_ECM at the first scale step, so the arm admits neither: no `width`
 # field, no `with_width` setter, its scale interface `SelfScaling` (the row).
-VgtkCore.lo_width(lo::WelschHQEcm) = ScaleMultiple(lo.scale_multiple)
+VgtkCore.lo_width(lo::WelschHQEcm) = EfficiencyConstant(lo.efficiency_constant)
 
 # =============================================================================
 # THE strategy registry — one row of facts per strategy, on
@@ -602,7 +584,7 @@ VgtkCore.lo_width(lo::WelschHQEcm) = ScaleMultiple(lo.scale_multiple)
 # =============================================================================
 #
 # Every strategy of this package is ONE row here: its TOML tag (the
-# `configs/default.toml` `[local_optimization.<tag>]` table its keyword
+# `configs/default.toml` `[optimization_strategy.<tag>]` table its keyword
 # defaults read, and the `type` a config spells it by — the tag rule:
 # `snake_case` of the type's name), its optimization path, whether it is a
 # loss-parametric family (`HQ{K}`/`Gnc{Irls{K}}`, which take a `loss` key),
@@ -651,7 +633,7 @@ tag → strategy type or loss-parametric family, the tag `snake_case` of the
 type's name. Retired tags name their successor. Merge it with the core's to
 load either: `merge(VisualGeometryToolkitEstimation.LO_TAGS, STRATEGY_TAGS)`.
 """
-const STRATEGY_TAGS = VgtkEstimation.@lo_registry _STRATEGY_ROWS defaults = _DEFAULTS_OF_RECORD["local_optimization"] retired = (
+const STRATEGY_TAGS = VgtkEstimation.@lo_registry _STRATEGY_ROWS defaults = _DEFAULTS_OF_RECORD["optimization_strategy"] retired = (
     "stutu_bcd" => "stu_tu_bcd", "stutu_hq_tabulated" => "stu_tu_hq_tabulated", "stutu_regemm" => "stu_tu_regemm",
 )
 

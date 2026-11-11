@@ -163,7 +163,7 @@ end
         @test first(solo_refit_imc!(ctx, solo, seed, w, 0.05)) === native
         spec = LoRefitSpec("TLS-LO", lo, OutlierHalfwidth(), [0.05], reshape(Int32[1], 1, 1); widths = [w])
         M = fill(NaN, 1, 1)
-        VgtkEval.Evaluation._apply_refit_row!(M, ctx, lo, spec, 1, OPERATING_SCALE_MULTIPLE, NaN)
+        VgtkEval.Evaluation._apply_refit_row!(M, ctx, lo, spec, 1, OPERATING_EFFICIENCY_CONSTANT, NaN)
         @test M[1, 1] === native
         # the contract itself: FixedS2(w²) is the loss width √(w²) = w
         ws = _lebeda_ws(ctx)

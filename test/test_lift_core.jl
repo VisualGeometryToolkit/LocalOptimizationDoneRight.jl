@@ -51,7 +51,7 @@ rsq(r, i, C) = sum(abs2, r[(C * (i - 1) + 1):(C * i)])
 rng = MersenneTwister(3)
 D = 5; n = 12
 μ = 1.0e-3
-loss = deploy(WelschShape(), 0.04; scale_multiple = 1.5)
+loss = deploy(WelschShape(), 0.04; efficiency_constant = 1.5)
 c2 = sq_loss_width(loss)
 z0 = sqrt.(0.2 .+ 0.7 .* rand(rng, n))                # inside the window: no clamp
 
@@ -86,7 +86,7 @@ for C in (1, 2)
         @test ls.z ≈ clamp.(z0 .+ ref[(D + 1):end], sqrt(1e-9), 1.0) rtol = 1e-8
         # its second-order terms are Welsch's: another shape is refused
         @test_throws ArgumentError _lift_hq_increment!(
-            _ws(J, r, z0, D, C)..., deploy(GemanMcclureShape(), 0.04; scale_multiple = 1.0), μ, n, nothing;
+            _ws(J, r, z0, D, C)..., deploy(GemanMcclureShape(), 0.04; efficiency_constant = 1.0), μ, n, nothing;
             zblock = WelschConvexNewton())
     end
 end
@@ -141,7 +141,7 @@ end
     for C in (1, 2)
         J = randn(rng, C * n, D); r = 0.3 .* randn(rng, C * n)
         Δθt = _lift_hq_increment!(_ws(J, r, z0, D, C)..., cold, μ, n, nothing)
-        Δθk = _lift_hq_increment!(_ws(J, r, z0, D, C)..., deploy(WelschShape(), 0.04 * 1.05; scale_multiple = 1.5), μ, n, nothing)
+        Δθk = _lift_hq_increment!(_ws(J, r, z0, D, C)..., deploy(WelschShape(), 0.04 * 1.05; efficiency_constant = 1.5), μ, n, nothing)
         @test Δθt ≈ Δθk rtol = 2e-2
     end
 end
@@ -150,8 +150,8 @@ end
 # constant c²) and refuses every other shape (moved from VisualGeometryToolkitCore's
 # conjugate_curvature item; the curvature itself is VGC's shape math).
 @testset "the convexified Newton z-block's curvature" begin
-    loss = deploy(WelschShape(), 0.04; scale_multiple = 1.5)
+    loss = deploy(WelschShape(), 0.04; efficiency_constant = 1.5)
     @test _convex_newton_curvature(loss, 0.3) == VgtkCore.sq_loss_width(loss)
-    @test_throws ArgumentError _convex_newton_curvature(deploy(CauchyShape(), 0.04; scale_multiple = 1.5), 0.3)
+    @test_throws ArgumentError _convex_newton_curvature(deploy(CauchyShape(), 0.04; efficiency_constant = 1.5), 0.3)
 end
 end

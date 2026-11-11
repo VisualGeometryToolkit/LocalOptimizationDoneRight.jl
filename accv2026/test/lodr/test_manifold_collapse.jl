@@ -51,7 +51,7 @@ using .EpipolarScenes
         m = which(VgtkCore.locally_optimize!, Tuple{Any, lo, RVGC.LineFittingProblem{Float64}, Any,
                                                  VgtkCore.ConsensusSet, VgtkCore.ScoreBuffers, Any})
         @test problem_param(m) === Any
-        @test Base.unwrap_unionall(m.sig).parameters[3] === VgtkCore.AbstractLocalOptimization
+        @test Base.unwrap_unionall(m.sig).parameters[3] === VgtkCore.AbstractOptimizationStrategy
     end
 end
 
@@ -68,7 +68,7 @@ end
     c_seed = sqcost(F_seed)
     rf = RVGC.locally_optimize(
         pf, F_seed; scoring = StudentTUniformScoring(pf, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-        local_optimization = LODR.Gnc{RVGC.Irls{RVGC.WelschShape}}(scale_multiple = 1.0)
+        local_optimization_strategy = LODR.Gnc{RVGC.Irls{RVGC.WelschShape}}(efficiency_constant = 1.0)
     )
     @test estimate(rf) !== nothing
     @test retcode(rf) in (:converged, :max_iterations)

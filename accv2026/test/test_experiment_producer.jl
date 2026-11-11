@@ -29,9 +29,9 @@ include(joinpath(@__DIR__, "..", "src", "plot_lo_sensitivity.jl"))   # compute_s
                   "spacing" => Dict("type" => "log_count", "n" => 9))
     spec = tuning_spec(Dict("tuning" => Dict("smoke" => Dict(
         "type" => "windowed_bootstrap",
-        "scale_multiple_window" => Dict("lo" => 1.0, "hi" => 3.3),
+        "efficiency_constant_window" => Dict("lo" => 1.0, "hi" => 3.3),
         "outlier_halfwidth" => native, "loss_width" => native,
-        "scale_multiple" => Dict("spacing" => Dict("type" => "linear_count", "n" => 5)),
+        "efficiency_constant" => Dict("spacing" => Dict("type" => "linear_count", "n" => 5)),
         "budget_sampling" => Dict("n_draws" => 20, "sizes" => [1, 2]),
         "cross_validation" => Dict("scene_split" => Dict("type" => "registered", "name" => "phototourism"))))), "smoke")
     kw = (; problem_type = EssentialProblem, spec,
@@ -43,8 +43,8 @@ include(joinpath(@__DIR__, "..", "src", "plot_lo_sensitivity.jl"))   # compute_s
     b = load_tuning_artifact(path)
     @test b.spec == spec && b["mode"] == "miscal" && b["labels"] == ["IG  sel", "MSAC sel"]
     @test b["label_axis"] == Dict("IG  sel" => "outlier_halfwidth", "MSAC sel" => "loss_width")
-    @test length(b.grids[:outlier_halfwidth]) == 9 && length(b.grids[:scale_multiple]) == 5
-    @test b.grids[:scale_multiple] == grid(b.grid_specs[:scale_multiple])
+    @test length(b.grids[:outlier_halfwidth]) == 9 && length(b.grids[:efficiency_constant]) == 5
+    @test b.grids[:efficiency_constant] == grid(b.grid_specs[:efficiency_constant])
     @test size.(b["M"]["IG  sel"]) == [(2, 9), (2, 9)]
     @test all(M -> all(isfinite, M), b["M"]["IG  sel"])
     # the offline renderer's summary (plot_lo_sensitivity.jl): the fixed-width

@@ -45,13 +45,13 @@ objective_matched = ["IG  +BCD"]
 # MSAC +Lift is the limit-era (faithful) arm's.
 zero_clamp = ["IG  +Lift"]
 scorer = "scorer"
-refiner = { scale_multiple = "refiner_scale_multiple", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
+refiner = { efficiency_constant = "refiner_efficiency_constant", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
 # The [phototourism] 25 % validation sample, decoded once and held in RAM. A
 # scene is decoded in FULL before the sample is taken (PT pools are 30-110 GB),
 # so at most 4 decode at a time: peak ~4 whole scenes + the cache.
 cache_validation = true
 decode_parallel = 4
-# The anchoring ablation (fig_anchoring.jl) evaluates the scale-multiple arms at
+# The anchoring ablation (fig_anchoring.jl) evaluates the efficiency-constant arms at
 # a FIXED external scale s0. On PhotoTourism that scale is the ORACLE variance:
 # σ̂² per pair from the SfM-track-paired detections under the bundle-adjusted
 # pose (VisualGeometryToolkitEval Datasets phototourism.jl), so s0 = reference_scale of the validation pairs'.

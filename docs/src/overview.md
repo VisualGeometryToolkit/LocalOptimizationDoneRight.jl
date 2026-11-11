@@ -18,7 +18,7 @@ halves:
 
 The package depends on VisualGeometryToolkitCore (the contracts, the losses, the width
 axes) and VisualGeometryToolkitEstimation (the problems, the RANSAC loop, the core
-baselines `NoLocalOptimization` and `Irls{K}`). PoseLib is a weak dependency.
+baselines `nothing` (no local optimization) and `Irls{K}`). PoseLib is a weak dependency.
 
 ## Scoring versus refinement
 
@@ -41,7 +41,7 @@ result = find_essential(camera, camera, cs)
 # Welsch-HQ refinement
 result = find_essential(camera, camera, cs;
     scoring = StudentTUniformScoring(EssentialProblem, 250.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-    local_optimization = HQ{WelschShape}(; scale_multiple = WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL))
+    local_optimization_strategy = HQ{WelschShape}(; efficiency_constant = WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL))
 ```
 
 ## Strategies
@@ -67,7 +67,7 @@ A width-carrying strategy (`HQ`, `Gnc`, `WelschHQNewton`, `BarronHQ`, `GmHqEps`,
 `BarronAdaptive`, and the core `Irls`) holds its width mode as a type parameter,
 resolved once per call by VisualGeometryToolkitCore's `loss_at`:
 
-- `scale_multiple = m` (`ScaleMultiple(m)`): the loss width is `m·ŝ`, with `ŝ`
+- `efficiency_constant = m` (`EfficiencyConstant(m)`): the loss width is `m·ŝ`, with `ŝ`
   the scale of the consensus set the scorer selected (the paper's *partition
   anchoring*);
 - `loss_width = w` (`LossWidth(w)`): an absolute width, in the caller's units;
@@ -90,19 +90,19 @@ project's RansacLib arms implement the same contract; see
 ## Operating points and TOML
 
 [`tuning_constant`](@ref)`(problem, shape; features, dataset)` returns the
-cross-validated scale multiple of a loss on a model class, with its provenance
-(the accv2026 config that produced it); the `WELSCH_HQ_SCALE_MULTIPLE_*`
+cross-validated efficiency constant of a loss on a model class, with its provenance
+(the accv2026 config that produced it); the `WELSCH_HQ_EFFICIENCY_CONSTANT_*`
 constants are its Welsch-HQ entries.
 
 [`STRATEGY_TAGS`](@ref) registers the strategies' TOML tags. Merge it with the core's
-to load a `[local_optimization]` table of either package:
+to load a `local_optimization_strategy` table of either package:
 
 ```julia
-lo = local_optimization_from_toml(d; class = :essential,
+lo = optimization_strategy_from_toml(d; class = :essential,
     tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.STRATEGY_TAGS))
 ```
 
-In such a table, `scale_multiple = "cross_validated"` resolves through
+In such a table, `efficiency_constant = "cross_validated"` resolves through
 [`tuning_constant`](@ref).
 
 ## Evaluation
@@ -123,9 +123,9 @@ so an edit forces a recompile.
 
 | table | holds |
 |:---|:---|
-| `[local_optimization.<tag>]` | each strategy's defaults (`max_iter`, damping, schedule), keyed by its `STRATEGY_TAGS` tag |
-| `[local_optimization.poselib]` | `cheirality_vote_points`: points in the cheirality vote of an E decomposition |
-| `[local_optimization.poselib_adapt]` | [`PoseLibLmAdaptLossWidth`](@ref)'s total budget, rounds, `min_support` and operating scale multiple |
+| `[optimization_strategy.<tag>]` | each strategy's defaults (`max_iter`, damping, schedule), keyed by its `STRATEGY_TAGS` tag |
+| `[optimization_strategy.poselib]` | `cheirality_vote_points`: points in the cheirality vote of an E decomposition |
+| `[optimization_strategy.poselib_adapt]` | [`PoseLibLmAdaptLossWidth`](@ref)'s total budget, rounds, `min_support` and operating efficiency constant |
 | `[[tuning_constants]]` | the cross-validated operating points with their provenance |
 
 A paper with its own protocol states its values explicitly; the ACCV 2026

@@ -12,7 +12,7 @@ using Test, Random, LinearAlgebra, StaticArrays
 using Rotations: RotY
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: AbstractWeightPolicy, NormalizedWeightPolicy, RefitFamily, NativeRefit,
-    update_nuisance!, update_weights!, lo_width, with_width, LossWidth, ScaleMultiple, FixedScale,
+    update_nuisance!, update_weights!, lo_width, with_width, LossWidth, EfficiencyConstant, FixedScale,
     consensus_set, score_model!, scale_s2, csponds, estimate, converged, codimension, minimal_sample_size,
     test_local_optimization_contract, MsacScoring, WelschShape, GemanMcclureShape, TLSShape
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
@@ -46,7 +46,7 @@ end
 @testset "RefitFamily routing (VGC trait)" begin
     # VGC default: every strategy is NativeRefit unless it declares otherwise.
     @test RefitFamily(StudentTUniform()) isa NativeRefit
-    @test RefitFamily(HQ{WelschShape}(scale_multiple = 1.597)) isa NativeRefit
+    @test RefitFamily(HQ{WelschShape}(efficiency_constant = 1.597)) isa NativeRefit
     @test RefitFamily(StuTuBCD()) isa NativeRefit
 end
 
@@ -58,15 +58,15 @@ end
 # -------------------------------------------------------------------------
 @testset "with_width sets the width mode and preserves every other field" begin
     strategies = Any[
-        HQ{GemanMcclureShape}(scale_multiple = 1.25, max_iter = 7, init = :posterior),   # parametric
-        WelschHQNewton(scale_multiple = 1.5, μ = 2.0e-9),                               # plain keyword
-        BarronHQ(-2.0; scale_multiple = 1.5, max_iter = 9),                             # positional α
-        Gnc{Irls{WelschShape}}(scale_multiple = 2.5, factor = 1.7, budget = :converged),
-        BarronAdaptive(scale_multiple = 1.5, n_sub = 64),
-        GmHqEps(scale_multiple = 0.75, max_iter = 33),
+        HQ{GemanMcclureShape}(efficiency_constant = 1.25, max_iter = 7, init = :posterior),   # parametric
+        WelschHQNewton(efficiency_constant = 1.5, μ = 2.0e-9),                               # plain keyword
+        BarronHQ(-2.0; efficiency_constant = 1.5, max_iter = 9),                             # positional α
+        Gnc{Irls{WelschShape}}(efficiency_constant = 2.5, factor = 1.7, budget = :converged),
+        BarronAdaptive(efficiency_constant = 1.5, n_sub = 64),
+        GmHqEps(efficiency_constant = 0.75, max_iter = 33),
     ]
     for lo in strategies
-        @test lo_width(lo) isa ScaleMultiple
+        @test lo_width(lo) isa EfficiencyConstant
         @test VgtkCore.scale_interface(lo) == VgtkCore.ConsensusAnchored()
         out = with_width(lo, LossWidth(0.25))
         @test typeof(out).name === typeof(lo).name
@@ -79,12 +79,12 @@ end
         # and back: the multiple restored is the strategy constructed with it
         @test with_width(out, lo_width(lo)) == lo
     end
-    # A self-scaling strategy re-estimates ŝ² at its scale multiple: its ONE
+    # A self-scaling strategy re-estimates ŝ² at its efficiency constant: its ONE
     # width mode is that multiple (deployed by VGC's `loss_at`), and it has no
     # setter — an absolute or the scorer's width would be replaced by 1·ŝ at
     # the first scale step.
-    @test lo_width(WelschHQEcm(scale_multiple = 1.5)) == ScaleMultiple(1.5)
-    @test_throws MethodError with_width(WelschHQEcm(scale_multiple = 1.5), LossWidth(1.0))
+    @test lo_width(WelschHQEcm(efficiency_constant = 1.5)) == EfficiencyConstant(1.5)
+    @test_throws MethodError with_width(WelschHQEcm(efficiency_constant = 1.5), LossWidth(1.0))
 end
 
 @testset "a consensus-anchored lift deploys the fresh set's scale" begin
@@ -97,7 +97,7 @@ end
     cs = consensus_set(scoring, buf.scoring_ws, buf.residuals;
                        model_dof = minimal_sample_size(problem) + 1, d_g = codimension(problem), epoch = buf.epoch)
     # through the owner, VGC's `loss_at` (here via the core's `lo_loss`)
-    @test scale_s2(RVG.lo_loss(HQ{WelschShape}(scale_multiple = 1.0), cs, scoring, buf)) == max(scale_s2(cs), eps())
+    @test scale_s2(RVG.lo_loss(HQ{WelschShape}(efficiency_constant = 1.0), cs, scoring, buf)) == max(scale_s2(cs), eps())
 end
 
 # The local-optimization contract on the strategies this package hosts
@@ -112,10 +112,10 @@ fitted(p, halfwidth; seed = 1) =
     stu = StudentTUniformScoring(p, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     msac = MsacScoring(p; threshold = 3.0)
     for (lo, sc) in (
-            (HQ{WelschShape}(scale_multiple = 1.5), msac),
-            (Gnc{Irls{TLSShape}}(scale_multiple = 2.5), msac),
+            (HQ{WelschShape}(efficiency_constant = 1.5), msac),
+            (Gnc{Irls{TLSShape}}(efficiency_constant = 2.5), msac),
             (StudentTUniform(), stu),                              # needs the scorer's outlier model
-            (HQ{WelschShape}(scale_multiple = 1.5), stu),
+            (HQ{WelschShape}(efficiency_constant = 1.5), stu),
             (StuTuBCD(), stu),
         )
         test_local_optimization_contract(lo, p, θ, sc; allocations = false)
@@ -130,8 +130,8 @@ end
     stu = StudentTUniformScoring(p, 40.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     msac = MsacScoring(p; threshold = 2.0)
     for (lo, sc) in (
-            (HQ{WelschShape}(scale_multiple = 1.5), msac),
-            (Gnc{Irls{TLSShape}}(scale_multiple = 2.5), msac),
+            (HQ{WelschShape}(efficiency_constant = 1.5), msac),
+            (Gnc{Irls{TLSShape}}(efficiency_constant = 2.5), msac),
             (StudentTUniform(), stu),
         )
         test_local_optimization_contract(lo, p, θ, sc; allocations = false)

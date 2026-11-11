@@ -37,14 +37,14 @@ const _LOC_PROB = EssentialProblem(CameraModel(SMatrix{3, 3, Float64, 9}(I)), Ca
                                    Csponds(_LOC.w1, _LOC.w2))
 
 # Symbol → wrapped-strategy map for the three GNC arms (the historical
-# per-variant construction sites). `scale_multiple` has no mechanism default
+# per-variant construction sites). `efficiency_constant` has no mechanism default
 # (a problem-class operating point; without a width the strategy follows the
 # scorer's) — the helper supplies the historical parity point 2.5 so the
 # contract scenes stay put.
-_gnc(v::Symbol; scale_multiple = 2.5, kw...) =
-    v === :welsch ? Gnc{Irls{WelschShape}}(; scale_multiple, kw...) :
-    v === :tls ? Gnc{Irls{TLSShape}}(; scale_multiple, kw...) :
-    Gnc{Irls{GemanMcclureShape}}(; scale_multiple, kw...)
+_gnc(v::Symbol; efficiency_constant = 2.5, kw...) =
+    v === :welsch ? Gnc{Irls{WelschShape}}(; efficiency_constant, kw...) :
+    v === :tls ? Gnc{Irls{TLSShape}}(; efficiency_constant, kw...) :
+    Gnc{Irls{GemanMcclureShape}}(; efficiency_constant, kw...)
 
 # What a local optimization optimizes is the fit to the data, so the contracts
 # read the fit, not the pose: on this narrow field of view the translation
@@ -78,14 +78,14 @@ end
         @test lo_width(_gnc(:welsch)).value == 2.5
         # graduation over the lift is refused at construction (the engine
         # graduates Irls{K} only)
-        @test_throws ArgumentError Gnc{HQ{WelschShape}}(scale_multiple = 2.5)
+        @test_throws ArgumentError Gnc{HQ{WelschShape}}(efficiency_constant = 2.5)
         @test_throws ErrorException _gnc(:welsch, budget = :bar)
         # the GM/TLS μ is a convexity parameter, not a width — numeric entry refuses
         # (the entry policy's μ₀ values are VisualGeometryToolkitCore's `gnc_entry_mu0`,
         # tested there)
         @test_throws ErrorException _gnc(:gm, entry = 4.0)
         @test VgtkCore.scale_interface(_gnc(:welsch)) isa VgtkCore.ConsensusAnchored
-        @test lo_width(_gnc(:tls)) isa ScaleMultiple   # a width read off the consensus scale
+        @test lo_width(_gnc(:tls)) isa EfficiencyConstant   # a width read off the consensus scale
     end
 
     # -------------------------------------------------------------------------
@@ -115,23 +115,23 @@ end
             est = VgtkCore.locally_optimize!(ws.lo_ws, lo, prob, E0, cs, ws.buf, sc)
             @test estimate(est) isa EssentialMat
             @test iterations(est) <= lo.max_iter
-            r = locally_optimize(prob, E0; scoring = _marginal(_LOC_A), local_optimization = lo)
+            r = locally_optimize(prob, E0; scoring = _marginal(_LOC_A), local_optimization_strategy = lo)
             f0, f = _fit(E0), _fit(r.estimate)
             @test f.cost < f0.cost
             @test f.inliers >= 0.95 * _NIN
         end
     end
 
-    # The deployed GNC-W (scale_multiple = 1.5, the protocol's entry: the anneal completes within the
+    # The deployed GNC-W (efficiency_constant = 1.5, the protocol's entry: the anneal completes within the
     # update budget) from far seeds. Measured: δ = 0.1 seeds 14/15 and
     # δ = 0.2 seed 15 recover 120/120 inliers (from 18, 85 and 5); δ = 0.2 seed
     # 14 lands in a wrong basin (67/120 from 0), still lowering the cost — a
     # 0.2-rad seed is not inside every basin, so it is asserted on the cost only.
     @testset "Gnc deployed config improves a far seed" begin
-        lo = _gnc(:welsch, max_iter = LO_BUDGET, scale_multiple = 1.5, entry = _GNC_ENTRY)
+        lo = _gnc(:welsch, max_iter = LO_BUDGET, efficiency_constant = 1.5, entry = _GNC_ENTRY)
         for (δ, s) in ((0.1, 14), (0.1, 15), (0.2, 14), (0.2, 15))
             E0 = _loc_seed_E(δ; seed = s)
-            r = locally_optimize(prob, E0; scoring = _marginal(_LOC_A), local_optimization = lo)
+            r = locally_optimize(prob, E0; scoring = _marginal(_LOC_A), local_optimization_strategy = lo)
             f0, f = _fit(E0), _fit(r.estimate)
             @test f.cost < f0.cost
             (δ, s) == (0.2, 14) || @test f.inliers >= 0.95 * _NIN
@@ -150,8 +150,8 @@ end
         for v in (:welsch, :tls, :gm), s in 11:16
             E0 = _loc_seed_E(0.02; seed = s)
             lo = _gnc(v, max_iter = LO_BUDGET)
-            f1 = _fit(locally_optimize(prob, E0; scoring = _marginal(_LOC_A), local_optimization = lo).estimate)
-            f128 = _fit(locally_optimize(prob, E0; scoring = _marginal(128 * _LOC_A), local_optimization = lo).estimate)
+            f1 = _fit(locally_optimize(prob, E0; scoring = _marginal(_LOC_A), local_optimization_strategy = lo).estimate)
+            f128 = _fit(locally_optimize(prob, E0; scoring = _marginal(128 * _LOC_A), local_optimization_strategy = lo).estimate)
             @test min(f1.inliers, f128.inliers) >= 0.9 * _NIN
             @test abs(f128.cost - f1.cost) <= 0.15 * f1.cost
         end
@@ -167,8 +167,8 @@ end
     @testset "Welsch HQ lift basin" begin
         for s in (14, 15)
             E0 = _loc_seed_E(0.15; seed = s)
-            run(lo) = _fit(locally_optimize(prob, E0; scoring = _marginal(_LOC_A), local_optimization = lo).estimate)
-            lift, irls = run(HQ{WelschShape}(max_iter = LO_BUDGET, scale_multiple = 1.0)), run(StudentTUniform(max_iter = LO_BUDGET))
+            run(lo) = _fit(locally_optimize(prob, E0; scoring = _marginal(_LOC_A), local_optimization_strategy = lo).estimate)
+            lift, irls = run(HQ{WelschShape}(max_iter = LO_BUDGET, efficiency_constant = 1.0)), run(StudentTUniform(max_iter = LO_BUDGET))
             @test lift.inliers >= 0.95 * _NIN
             @test lift.inliers > irls.inliers
         end

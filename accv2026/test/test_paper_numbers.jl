@@ -26,7 +26,7 @@ const PROTOCOL_LITERALS = [
     (r"100 models|100 hypotheses|4,000 models|after 4000", "the budget checkpoints (configs/sample_budget_protocol.toml)"),
     (r"\$4\\,096\$ per image pair", "the pools' correspondence cap (configs/pt_e_pools.toml)"),
     (r"\$10\\,000\$ trials", "SupeRANSAC's trial cap (configs/pt_e_superansac.toml)"),
-    (r"\\kscore\\in\[1,3\.3\]", "the shared scoring window (configs/tuning.toml [types.scale_multiple_window])"),
+    (r"\\kscore\\in\[1,3\.3\]", "the shared scoring window (configs/tuning.toml [types.efficiency_constant_window])"),
     (r"\$0\.25\$--\$8\$\\,px", "SIMFIT++'s admissible window (its reference implementation)"),
     (r"\(40 pairs, about 4,000 correspondences\)", "the timing fixture (configs/timing_table.toml npairs; the 4,096 cap)"),
     (r"No~101081480", "a grant number"),

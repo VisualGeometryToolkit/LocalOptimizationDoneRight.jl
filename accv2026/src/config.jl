@@ -45,11 +45,11 @@ using VisualGeometryToolkitEval.Stats, VisualGeometryToolkitEval.Tuning, VisualG
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: StudentTUniform, HQ, Gnc, WelschHQNewton, WelschHQEcm, StuTuRegemm
 using VisualGeometryToolkitEstimation
-using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, locally_optimize, NoLocalOptimization, Irls
+using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, locally_optimize, Irls
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: Point2, EssentialMat, FundMat, intrinsics, Vec3, skew,
     WelschShape, GemanMcclureShape, CauchyShape, SmoothTLSShape, TLSShape, HuberShape, GaussianShape,
-    WidthAxis, ScaleMultiple, LossWidth, OutlierHalfwidth, IGPrior, codimension, best_pool_model,
+    WidthAxis, EfficiencyConstant, LossWidth, OutlierHalfwidth, IGPrior, codimension, best_pool_model,
     MsacScoring, RansacScoring, lo_width
 using VisualGeometryToolkitCore.Pools
 using VisualGeometryToolkitEval.Evaluation: lo_iteration_budget

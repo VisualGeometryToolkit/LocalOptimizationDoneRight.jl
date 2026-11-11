@@ -24,9 +24,9 @@ using RANSACScoringDoneRight: RANSACScoringDoneRight
 using RansacLibLO: LebedaLOOptions, PRESET_REFERENCE   # the Lebeda ladder's options; RansacLib's defaults
 using VisualGeometryToolkitEval.Evaluation: ComposedSpec, SoloSpec, Roster, WidthSource, TunedWidth, SelectionWidth,
     problem_type
-using VisualGeometryToolkitCore: WidthAxis, ScaleMultiple, LossWidth, OutlierHalfwidth
+using VisualGeometryToolkitCore: WidthAxis, EfficiencyConstant, LossWidth, OutlierHalfwidth
 import PoseLib
-using VisualGeometryToolkitCore: lo_label, decision_boundary
+using VisualGeometryToolkitCore: lo_label, decision_boundary, decision_width
 # The classical RansacLib LO baseline (LebedaIterLO, LebedaLOPlus) over lib/RansacLibLO.
 include(joinpath(@__DIR__, "lebeda_lo.jl"))
 # The research-only zero-clamp Welsch shape (the "<key>@zc" variants below).
@@ -110,35 +110,38 @@ end
 "The Lebeda ladder's per-call seed ([arms.lebeda] rng_seed)."
 const LEBEDA_RNG_SEED = Int(protocol_value("arms.lebeda", "rng_seed"))
 const _GNC_ENTRY = Float64(protocol_value("arms.gnc", "entry"))
+# The GM arms' map from the shared Welsch grid value m: the Geman–McClure loss
+# width (as a multiple of ŝ) whose half-weight radius is the Welsch arm's at m.
+_gm_at_welsch_depth(m) = decision_width(GemanMcclureShape(), decision_boundary(WelschShape(), m))
 const _TLS_ADAPT_ROUNDS = let per = Int(protocol_value("arms.tls_adapt", "lm_iterations_per_round"))
     rounds, r = divrem(LO_BUDGET, per)
     r == 0 || throw(ArgumentError("[arms.tls_adapt] lm_iterations_per_round = $per does not divide the LO budget $LO_BUDGET"))
     rounds
 end
 
-# One arm. `lo(scale_multiple)` builds the relative-pose strategy at the loss's
-# OWN scale multiple (ignored by the self-scaling and fixed-external-scale arms,
+# One arm. `lo(efficiency_constant)` builds the relative-pose strategy at the loss's
+# OWN efficiency constant (ignored by the self-scaling and fixed-external-scale arms,
 # whose width is a native outlier half-width / loss width the refit layer
-# delivers); `strategy_scale_multiple(width)` maps the tuned width value onto
-# that scale multiple. `source` is where the refit width VALUE comes from (VisualGeometryToolkitEval
+# delivers); `strategy_efficiency_constant(width)` maps the tuned width value onto
+# that efficiency constant. `source` is where the refit width VALUE comes from (VisualGeometryToolkitEval
 # `WidthSource`): tuned by the refiner stage, or — an objective-matched variant
 # (`matched_key`, declared per cell) — its selector's a* itself.
 struct ArmDef
     key::String                              # registry key, e.g. "IG  +Lift"
     sel::Symbol                              # selector seeding the refit (:ig | :msac)
-    kind::WidthAxis                          # width parameterization (ScaleMultiple() | OutlierHalfwidth() | LossWidth())
-    lo::Function                             # scale multiple -> strategy
-    strategy_scale_multiple::Function        # tuned width value -> scale multiple
+    kind::WidthAxis                          # width parameterization (EfficiencyConstant() | OutlierHalfwidth() | LossWidth())
+    lo::Function                             # efficiency constant -> strategy
+    strategy_efficiency_constant::Function        # tuned width value -> efficiency constant
     timing::Union{Nothing, Tuple{String, Symbol}}   # (time_lo_supp run tag, method column)
     cite::String                             # the LO's citation (`\cite{…}`), "" = none
     source::WidthSource                      # TunedWidth() | SelectionWidth() (refit width = a*)
 end
-ArmDef(key, sel, kind, lo; strategy_scale_multiple = identity, timing = nothing, cite = "",
+ArmDef(key, sel, kind, lo; strategy_efficiency_constant = identity, timing = nothing, cite = "",
        source = TunedWidth()) =
-    ArmDef(key, sel, kind, lo, strategy_scale_multiple, timing, cite, source)
+    ArmDef(key, sel, kind, lo, strategy_efficiency_constant, timing, cite, source)
 
 "The relative-pose strategy of arm `def` at tuned width value `width`."
-arm_strategy(def::ArmDef, width) = def.lo(def.strategy_scale_multiple(width))
+arm_strategy(def::ArmDef, width) = def.lo(def.strategy_efficiency_constant(width))
 """
     arm_lo_label(def::ArmDef) -> String
 
@@ -168,30 +171,32 @@ const _ARM_DEFS = ArmDef[
     ArmDef("IG  +BCD", :ig, OutlierHalfwidth(), _ -> StuTuBCD(max_iter = LO_BUDGET);   # same-objective control (Table 1)
            timing = ("Stu-tU-BCD", :ig)),
     # Welsch: static IRLS, HQ lift, GNC continuation — consensus-anchored scale
-    # multiple (width = scale_multiple·ŝ of the consensus set; never slides with the plug-in).
-    ArmDef("IG  +WIrls", :ig, ScaleMultiple(), scale_multiple -> Irls{WelschShape}(; max_iter = LO_BUDGET, scale_multiple);
+    # multiple (width = efficiency_constant·ŝ of the consensus set; never slides with the plug-in).
+    ArmDef("IG  +WIrls", :ig, EfficiencyConstant(), efficiency_constant -> Irls{WelschShape}(; max_iter = LO_BUDGET, efficiency_constant);
            timing = ("Welsch-IRLS", :ig)),
-    ArmDef("IG  +Lift",  :ig, ScaleMultiple(), scale_multiple -> HQ{WelschShape}(; max_iter = LO_BUDGET, scale_multiple);
+    ArmDef("IG  +Lift",  :ig, EfficiencyConstant(), efficiency_constant -> HQ{WelschShape}(; max_iter = LO_BUDGET, efficiency_constant);
            timing = ("Welsch-HQ", :ig)),
-    # GNC: the scale multiple sets the terminal width; `entry` is the continuation
+    # GNC: the efficiency constant sets the terminal width; `entry` is the continuation
     # SCHEDULE's start ([arms.gnc] entry: the anneal completes within the budget).
-    ArmDef("IG  +GNC-W", :ig, ScaleMultiple(), scale_multiple -> Gnc{Irls{WelschShape}}(; max_iter = LO_BUDGET, scale_multiple, entry = _GNC_ENTRY);
+    ArmDef("IG  +GNC-W", :ig, EfficiencyConstant(), efficiency_constant -> Gnc{Irls{WelschShape}}(; max_iter = LO_BUDGET, efficiency_constant, entry = _GNC_ENTRY);
            timing = ("Welsch-GNC", :ig)),
-    # Geman–McClure: same three mechanisms in the half-weight currency (VGC
-    # `decision_width`): the shared scale-multiple grid is mapped through the
-    # Welsch half-weight depth `decision_boundary(WelschShape(), m)` = m·√ln2
-    # (a Welsch loss of width m·ŝ weighs a residual ½ there), so the GM rows tune
-    # on the same grid as the Welsch arms.
-    ArmDef("IG  +GM-Irls", :ig, ScaleMultiple(), scale_multiple -> Irls{GemanMcclureShape}(; max_iter = LO_BUDGET, scale_multiple);
-           strategy_scale_multiple = m -> decision_boundary(WelschShape(), m), timing = ("GM-IRLS", :ig)),
-    ArmDef("IG  +GM-HQ",   :ig, ScaleMultiple(), scale_multiple -> HQ{GemanMcclureShape}(; max_iter = LO_BUDGET, scale_multiple);
-           strategy_scale_multiple = m -> decision_boundary(WelschShape(), m), timing = ("GM-HQ", :ig)),
-    ArmDef("IG  +GNC-GM",  :ig, ScaleMultiple(), scale_multiple -> Gnc{Irls{GemanMcclureShape}}(; max_iter = LO_BUDGET, scale_multiple);
+    # Geman–McClure: same three mechanisms at the Welsch arms' half-weight depth:
+    # the shared efficiency-constant grid is mapped through the Welsch half-weight
+    # depth `decision_boundary(WelschShape(), m)` = m·√ln2 (a Welsch loss of width
+    # m·ŝ weighs a residual ½ there) and then to the GM loss width that weighs a
+    # residual ½ at that depth, `decision_width(GemanMcclureShape(), ·)`, so the GM
+    # rows tune on the same grid as the Welsch arms (the grid spec is unchanged;
+    # the second step was the retired GM currency, now composed into the map).
+    ArmDef("IG  +GM-Irls", :ig, EfficiencyConstant(), efficiency_constant -> Irls{GemanMcclureShape}(; max_iter = LO_BUDGET, efficiency_constant);
+           strategy_efficiency_constant = _gm_at_welsch_depth, timing = ("GM-IRLS", :ig)),
+    ArmDef("IG  +GM-HQ",   :ig, EfficiencyConstant(), efficiency_constant -> HQ{GemanMcclureShape}(; max_iter = LO_BUDGET, efficiency_constant);
+           strategy_efficiency_constant = _gm_at_welsch_depth, timing = ("GM-HQ", :ig)),
+    ArmDef("IG  +GNC-GM",  :ig, EfficiencyConstant(), efficiency_constant -> Gnc{Irls{GemanMcclureShape}}(; max_iter = LO_BUDGET, efficiency_constant);
            timing = ("GM-GNC", :ig)),
-    # TLS: smooth-truncated HQ lift (the scale multiple is the truncation in ŝ units) and GNC.
-    ArmDef("IG  +TLS-HQ",  :ig, ScaleMultiple(), scale_multiple -> HQ{SmoothTLSShape}(; max_iter = LO_BUDGET, scale_multiple);
+    # TLS: smooth-truncated HQ lift (the efficiency constant is the truncation in ŝ units) and GNC.
+    ArmDef("IG  +TLS-HQ",  :ig, EfficiencyConstant(), efficiency_constant -> HQ{SmoothTLSShape}(; max_iter = LO_BUDGET, efficiency_constant);
            timing = ("TLS-HQ", :ig)),
-    ArmDef("IG  +GNC-TLS", :ig, ScaleMultiple(), scale_multiple -> Gnc{Irls{TLSShape}}(; max_iter = LO_BUDGET, scale_multiple);
+    ArmDef("IG  +GNC-TLS", :ig, EfficiencyConstant(), efficiency_constant -> Gnc{Irls{TLSShape}}(; max_iter = LO_BUDGET, efficiency_constant);
            timing = ("TLS-GNC", :ig)),
     # Fixed-EXTERNAL-scale TLS baselines: the width IS the absolute truncation
     # loss width (:loss_width, the loss-width grid). Their timing rides the
@@ -212,19 +217,19 @@ const _ARM_DEFS = ArmDef[
     ArmDef("IG  +TLS-LO+",      :ig, LossWidth(), _ -> LebedaLOPlus(LEBEDA_OPTIONS, LEBEDA_RNG_SEED); timing = ("TLS-LO+", :ig)),
     ArmDef("IG  +TLS-LO+(ref)", :ig, LossWidth(), _ -> LebedaLOPlus(PRESET_REFERENCE, LEBEDA_RNG_SEED)),
     # Composed adaptive-TLS: Stu-t selection + PoseLib truncated LM
-    # whose loss width is CONSENSUS-ANCHORED per round (scale_multiple·ŝ of the
+    # whose loss width is CONSENSUS-ANCHORED per round (efficiency_constant·ŝ of the
     # refined consensus; [arms.tls_adapt]: one LM iteration per round, so
-    # rounds = the budget). The width parameter is the dimensionless scale multiple — the
+    # rounds = the budget). The width parameter is the dimensionless efficiency constant — the
     # treatment of the Welsch arms. An external refiner (LocalOptimizationDoneRight's
     # PoseLib extension); E-track only.
-    ArmDef("IG  +TLSadapt", :ig, ScaleMultiple(),
-           m -> PoseLibLmAdaptLossWidth(max_iter = LO_BUDGET, rounds = _TLS_ADAPT_ROUNDS, scale_multiple = m)),
+    ArmDef("IG  +TLSadapt", :ig, EfficiencyConstant(),
+           m -> PoseLibLmAdaptLossWidth(max_iter = LO_BUDGET, rounds = _TLS_ADAPT_ROUNDS, efficiency_constant = m)),
     # MSAC-seeded arms: the selection loss width seeds, the tuned truncation
     # loss width refits (the truncated pair); MSAC+Lift is the score×refiner
     # factorial off-diagonal.
     ArmDef("MSAC +PoseLib", :msac, LossWidth(), _ -> PoseLibLm(LO_BUDGET); cite = _CITE_TLS_IRLS),
     ArmDef("MSAC +LZ",      :msac, LossWidth(), _ -> PoseLibLZ(LO_BUDGET); cite = _CITE_TLS_LZ),
-    ArmDef("MSAC +Lift",    :msac, ScaleMultiple(), scale_multiple -> HQ{WelschShape}(; max_iter = LO_BUDGET, scale_multiple)),
+    ArmDef("MSAC +Lift",    :msac, EfficiencyConstant(), efficiency_constant -> HQ{WelschShape}(; max_iter = LO_BUDGET, efficiency_constant)),
 ]
 # THE OBJECTIVE-MATCHED VARIANTS: every arm whose width axis IS its selection
 # axis (the Stu-tU-selected self-scaled refits) has a variant `matched_key(key)`
@@ -244,7 +249,7 @@ matched_key(key::AbstractString) = String(key) * "@a*"
 matchable(def::ArmDef) = def.source isa TunedWidth && def.kind == _selection_axis(def)
 _matched_def(def::ArmDef) =
     ArmDef(matched_key(def.key), def.sel, def.kind, def.lo;
-           strategy_scale_multiple = def.strategy_scale_multiple, cite = def.cite, source = SelectionWidth())
+           strategy_efficiency_constant = def.strategy_efficiency_constant, cite = def.cite, source = SelectionWidth())
 append!(_ARM_DEFS, [_matched_def(d) for d in filter(matchable, _ARM_DEFS)])
 "The registry keys of every objective-matched variant (opt-in rows of every render and table)."
 const MATCHED_KEYS = [d.key for d in _ARM_DEFS if d.source isa SelectionWidth]
@@ -274,7 +279,7 @@ zero_clamp_key(key::AbstractString) = String(key) * "@zc"
 zero_clampable(def::ArmDef) = def.source isa TunedWidth && arm_strategy(def, 1.0) isa HQ{WelschShape}
 _zero_clamp_def(def::ArmDef) =
     ArmDef(zero_clamp_key(def.key), def.sel, def.kind, m -> zero_clamp_strategy(def.lo(m));
-           strategy_scale_multiple = def.strategy_scale_multiple, cite = def.cite)
+           strategy_efficiency_constant = def.strategy_efficiency_constant, cite = def.cite)
 append!(_ARM_DEFS, [_zero_clamp_def(d) for d in filter(zero_clampable, _ARM_DEFS)])
 "The registry keys of every zero-clamp variant (opt-in rows of every render and table)."
 const ZERO_CLAMP_KEYS = [d.key for d in _ARM_DEFS if arm_strategy(d, 1.0) isa HQ{WelschZeroClampShape}]
@@ -352,7 +357,7 @@ _fig2_roster(base, problem) = problem === :E ? vcat(base, _FIG2_E_ONLY) : base
     composed_specs(problem::Symbol = :E; matched = String[], zero_clamp = String[]) -> Vector{ComposedSpec}
 
 The composed (score + LO, sequential-CV tuned) roster of `problem` (:E, :F,
-:H): each arm at its width parameterization (`:scale_multiple`
+:H): each arm at its width parameterization (`:efficiency_constant`
 consensus-anchored, `:outlier_halfwidth` refit outlier half-width, `:loss_width`
 refit truncation loss width), plus the objective-matched variant of each base
 in `matched` and the zero-clamp variant of each base in `zero_clamp` (the
@@ -364,7 +369,7 @@ composed_specs(problem::Symbol = :E; matched = String[], zero_clamp = String[]) 
 
 
 # The unit-multiple arm of the solo/basin rosters: consensus-FORM arms register
-# their UNIT scale multiple and the refit runs it at the absolute loss width
+# their UNIT efficiency constant and the refit runs it at the absolute loss width
 # (:loss_width); natively-absolute arms keep their kind.
 _unit_strategy(d::ArmDef) = _ -> arm_strategy(d, 1.0)
 
@@ -375,7 +380,7 @@ The registered solo-CV roster for `role`.
 
 role=:refinement — the Fig 2 roster: the deterministic loss arms, the
 truncated externals, the classical RansacLib rows and the self-scaled Stu-t
-arm. Consensus-anchored arms are registered at their UNIT scale multiple; the
+arm. Consensus-anchored arms are registered at their UNIT efficiency constant; the
 refit runs them at the absolute loss width (see `solo_refit_imc!`).
 The default main-figure classical roster is the budget-parity Lebeda pair (LEBEDA_OPTIONS); the
 PRESET_REFERENCE full-LO row is the supplement's reference operating point.
@@ -392,7 +397,7 @@ integrate the scale out over the whole pool column and stay sweep-only (RSDR
 """
 function solo_specs(problem::Symbol = :E; role::Symbol = :refinement)
     if role === :refinement
-        return [SoloSpec(d.key, :refinement, d.kind isa ScaleMultiple ? LossWidth() : d.kind,
+        return [SoloSpec(d.key, :refinement, d.kind isa EfficiencyConstant ? LossWidth() : d.kind,
                          _unit_strategy(d))
                 for d in (ARM_TABLE[k] for k in _fig2_roster(SOLO_ROSTER, problem))]
     elseif role === :selection
@@ -430,10 +435,10 @@ rows) are :loss_width too, their external refit at the same width, and
 Consumed by the sequential CV of configs/pt_e_basin.toml (roster = "basin":
 sidecar mode "basin", its own keyed dir) and, test-side, by the basin ladder's --solo-cv path via
 `deployed_basin_settings`. The deployed/miscal/budget rosters stay
-scale-multiple/consensus-anchored — their readers REFUSE basin sidecars.
+efficiency-constant/consensus-anchored — their readers REFUSE basin sidecars.
 """
 basin_specs(problem::Symbol = :E; matched = String[], zero_clamp = String[]) =
-    [ComposedSpec(d.key, d.sel, _selection_axis(d), d.kind isa ScaleMultiple ? LossWidth() : d.kind, _unit_strategy(d);
+    [ComposedSpec(d.key, d.sel, _selection_axis(d), d.kind isa EfficiencyConstant ? LossWidth() : d.kind, _unit_strategy(d);
                   source = d.source)
      for d in (ARM_TABLE[k] for k in _with_variants(_fig2_roster(BASIN_ROSTER, problem), matched, zero_clamp))]
 
@@ -466,7 +471,7 @@ end
 
 # --- the derived name tables --------------------------------------------------
 # The "Welsch-HQ" timing run belongs to the paper's Welsch-HQ (its strategy,
-# its tuned scale multiple: time_lo_supp.jl); the other z-block is not timed.
+# its tuned efficiency constant: time_lo_supp.jl); the other z-block is not timed.
 "Registry key => (time_lo_supp run tag, method column) of every timed arm."
 const TIMING_TAGS = let t = Dict(d.key => d.timing for d in _ARM_DEFS if d.timing !== nothing)
     haskey(t, "IG  +Lift") || error("arm table: the Welsch-HQ arm lost its timing row")

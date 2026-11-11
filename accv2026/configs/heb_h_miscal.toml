@@ -20,7 +20,7 @@
 # names both sides.
 #
 # CODIMENSION. H is codimension 2, and `d_g` MOVES the outlier-half-width
-# window: at the same scale-multiple window the upper edge falls ~3.91 decades
+# window: at the same efficiency-constant window the upper edge falls ~3.91 decades
 # from d_g = 1 to d_g = 2 (RANSACScoringDoneRight `to_native`). Nothing here states it — the
 # problem does (`problem = "H"`) — and a window cut at one codimension against
 # a grid cut at another is refused as `:selection_out`, never consumed.
@@ -76,7 +76,7 @@ objective_matched = ["IG  +BCD"]
 # fold the run without it, operating_points_run).
 zero_clamp = ["IG  +Lift"]
 scorer = "scorer"
-refiner = { scale_multiple = "refiner_scale_multiple", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
+refiner = { efficiency_constant = "refiner_efficiency_constant", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
 # Hold the decoded validation pools in RAM across rounds: every extension and
 # fine round is one sweep over ~11000 pairs, and re-decoding HEB's 10-15 GB
 # scenes costs ~35 min each. Scenes decode in parallel on first use.

@@ -1,9 +1,9 @@
 # =============================================================================
 # The find_* pipelines under the paper's per-class recipes — the defaults of
 # VisualGeometryToolkitEstimation's find_* before 2026-10, now stated explicitly: the
-# Welsch HQ lift at the class's cross-validated scale multiple,
+# Welsch HQ lift at the class's cross-validated efficiency constant,
 #
-#     local_optimization = HQ{WelschShape}(scale_multiple = tuning_constant(class, "welsch").scale_multiple)
+#     local_optimization_strategy = HQ{WelschShape}(efficiency_constant = tuning_constant(class, "welsch").efficiency_constant)
 #
 # with their default scorer of that time, the Jeffreys Student-t + uniform
 # marginal at the class's file outlier half-width (`old_scoring`; the core
@@ -28,7 +28,7 @@ using LocalOptimizationDoneRight
 using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination
 
 # The paper's per-class recipe.
-welsch_hq(class) = HQ{WelschShape}(scale_multiple = tuning_constant(class, "welsch").scale_multiple)
+welsch_hq(class) = HQ{WelschShape}(efficiency_constant = tuning_constant(class, "welsch").efficiency_constant)
 # The find_* default scorer before 2026-10: the marginal at the class's
 # `[pipelines.<class>] outlier_halfwidth` of VisualGeometryToolkitEstimation's
 # configs/default.toml then (pixels; hand-eye a fraction of the problem's L).
@@ -46,7 +46,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         )
 
         hsc = old_scoring(HomographyProblem(StructArray(src .=> dst)), :homography)
-        r = find_homography(StructArray(src .=> dst); scoring = hsc, local_optimization = welsch_hq(:homography), rng = MersenneTwister(134))
+        r = find_homography(StructArray(src .=> dst); scoring = hsc, local_optimization_strategy = welsch_hq(:homography), rng = MersenneTwister(134))
         @test r !== nothing
         @test converged(r)
         # Every inlier sits in the first 120 slots; demand most of them back
@@ -61,7 +61,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         # again when the workspace is reused.
         ws = RansacWorkspace(HomographyProblem{Float64}, length(src), hsc)   # the scorer's workspace
         for _ in 1:2
-            r2 = find_homography(StructArray(src .=> dst); scoring = hsc, workspace = ws, local_optimization = welsch_hq(:homography), rng = MersenneTwister(134))
+            r2 = find_homography(StructArray(src .=> dst); scoring = hsc, workspace = ws, local_optimization_strategy = welsch_hq(:homography), rng = MersenneTwister(134))
             @test r2 !== nothing && converged(r2)
             @test estimate(r2) == estimate(r)
             @test r2.inlier_mask == r.inlier_mask
@@ -69,7 +69,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         end
 
         # Below the minimal sample the wrapper returns a failed result (no estimate), it does not throw.
-        r3 = find_homography(StructArray(src[1:3] .=> dst[1:3]); scoring = hsc, local_optimization = welsch_hq(:homography), rng = MersenneTwister(136))
+        r3 = find_homography(StructArray(src[1:3] .=> dst[1:3]); scoring = hsc, local_optimization_strategy = welsch_hq(:homography), rng = MersenneTwister(136))
         @test !converged(r3) && estimate(r3) === nothing
     end
 
@@ -84,7 +84,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         n_in = length(u₁) - 60
 
         fsc = old_scoring(FundMatProblem(StructArray(u₁ .=> u₂)), :fundmat)
-        r = find_fundmat(StructArray(u₁ .=> u₂); scoring = fsc, local_optimization = welsch_hq(:fundmat), rng = MersenneTwister(137))
+        r = find_fundmat(StructArray(u₁ .=> u₂); scoring = fsc, local_optimization_strategy = welsch_hq(:fundmat), rng = MersenneTwister(137))
         @test r !== nothing
         @test converged(r)
         @test count(r.inlier_mask[1:n_in]) > 0.75 * n_in
@@ -98,7 +98,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         end
 
         ws = RansacWorkspace(FundMatProblem{Float64}, length(u₁), fsc)   # the scorer's workspace
-        @test find_fundmat(StructArray(u₁ .=> u₂); scoring = fsc, workspace = ws, local_optimization = welsch_hq(:fundmat), rng = MersenneTwister(138)) !== nothing
+        @test find_fundmat(StructArray(u₁ .=> u₂); scoring = fsc, workspace = ws, local_optimization_strategy = welsch_hq(:fundmat), rng = MersenneTwister(138)) !== nothing
     end
 
     @testset "find_essential" begin
@@ -115,7 +115,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         # in pixels too.
         pxcs = csponds(topx.(u₁), topx.(u₂))
         esc = old_scoring(EssentialProblem(ECAM, ECAM, pxcs), :essential)
-        r = find_essential(ECAM, ECAM, pxcs; scoring = esc, local_optimization = welsch_hq(:essential), rng = MersenneTwister(139))
+        r = find_essential(ECAM, ECAM, pxcs; scoring = esc, local_optimization_strategy = welsch_hq(:essential), rng = MersenneTwister(139))
         @test r !== nothing
         @test converged(r)
         @test count(r.inlier_mask[1:n_in]) > 0.75 * n_in
@@ -125,7 +125,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         @test s[3] / s[1] < 1.0e-6
 
         r4 = find_essential(
-            ECAM, ECAM, csponds(topx.(u₁[1:4]), topx.(u₂[1:4])); scoring = esc, local_optimization = welsch_hq(:essential), rng = MersenneTwister(140)
+            ECAM, ECAM, csponds(topx.(u₁[1:4]), topx.(u₂[1:4])); scoring = esc, local_optimization_strategy = welsch_hq(:essential), rng = MersenneTwister(140)
         )
         @test !converged(r4) && estimate(r4) === nothing
         # The floor refusal: a threshold carried over in the OLD calibrated
@@ -144,7 +144,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         src, dst = first.(pairs), last.(pairs)
 
         psc = old_scoring(AbsolutePoseProblem(cam, StructArray(src .=> dst)), :absolute_pose)
-        r = find_absolute_pose(cam, StructArray(src .=> dst); scoring = psc, local_optimization = welsch_hq(:absolute_pose), rng = MersenneTwister(141))
+        r = find_absolute_pose(cam, StructArray(src .=> dst); scoring = psc, local_optimization_strategy = welsch_hq(:absolute_pose), rng = MersenneTwister(141))
         @test r !== nothing
         @test converged(r)
         @test count(r.inlier_mask[1:120]) > 100
@@ -152,12 +152,12 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         @test translation_error(estimate(r), t_gt) < 0.05
 
         ws = RansacWorkspace(AbsolutePoseProblem, length(src), psc)   # the scorer's workspace
-        @test find_absolute_pose(cam, StructArray(src .=> dst); scoring = psc, workspace = ws, local_optimization = welsch_hq(:absolute_pose), rng = MersenneTwister(142)) !== nothing
+        @test find_absolute_pose(cam, StructArray(src .=> dst); scoring = psc, workspace = ws, local_optimization_strategy = welsch_hq(:absolute_pose), rng = MersenneTwister(142)) !== nothing
         # fewer than the P3P minimal sample: no hypothesis; a minimal sample is
         # searched, and holds no consensus beyond itself
-        r2p = find_absolute_pose(cam, StructArray(src[1:2] .=> dst[1:2]); scoring = psc, local_optimization = welsch_hq(:absolute_pose), rng = MersenneTwister(143))
+        r2p = find_absolute_pose(cam, StructArray(src[1:2] .=> dst[1:2]); scoring = psc, local_optimization_strategy = welsch_hq(:absolute_pose), rng = MersenneTwister(143))
         @test !converged(r2p) && estimate(r2p) === nothing
-        @test !converged(find_absolute_pose(cam, StructArray(src[1:3] .=> dst[1:3]); scoring = psc, local_optimization = welsch_hq(:absolute_pose), rng = MersenneTwister(143)))
+        @test !converged(find_absolute_pose(cam, StructArray(src[1:3] .=> dst[1:3]); scoring = psc, local_optimization_strategy = welsch_hq(:absolute_pose), rng = MersenneTwister(143)))
 
         # PREDICTIVE scoring, THROUGH the local optimization. The pose family's
         # LO returns an UNLABELED `EuclideanMap` while the workspace model type
@@ -168,7 +168,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         # the model type). `_covariance_scored` labels first now, so this runs.
         rp = find_absolute_pose(
             cam, StructArray(src .=> dst);
-            scoring = StudentTUniformScoring{Predictive}(3, 3.0; codimension = 2, scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization = welsch_hq(:absolute_pose), rng = MersenneTwister(144)   # model_dof = the P3P minimal sample, m = 3
+            scoring = StudentTUniformScoring{Predictive}(3, 3.0; codimension = 2, scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization_strategy = welsch_hq(:absolute_pose), rng = MersenneTwister(144)   # model_dof = the P3P minimal sample, m = 3
         )
         @test rp !== nothing && converged(rp)
         @test rp.lo_retcode !== :not_run                                   # the LO really fired
@@ -186,7 +186,7 @@ end
     X, Y, A = only(sc.X), sc.Y, sc.A
     B = [perturb_pose(rng, marker_pose(Y, A[i], X); σ_R = 0.001, σ_t = 0.001) for i in eachindex(A)]
     r = find_hand_eye(A .=> B; scoring = old_scoring(HandEyeProblem(A .=> B), :hand_eye),
-                      local_optimization = StudentTUniform(), rng = MersenneTwister(31))
+                      local_optimization_strategy = StudentTUniform(), rng = MersenneTwister(31))
     @test converged(r)
     @test r.lo_retcode !== :not_run
 end

@@ -46,7 +46,7 @@ const RVGL = VisualGeometryToolkitEstimation
     cerr(H) = max_transfer_error(H, H_TRUE, corners)
 
     # --- 1. full production ransac() per LO arm ------------------------------
-    arms = lift_arms(; welsch_scale_multiple = 1.5, gnc_scale_multiple = 2.5)
+    arms = lift_arms(; welsch_efficiency_constant = 1.5, gnc_efficiency_constant = 2.5)
     check_lift_ransac(prob, sc, arms, n_in; seed = 325) do Ĥ
         @test cerr(Ĥ) < 1.5                              # ≈3σ of the 0.5 px noise at the corners
     end
@@ -71,7 +71,7 @@ const RVGL = VisualGeometryToolkitEstimation
     # storage; the default workspace is Float32 (storage precision perturbs
     # the seed scale ~1e-7 which the lift's GN iterations amplify ~1e-4).
     refit(H₀, lo) = RVGL.locally_optimize(
-        prob, H₀; local_optimization = lo, scoring = sc,
+        prob, H₀; local_optimization_strategy = lo, scoring = sc,
         workspace = RVGL.RansacWorkspace(Float64, prob, sc)
     )
     arm = Dict(arms)
@@ -138,7 +138,7 @@ const RVGL = VisualGeometryToolkitEstimation
         # fixture guards the H lift path only. Same rule.
         # Re-pinned 2026-09-20 for the held-loss refactor (RVG): the HQ arms
         # now carry a `DeployedLoss` and the currency map (now the
-        # `_scale_multiple_currency(mechanism, shape)` trait in scoring_glue.jl)
+        # `_efficiency_constant_currency(mechanism, shape)` trait in scoring_glue.jl)
         # returns the dimensionless multiple m, so the squared width is `m²·ŝ²`
         # instead of `(m·ŝ)²`. ONLY the GM entry moved — the GM currency is the
         # one that re-associates (`m/√(√2−1)` squared against ŝ², vs

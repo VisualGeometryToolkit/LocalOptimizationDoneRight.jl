@@ -24,8 +24,8 @@
 # from the loss's OWN weight ω(r) = e^{−r²/loss_width²} (VGC `lift_weight`) — NOT a
 # Gaussian variance or the t latent precision: ŝ² = Σωᵢrᵢ²/Σωᵢ, the
 # redescending-weighted second moment, as RSDR's `fit_scale` under the Jeffreys
-# prior (rss = Σωr², dof = Σω); the loss width is then scale_multiple·√ŝ² at the
-# same `scale_multiple`.
+# prior (rss = Σωr², dof = Σω); the loss width is then efficiency_constant·√ŝ² at the
+# same `efficiency_constant`.
 #
 # INCUMBENT COMPARABILITY (D2 fix, 2026-07-14): under ECM the per-iteration
 # tracked cost `lift_cost(state.loss, r, n)` is evaluated at a MOVING scale
@@ -53,7 +53,7 @@ function update_nuisance!(lh::WelschEcmScale)
         ri = res[i]; ω = lift_weight(s.loss, ri * ri)    # the loss's own IRLS weight
         sωr2 += weighted_sq(ω, ri * ri); sω += ω         # RSDR's `weighted_rss` term: 0·Inf guarded
     end
-    # A new noise VARIANCE at the same scale multiple: `rescale` replaces the
+    # A new noise VARIANCE at the same efficiency constant: `rescale` replaces the
     # one slot. No weight at all (every point beyond the loss) holds the scale.
     sω > 0 && (s.loss = rescale(s.loss, fit_scale(JeffreysPrior(), sωr2, sω)))
     return nothing
@@ -89,7 +89,7 @@ function locally_optimize!(
         cs::ConsensusSet, buf::ScoreBuffers, scoring
     )
     # Self-scaling: the consensus scale is the ECM's initial ŝ² (floored at eps),
-    # through VGC's `loss_at` at the arm's one width mode, `ScaleMultiple`.
+    # through VGC's `loss_at` at the arm's one width mode, `EfficiencyConstant`.
     loss = loss_at(lo, WelschShape(), cs, scoring, buf)
     prov = rows_provider(problem)
     method = ManifoldLiftHQ(prov, lift_size(prov), loss, lo.μ)

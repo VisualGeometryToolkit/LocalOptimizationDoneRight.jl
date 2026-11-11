@@ -53,7 +53,7 @@ const RVGP = VisualGeometryToolkitEstimation
     end
 
     # --- 1. full production ransac() per LO arm ------------------------------
-    arms = lift_arms(; welsch_scale_multiple = 1.597, gnc_scale_multiple = 1.0)
+    arms = lift_arms(; welsch_efficiency_constant = 1.597, gnc_efficiency_constant = 1.0)
     check_lift_ransac(accurate, prob, sc, arms, n_in; seed = 373)
 
     # --- 2. basin sanity: perturbed seeds ------------------------------------
@@ -72,7 +72,7 @@ const RVGP = VisualGeometryToolkitEstimation
         )
     end
     refit(p0, lo, outlier_halfwidth) = RVGP.locally_optimize(
-        prob, p0; local_optimization = lo,
+        prob, p0; local_optimization_strategy = lo,
         scoring = StudentTUniformScoring(prob, outlier_halfwidth; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     )
 
@@ -115,7 +115,7 @@ const RVGP = VisualGeometryToolkitEstimation
         p0 = EuclideanMap(R_gt, Vec3{Float64}(t_gt[1], t_gt[2], t_gt[3] - 0.6))
         n_behind = count(i -> (R_gt * src2[i] + translation(p0))[3] <= 0.0, 1:(n_near + n_far))
         @test n_behind >= 10                             # the stress is real
-        check_lift_recovers(lo -> RVGP.locally_optimize(prob2, p0; local_optimization = lo, scoring = sc2), arms[2:4]) do p
+        check_lift_recovers(lo -> RVGP.locally_optimize(prob2, p0; local_optimization_strategy = lo, scoring = sc2), arms[2:4]) do p
             accurate(p)
             # every true inlier is back in front of the recovered pose
             @test all(i -> (rotation(p) * src2[i] + translation(p))[3] > 0.0, 1:(n_near + n_far))

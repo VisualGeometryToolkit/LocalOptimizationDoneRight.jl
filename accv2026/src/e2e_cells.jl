@@ -9,7 +9,7 @@
 # SupeRANSAC cell's, src/superansac.jl).
 #
 # An arm is deployed at its sidecar's operating point by its width kind:
-#   ScaleMultiple()    — the deployed strategy itself (consensus-anchored k*·ŝ;
+#   EfficiencyConstant()    — the deployed strategy itself (consensus-anchored k*·ŝ;
 #                        ζ never touches it), scoring at ζ·a*;
 #   OutlierHalfwidth() — the self-scaled arm (Stu-tU IRLS, BCD) refitting under
 #                        the marginal at ITS tuned refit half-width ζ·w*
@@ -23,7 +23,7 @@ using VisualGeometryToolkitEval.Evaluation: build_pair_ctx, live_runs, live_row,
 using VisualGeometryToolkitEval.Pools: load_pool
 using VisualGeometryToolkitEval.Stats: scene_mean
 using VisualGeometryToolkitEval.Render: fmt3
-using VisualGeometryToolkitCore: ScaleMultiple, OutlierHalfwidth, width_axis_name, IGPrior
+using VisualGeometryToolkitCore: EfficiencyConstant, OutlierHalfwidth, width_axis_name, IGPrior
 using VisualGeometryToolkitCore.Pools: PoolPair
 using VisualGeometryToolkitEstimation: EssentialProblem, RansacConfig, GaussianSampler
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
@@ -75,7 +75,7 @@ end
 
 The deployed arms of the operating-points `sidecar` as the live loop runs them:
 `scoring_at(a, ζ)` the selection scorer and `lo_at(a, ζ)` the LO of arm `a` at
-ζ (see the header: a ScaleMultiple arm is its deployed strategy, an
+ζ (see the header: an EfficiencyConstant arm is its deployed strategy, an
 OutlierHalfwidth arm refits at ζ·w*). Gated: interior argmins only, and every
 arm deployable end to end. THE one deployment of the accuracy run
 ([`e2e_live`](@ref)) and the timing repeat (src/e2e_timing.jl).
@@ -86,11 +86,11 @@ function e2e_deployment(sidecar::AbstractString, arms)
     prior = sidecar_scale_prior(sidecar)
     for a in arms
         haskey(dep, a) || error("e2e: arm \"$a\" not in $sidecar")
-        dep[a].kind isa Union{ScaleMultiple, OutlierHalfwidth} ||
+        dep[a].kind isa Union{EfficiencyConstant, OutlierHalfwidth} ||
             error("e2e: arm \"$a\" is $(dep[a].kind) — a fixed loss width has no in-loop port; not deployable end to end here")
     end
     template = StudentTUniformScoring(EssentialProblem, 1.0; scale_prior = prior, label_prior = FlatLabelPrior())   # the refit marginal at the operating points' prior
-    lo_at(a, ζ) = dep[a].kind isa ScaleMultiple ? dep[a].lo :
+    lo_at(a, ζ) = dep[a].kind isa EfficiencyConstant ? dep[a].lo :
                   RefitHalfwidth(dep[a].lo, ζ * dep[a].ref, template)
     scoring_at(a, ζ) = StudentTUniformScoring(EssentialProblem, ζ * dep[a].sel; scale_prior = prior, label_prior = FlatLabelPrior())
     return (; dep, prior, scoring_at, lo_at)

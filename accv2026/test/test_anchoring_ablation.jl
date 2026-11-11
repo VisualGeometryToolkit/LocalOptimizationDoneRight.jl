@@ -13,7 +13,7 @@ using Test, Random, TOML
 using VisualGeometryToolkitEstimation: EssentialProblem
 using VisualGeometryToolkitEval.Evaluation: miscal_evaluation_refit, apply_lo_refits, build_pair_ctx,
     refit_imc!, refit_seed
-using VisualGeometryToolkitCore: ScaleMultiple, FixedScale, SCALE_INTERFACE_TAGS
+using VisualGeometryToolkitCore: EfficiencyConstant, FixedScale, SCALE_INTERFACE_TAGS
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEval.Pools: synthetic_e_pool_pair
 include(joinpath(@__DIR__, "..", "src", "config.jl"))   # the paper's arm roster (ROSTER)
@@ -24,14 +24,14 @@ include(joinpath(@__DIR__, "..", "src", "config.jl"))   # the paper's arm roster
     drawn = ("IG  +TLSadapt", "IG  +GNC-W", "IG  +GNC-GM", PAPER_WELSCH_HQ)
     arms = [a for a in ROSTER.composed(:E) if a.base in drawn]   # the paper's roster
     @test length(arms) == length(drawn)
-    @test all(a -> a.kind isa ScaleMultiple, arms)
+    @test all(a -> a.kind isa EfficiencyConstant, arms)
 
     pair, _ = synthetic_e_pool_pair(MersenneTwister(7); sibling_counts = fill(1, 12), noise = 0.002,
                                  δ_rot = 0.2, t_jitter = 0.1, gt_variance = 4.0e-6)
-    grids = Dict(:outlier_halfwidth => [0.005, 0.01, 0.02], :scale_multiple => [1.5, 2.5, 3.0])
+    grids = Dict(:outlier_halfwidth => [0.005, 0.01, 0.02], :efficiency_constant => [1.5, 2.5, 3.0])
     idxs_of = Dict(:ig => fill(Int32(3), 1, 3))
     # format 6: the tuned point is NATIVE values, read off the grids here
-    tuned = (selection = grids[:outlier_halfwidth][2], width = grids[:scale_multiple][2])
+    tuned = (selection = grids[:outlier_halfwidth][2], width = grids[:efficiency_constant][2])
     zetas = [0.25, 1.0, 4.0]
     s0 = sqrt(pair.gt_variance)                    # the plug-in (validation reference) scale
     template = StudentTUniformScoring(EssentialProblem, 1.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())   # the refit scoring template (Jeffreys)

@@ -7,10 +7,10 @@
 #
 # ONE tuning — fig3's sequential CV (stage cv) — read out twice
 # on the same ζ ladder, test scenes and seeds:
-#   WITH    : fig3's own ζ evaluation — the deployed arms, the scale-multiple
-#             arms' loss width scale_multiple·ŝ partition-anchored (immune to ζ).
+#   WITH    : fig3's own ζ evaluation — the deployed arms, the efficiency-constant
+#             arms' loss width efficiency_constant·ŝ partition-anchored (immune to ζ).
 #   WITHOUT : stage evaluation below — the SAME tuned operating points, the
-#             scale-multiple arms' loss width delivered at a FIXED external
+#             efficiency-constant arms' loss width delivered at a FIXED external
 #             plug-in scale corrupted by ζ (the scale interface of
 #             configs/miscal_protocol.toml [anchoring_ablation]: "fixed_scale" =
 #             `with_width(lo, fixed_width(lo, (ζ·s0)²))`, s0 the reference scale of

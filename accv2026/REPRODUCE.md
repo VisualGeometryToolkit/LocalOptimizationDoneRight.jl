@@ -440,8 +440,8 @@ number comes from anywhere else.
 
 `fig_anchoring.jl` (`panel_anchoring_paired.tex`) is a PAIRED ABLATION at ONE
 set of operating points, fig3's full-roster tuning: the SOLID (WITH) side is
-fig3's own ζ evaluation (the scale-multiple arms' loss width partition-anchored,
-`scale_multiple·ŝ`); the DASHED (WITHOUT) side is stage `evaluation`, the SAME
+fig3's own ζ evaluation (the efficiency-constant arms' loss width partition-anchored,
+`efficiency_constant·ŝ`); the DASHED (WITHOUT) side is stage `evaluation`, the SAME
 tuned points re-read on the same ladder, test scenes and seeds with the loss
 width delivered at a fixed external plug-in scale corrupted by ζ
 (`with_width(lo, fixed_width(lo, (ζ·s0)²))`, s0 the reference scale of the
@@ -504,7 +504,7 @@ not match, so a floor computed on retired pools cannot be taken as current.
 
 | protocol file | governs |
 |---|---|
-| `configs/tuning.toml` | THE tuning protocol: every `[tuning.<name>]` entry the drivers run (windows, spacings, expand-on-boundary rules, argmin, objective, budget sampling, cross-validation), stating only what differs from VisualGeometryToolkitEval's `configs/tuning.toml`; paper-level type defaults (`[types.scale_multiple_window]`, the paper's [1, 3.3]; `[types.cross_validation]`, the registered `phototourism` split) |
+| `configs/tuning.toml` | THE tuning protocol: every `[tuning.<name>]` entry the drivers run (windows, spacings, expand-on-boundary rules, argmin, objective, budget sampling, cross-validation), stating only what differs from VisualGeometryToolkitEval's `configs/tuning.toml`; paper-level type defaults (`[types.efficiency_constant_window]`, the paper's [1, 3.3]; `[types.cross_validation]`, the registered `phototourism` split) |
 | `configs/cv_protocol.toml` | tuning at ζ=1; per-dataset cross-validations (partial `cross_validation` tables layered into the tuning entry: the registered scene split and the validation sampling; test sides never subsampled) |
 | `configs/miscal_protocol.toml` | ζ evaluation ladder (n_zeta, zeta_octaves) |
 | `configs/sample_budget_protocol.toml` | per-dataset stream depth / checkpoint schedule (explicit `checkpoints` overrides the batch/lo_every rule) |

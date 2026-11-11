@@ -31,7 +31,7 @@ const PALETTE_COLORS = [paper_color_name(key) => hex for (key, hex) in (
     "GEM sel"       => "808000",
     "WMG sel"       => "f032e6",              # marginal Welsch (scale integrated)
     # Composed arms outside the faceted registry.
-    "IG  +TLSadapt" => "1f77b4",              # composed adaptive-loss-width truncated LM (loss width = scale_multiple·ŝ per round)
+    "IG  +TLSadapt" => "1f77b4",              # composed adaptive-loss-width truncated LM (loss width = efficiency_constant·ŝ per round)
     "MSAC +PoseLib" => "b5530b",
     "MSAC +LO"      => "b5530b",              # the archived bundles' name for MSAC +PoseLib
     "MSAC +LZ"      => "d62728",

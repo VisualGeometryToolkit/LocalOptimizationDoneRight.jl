@@ -24,7 +24,7 @@ using Random: MersenneTwister, randn
 using StaticArrays: SA
 import VisualGeometryToolkitCore as VgtkCore
 using VisualGeometryToolkitCore: AbstractScoring, BarronShape, CameraModel, EssentialMat, GemanMcclureShape, LossWidth,
-    MsacScoring, Point2, Rect, ScaleMultiple, TLSShape, WelschShape, codimension, consensus_set, csponds, decision_width,
+    MsacScoring, Point2, Rect, EfficiencyConstant, TLSShape, WelschShape, codimension, consensus_set, csponds, decision_width,
     deploy, estimate, exp_so3, locally_optimize!, loss_at, lo_width, mahalanobis_distances!, minimal_sample_size, px,
     retcode, scale_s2, score_model!, sq_loss_width
 using VisualGeometryToolkitCore.Synthetic: projective_distance, sample_twoview_scene
@@ -89,17 +89,17 @@ end
 
 @testset "each strategy recovers the perturbed seed" begin
     arms = (
-        HQ{WelschShape}(scale_multiple = 1.5) => msac,
-        HQ{GemanMcclureShape}(scale_multiple = 1.5) => msac,
-        BarronHQ(-2.0; scale_multiple = 1.5) => msac,
-        GmHqEps(scale_multiple = 1.0) => msac,
-        Gnc{Irls{TLSShape}}(scale_multiple = 2.5) => msac,
-        WelschHQEcm(scale_multiple = 1.5) => msac,
-        BarronAdaptive(scale_multiple = 1.5) => msac,
+        HQ{WelschShape}(efficiency_constant = 1.5) => msac,
+        HQ{GemanMcclureShape}(efficiency_constant = decision_width(GemanMcclureShape(), 1.5)) => msac,   # half-weight depth 1.5, migrated
+        BarronHQ(-2.0; efficiency_constant = 1.5 / sqrt(2.0)) => msac,                                   # the retired m/√2 currency, migrated
+        GmHqEps(efficiency_constant = 1.0) => msac,
+        Gnc{Irls{TLSShape}}(efficiency_constant = 2.5) => msac,
+        WelschHQEcm(efficiency_constant = 1.5) => msac,
+        BarronAdaptive(efficiency_constant = 1.5) => msac,
         StuTuBCD() => msac,
         StudentTUniform() => stu,
         StuTuHQTabulated() => stu,
-        HQ{WelschShape}(scale_multiple = 1.5) => stu,
+        HQ{WelschShape}(efficiency_constant = 1.5) => stu,
     )
     @testset "$(nameof(typeof(lo)))" for (lo, scoring) in arms
         result = run_lo(lo, problem, scoring, seed)
@@ -126,19 +126,19 @@ end
 end
 
 @testset "HQ dispatch" begin
-    hq = HQ{WelschShape}(scale_multiple = 1.5)
+    hq = HQ{WelschShape}(efficiency_constant = 1.5)
     welsch = run_lo(hq, problem, msac, seed)
     # BarronHQ standardizes on the Gaussian core, so α → −∞ is HQ{WelschShape}
-    # at the same scale multiple.
-    @test projective_distance(estimate(run_lo(BarronHQ(-1.0e12; scale_multiple = 1.5), problem, msac, seed)),
+    # at √2 times its efficiency constant.
+    @test projective_distance(estimate(run_lo(BarronHQ(-1.0e12; efficiency_constant = 1.5 / sqrt(2.0)), problem, msac, seed)),
                               estimate(welsch)) < 1.0e-9
     # A BoundedProblem is a validation decorator: the lift refines its inner problem.
     bounded = BoundedProblem(problem, Rect(0.0, 0.0, 500.0, 500.0))
     @test estimate(run_lo(hq, bounded, msac, seed)) == estimate(welsch)
-    gnc = Gnc{Irls{TLSShape}}(scale_multiple = 2.5)
+    gnc = Gnc{Irls{TLSShape}}(efficiency_constant = 2.5)
     @test estimate(run_lo(gnc, bounded, msac, seed)) == estimate(run_lo(gnc, problem, msac, seed))
     # The crossover sentinel (a non-positive multiple) is retired.
-    @test_throws ArgumentError run_lo(GmHqEps(scale_multiple = -1.0), problem, msac, seed)
+    @test_throws ArgumentError run_lo(GmHqEps(efficiency_constant = -1.0), problem, msac, seed)
 end
 
 @testset "StuTuBCD never lowers the score" begin
@@ -153,8 +153,8 @@ end
 # recovery list above: from the perturbed seed on this pixel scene it returns
 # the seed.)
 @testset "WelschHQNewton keeps HQ{WelschShape}'s refined model" begin
-    refined = estimate(run_lo(HQ{WelschShape}(scale_multiple = 1.5), problem, msac, seed))
-    kept = estimate(run_lo(WelschHQNewton(scale_multiple = 1.5), problem, msac, refined))
+    refined = estimate(run_lo(HQ{WelschShape}(efficiency_constant = 1.5), problem, msac, seed))
+    kept = estimate(run_lo(WelschHQNewton(efficiency_constant = 1.5), problem, msac, refined))
     @test projective_distance(kept, refined) < 1.0e-6
     @test inlier_rms(kept) < 0.4
 end
@@ -168,15 +168,15 @@ end
     # BarronAdaptive's frozen α-fit width: loss_at at the reference shape
     # BarronShape(0) — bit-identical to m²·ŝ² and m₀²·s2 under a width ...
     w2(lo) = LocalOptimizationDoneRight._barron_sq_width(lo, cs, msac, buf)
-    @test w2(BarronAdaptive(scale_multiple = 1.5)) === 1.5^2 * s2
+    @test w2(BarronAdaptive(efficiency_constant = 1.5)) === 1.5^2 * s2
     @test w2(BarronAdaptive(loss_width = 2.0)) === 2.0^2
     # ... and, following the scorer, the reference shape's DECISION width at the
     # threshold (Cauchy deciding at t: c² = t²/2), not the threshold itself
     @test w2(BarronAdaptive()) == decision_width(BarronShape(0.0), 2.0)^2
     @test w2(BarronAdaptive()) ≈ 2.0^2 / 2
-    # Welsch-HQ-ECM: its one width mode is its scale multiple, deployed by loss_at
-    ecm = WelschHQEcm(scale_multiple = 1.5)
-    @test lo_width(ecm) == ScaleMultiple(1.5)
-    @test loss_at(ecm, WelschShape(), cs, msac, buf) === deploy(WelschShape(), s2; scale_multiple = 1.5)
+    # Welsch-HQ-ECM: its one width mode is its efficiency constant, deployed by loss_at
+    ecm = WelschHQEcm(efficiency_constant = 1.5)
+    @test lo_width(ecm) == EfficiencyConstant(1.5)
+    @test loss_at(ecm, WelschShape(), cs, msac, buf) === deploy(WelschShape(), s2; efficiency_constant = 1.5)
     @test_throws MethodError VgtkCore.with_width(ecm, LossWidth(1.0))   # a self-scaling arm: no other mode
 end

@@ -112,17 +112,17 @@ _all_eval_sources() = [
     else
         supp = read(supp_path, String)
         @testset "protocol table constants" begin
-            # (a) Scale-multiple search window: the paper's prose "$k\in[1,3.3]$" (its symbol) ⇔ the
+            # (a) Efficiency-constant search window: the paper's prose "$k\in[1,3.3]$" (its symbol) ⇔ the
             #     tuning protocol of record's window (configs/tuning.toml
-            #     [types.scale_multiple_window], THE one place it is spelled).
+            #     [types.efficiency_constant_window], THE one place it is spelled).
             mw = match(r"k\\in\[([\d.]+),([\d.]+)\]", supp)
             # The ACCV-restructured supplement dropped the protocols-table
             # prose; the constant checks only apply while the paper CLAIMS the
             # constant (pre-existing drift, predates the eval-package move).
             if mw === nothing
-                @warn "supplement carries no scale-multiple window prose — window check skipped"
+                @warn "supplement carries no efficiency-constant window prose — window check skipped"
             else
-                w = TOML.parsefile(joinpath(ROOT, "configs", "tuning.toml"))["types"]["scale_multiple_window"]
+                w = TOML.parsefile(joinpath(ROOT, "configs", "tuning.toml"))["types"]["efficiency_constant_window"]
                 @test parse(Float64, mw[1]) == Float64(w["lo"])
                 @test parse(Float64, mw[2]) == Float64(w["hi"])
             end
@@ -138,7 +138,7 @@ _all_eval_sources() = [
                 @test parse(Int, mi[1]) == LO_BUDGET
             end
 
-            # (The Huber-elbow check is gone: RVG made every loss's `scale_multiple` a
+            # (The Huber-elbow check is gone: RVG made every loss's `efficiency_constant` a
             # required keyword, so there is no code default for the prose to match.)
         end
     end

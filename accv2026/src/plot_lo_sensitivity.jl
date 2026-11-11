@@ -56,7 +56,7 @@ _tonat(label, d) = _axis(label, d) === :loss_width ? native_map(LossWidth(); d_g
 
 # The bundle's tuning scheme and its parts.
 _scheme(d) = d.spec.scheme
-_window(d) = _scheme(d).scale_multiple_window
+_window(d) = _scheme(d).efficiency_constant_window
 _budget(d) = _scheme(d).budget_sampling
 
 # FlatProtocol from per-scene pair counts (val scenes first, then test).

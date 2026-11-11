@@ -122,9 +122,9 @@ end
 # (VisualGeometryToolkitCore's GNC surrogate facet; the ladders are this package's).
 @testset "gnc_schedule: the ladder of each graduation family" begin
     cbar2 = 2.3
-    kW = deploy(WelschShape(), cbar2; scale_multiple = 1.0)
-    kG = deploy(GemanMcclureShape(), cbar2; scale_multiple = 1.0)
-    kT = deploy(TLSShape(), cbar2; scale_multiple = 1.0)
+    kW = deploy(WelschShape(), cbar2; efficiency_constant = 1.0)
+    kG = deploy(GemanMcclureShape(), cbar2; efficiency_constant = 1.0)
+    kT = deploy(TLSShape(), cbar2; efficiency_constant = 1.0)
     @test gnc_schedule(kT, 1.4).direction === :up
     @test gnc_schedule(kW, 1.4).direction === :down
     @test gnc_schedule(kG, 1.4).direction === :down

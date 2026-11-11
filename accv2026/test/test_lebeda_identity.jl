@@ -12,7 +12,7 @@ using VisualGeometryToolkitEval.Evaluation: consumed_axis
 @testset "RansacLib LO arms: identity" begin
     opts = LebedaLOOptions(num_lo_trials = 4)   # any non-reference options
     for lo in (LebedaIterLO(opts, 0), LebedaLOPlus(opts, 0), LebedaLOPlus(PRESET_REFERENCE, 0))
-        @test lo isa VgtkCore.AbstractLocalOptimization
+        @test lo isa VgtkCore.AbstractOptimizationStrategy
         @test RefitFamily(lo) isa ExternalRefit
         @test VgtkCore.scale_interface(lo) isa FixedScale
         @test VgtkCore.loss_family(lo) === :tls

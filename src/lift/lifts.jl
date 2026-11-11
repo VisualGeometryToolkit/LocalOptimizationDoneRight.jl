@@ -74,7 +74,7 @@ block_coordinate_result(state, method::AbstractLiftMethod, prob, θ, stop_reason
 struct ManifoldLiftHQ{L <: DeployedLoss, Prov, Z <: LiftZBlock, S <: LiftState} <: JointLiftMethod
     prov::Prov
     n::Int
-    loss::L      # shape + (scale_multiple, ŝ²) at the seed anchor; the width is `sq_loss_width(loss)`
+    loss::L      # shape + (efficiency_constant, ŝ²) at the seed anchor; the width is `sq_loss_width(loss)`
     μ::Float64
     zblock::Z    # the joint system's z-block (`LiftZBlock`)
     ls::S        # the lift's own state (z and the reduced system)
@@ -161,12 +161,11 @@ function _manifold_hq!(
 end
 
 # The α-dial lift (BarronHQ): fixed-CORE-WIDTH standardization — the facet-B
-# Barron loss width scale_multiple·ŝ/√2 holds the Gaussian-core curvature fixed
-# across α (α → −∞ is then EXACTLY HQ{WelschShape} at the same scale_multiple:
-# the Welsch-equivalent loss width is √2·(scale_multiple·ŝ/√2) = scale_multiple·ŝ),
-# so the dial moves tail steepness only. The √2 is part of the CURRENCY
-# (`deployed_scale_multiple(::BarronHQ, …)`), so it belongs in the scale
-# multiple, not in the scale. Flat z₀, as the arm always started.
+# Barron loss width efficiency_constant·ŝ holds the Gaussian-core curvature fixed
+# across α (α → −∞ is then EXACTLY HQ{WelschShape} at √2·efficiency_constant: the
+# Welsch-equivalent loss width is √2 times the Barron one), so the dial moves
+# tail steepness only. The retired `m/√2` currency's values are migrated once
+# (×1/√2). Flat z₀, as the arm always started.
 function locally_optimize!(
         ::LoBuffers, lo::BarronHQ, problem::LiftableProblem, model,
         cs::ConsensusSet, buf::ScoreBuffers, scoring
@@ -176,7 +175,7 @@ function locally_optimize!(
 end
 
 # The loss-width-parameterized Geman–McClure lift (GmHqEps): loss width
-# scale_multiple·ŝ (a width multiple — identity currency), an absolute width,
+# efficiency_constant·ŝ (the plain multiple), an absolute width,
 # or the scorer's decision point (its GM half-weight radius at the scorer's
 # threshold). Flat z₀, as the arm always started.
 function locally_optimize!(
@@ -186,9 +185,6 @@ function locally_optimize!(
     loss = loss_at(lo, GemanMcclureShape(), cs, scoring, buf)
     return _manifold_hq!(problem, model, loss, lo.μ, :flat, lo.max_iter)
 end
-VgtkCore.deployed_scale_multiple(::GmHqEps, _shape, m::Float64, _s2, _scoring) =
-    m > 0 ? m : throw(ArgumentError(
-    "GmHqEps: scale_multiple = $m — the crossover sentinel is retired; give no width to follow the scorer"))
 
 # `BoundedProblem` is a VALIDATION decorator, not a different estimation
 # problem: its extent is consumed by RANSAC's post-IRLS consensus hook
@@ -211,7 +207,7 @@ locally_optimize!(
 # `block_coordinate_descent!` loop. Per-iteration weights are the GNC surrogate at the
 # current rung (`gnc_weight` on x = rᵢ² in the provider's residual currency;
 # codim 2: one weight per correspondence scaling both rows), the μ-ladder is
-# VGC `MuLadder`, the target loss width is frozen at c̄² = scale_multiple²·ŝ² from the seed
+# VGC `MuLadder`, the target loss width is frozen at c̄² = efficiency_constant²·ŝ² from the seed
 # partition, best-tracking is on the TARGET loss at c̄ (`lift_cost`).
 # Cheirality-masked points (PnP) are excluded from the θ accumulation and the
 # μ₀ seed extreme; their target-cost entry saturates at the sentinel norm.
@@ -219,7 +215,7 @@ locally_optimize!(
 struct ManifoldLiftGnc{Prov, L <: DeployedLoss, S <: LiftState} <: AbstractLiftMethod
     prov::Prov
     n::Int
-    loss::L      # c̄² = scale_multiple²·ŝ² is `sq_loss_width(loss)`, frozen at the consensus anchor
+    loss::L      # c̄² = efficiency_constant²·ŝ² is `sq_loss_width(loss)`, frozen at the consensus anchor
     ls::S        # the lift's own state (the reduced system)
 end
 ManifoldLiftGnc(prov, n::Int, loss::DeployedLoss) = ManifoldLiftGnc(prov, n, loss, provider_lift_state(prov))
@@ -291,7 +287,7 @@ function locally_optimize!(
         ::LoBuffers, lo::Gnc{<:Irls}, problem::LiftableProblem, model,
         cs::ConsensusSet, buf::ScoreBuffers, scoring
     )
-    # c̄² = scale_multiple²·ŝ², deployed as a (scale_multiple, ŝ²) pair.
+    # c̄² = efficiency_constant²·ŝ², deployed as a (efficiency_constant, ŝ²) pair.
     loss = lo_loss(lo, cs, scoring, buf)   # GNC: the target width multiple; ŝ² floored at eps() (VGC `loss_at`)
     prov = rows_provider(problem)
     n = lift_size(prov)

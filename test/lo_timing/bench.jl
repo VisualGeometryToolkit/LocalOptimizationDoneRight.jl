@@ -103,8 +103,8 @@ const F1 = first.(FM1); const F2 = first.(FM2); const M1 = last.(FM1); const M2 
 const CHE = EssentialManifold5(EssentialMat(R, T))
 const RWS = RowsWorkspace{5, 1}(N)        # the chart rows (VisualGeometryToolkitCore)
 const LS = LiftState{5}(N)                # the lift's own state
-const WELSCH = deploy(WelschShape(), 1.0; scale_multiple = 1.5)
-const GM = deploy(GemanMcclureShape(), 1.0; scale_multiple = 1.25)
+const WELSCH = deploy(WelschShape(), 1.0; efficiency_constant = 1.5)
+const GM = deploy(GemanMcclureShape(), 1.0; efficiency_constant = 1.25)
 
 const aE = zero_tangent(CHE)
 const EE = retract(CHE, aE); const dE = retract_directions(CHE, aE)

@@ -12,6 +12,28 @@ Eval and RANSACScoringDoneRight on 0.9.
   name `LO_TAGS`, its core registry). The registry is unchanged. Migration:
   `merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.LO_TAGS)` →
   `merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.STRATEGY_TAGS)`.
+- **`scale_multiple` is `efficiency_constant`** (VisualGeometryToolkitCore's
+  `ScaleMultiple` is `EfficiencyConstant`): every strategy keyword and field, the TOML
+  key, `[[tuning_constants]] efficiency_constant`, the `WELSCH_HQ_EFFICIENCY_CONSTANT_*`
+  constants (were `WELSCH_HQ_SCALE_MULTIPLE_*`), `PoseLibLmAdaptLossWidth`'s
+  `efficiency_constant` and the defaults key `operating_efficiency_constant`.
+- **The per-shape currencies are retired**: an efficiency constant is ALWAYS the
+  plain multiple, `loss_width = efficiency_constant·ŝ`, for every strategy.
+  `HQ{GemanMcclureShape}` no longer reads a half-weight depth and `BarronHQ` no
+  longer divides by √2. Migration: a GM value `m` stated as a half-weight depth
+  becomes `decision_width(GemanMcclureShape(), m)` (= m/√(√2−1)); a BarronHQ value
+  `m` becomes `m / sqrt(2.0)`. Both are the conversions the retired hooks
+  computed, so every result is bit-identical. `Gnc` and `GmHqEps` were already
+  plain (unchanged). accv2026's GM arms compose `decision_width` into their map
+  from the shared Welsch grid (the grid spec is unchanged).
+- **One optimization-strategy family** (VisualGeometryToolkitCore's
+  `AbstractOptimizationStrategy`, was `AbstractLocalOptimization`): find_*,
+  `ransac` and `locally_optimize` take `local_optimization_strategy` (was
+  `local_optimization`); the TOML reader is
+  `optimization_strategy_from_toml` (was `local_optimization_from_toml`);
+  `NoLocalOptimization()` is `nothing` (TOML `type = "none"`); the strategies'
+  defaults tables are `[optimization_strategy.<tag>]` (were
+  `[local_optimization.<tag>]`).
 
 ### Changed
 

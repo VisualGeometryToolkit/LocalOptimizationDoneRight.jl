@@ -28,7 +28,7 @@ _drop_wmg(l) = (s = lowercase(string(l)); !occursin("wmg", s) && !occursin("marg
 # Registry entries: render_bundle(src, PanelSpec(; spec...)) → <panel_name>.tex
 # next to the bundle; deploy copies it to <figdir>/<dest>.
 const FIGURES = Dict{Symbol,NamedTuple}(
-    # Fig 1 (main paper): scoring-only miscalibration, all pairs, fixed tuned scale multiple.
+    # Fig 1 (main paper): scoring-only miscalibration, all pairs, fixed tuned efficiency constant.
     # Bundle job 2427 added MAGSAC++ and RANSAC; v3 (2026-09-08) adds SIMFIT++. Rendered
     # as TWO panels — median (:fig1) and mAA@10° (:fig1_maa) — off the same
     # bundle; both write the shared "selmiscallegend" legend-to-name.

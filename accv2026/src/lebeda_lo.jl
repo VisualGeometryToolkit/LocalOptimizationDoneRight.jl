@@ -67,7 +67,7 @@ using RansacLibLO: RansacLibLO, LebedaLOOptions, PRESET_REFERENCE, lebeda_lo, le
 isfile(RansacLibLO._SHIM) ||
     error("RansacLibLO's shim $(RansacLibLO._SHIM) is not built — run `Pkg.build(\"RansacLibLO\")` in accv2026")
 import VisualGeometryToolkitCore
-using VisualGeometryToolkitCore: AbstractLocalOptimization, ExternalRefit, FixedScale, EssentialMat, FundMat,
+using VisualGeometryToolkitCore: AbstractOptimizationStrategy, ExternalRefit, FixedScale, EssentialMat, FundMat,
     HomographyMat, PerspectiveMap, sources, targets, LossWidth, loss_width
 import VisualGeometryToolkitCore: external_workspace, refine_external!
 using StaticArrays: SMatrix
@@ -85,7 +85,7 @@ header for the loss width's frame conversion. `rng_seed` seeds RansacLib's
 mt19937 on every call (its inlier-cap subsampling). Both are required: the
 options and the seed are protocol values of the caller.
 """
-struct LebedaIterLO <: AbstractLocalOptimization
+struct LebedaIterLO <: AbstractOptimizationStrategy
     opts::LebedaLOOptions
     rng_seed::Int
 end
@@ -97,7 +97,7 @@ Full classical LO (RansacLib `LocalOptimization` run verbatim — `lebeda_lo`:
 enlarged-loss-width LSq, inner non-minimal resampling, per-sample ILSQ) as an
 ExternalRefit strategy. Same currency/accounting/seeding as [`LebedaIterLO`](@ref).
 """
-struct LebedaLOPlus <: AbstractLocalOptimization
+struct LebedaLOPlus <: AbstractOptimizationStrategy
     opts::LebedaLOOptions
     rng_seed::Int
 end

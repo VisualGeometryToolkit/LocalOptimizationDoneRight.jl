@@ -17,7 +17,7 @@ const _DEFAULTS_OF_RECORD = TOML.parsefile(DEFAULTS_PATH)
 """
     _config_default(table, key)
 
-The default `key` of `[table]` (a dotted path, `"local_optimization.poselib_adapt"`)
+The default `key` of `[table]` (a dotted path, `"optimization_strategy.poselib_adapt"`)
 in configs/default.toml. Throws a `KeyError` naming a missing table or key.
 """
 _config_default(table::AbstractString, key::AbstractString) = toml_default(_DEFAULTS_OF_RECORD, table, key)

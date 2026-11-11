@@ -43,10 +43,10 @@ _cell_cv(cfg) = tuning_spec(cfg, sequential_cv_scorer_entry(cfg["sequential_cv"]
         end
         # the paper's window is stated once, as a type default, and reaches
         # every entry whose scheme holds one
-        w = TUNING_PROTOCOL["types"]["scale_multiple_window"]
+        w = TUNING_PROTOCOL["types"]["efficiency_constant_window"]
         for name in ("lo_sensitivity", "lo_sensitivity_natural", "lo_sensitivity_miscal")
             s = tuning_spec(tuning_config(name), name).scheme
-            @test (s.scale_multiple_window.lo, s.scale_multiple_window.hi) == (w["lo"], w["hi"])
+            @test (s.efficiency_constant_window.lo, s.efficiency_constant_window.hi) == (w["lo"], w["hi"])
         end
         # the paper's data, stated once: every entry tunes on the registered
         # PhotoTourism split — the registry's lists, resolved into the spec

@@ -24,7 +24,7 @@
 #     EVERY selector's grid on that staged copy (VisualGeometryToolkitCore
 #     `select_on_grid!` — RANSACScoringDoneRight's grid kernels), then score each selector's
 #     per-(pair, column) selection through `apply_lo_refits` (a
-#     NoLocalOptimization row: the selected pool model's imc).  Free the scene.
+#     no-local-optimization row (`nothing`): the selected pool model's imc).  Free the scene.
 #
 # The per-pair errs/idxs and the post-LO `M` matrices are scalar (pair × column),
 # ~MB; only the staged `sorted_sq_flat` + the raw scene pairs are large, and both
@@ -39,7 +39,7 @@
 # =============================================================================
 
 using CUDA, Statistics, JLD2
-using VisualGeometryToolkitEstimation: NoLocalOptimization, SimFitPP   # SIMFIT++ is Estimation's
+using VisualGeometryToolkitEstimation: SimFitPP   # SIMFIT++ is Estimation's
 using RANSACScoringDoneRight: loss_spec, loss_scale_bounds, loss_width_scoring
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitCore: AbstractLossShape, WidthAxis, LossWidth, OutlierHalfwidth, width_axis_name, width_axis,
@@ -110,7 +110,7 @@ _val_sigma2(loaders, nval) = filter(isfinite, reduce(vcat, val_sigma2_by_scene(l
 # selectors run (IG + MSAC for the LO experiments; one per well depth Δ for the
 # Δ-sweep); `stream_selections` (the evaluator) streams them all, and
 # each selector contributes one selection row "<label>" (the selected pool
-# model's imc, a NoLocalOptimization refit).  Labels are carried whole (not
+# model's imc, a refit with no local optimization).  Labels are carried whole (not
 # composed) so existing bundles/renderers see byte-identical keys.
 # =============================================================================
 struct SelectorSpec{S}
@@ -124,7 +124,7 @@ end
 _labels(selectors) = String[sel.label for sel in selectors]
 _sweeps(selectors) = [sel.key => (sel.native, sel.scoring) for sel in selectors]
 _selection_rows(selectors) = (idxs_of, _) ->
-    [LoRefitSpec(sel.label, NoLocalOptimization(), sel.axis, sel.native, idxs_of[sel.key])
+    [LoRefitSpec(sel.label, nothing, sel.axis, sel.native, idxs_of[sel.key])
      for sel in selectors]
 
 # =============================================================================
@@ -249,20 +249,20 @@ _mode_tag(::DeltaSweepExperiment)     = "delta"
 # q and margin for the validation-budget / Δ sweeps; the natural regime's full-range q and
 # wide margin; the miscal sweep's ζ-reaching window — a clamp would flatten the
 # tail and hide the effect: MSAC's reachable native window scales as hi/lo of
-# the scale-multiple window, IG's as exp((hi²−lo²)/2)) and its standardized
-# `scale_multiple` display axis. A ζ sweep whose ladder the coverage does not
+# the efficiency-constant window, IG's as exp((hi²−lo²)/2)) and its standardized
+# `efficiency_constant` display axis. A ζ sweep whose ladder the coverage does not
 # reach is refused.
 function _grid_specs(spec::TuningSpec, val_sigma2s, d_g::Int)
     sch = spec.scheme
     sch isa WindowedBootstrap ||
         throw(ArgumentError("[tuning.$(spec.name)] is a $(nameof(typeof(sch))), not a windowed_bootstrap"))
-    w = sch.scale_multiple_window
+    w = sch.efficiency_constant_window
     return Dict{Symbol,GridSpec}(
-        :outlier_halfwidth => grid_spec(sch.outlier_halfwidth; scale_multiple_window = w,
+        :outlier_halfwidth => grid_spec(sch.outlier_halfwidth; efficiency_constant_window = w,
                                         native = native_map(OutlierHalfwidth(); d_g), s2 = val_sigma2s),
-        :loss_width => grid_spec(sch.loss_width; scale_multiple_window = w,
+        :loss_width => grid_spec(sch.loss_width; efficiency_constant_window = w,
                                  native = native_map(LossWidth(); d_g), s2 = val_sigma2s),
-        :scale_multiple => grid_spec(sch.scale_multiple; scale_multiple_window = w))
+        :efficiency_constant => grid_spec(sch.efficiency_constant; efficiency_constant_window = w))
 end
 
 _check_reach(e::StreamedExperiment, spec) = nothing
@@ -314,7 +314,7 @@ _bundle_extra(e::DeltaSweepExperiment, np_per, nval) =
     Dict("deltas" => e.deltas, "loss" => string(nameof(typeof(e.loss))),
          "NG" => something(e.NG, "loss_spec default"))
 
-# validation_budget: flat (val+test, scene-ordered) per-pair matrices for the per-scale-multiple
+# validation_budget: flat (val+test, scene-ordered) per-pair matrices for the per-efficiency-constant
 # diagnostic evaluation.  The n-sweep + BCa CIs live ONLY in the offline renderer
 # (which re-bootstraps the saved bundle via the package's
 # `compute_method_rows`), so the producer just makes M.  Keys follow the

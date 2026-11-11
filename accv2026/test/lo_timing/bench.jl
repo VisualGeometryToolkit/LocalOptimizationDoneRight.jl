@@ -52,18 +52,18 @@ Threads.nthreads() == 1 || error("bench.jl: run single-threaded (julia -t 1); go
 include(joinpath(pkgdir(VisualGeometryToolkitEstimation), "test", "lo_timing", "call_set.jl"))   # CALL_SET_FIXTURE, read_fixture, pool_csponds, problem_of: the call set's one reader (VisualGeometryToolkitEstimation's)
 include(joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "bench_record.jl"))   # calibration_spread, kernel_arm, write_bench_record: the record the gate reads (VisualGeometryToolkitCore's)
 
-# The Table 1 arms at the equal LO budget. The scale multiples are the Welsch
-# grid's centre (GM in its half-weight currency, as accv2026's arm table maps
-# it) — the width barely moves per-call time; the protocol's GNC entry is 16.
+# The Table 1 arms at the equal LO budget. The efficiency constants are the Welsch
+# grid's centre (GM at the Welsch half-weight depth's GM width, as accv2026's arm
+# table maps it) — the width barely moves per-call time; the protocol's GNC entry is 16.
 const BUDGET = 25
-const GM_MULTIPLE = 1.5 * sqrt(log(2.0))
+const GM_MULTIPLE = VisualGeometryToolkitCore.decision_width(GemanMcclureShape(), 1.5 * sqrt(log(2.0)))
 const ARMS = [
-    "Welsch-HQ"   => () -> HQ{WelschShape}(; max_iter = BUDGET, scale_multiple = 1.6),
-    "Welsch-GNC"  => () -> Gnc{Irls{WelschShape}}(; max_iter = BUDGET, scale_multiple = 1.5, entry = 16.0),
-    "GM-HQ"       => () -> HQ{GemanMcclureShape}(; max_iter = BUDGET, scale_multiple = GM_MULTIPLE),
-    "GM-GNC"      => () -> Gnc{Irls{GemanMcclureShape}}(; max_iter = BUDGET, scale_multiple = 1.5),
-    "TLS-HQ"      => () -> HQ{SmoothTLSShape}(; max_iter = BUDGET, scale_multiple = 2.5),
-    "TLS-GNC"     => () -> Gnc{Irls{TLSShape}}(; max_iter = BUDGET, scale_multiple = 2.5),
+    "Welsch-HQ"   => () -> HQ{WelschShape}(; max_iter = BUDGET, efficiency_constant = 1.6),
+    "Welsch-GNC"  => () -> Gnc{Irls{WelschShape}}(; max_iter = BUDGET, efficiency_constant = 1.5, entry = 16.0),
+    "GM-HQ"       => () -> HQ{GemanMcclureShape}(; max_iter = BUDGET, efficiency_constant = GM_MULTIPLE),
+    "GM-GNC"      => () -> Gnc{Irls{GemanMcclureShape}}(; max_iter = BUDGET, efficiency_constant = 1.5),
+    "TLS-HQ"      => () -> HQ{SmoothTLSShape}(; max_iter = BUDGET, efficiency_constant = 2.5),
+    "TLS-GNC"     => () -> Gnc{Irls{TLSShape}}(; max_iter = BUDGET, efficiency_constant = 2.5),
     "Stu-t-IRLS"  => () -> StudentTUniform(; max_iter = BUDGET),
     "Stu-tU-BCD"  => () -> StuTuBCD(; max_iter = BUDGET),
 ]
@@ -75,7 +75,7 @@ const WORKSPACES = [RansacWorkspace(PROBS[i], SCORINGS[i]) for i in eachindex(PR
 const NCALLS = call_set_size(PAIRS)
 
 lo_call(lo, i, seed) =
-    locally_optimize(PROBS[i], seed; local_optimization = lo, scoring = SCORINGS[i], workspace = WORKSPACES[i])
+    locally_optimize(PROBS[i], seed; local_optimization_strategy = lo, scoring = SCORINGS[i], workspace = WORKSPACES[i])
 
 # Each arm as Core's record measures it (call_set.jl's `call_set_arm`): its sorted µs per call over the reps, bytes per call.
 lo_arm(ctor) = call_set_arm(() -> (lo = ctor(); (i, seed) -> lo_call(lo, i, seed)), PAIRS, REPS)

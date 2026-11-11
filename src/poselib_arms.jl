@@ -11,59 +11,59 @@
 # =============================================================================
 
 """
-    PoseLibLm(max_iter) <: AbstractLocalOptimization
+    PoseLibLm(max_iter) <: AbstractOptimizationStrategy
 
 PoseLib Levenberg–Marquardt over the TRUNCATED Sampson loss (`TLSShape`) — the
 LO-RANSAC standard truncated refiner (TLS-IRLS). An external refiner
 (`ExternalRefit`): it refines at an absolute loss width (`refine_external!`),
 not in the native RANSAC loop. `max_iter` is its LM budget.
 """
-struct PoseLibLm <: AbstractLocalOptimization
+struct PoseLibLm <: AbstractOptimizationStrategy
     max_iter::Int
 end
 
 """
-    PoseLibLZ(max_iter) <: AbstractLocalOptimization
+    PoseLibLZ(max_iter) <: AbstractOptimizationStrategy
 
 PoseLib's Le–Zach relaxed IRLS (TR-IRLS) on the same truncated loss as
 [`PoseLibLm`](@ref) — the optimizer axis within the truncated class (TLS-LZ).
 """
-struct PoseLibLZ <: AbstractLocalOptimization
+struct PoseLibLZ <: AbstractOptimizationStrategy
     max_iter::Int
 end
 
 """
-    PoseLibLmAdaptLossWidth(; max_iter, rounds, scale_multiple)
+    PoseLibLmAdaptLossWidth(; max_iter, rounds, efficiency_constant)
 
 PoseLib's truncated LM refiner with its loss width re-estimated between rounds.
 
 Consensus-anchored truncated refit (TLS-IRLS-ŝ): PoseLib LM over the truncated
 loss, its loss width re-formed between `rounds` LM rounds as
-`scale_multiple·ŝ` of the current model's within-width residual scale (outer
+`efficiency_constant·ŝ` of the current model's within-width residual scale (outer
 pose-block / scale-moment alternation; PoseLib is a black box).
 
 The INITIAL width is anchored on the seed's consensus scale — `ŝ²` of the
 consensus set under the refit scoring at the outlier half-width of the
 delivered loss width (`loss_width_to_outlier_halfwidth` at the refit
-protocol's operating scale multiple, `[local_optimization.poselib_adapt]
-operating_scale_multiple`), VisualGeometryToolkitEstimation's `consensus_s2!` — never a
+protocol's operating efficiency constant, `[optimization_strategy.poselib_adapt]
+operating_efficiency_constant`), VisualGeometryToolkitEstimation's `consensus_s2!` — never a
 plug-in scale; a consensus too thin to carry a scale makes no refit.
 `max_iter` is the total LM budget across rounds. Defaults:
-configs/default.toml `[local_optimization.poselib_adapt]`. E-track only
+configs/default.toml `[optimization_strategy.poselib_adapt]`. E-track only
 (PoseLib `refine_relpose`).
 """
-struct PoseLibLmAdaptLossWidth <: AbstractLocalOptimization
+struct PoseLibLmAdaptLossWidth <: AbstractOptimizationStrategy
     max_iter::Int    # TOTAL LM budget across rounds (parity with PoseLibLm)
     rounds::Int      # scale re-estimation rounds
-    scale_multiple::Float64   # the truncated loss's width as a multiple of the re-estimated scale ŝ
+    efficiency_constant::Float64   # the truncated loss's width as a multiple of the re-estimated scale ŝ
 end
-# The refit protocol's operating scale multiple: the default `scale_multiple`
+# The refit protocol's operating efficiency constant: the default `efficiency_constant`
 # and the bootstrap's loss width → outlier half-width conversion.
-const _ADAPT_OPERATING_SCALE_MULTIPLE = Float64(_config_default("local_optimization.poselib_adapt", "operating_scale_multiple"))
-PoseLibLmAdaptLossWidth(; max_iter::Integer = _config_default("local_optimization.poselib_adapt", "max_iter"),
-                        rounds::Integer = _config_default("local_optimization.poselib_adapt", "rounds"),
-                        scale_multiple::Real = _ADAPT_OPERATING_SCALE_MULTIPLE) =
-    PoseLibLmAdaptLossWidth(Int(max_iter), Int(rounds), Float64(scale_multiple))
+const _ADAPT_OPERATING_EFFICIENCY_CONSTANT = Float64(_config_default("optimization_strategy.poselib_adapt", "operating_efficiency_constant"))
+PoseLibLmAdaptLossWidth(; max_iter::Integer = _config_default("optimization_strategy.poselib_adapt", "max_iter"),
+                        rounds::Integer = _config_default("optimization_strategy.poselib_adapt", "rounds"),
+                        efficiency_constant::Real = _ADAPT_OPERATING_EFFICIENCY_CONSTANT) =
+    PoseLibLmAdaptLossWidth(Int(max_iter), Int(rounds), Float64(efficiency_constant))
 
 const _PoseLibArm = Union{PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth}
 VgtkCore.RefitFamily(::_PoseLibArm) = ExternalRefit()

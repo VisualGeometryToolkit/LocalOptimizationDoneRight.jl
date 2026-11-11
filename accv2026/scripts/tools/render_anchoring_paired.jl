@@ -1,7 +1,7 @@
 # Paired-ablation "partition anchoring" figure: WITH vs WITHOUT anchoring the
 # local optimizer's scale to the seed partition, at the SAME tuned operating
 # points (scripts/fig_anchoring.jl): WITH = fig3's production ζ evaluation (loss
-# width scale_multiple·ŝ, ŝ from the seed partition); WITHOUT = the ablation
+# width efficiency_constant·ŝ, ŝ from the seed partition); WITHOUT = the ablation
 # evaluation of the same points with the loss width at a fixed external plug-in
 # scale corrupted by ζ (the evaluation artifact records its scale interface).
 # 1×2 groupplot in the CURRENT paper style (modeled on render_miscal_faceted.jl):

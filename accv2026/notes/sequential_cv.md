@@ -137,7 +137,7 @@ variance problem rather than trading bias for variance).
 
 - **Stage 2 is the existing stream with a DEGENERATE selection axis.** Run
   `stream_product_tuning` with `grids[:outlier_halfwidth] = [a*]` (one column)
-  and `grids[:scale_multiple]` = the coarse (then fine) k grid.
+  and `grids[:efficiency_constant]` = the coarse (then fine) k grid.
   `apply_lo_refits` already batches all 14 arms x all k columns in ONE sweep, so
   the 14 refiner CVs share a pool sweep for free. No per-arm pool reads.
 - **Stage 3 is unchanged**: the evaluation phase already reads each tuned width w*

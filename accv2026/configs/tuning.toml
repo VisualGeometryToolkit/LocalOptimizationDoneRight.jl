@@ -13,7 +13,7 @@
 # `_config.toml`. Drivers read nothing else: no grid literal and no grid CLI
 # flag exists in this project.
 #
-#   scorer, refiner_scale_multiple, refiner_native
+#   scorer, refiner_efficiency_constant, refiner_native
 #                   THE hyperparameter tuning: the SEQUENTIAL CV of every
 #                   tuning cell (notes/sequential_cv.md;
 #                   scripts/tools/run_sequential_cv.jl) — each selector's width,
@@ -38,8 +38,8 @@
 # notes/sequential_cv.md's.
 # =============================================================================
 
-# The standardized scale-multiple window of the paper ([1, 3.3]).
-[types.scale_multiple_window]
+# The standardized efficiency-constant window of the paper ([1, 3.3]).
+[types.efficiency_constant_window]
 lo = 1.0
 hi = 3.3
 
@@ -57,7 +57,7 @@ scene_split = { type = "registered", name = "phototourism" }
 [tuning.lo_sensitivity]
 type = "windowed_bootstrap"
 
-[tuning.lo_sensitivity.scale_multiple]
+[tuning.lo_sensitivity.efficiency_constant]
 spacing = { type = "linear_count", n = 17 }
 
 # The natural small-validation regime: the native grids span the full
@@ -71,7 +71,7 @@ window = { type = "coverage", q_lo = 0.001, q_hi = 0.999, log_margin = 0.30 }
 [tuning.lo_sensitivity_natural.loss_width]
 window = { type = "coverage", q_lo = 0.001, q_hi = 0.999, log_margin = 0.30 }
 
-[tuning.lo_sensitivity_natural.scale_multiple]
+[tuning.lo_sensitivity_natural.efficiency_constant]
 spacing = { type = "linear_count", n = 17 }
 
 # The selection-only ζ sweep (run_lo_sensitivity --mode=miscal; Fig 1): 400
@@ -88,7 +88,7 @@ spacing = { type = "log_count", n = 400 }
 window = { type = "coverage", log_margin = 0.1, zeta_octaves = 7.0 }
 spacing = { type = "log_count", n = 400 }
 
-[tuning.lo_sensitivity_miscal.scale_multiple]
+[tuning.lo_sensitivity_miscal.efficiency_constant]
 spacing = { type = "linear_count", n = 17 }
 
 # =============================================================================
@@ -133,7 +133,7 @@ fine = { type = "log_per_decade", per_decade = 200 }
 # points). [0.1, 10] was too tight at the low end: on HEB-H five arms tuned to
 # k <= 1 and GNC-W's argmin sat two points above k = 0.1, with nothing below
 # it evaluated.
-[tuning.refiner_scale_multiple]
+[tuning.refiner_efficiency_constant]
 type = "coarse_fine"
 edge_margin = 1
 criterion = { type = "finite_median" }

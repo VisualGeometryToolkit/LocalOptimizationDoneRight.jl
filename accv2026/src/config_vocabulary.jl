@@ -19,5 +19,5 @@ const RETIRED_CONFIG_KEYS = [("arm", "name"), ("pool", "dedupe"),
     ("arm", "a0"), ("arm", "a_half_octaves"), ("arm", "k_half_octaves"),
     ("arm", "criterion"), ("arm", "max_expansions"), ("arm", "ext_half_octaves"),
     # the PnP cells' width keys under their full names since 2026-10-01
-    # (`scale_multiple`, `outlier_halfwidth`)
+    # (`efficiency_constant`, `outlier_halfwidth`)
     ("arm", "k"), ("arm", "a")]

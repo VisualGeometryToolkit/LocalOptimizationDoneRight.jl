@@ -10,7 +10,7 @@ using Test
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: LocalOptimizationDoneRight as LODR, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth
 import PoseLib
-using VisualGeometryToolkitCore: AbstractLocalOptimization, RefitFamily, ExternalRefit, FixedScale, ConsensusAnchored,
+using VisualGeometryToolkitCore: AbstractOptimizationStrategy, RefitFamily, ExternalRefit, FixedScale, ConsensusAnchored,
     LossWidth, FixedS2, scale_interface, optimization_path, lo_label, external_workspace, refine_external!,
     prepare_external!
 
@@ -18,7 +18,7 @@ const _EXT = Base.get_extension(LODR, :LocalOptimizationDoneRightPoseLibExt)
 
 @testset "PoseLib truncated refiners: identity" begin
     @test _EXT isa Module                                    # loading PoseLib loads the solver calls
-    @test PoseLibLm(25) isa AbstractLocalOptimization && PoseLibLZ(25) isa AbstractLocalOptimization
+    @test PoseLibLm(25) isa AbstractOptimizationStrategy && PoseLibLZ(25) isa AbstractOptimizationStrategy
     for lo in (PoseLibLm(25), PoseLibLZ(25), PoseLibLmAdaptLossWidth())
         @test RefitFamily(lo) isa ExternalRefit
     end
@@ -48,7 +48,7 @@ end
 @testset "the adaptive arm's width is VGC's TLS deployment" begin
     lw = _EXT._adapt_loss_width
     for m in (2.5, 1.0, 3.7), s2 in (0.0, 1.0e-6, 0.37, 4.0)
-        lo = PoseLibLmAdaptLossWidth(scale_multiple = m)
+        lo = PoseLibLmAdaptLossWidth(efficiency_constant = m)
         @test lw(lo, s2) === m * sqrt(max(s2, eps()))      # bit-identical to the width it replaced
     end
     # the moment is VGC's Jeffreys scale estimator: floored at eps, never 0

@@ -52,7 +52,7 @@ objective_matched = ["IG  +BCD"]
 # MSAC +Lift is the limit-era (faithful) arm's.
 zero_clamp = ["IG  +Lift"]
 scorer = "scorer"
-refiner = { scale_multiple = "refiner_scale_multiple", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
+refiner = { efficiency_constant = "refiner_efficiency_constant", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
 cache_validation = true
 decode_parallel = 4
 

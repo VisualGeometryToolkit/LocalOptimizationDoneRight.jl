@@ -33,7 +33,7 @@ function locally_optimize!(
         L::LoBuffers, lo::BarronAdaptive, problem, model,
         cs::ConsensusSet, buf::ScoreBuffers, scoring
     )
-    # A genuine (scale_multiple, ŝ²) pair kept apart until the one
+    # A genuine (efficiency_constant, ŝ²) pair kept apart until the one
     # multiplication that needs them both; what lands in the likelihood is a
     # squared WIDTH. Only the SHAPE α moves in this arm.
     width2 = _barron_sq_width(lo, cs, scoring, buf)

@@ -6,7 +6,7 @@
 # THIN CALLER: the emission body is VisualGeometryToolkitEval.Render `emit_basin_faceted`;
 # this script keeps only the paper wiring — env parsing, default artifact
 # paths, the panel table, the EXCLUDE default and the legend name. Arm names
-# are the deployed-sidecar keys (two spaces after IG); CV'd scale multiple per method.
+# are the deployed-sidecar keys (two spaces after IG); CV'd efficiency constant per method.
 using DrWatson; @quickactivate "ACCV2026"   # the project this tool runs under (srcdir/projectdir)
 include(srcdir("config.jl"))   # PAPER_STYLE, the arm vocabulary
 @isdefined(PAPER_FIGDIR) || include(srcdir("registry.jl"))   # the campaign path registry

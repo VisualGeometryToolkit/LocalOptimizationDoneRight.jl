@@ -29,8 +29,8 @@
 # Conventions: pool-frame Sampson residuals via the record's EssentialProblem(pair);
 # per-pair oracle scale ŝ² = gt_variance (this is the MECHANISM exhibit — the
 # oracle choice is stated in the caption; the production 2×2 uses plug-in);
-# outlier half-width = ŝ·√(π/2)·e^{m²/2} at the operating scale multiple m
-# (paper eq-28 map, --operating-scale-multiple).
+# outlier half-width = ŝ·√(π/2)·e^{m²/2} at the operating efficiency constant m
+# (paper eq-28 map, --operating-efficiency-constant).
 #
 # paper-project: allow C1 a worker: scripts/fig2_basin.jl hands it every argument from its configs of record (configs/pt_e_basin.toml, configs/protocol.toml [basin_ladder]) through registry.jl
 # paper-project: allow P1 a worker of scripts/fig2_basin.jl: the bundle (ladder.jld2) records its operating-points sidecar, seed and protocol, and lives in the basin cell's keyed directory, whose run records the cell writes
@@ -54,8 +54,8 @@ start_output_flush!()
 const ARGV     = ARGS
 const POOL_DIR = cli_option(ARGV, "pool-dir")
 const DELTAS   = parse.(Float64, split(cli_option(ARGV, "deltas"), ','))      # the ladder protocol's δ (rad; registry.jl EXP_LADDER_DELTAS)
-const OPERATING_MULTIPLE = parse(Float64, cli_option(ARGV, "operating-scale-multiple",
-                                              string(OPERATING_SCALE_MULTIPLE)))   # eq-28 operating scale multiple (outlier half-width ≈ 25ŝ)
+const OPERATING_MULTIPLE = parse(Float64, cli_option(ARGV, "operating-efficiency-constant",
+                                              string(OPERATING_EFFICIENCY_CONSTANT)))   # eq-28 operating efficiency constant (outlier half-width ≈ 25ŝ)
 const SUCCDEG  = parse(Float64, cli_option(ARGV, "succ-deg"))      # the ladder protocol's success radius (registry.jl EXP_LADDER_SUCC)
 const SEED     = parse(Int, cli_option(ARGV, "seed"))              # the ladder protocol's (registry.jl EXP_LADDER_SEED)
 # Mechanism experiment: corrupt the supplied scale by ζ (ŝ → ζ·ŝ) BEFORE the
@@ -73,14 +73,14 @@ const MATCHER  = cli_option(ARGV, "matcher", "sift")
 
 # (The fixed-constant LO_ROSTER table that used to live here was DEAD CODE: the
 #  roster comes from the sidecars below since 2026-07-18, and its
-#  scale-multiple-less constructors stopped loading when the scale multiple
+#  efficiency-constant-less constructors stopped loading when the efficiency constant
 #  became mandatory (RVG 0.15). Removed
 #  2026-09-07.)
 # =============================================================================
 # Ladder CONFIGURATION — CROSS-VALIDATED DEPLOYMENT ONLY.
 # Every arm runs at its tuned operating point (tuned on the val set with
 # NO perturbation, from the operating-points sidecar) applied to the per-pair
-# oracle scale. There is NO fixed-multiple mode: a common scale multiple does
+# oracle scale. There is NO fixed-multiple mode: a common efficiency constant does
 # not translate across losses — a Welsch loss, a TLS truncation, and a
 # Geman--McClure width at the same multiple are different operating points, so
 # a shared multiple secretly un-matches the methods.
@@ -98,7 +98,7 @@ const SOLOPATH = cli_option(ARGV, "solo-cv", "")
 # (fig2_basin.jl gives the basin cell's) defaults to their run key, so a rerun
 # of the same arguments lands in the same directory.
 const EFFECTIVE = Dict{String,Any}(
-    "pool_dir" => POOL_DIR, "deltas" => DELTAS, "operating_scale_multiple" => OPERATING_MULTIPLE,
+    "pool_dir" => POOL_DIR, "deltas" => DELTAS, "operating_efficiency_constant" => OPERATING_MULTIPLE,
     "succ_deg" => SUCCDEG, "seed" => SEED, "zeta" => ZETA, "arms" => ARMSF, "nboot" => NBOOT,
     "operating_points" => TKPATH, "solo_cv" => SOLOPATH, "dataset" => DATASET, "matcher" => MATCHER)
 const STAMP    = cli_option(ARGV, "stamp", "basin-ladder-" * run_key(EFFECTIVE))
@@ -130,7 +130,7 @@ const _PROBE_LO = arm_strategy(ARM_TABLE["IG  +LO"], 1.0)
 _arm_lo(entry) = entry isa Tuple ? entry[1] : entry
 _arm_native(entry, halfwidth::Float64) = entry isa Tuple ? entry[2] :
     consumed_native(entry, OutlierHalfwidth(), halfwidth;
-                    operating_scale_multiple = OPERATING_MULTIPLE, d_g = codimension(EssentialProblem))
+                    operating_efficiency_constant = OPERATING_MULTIPLE, d_g = codimension(EssentialProblem))
 # ONE refit call per roster entry — solo entries route through the shared
 # delivery dispatch (solo_refit_imc!); composed entries keep the deployed
 # path below verbatim.
@@ -212,7 +212,7 @@ function run_ladder()
             # is on_fail = NaN (a failed refit did NOT travel; the old
             # seed-imc fallback of the truncated path wrongly counted failures
             # as success). Deployed mode: consumed_native converts the outlier
-            # half-width to a loss width at the operating scale multiple for the
+            # half-width to a loss width at the operating efficiency constant for the
             # truncated arms, and every loss-scale consumer (incl. the
             # production Gnc port) reads the seed partition inside its own
             # refit — the retired eval engines' oracle-ŝ² side channel is gone.
@@ -229,7 +229,7 @@ function run_ladder()
     mkpath(OUTDIR)
     bundle = joinpath(OUTDIR, "ladder.jld2")
     JLD2.jldsave(bundle; errs, lo_ns=lons, refinable, deltas=collect(DELTAS), methods=METHODS,
-                 scenes=collect(String.(SCENES)), operating_scale_multiple=OPERATING_MULTIPLE,
+                 scenes=collect(String.(SCENES)), operating_efficiency_constant=OPERATING_MULTIPLE,
                  succ_deg=SUCCDEG, seed=SEED, zeta=ZETA,
                  config=isempty(SOLOPATH) ? "deployed" : "solo-cv",
                  product_tuning_sidecar=TKPATH, solo_sidecar=SOLOPATH,

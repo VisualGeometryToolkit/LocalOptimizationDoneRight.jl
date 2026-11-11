@@ -18,7 +18,7 @@ module LocalOptimizationDoneRightPoseLibExt
 using LocalOptimizationDoneRight: LocalOptimizationDoneRight, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth
 # The package's internals, qualified: its defaults of record and the adaptive arm's operating point.
 const _config_default = LocalOptimizationDoneRight._config_default
-const _ADAPT_OPERATING_SCALE_MULTIPLE = LocalOptimizationDoneRight._ADAPT_OPERATING_SCALE_MULTIPLE
+const _ADAPT_OPERATING_EFFICIENCY_CONSTANT = LocalOptimizationDoneRight._ADAPT_OPERATING_EFFICIENCY_CONSTANT
 import LocalOptimizationDoneRight: truncated_refit_pose
 using PoseLib: refine_relpose, refine_fundamental, refine_homography, LeZachTruncation
 using StaticArrays: SMatrix
@@ -52,9 +52,9 @@ PoseLibWorkspace(frame) =
 external_workspace(::Union{PoseLibLm, PoseLibLZ}, _problem, frame, _scoring) = PoseLibWorkspace(frame)
 
 # THE cheirality of a seed essential (one copy): its pose by VGC's fast vote
-# (`cheiral_pose_fast`, strided-subsampled to about `[local_optimization.poselib]
+# (`cheiral_pose_fast`, strided-subsampled to about `[optimization_strategy.poselib]
 # cheirality_vote_points` points) on the E problem's unit bearings.
-const _CHEIRALITY_VOTE_POINTS = Int(_config_default("local_optimization.poselib", "cheirality_vote_points"))
+const _CHEIRALITY_VOTE_POINTS = Int(_config_default("optimization_strategy.poselib", "cheirality_vote_points"))
 @inline _cheiral_stride(n::Int; cap::Int = _CHEIRALITY_VOTE_POINTS) = 1:max(1, n ÷ cap):n
 function _cheiral_seed_pose(problem::EssentialProblem, seed_E)
     f₁, f₂ = sources(problem.cs), targets(problem.cs)
@@ -123,7 +123,7 @@ external_workspace(::PoseLibLmAdaptLossWidth, problem, _frame, _scoring) =
 function prepare_external!(ws::AdaptWorkspace, ::PoseLibLmAdaptLossWidth, problem::EssentialProblem,
                            seed_E, width::LossWidth, scoring)
     a = loss_width_to_outlier_halfwidth(loss_width(width);
-                                        operating_scale_multiple = _ADAPT_OPERATING_SCALE_MULTIPLE,
+                                        operating_efficiency_constant = _ADAPT_OPERATING_EFFICIENCY_CONSTANT,
                                         d_g = codimension(problem))
     s2₀ = consensus_s2!(ws.rws, problem, with_width(scoring, OutlierHalfwidth(a)), seed_E)
     s2₀ === nothing && return false
@@ -146,7 +146,7 @@ end
 # = rss/ν, ν the partition's size (a scalar distance: one component per point).
 # Fewer than `min_support` residuals within the truncation → nothing (a
 # consensus too thin for a stable scale).
-const _ADAPT_MIN_SUPPORT = Int(_config_default("local_optimization.poselib_adapt", "min_support"))
+const _ADAPT_MIN_SUPPORT = Int(_config_default("optimization_strategy.poselib_adapt", "min_support"))
 function _truncated_moment_s2(loss_width::Float64, r::AbstractVector; min_support::Int = _ADAPT_MIN_SUPPORT)
     rss = 0.0; ν = 0
     @inbounds for i in eachindex(r)
@@ -158,9 +158,9 @@ end
 
 # The truncated loss the arm refines at: VGC's deployment of `TLSShape()` at
 # the scale ŝ² (floored at eps) and the arm's multiple — its width is
-# `loss_width(deploy(…)) = scale_multiple·ŝ`.
+# `loss_width(deploy(…)) = efficiency_constant·ŝ`.
 _adapt_loss_width(lo::PoseLibLmAdaptLossWidth, s2::Float64) =
-    loss_width(deploy(TLSShape(), max(s2, eps()); scale_multiple = lo.scale_multiple))
+    loss_width(deploy(TLSShape(), max(s2, eps()); efficiency_constant = lo.efficiency_constant))
 
 # The per-round alternation moment of a refined pose: the within-width
 # second moment of its pool-frame distances (`mahalanobis_distances!` on the E

@@ -24,7 +24,7 @@ using VisualGeometryToolkitCore: Synthetic
 using VisualGeometryToolkitCore.Synthetic: projective_distance
 using VisualGeometryToolkitCore: estimate, retcode   # VGC accessors (public)
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
-using VisualGeometryToolkitEstimation: LOSS_TAGS, config_dict, local_optimization_from_toml   # public, not exported
+using VisualGeometryToolkitEstimation: LOSS_TAGS, config_dict, optimization_strategy_from_toml   # public, not exported
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: WelschHQEcm, WelschHQNewton
@@ -41,10 +41,10 @@ using VisualGeometryToolkitEstimation: RansacWorkspace
 # calibrated units. Do not "fix" it
 # into the pixel domain — the reason is measured, not stylistic:
 #
-# These arms pin the LO LOSS's behaviour, and its `scale_multiple` is only
+# These arms pin the LO LOSS's behaviour, and its `efficiency_constant` is only
 # observable here. In the calibrated regime the 1.5 / 1.0 / 2.5 arms differ in
 # the third hex digit of their pinned models — ~1e-3 relative, small but real.
-# In the pixel regime the scale multiple is INERT: swept across 32x (0.25x to 8x the inlier
+# In the pixel regime the efficiency constant is INERT: swept across 32x (0.25x to 8x the inlier
 # residual scale) every output is BIT-IDENTICAL. Porting this testset to pixels
 # therefore deletes the only sensitivity it exists to measure, silently.
 #
@@ -156,22 +156,22 @@ const _LIFT_REGRESSION = Dict(
 @testset "lift losses: Welsch-lift trait path is bit-identical (regression)" begin
     u₁, u₂, E_seed = _lift_regression_scene()
     p = cal_problem(u₁, u₂)
-    # The Welsch scale multiples below are NOT in the residual's unit and must
+    # The Welsch efficiency constants below are NOT in the residual's unit and must
     # NOT be scaled with it. Measured: scaling them by the focal length collapses
     # `welsch`, `welsch_1x` and `welsch_2_5x` to BIT-IDENTICAL output — the
     # loss goes flat and the multiple stops mattering, which is the opposite of
-    # what these three arms exist to test. `scale_multiple` multiplies an
+    # what these three arms exist to test. `efficiency_constant` multiplies an
     # estimated scale; the outlier half-width is the quantity that carries the
     # residual's unit.
     arms = [
-        "welsch" => HQ{WelschShape}(max_iter = 25, scale_multiple = 1.5),   # historical default (bitwise fixture)
-        "welsch_1x" => HQ{WelschShape}(max_iter = 25, scale_multiple = 1.0),
-        "welsch_2_5x" => HQ{WelschShape}(max_iter = 25, scale_multiple = 2.5),
-        "newton" => WelschHQNewton(scale_multiple = 1.5, max_iter = 25),
-        "ecm" => WelschHQEcm(scale_multiple = 1.5, max_iter = 25),
-        "gm" => LO.GmHqEps(scale_multiple = 1.0),
-        "tls" => HQ{SmoothTLSShape}(scale_multiple = 2.0),              # historical LiftedSmoothTLSIrls defaults (40, scale_multiple = 2)
-        # (the `scale_multiple = 0` crossover-sentinel arms gm_sent/tls_sent
+        "welsch" => HQ{WelschShape}(max_iter = 25, efficiency_constant = 1.5),   # historical default (bitwise fixture)
+        "welsch_1x" => HQ{WelschShape}(max_iter = 25, efficiency_constant = 1.0),
+        "welsch_2_5x" => HQ{WelschShape}(max_iter = 25, efficiency_constant = 2.5),
+        "newton" => WelschHQNewton(efficiency_constant = 1.5, max_iter = 25),
+        "ecm" => WelschHQEcm(efficiency_constant = 1.5, max_iter = 25),
+        "gm" => LO.GmHqEps(efficiency_constant = 1.0),
+        "tls" => HQ{SmoothTLSShape}(efficiency_constant = 2.0),              # historical LiftedSmoothTLSIrls defaults (40, efficiency_constant = 2)
+        # (the `efficiency_constant = 0` crossover-sentinel arms gm_sent/tls_sent
         # retired with the sentinel: a non-positive multiple is refused)
     ]
     # DISCRIMINATION: the arms must still tell each other apart. Without this a
@@ -184,7 +184,7 @@ const _LIFT_REGRESSION = Dict(
         # storage; the default workspace is now Float32.
         r = locally_optimize(
             p, E_seed; scoring = StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-            local_optimization = lo,
+            local_optimization_strategy = lo,
             workspace = RansacWorkspace(Float64, p, StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()))
         )
         @test estimate(r) !== nothing
@@ -209,7 +209,7 @@ const _LIFT_REGRESSION = Dict(
     F_seed = FundMat(Tuple(SMatrix{3, 3, Float64, 9}(E_seed)))
     rf = locally_optimize(
         pf, F_seed; scoring = StudentTUniformScoring(pf, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-        local_optimization = HQ{WelschShape}(max_iter = 25, scale_multiple = 1.5)
+        local_optimization_strategy = HQ{WelschShape}(max_iter = 25, efficiency_constant = 1.5)
     )
     @test estimate(rf) !== nothing
 end
@@ -229,25 +229,25 @@ end
     e_seed = Synthetic.imc_pose_error(E_seed, R_gt, t_gt)
     @test e_seed > 3.0                     # the seed is genuinely perturbed (~3.4°)
     # Per-loss standardized depths at which the lift must recover: the
-    # redescending losses at the deployed Welsch scale multiple 1.5 (half-weight
+    # redescending losses at the deployed Welsch efficiency constant 1.5 (half-weight
     # depth 1.5·√ln2);
     # Cauchy — the ablation's non-redescending control, whose heavy tail drags
     # toward outliers at wide widths (that sensitivity is the finding the
     # ladder ablation quantifies) — at a tighter depth where it contracts.
     half_weight_depth = 1.5 * sqrt(log(2.0))
-    # Per-K currencies (HQ docstring): Welsch a width multiple, GM/Cauchy a
-    # half-weight depth, smooth-TLS a cutoff multiple (the half-weight depth maps
-    # to the cutoff √2·half_weight_depth·ŝ).
+    # Every efficiency constant is the plain one (HQ docstring): GM's half-weight depth
+    # is converted to its width by `decision_width` (the retired GM currency,
+    # migrated), smooth-TLS's cutoff is √2·half_weight_depth·ŝ.
     arms = [
-        HQ{WelschShape}(max_iter = 25, scale_multiple = 1.5),
-        HQ{GemanMcclureShape}(max_iter = 25, scale_multiple = half_weight_depth),
-        HQ{SmoothTLSShape}(max_iter = 25, scale_multiple = sqrt(2.0) * half_weight_depth),
-        HQ{CauchyShape}(max_iter = 25, scale_multiple = 0.6),
+        HQ{WelschShape}(max_iter = 25, efficiency_constant = 1.5),
+        HQ{GemanMcclureShape}(max_iter = 25, efficiency_constant = VgtkCore.decision_width(GemanMcclureShape(), half_weight_depth)),
+        HQ{SmoothTLSShape}(max_iter = 25, efficiency_constant = sqrt(2.0) * half_weight_depth),
+        HQ{CauchyShape}(max_iter = 25, efficiency_constant = 0.6),
     ]
     for lo in arms
         r = locally_optimize(
             p, E_seed; scoring = StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-            local_optimization = lo
+            local_optimization_strategy = lo
         )
         @test estimate(r) !== nothing
         @test retcode(r) in (:converged, :max_iterations)
@@ -261,7 +261,7 @@ end
     for lo in arms
         rf = locally_optimize(
             pf, F_seed; scoring = StudentTUniformScoring(pf, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-            local_optimization = lo
+            local_optimization_strategy = lo
         )
         @test estimate(rf) !== nothing
         @test sqcost(estimate(rf)) < cost_seed
@@ -273,40 +273,40 @@ end
 # deployed configuration — a real focal length, the outlier half-width in
 # pixels — had no lift gate at all. Same scene, moved into the pixels of an
 # f = 800 camera; the outlier half-width scales with the residual's unit, the
-# Welsch `scale_multiple` does not (it multiplies an estimated scale).
+# Welsch `efficiency_constant` does not (it multiplies an estimated scale).
 # -----------------------------------------------------------------------------
 @testset "lift losses: E HQ lift in the pixel regime" begin
     u₁, u₂, E_seed, R_gt, t_gt = _lift_smoke_scene()
     f = FPX
     p = ecs(u₁, u₂)                                    # the scene in ECAM's pixels
     e_seed = Synthetic.imc_pose_error(E_seed, R_gt, t_gt)
-    lift(scale_multiple) = locally_optimize(
+    lift(efficiency_constant) = locally_optimize(
         p, E_seed; scoring = StudentTUniformScoring(p, 0.05 * f; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-        local_optimization = HQ{WelschShape}(; max_iter = 25, scale_multiple)
+        local_optimization_strategy = HQ{WelschShape}(; max_iter = 25, efficiency_constant)
     )
     # The same lift in calibrated units, for the unit-invariance gate below.
     pc = cal_problem(u₁, u₂)
-    lift_cal(scale_multiple) = locally_optimize(
+    lift_cal(efficiency_constant) = locally_optimize(
         pc, E_seed; scoring = StudentTUniformScoring(pc, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-        local_optimization = HQ{WelschShape}(; max_iter = 25, scale_multiple)
+        local_optimization_strategy = HQ{WelschShape}(; max_iter = 25, efficiency_constant)
     )
     models = Dict{Float64, SMatrix{3, 3, Float64, 9}}()
-    for scale_multiple in (1.0, 1.5, 2.5)
-        r = lift(scale_multiple)
+    for efficiency_constant in (1.0, 1.5, 2.5)
+        r = lift(efficiency_constant)
         @test estimate(r) !== nothing
         @test retcode(r) in (:converged, :max_iterations)
         @test projective_distance(estimate(r), E_seed) > 1.0e-6     # the lift moved the model
         # Moving into pixels changes nothing but the unit: the pose error
         # matches the calibrated lift's at every width (measured: 1.2e-6
-        # relative at scale_multiple = 1, the conditioning of the pixel ↔ bearing map).
-        @test isapprox(Synthetic.imc_pose_error(estimate(r), R_gt, t_gt), Synthetic.imc_pose_error(estimate(lift_cal(scale_multiple)), R_gt, t_gt); rtol = 1.0e-5)
+        # relative at efficiency_constant = 1, the conditioning of the pixel ↔ bearing map).
+        @test isapprox(Synthetic.imc_pose_error(estimate(r), R_gt, t_gt), Synthetic.imc_pose_error(estimate(lift_cal(efficiency_constant)), R_gt, t_gt); rtol = 1.0e-5)
         # Toward the truth at the deployed widths only. Measured: at a scale
         # multiple ≥ 2.5 the Welsch loss admits this scene's 8% outliers and ends
         # near 13°, identically in calibrated units — the width, not the unit.
-        scale_multiple <= 1.5 && @test Synthetic.imc_pose_error(estimate(r), R_gt, t_gt) < 0.8 * e_seed
-        models[scale_multiple] = SMatrix{3, 3, Float64, 9}(estimate(r))
+        efficiency_constant <= 1.5 && @test Synthetic.imc_pose_error(estimate(r), R_gt, t_gt) < 0.8 * e_seed
+        models[efficiency_constant] = SMatrix{3, 3, Float64, 9}(estimate(r))
     end
-    # and its width is live: different scale multiple, different model
+    # and its width is live: different efficiency constant, different model
     @test projective_distance(models[1.0], models[2.5]) > 1.0e-12
 end
 
@@ -323,19 +323,19 @@ end
 @testset "every registered LO strategy runs end to end (E)" begin
     u₁, u₂, E_seed = _lift_smoke_scene()
     p = cal_problem(u₁, u₂)
-    build(d) = local_optimization_from_toml(d; class = :essential, tags = TAGS)
-    runlo(lo) = locally_optimize(p, E_seed; scoring = StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization = lo)
+    build(d) = optimization_strategy_from_toml(d; class = :essential, tags = TAGS)
+    runlo(lo) = locally_optimize(p, E_seed; scoring = StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization_strategy = lo)
     # a registry entry's owner answers whether it takes a loss
     parametric(T) = RVGK.lo_parametric(T)
     for (tag, T) in TAGS
-        takes_scale_multiple = :width in fieldnames(T) || hasfield(T, :scale_multiple)   # WelschHQEcm: a plain multiple
+        takes_efficiency_constant = :width in fieldnames(T) || hasfield(T, :efficiency_constant)   # WelschHQEcm: a plain multiple
         takes_loss = parametric(T)
         takes_loss && continue                         # the loss families: below
         d = Dict{String, Any}("type" => tag)
-        takes_scale_multiple && (d["scale_multiple"] = 1.5)
+        takes_efficiency_constant && (d["efficiency_constant"] = 1.5)
         tag == "barron_hq" && (d["alpha"] = -2.0)
         # the terminal placement names its strategy in a nested `inner` table
-        tag == "terminal_lo" && (d["inner"] = Dict{String, Any}("type" => "hq", "loss" => "welsch", "scale_multiple" => 1.5))
+        tag == "terminal_lo" && (d["inner"] = Dict{String, Any}("type" => "hq", "loss" => "welsch", "efficiency_constant" => 1.5))
         r = runlo(build(d))
         @test estimate(r) !== nothing
         @test retcode(r) in (:converged, :max_iterations)
@@ -348,8 +348,8 @@ end
     )
     for (tag, losses) in admitted, loss in keys(LOSS_TAGS)
         d = Dict{String, Any}("type" => tag, "loss" => loss)
-        # least squares (Irls on the gaussian loss) has no scale multiple
-        (tag == "irls" && loss == "gaussian") || (d["scale_multiple"] = 1.5)
+        # least squares (Irls on the gaussian loss) has no efficiency constant
+        (tag == "irls" && loss == "gaussian") || (d["efficiency_constant"] = 1.5)
         if loss in losses
             r = runlo(build(d))
             @test estimate(r) !== nothing
@@ -359,22 +359,22 @@ end
             tag == "gnc" || @test_throws ArgumentError build(d)
         end
     end
-    # Irls{GaussianShape} is least squares: no `scale_multiple` to require, and one given
+    # Irls{GaussianShape} is least squares: no `efficiency_constant` to require, and one given
     # is refused (in the constructor and in a TOML table), never ignored.
     @test Irls{GaussianShape}() isa Irls{GaussianShape}
-    @test_throws ArgumentError Irls{GaussianShape}(scale_multiple = 1.5)
+    @test_throws ArgumentError Irls{GaussianShape}(efficiency_constant = 1.5)
     @test VgtkCore.lo_width(Irls{WelschShape}()) === nothing   # no width: follows the scorer
-    @test_throws ArgumentError build(Dict{String, Any}("type" => "irls", "loss" => "gaussian", "scale_multiple" => 1.5))
+    @test_throws ArgumentError build(Dict{String, Any}("type" => "irls", "loss" => "gaussian", "efficiency_constant" => 1.5))
     l2 = Irls{GaussianShape}(max_iter = 7)
-    @test !haskey(config_dict(l2), "scale_multiple")
-    @test local_optimization_from_toml(config_dict(l2); class = :homography, tags = TAGS) == l2
+    @test !haskey(config_dict(l2), "efficiency_constant")
+    @test optimization_strategy_from_toml(config_dict(l2); class = :homography, tags = TAGS) == l2
     @test VgtkCore.lo_width(l2) === nothing
     @test VgtkCore.scale_interface(l2) == VgtkCore.NoScale()
     @test VgtkCore.with_width(l2, nothing) == l2
     # The seeded z₀ policies had no runner anywhere; they now read the deployed
     # loss's own normalized weight (VGC `lift_weight`/`lift_wmax`) — run them.
     for K in (WelschShape, GemanMcclureShape, SmoothTLSShape), init in (:posterior, :consensus)
-        r = runlo(HQ{K}(scale_multiple = 1.5, init = init))
+        r = runlo(HQ{K}(efficiency_constant = 1.5, init = init))
         @test estimate(r) !== nothing
         @test retcode(r) in (:converged, :max_iterations)
     end
@@ -384,7 +384,7 @@ end
 # BarronHQ α-dial — MANDATORY pre-launch anchor gates (smooth-and-lift
 # 3-ii): the dial engine must reproduce the existing arms at its parameter
 # limits (α → −∞ ≡ Welsch-HQ; α = −2 ≡ GM-HQ; α = 0 ≡ Cauchy-HQ) under the
-# fixed-core-width standardization: Barron loss width = scale_multiple·ŝ/√2.
+# fixed-core-width standardization: Barron loss width = efficiency_constant·ŝ/√2.
 # =============================================================================
 @testset "BarronHQ α-dial anchor gates" begin
     u₁, u₂, E_seed = _lift_regression_scene()
@@ -392,31 +392,35 @@ end
     RVGB = LocalOptimizationDoneRight
     run(lo) = estimate(locally_optimize(
         p, E_seed; scoring = StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-        local_optimization = lo
+        local_optimization_strategy = lo
     ))
-    scale_multiple = 1.5
-    # α → −∞ ≡ HQ{WelschShape} at the same scale multiple. The limit is NOT
+    efficiency_constant = 1.5
+    # The Barron arms' plain multiple: the Barron loss width is efficiency_constant·ŝ/√2
+    # (the retired m/√2 currency, migrated).
+    barron_multiple = efficiency_constant / sqrt(2.0)
+    # α → −∞ ≡ HQ{WelschShape} at √2·barron_multiple. The limit is NOT
     # uniform in s: the tail correction is a factor e^{x²/(4|α|)} at
     # x = s/loss_width² — canonical-unit gross
     # outliers sit at x ≈ 6·10⁴ (x² ≈ 4·10⁹), so |α| ≳ 10¹² is needed before
     # the losses agree to trajectory tolerance (measured: d = 8e-5 at −1e10,
     # 4.3e-7 at −1e12, plateau ≈ 3e-7 = the 25-iteration ulp-chaos floor).
-    Ew = run(RVGB.HQ{WelschShape}(; max_iter = 25, scale_multiple))
-    Eb = run(RVGB.BarronHQ(-1.0e12; max_iter = 25, scale_multiple))
+    Ew = run(RVGB.HQ{WelschShape}(; max_iter = 25, efficiency_constant))
+    Eb = run(RVGB.BarronHQ(-1.0e12; max_iter = 25, efficiency_constant = barron_multiple))
     @test projective_distance(Eb, Ew) < 1.0e-6
-    # α = −2 ≡ the GM lift at GM loss width = 2·(Barron loss width) = √2·scale_multiple·ŝ
-    # (HQ{GM} half-weight currency: GM loss width = m·ŝ/√(√2−1) ⇒ m = √2·scale_multiple·√(√2−1))
-    Egm = run(RVGB.HQ{GemanMcclureShape}(max_iter = 25, scale_multiple = sqrt(2) * scale_multiple * sqrt(sqrt(2) - 1)))
-    Eb2 = run(RVGB.BarronHQ(-2.0; max_iter = 25, scale_multiple))
+    # α = −2 ≡ the GM lift at GM loss width = 2·(Barron loss width) = √2·efficiency_constant·ŝ
+    # (the half-weight depth √2·efficiency_constant·√(√2−1) converted by `decision_width`, the retired GM currency migrated)
+    Egm = run(RVGB.HQ{GemanMcclureShape}(max_iter = 25,
+        efficiency_constant = VgtkCore.decision_width(GemanMcclureShape(), sqrt(2) * efficiency_constant * sqrt(sqrt(2) - 1))))
+    Eb2 = run(RVGB.BarronHQ(-2.0; max_iter = 25, efficiency_constant = barron_multiple))
     @test projective_distance(Eb2, Egm) < 1.0e-6
     # α = 0 ≡ the Cauchy lift at Cauchy loss width = √2·(Barron loss width) =
-    # scale_multiple·ŝ (the Cauchy decision width is the identity)
-    Eca = run(RVGB.HQ{CauchyShape}(; max_iter = 25, scale_multiple))
-    Eb3 = run(RVGB.BarronHQ(0.0; max_iter = 25, scale_multiple))
+    # efficiency_constant·ŝ (the Cauchy decision width is the identity)
+    Eca = run(RVGB.HQ{CauchyShape}(; max_iter = 25, efficiency_constant))
+    Eb3 = run(RVGB.BarronHQ(0.0; max_iter = 25, efficiency_constant = barron_multiple))
     @test projective_distance(Eb3, Eca) < 1.0e-6
     # interior dial points run and return finite refined models
     for α in (-8.0, -4.0, -1.0, -0.5, 0.5, 1.0)
-        E = run(RVGB.BarronHQ(α; max_iter = 25, scale_multiple))
+        E = run(RVGB.BarronHQ(α; max_iter = 25, efficiency_constant = barron_multiple))
         @test E !== nothing && all(isfinite, Tuple(SMatrix{3, 3, Float64}(E)))
     end
 end

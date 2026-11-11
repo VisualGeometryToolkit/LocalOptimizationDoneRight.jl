@@ -87,17 +87,17 @@ using LocalOptimizationDoneRight: Gnc, HQ
 export lift_arms, check_lift_ransac, check_lift_recovers
 
 """
-    lift_arms(; welsch_scale_multiple, gnc_scale_multiple) -> (name => strategy, …)
+    lift_arms(; welsch_efficiency_constant, gnc_efficiency_constant) -> (name => strategy, …)
 
-The battery's LO arms: the static Welsch IRLS (scale multiple 1.5), the HQ
-lifts — Welsch at `welsch_scale_multiple`, Geman–McClure at the half-weight
-depth of Welsch's 1.5 — and the GNC arm at `gnc_scale_multiple`.
+The battery's LO arms: the static Welsch IRLS (efficiency constant 1.5), the HQ
+lifts — Welsch at `welsch_efficiency_constant`, Geman–McClure at the half-weight
+depth of Welsch's 1.5 — and the GNC arm at `gnc_efficiency_constant`.
 """
-lift_arms(; welsch_scale_multiple, gnc_scale_multiple) = (
-    "Irls{Welsch}" => Irls{WelschShape}(scale_multiple = 1.5),
-    "HQ{Welsch}" => HQ{WelschShape}(scale_multiple = welsch_scale_multiple),
-    "HQ{GM}" => HQ{GemanMcclureShape}(scale_multiple = 1.5 * sqrt(log(2.0))),
-    "Gnc{Irls{Welsch}}" => Gnc{Irls{WelschShape}}(scale_multiple = gnc_scale_multiple),
+lift_arms(; welsch_efficiency_constant, gnc_efficiency_constant) = (
+    "Irls{Welsch}" => Irls{WelschShape}(efficiency_constant = 1.5),
+    "HQ{Welsch}" => HQ{WelschShape}(efficiency_constant = welsch_efficiency_constant),
+    "HQ{GM}" => HQ{GemanMcclureShape}(efficiency_constant = VisualGeometryToolkitCore.decision_width(GemanMcclureShape(), 1.5 * sqrt(log(2.0)))),   # half-weight depth, migrated
+    "Gnc{Irls{Welsch}}" => Gnc{Irls{WelschShape}}(efficiency_constant = gnc_efficiency_constant),
 )
 
 """
@@ -111,7 +111,7 @@ function check_lift_ransac(accurate, problem, scoring, arms, n_in; seed)
     @testset "ransac() — $name" for (name, lo) in arms
         Random.seed!(11)
         res = ransac(
-            problem, scoring; local_optimization = lo,
+            problem, scoring; local_optimization_strategy = lo,
             config = RansacConfig(max_trials = 2000, min_trials = 200),
             rng = MersenneTwister(seed)
         )

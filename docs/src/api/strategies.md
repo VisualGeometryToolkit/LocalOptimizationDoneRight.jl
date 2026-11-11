@@ -7,8 +7,8 @@ CurrentModule = LocalOptimizationDoneRight
 Every strategy implements VisualGeometryToolkitCore's local-optimization contract
 (`lo_workspace`, `locally_optimize!`), so it composes with any scorer in
 VisualGeometryToolkitEstimation's `ransac` and `find_*` pipelines. The core baselines,
-`NoLocalOptimization` and `Irls{K}`, live in VisualGeometryToolkitEstimation. A
-width-carrying strategy takes `scale_multiple = m` (a multiple of the consensus
+`nothing` (no local optimization) and `Irls{K}`, live in VisualGeometryToolkitEstimation. A
+width-carrying strategy takes `efficiency_constant = m` (a multiple of the consensus
 set's scale), `loss_width = w` (an absolute width), or neither, in which case
 its loss width follows the scorer's inlier threshold. See the
 [Overview](../overview.md).
@@ -55,10 +55,10 @@ truncated_refit_pose
 tuning_constant
 TuningConstant
 TuningProvenance
-WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL
-WELSCH_HQ_SCALE_MULTIPLE_FUNDMAT
-WELSCH_HQ_SCALE_MULTIPLE_HOMOGRAPHY
-WELSCH_HQ_SCALE_MULTIPLE_ABSOLUTE_POSE
+WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL
+WELSCH_HQ_EFFICIENCY_CONSTANT_FUNDMAT
+WELSCH_HQ_EFFICIENCY_CONSTANT_HOMOGRAPHY
+WELSCH_HQ_EFFICIENCY_CONSTANT_ABSOLUTE_POSE
 ```
 
 ## TOML registry

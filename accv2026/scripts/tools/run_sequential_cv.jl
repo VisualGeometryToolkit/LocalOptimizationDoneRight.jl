@@ -22,7 +22,7 @@
 # its input is auditable on disk:
 #
 #   scorer   scorer_cv.jld2 — `coarse_fine_cv_batched` of each selector's width
-#            on the SELECTION-ONLY error (`NoLocalOptimization`: the selected
+#            on the SELECTION-ONLY error (`nothing`, no local optimization: the selected
 #            model's pose error, no refit) over the validation pairs. One sweep
 #            of the pool per round, every point of every selector in it.
 #   refiner  refiner_cv.jld2 — reads a* per selector from scorer_cv.jld2
@@ -38,7 +38,7 @@
 #            panels AND its budget cell.
 #
 # THE PLUG-IN SCALE (`[sequential_cv] plugin_scale`, optional): the tuning
-# never reads a scale, but the anchoring ablation evaluates the scale-multiple
+# never reads a scale, but the anchoring ablation evaluates the efficiency-constant
 # arms at a FIXED external scale s0. `"oracle_gt_variance"` records s0 =
 # reference_scale of the validation pairs' stored σ̂² — on PhotoTourism the
 # ORACLE variance (SfM-track detections under the bundle-adjusted pose,
@@ -52,7 +52,7 @@
 # points as a `mode = "basin"` sidecar with no ζ evaluation.
 #
 # ANCHORING (`--stage=anchoring`, never part of `all`): the anchoring
-# ablation's WITHOUT side — the composed sidecar's scale-multiple arms
+# ablation's WITHOUT side — the composed sidecar's efficiency-constant arms
 # re-evaluated on the same ζ ladder with their loss width delivered at the
 # FIXED plug-in scale ζ·s0 (`miscal_evaluation_refit`'s `plugin_scale`)
 # instead of the seed partition's ŝ. The scale interface is
@@ -139,7 +139,7 @@ const ARMS    = ROSTER_KIND == "basin" ? basin_specs(PROBLEM; matched = MATCHED,
                                          composed_specs(PROBLEM; matched = MATCHED, zero_clamp = ZERO_CLAMP)
 "The arms the refiner stage tunes (every arm but the pinned, selection-width ones)."
 const TUNED   = filter(is_tuned, ARMS)
-"An arm's width parameterization by its persisted name (`\"scale_multiple\"` | …)."
+"An arm's width parameterization by its persisted name (`\"efficiency_constant\"` | …)."
 kind_name(arm) = String(width_axis_name(arm.kind))
 "The selector families the roster seeds from, in a fixed order."
 const SELS    = sort!(unique(arm.sel for arm in ARMS))
@@ -355,7 +355,7 @@ function scorer_search()
     # own error, no refit.
     function curves(xs_of)
         M, s2[], np[] = selection_sweep(validation_loaders(), xs_of) do idxs_of
-            [LoRefitSpec("selection|$s", NoLocalOptimization(), selector_native_axis(s), xs, idxs_of[s])
+            [LoRefitSpec("selection|$s", nothing, selector_native_axis(s), xs, idxs_of[s])
              for (s, xs) in xs_of]
         end
         return Dict(s => [M["selection|$s"][:, t] for t in eachindex(xs)] for (s, xs) in xs_of)
@@ -569,8 +569,8 @@ function run_anchoring()
     haskey(tk, "s0") || error("$SIDECAR_F carries no plug-in scale s0 — set [sequential_cv] plugin_scale and re-tune")
     plugin_scale = Float64(tk["s0"])
     Float64.(tk["zetas"]) == ZETAS || error("$SIDECAR_F: its ζ ladder differs from the protocol's")
-    # Only the scale-multiple arms have a partition anchor to remove.
-    ro = [arm for arm in ARMS if arm.kind isa ScaleMultiple]
+    # Only the efficiency-constant arms have a partition anchor to remove.
+    ro = [arm for arm in ARMS if arm.kind isa EfficiencyConstant]
     tuned = Dict(arm.base => (selection = Float64(tk["tuned_selection"][arm.base]),
                               width = Float64(tk["tuned_width"][arm.base])) for arm in ro)
     sels = sort!(unique(arm.sel for arm in ro))

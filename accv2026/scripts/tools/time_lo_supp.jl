@@ -3,7 +3,7 @@
 # time_lo_supp.jl — isolated single-thread LO wall-clock timing for the
 # SUPPLEMENT's per-call timing table. Times every arm the arm table marks as
 # timed (arm_rosters.jl TIMING_TAGS), built by the table's own constructors at
-# the deployed scale multiple: one evaluate_sample_budget run per run tag, whose :ig
+# the deployed efficiency constant: one evaluate_sample_budget run per run tag, whose :ig
 # column carries that arm's per-call time; the truncated MSAC / Le-Zach refits
 # (TLS-IRLS / TLS-LZ) ride the Stu-t-IRLS run as its :msac / :lezach columns.
 #
@@ -13,7 +13,7 @@
 # Usage:
 #   julia -t 1 --project=<RVG> time_lo_supp.jl [--pool=DIR] [--scene=NAME]
 #                                              [--npairs=N] [--outlier-halfwidth=W] [--loss-width=T]
-#                                              [--scale-multiple=M] [--tag=LABEL]
+#                                              [--efficiency-constant=M] [--tag=LABEL]
 # Defaults reproduce the PhotoTourism (main-paper) timing; supply --pool/--outlier-halfwidth/--loss-width
 # to time on ScanNet at its own val-tuned operating point.
 # Output: $OUT/lo_timing_<tag>_<scene>.jld2 + a printed per-method table.
@@ -47,7 +47,7 @@ mkpath(OUT)
 # tuned optima through `deployed_budget_settings` — THE gate-enforced
 # reader (interior-argmin invariant; a clipped sidecar hard-errors here), so
 # each dataset is timed at ITS OWN tuned operating point from the ONE tuning
-# path. Explicit --outlier-halfwidth/--loss-width/--scale-multiple win (smoke
+# path. Explicit --outlier-halfwidth/--loss-width/--efficiency-constant win (smoke
 # only); without a sidecar every one of them is REQUIRED — there is no fallback
 # operating point. The retired `--cv=cv.jld2` shared-knob-CV consumer was
 # REMOVED 2026-07-18 with that CV path.
@@ -58,7 +58,7 @@ _operating_point(flag, deployed) = _DEP === nothing ? parse(Float64, cli_option(
 const OUTLIER_HALFWIDTH = _operating_point("outlier-halfwidth", d -> d["IG  +LO"].sel)
 const LOSS_WIDTH        = _operating_point("loss-width",        d -> d["MSAC +PoseLib"].ref)
 # the paper's Welsch-HQ (configs/protocol.toml [paper] welsch_hq) — the arm the "Welsch-HQ" run times
-const SCALE_MULTIPLE    = _operating_point("scale-multiple",    d -> lo_width(d[PAPER_WELSCH_HQ].lo).value)
+const EFFICIENCY_CONSTANT    = _operating_point("efficiency-constant",    d -> lo_width(d[PAPER_WELSCH_HQ].lo).value)
 
 scene  = cli_option(ARGS, "scene")                  # the timing fixture: required, stated by the caller (timing_table.jl)
 npairs = parse(Int, cli_option(ARGS, "npairs"))
@@ -87,7 +87,7 @@ const RIDER_SPECS = Dict(:msac   => LossWidthSpec(:msac, RIDER_MSAC, LOSS_WIDTH,
                          :lezach => LossWidthSpec(:lezach, RIDER_MSAC, LOSS_WIDTH, PoseLibLZ(lo_iteration_budget())))
 
 # One run per run tag: the arm whose :ig column the tag names supplies the
-# strategy (at SCALE_MULTIPLE on the shared grid; it barely affects per-call timing),
+# strategy (at EFFICIENCY_CONSTANT on the shared grid; it barely affects per-call timing),
 # the arms riding the tag supply its MSAC specs.
 const RUN_TAGS = unique(tag for (tag, col) in values(TIMING_TAGS) if col === :ig)
 runs = map(sort(RUN_TAGS)) do tag
@@ -96,7 +96,7 @@ runs = map(sort(RUN_TAGS)) do tag
     riders = LossWidthSpec[RIDER_SPECS[c] for c in (:msac, :lezach) if c in cols]
     (tag, evaluate_sample_budget(EssentialProblem, METHODS, sub, sub_R;
                                  loss_width_specs = riders,
-                                 cfg = cfgf(arm_strategy(ARM_TABLE[owner], SCALE_MULTIPLE))))
+                                 cfg = cfgf(arm_strategy(ARM_TABLE[owner], EFFICIENCY_CONSTANT))))
 end
 
 println("\n=== Isolated LO timing  (tag=$TAG, scene=$scene, $(length(sub)) pairs, nthreads=$(Threads.nthreads())) ===")
@@ -108,7 +108,7 @@ end
 
 JLD2.jldsave(joinpath(OUT, "lo_timing_$(TAG)_$(scene).jld2");
     tag = TAG, scene = scene, n_pairs = length(sub), nthreads = Threads.nthreads(),
-    outlier_halfwidth = OUTLIER_HALFWIDTH, loss_width = LOSS_WIDTH, scale_multiple = SCALE_MULTIPLE,
+    outlier_halfwidth = OUTLIER_HALFWIDTH, loss_width = LOSS_WIDTH, efficiency_constant = EFFICIENCY_CONSTANT,
     runs = [(tag = tag, methods = r.methods, lo_ns_total = r.lo_ns_total,
              lo_calls_total = r.lo_calls_total, lo_startup_ns = r.lo_startup_ns) for (tag, r) in runs])
 println("\nsaved -> ", joinpath(OUT, "lo_timing_$(TAG)_$(scene).jld2")); flush(stdout)

@@ -22,7 +22,7 @@ cv_section = "phototourism"
 
 # The HEB-H / PT-E protocol, on the basin roster (`basin_specs`): the IG
 # scorer's a* on the selection-only error, then each basin arm's width at it.
-# The basin roster holds no scale-multiple arm, but the fold names an entry
+# The basin roster holds no efficiency-constant arm, but the fold names an entry
 # for every kind, so the same three are named here.
 [sequential_cv]
 # The objective-matched Stu-tU-BCD (arm_rosters.jl): "IG  +BCD@a*", its refit
@@ -38,7 +38,7 @@ objective_matched = ["IG  +BCD"]
 zero_clamp = ["IG  +Lift"]
 roster = "basin"
 scorer = "scorer"
-refiner = { scale_multiple = "refiner_scale_multiple", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
+refiner = { efficiency_constant = "refiner_efficiency_constant", outlier_halfwidth = "refiner_native", loss_width = "refiner_native" }
 cache_validation = true
 decode_parallel = 4
 # ONE scorer per (dataset, model class): Fig 2's basin roster refines at the

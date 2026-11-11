@@ -34,10 +34,10 @@ using VisualGeometryToolkitEval.Evaluation: Evaluation, PairGeom, ScoreSelector,
     lo_iteration_budget, deployed_ref
 using VisualGeometryToolkitEval.Pools: PoolResiduals, ScoringPool, synthetic_e_pool_pair, sample_starts, GT_CONVENTION
 using VisualGeometryToolkitEval.Tuning: tuning_spec, GridSpec, SpacedGrid, LinearCount, grid, save_tuning_artifact,
-    tuning_table, ScaleMultipleWindow, PairUnit
-using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, NoLocalOptimization, RansacWorkspace, consensus_s2!
+    tuning_table, EfficiencyConstantWindow, PairUnit
+using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, RansacWorkspace, consensus_s2!
 using VisualGeometryToolkitCore: EssentialMat, FundMat, Point2, Csponds, CameraModel, WelschShape, IGPrior, MsacScoring,
-    ConsensusAnchored, ScaleMultiple, LossWidth, OutlierHalfwidth, scale_interface, width_axis_name, with_width,
+    ConsensusAnchored, EfficiencyConstant, LossWidth, OutlierHalfwidth, scale_interface, width_axis_name, with_width,
     codimension, select_on_grid!, stage_selection, selection_staging, best_pool_model, scoring_workspace
 using VisualGeometryToolkitCore.Pools: PoolPair, num_models, num_points
 
@@ -88,7 +88,7 @@ end
 # writes for pair 1).
 function refit_row(ctx, spec)
     M = fill(NaN, 1, length(spec.grid))
-    Evaluation._apply_refit_row!(M, ctx, spec.lo, spec, 1, OPERATING_SCALE_MULTIPLE, nothing)
+    Evaluation._apply_refit_row!(M, ctx, spec.lo, spec, 1, OPERATING_EFFICIENCY_CONSTANT, nothing)
     return M
 end
 
@@ -98,7 +98,7 @@ end
     pair, _ = epair(MersenneTwister(7))
     ctx = build_pair_ctx(P, pair; scoring = TEMPLATE)
     seed = refit_seed(ctx, pair.models[3])
-    lo = HQ{WelschShape}(max_iter = 25, scale_multiple = 1.0)
+    lo = HQ{WelschShape}(max_iter = 25, efficiency_constant = 1.0)
     a = 0.01
     sc = marginal(a)
     @test with_width(TEMPLATE, OutlierHalfwidth(a)) == sc          # the template at the refit's half-width
@@ -149,7 +149,7 @@ end
     @testset "loss-width delivery ≡ solo delivery (bitwise)" begin
         width = 3 * sn.loss_width
         halfwidth = 0.05
-        lo_unit() = HQ{WelschShape}(max_iter = 25, scale_multiple = 1.0)
+        lo_unit() = HQ{WelschShape}(max_iter = 25, efficiency_constant = 1.0)
         for lo_of in (lo_unit, () -> PoseLibLm(25))          # a native refiner, an external one
             spec = LoRefitSpec("bw", lo_of(), OutlierHalfwidth(), [halfwidth], reshape(Int32[1], 1, 1);
                                width_delivery(LossWidth(), lo_of(), width, 1)...)
@@ -167,26 +167,26 @@ end
                                s2 = width^2))
         @test width_delivery(LossWidth(), lo_unit(), 2.0, 2) == (; widths = [2.0, 2.0])
         @test width_delivery(LossWidth(), PoseLibLm(25), 2.0, 2) == (; widths = [2.0, 2.0])
-        @test width_delivery(ScaleMultiple(), lo_unit(), 2.0, 2) == (;)
-        @test_throws ArgumentError SoloSpec("x", :refinement, ScaleMultiple(), identity)
-        @test_throws ArgumentError ComposedSpec("x", :ig, ScaleMultiple(), ScaleMultiple(), identity)
+        @test width_delivery(EfficiencyConstant(), lo_unit(), 2.0, 2) == (;)
+        @test_throws ArgumentError SoloSpec("x", :refinement, EfficiencyConstant(), identity)
+        @test_throws ArgumentError ComposedSpec("x", :ig, EfficiencyConstant(), EfficiencyConstant(), identity)
     end
 end
 
 @testset "LoRefitSpec: the paper refiners' native axes" begin
     idxs = ones(Int32, 1, 3)
-    @test_throws MethodError consumed_native(PoseLibLm(25), ScaleMultiple(), 0.2; d_g = 1)
+    @test_throws MethodError consumed_native(PoseLibLm(25), EfficiencyConstant(), 0.2; d_g = 1)
     @test consumed_axis(PoseLibLm(25)) === LossWidth() && consumed_axis(PoseLibLmAdaptLossWidth()) === LossWidth()
     @test consumed_axis(ScoreGuarded(StudentTUniform(max_iter = 2))) === OutlierHalfwidth()
-    @test consumed_axis(HQ{WelschShape}(max_iter = 2, scale_multiple = 1.0)) === OutlierHalfwidth()
+    @test consumed_axis(HQ{WelschShape}(max_iter = 2, efficiency_constant = 1.0)) === OutlierHalfwidth()
     @test consumed_native(PoseLibLm(25), LossWidth(), 0.2; d_g = 1) === 0.2
     @test LoRefitSpec("x", PoseLibLm(25), LossWidth(), [1.0, 2.0, 3.0], idxs).axis === LossWidth()
-    # tuned ≡ deployed at ζ = 1: a scale-multiple arm's evaluation native is the
+    # tuned ≡ deployed at ζ = 1: an efficiency-constant arm's evaluation native is the
     # selection native on the refiner's own axis
-    grids = Dict(:outlier_halfwidth => [0.5, 1.0, 2.0], :loss_width => [0.1, 0.2, 0.4], :scale_multiple => [1.5, 2.5])
+    grids = Dict(:outlier_halfwidth => [0.5, 1.0, 2.0], :loss_width => [0.1, 0.2, 0.4], :efficiency_constant => [1.5, 2.5])
     idxs_of = Dict(:ig => ones(Int32, 1, 3), :msac => ones(Int32, 1, 3))
-    arms = [ComposedSpec("IG+Welsch", :ig, OutlierHalfwidth(), ScaleMultiple(), m -> HQ{WelschShape}(; scale_multiple = m)),
-            ComposedSpec("MSAC+TLS-LM", :msac, LossWidth(), ScaleMultiple(), m -> PoseLibLm(25))]
+    arms = [ComposedSpec("IG+Welsch", :ig, OutlierHalfwidth(), EfficiencyConstant(), m -> HQ{WelschShape}(; efficiency_constant = m)),
+            ComposedSpec("MSAC+TLS-LM", :msac, LossWidth(), EfficiencyConstant(), m -> PoseLibLm(25))]
     for arm in arms, c in 1:3
         sel = grids[width_axis_name(arm.selection)][c]
         ro = miscal_evaluation_refit(arm, idxs_of, (selection = sel, width = 2.5), [1.0], grids; d_g = 1)
@@ -200,11 +200,11 @@ end
     pairs = [first(epair(rng)) for _ in 1:3]
     hw = [0.005, 0.01, 0.02, 0.04, 0.08]
     idxs = Int32[j % 4 for j in 1:3, _ in 1:5]                 # some 0 ⇒ no consensus
-    specs = [LoRefitSpec("IG  +Lift|w=$i", HQ{WelschShape}(; max_iter = 5, scale_multiple = m),
+    specs = [LoRefitSpec("IG  +Lift|w=$i", HQ{WelschShape}(; max_iter = 5, efficiency_constant = m),
                          OutlierHalfwidth(), hw, idxs) for (i, m) in enumerate((1.0, 2.0))]
     push!(specs, LoRefitSpec("IG  +LO", StudentTUniform(max_iter = 5), OutlierHalfwidth(), hw, idxs))
     push!(specs, LoRefitSpec("IG  +TLS-LM", PoseLibLm(5), OutlierHalfwidth(), hw, idxs))
-    push!(specs, LoRefitSpec("IG  sel", NoLocalOptimization(), OutlierHalfwidth(), hw, idxs))
+    push!(specs, LoRefitSpec("IG  sel", nothing, OutlierHalfwidth(), hw, idxs))
     threaded = apply_lo_refits(P, specs, pairs; scoring = TEMPLATE)
     for sp in specs
         @test isequal(threaded[sp.label], only(values(apply_lo_refits(P, [sp], pairs; scoring = TEMPLATE))))
@@ -281,7 +281,7 @@ end
     prs = [epair(rng) for _ in 1:4]
     pairs = first.(prs); Rs = last.(prs)
     halfwidths = [0.005, 0.01, 0.02, 0.04]; a = halfwidths[2]
-    grids = Dict(:outlier_halfwidth => halfwidths, :scale_multiple => [1.0, 2.0, 3.0],
+    grids = Dict(:outlier_halfwidth => halfwidths, :efficiency_constant => [1.0, 2.0, 3.0],
                  :loss_width => [0.001, 0.002, 0.004])
     idxs = Matrix{Int32}(undef, length(pairs), length(halfwidths))
     select_on_grid!(idxs, P, TEMPLATE, halfwidths, stage_selection(selection_staging(TEMPLATE), pairs, Rs; backend = CPU))
@@ -290,8 +290,8 @@ end
     arms = [ComposedSpec("IG  +LO", :ig, OutlierHalfwidth(), OutlierHalfwidth(), _ -> StudentTUniform(max_iter = 25)) => 0.03,
             ComposedSpec("IG  +BCD", :ig, OutlierHalfwidth(), OutlierHalfwidth(), bcd) => 0.04,
             ComposedSpec("IG  +BCD@a*", :ig, OutlierHalfwidth(), OutlierHalfwidth(), bcd; source = SelectionWidth()) => nothing,
-            ComposedSpec("IG  +Lift", :ig, OutlierHalfwidth(), ScaleMultiple(),
-                         m -> HQ{WelschShape}(max_iter = 25, scale_multiple = m)) => 2.0,
+            ComposedSpec("IG  +Lift", :ig, OutlierHalfwidth(), EfficiencyConstant(),
+                         m -> HQ{WelschShape}(max_iter = 25, efficiency_constant = m)) => 2.0,
             ComposedSpec("IG  +PoseLib", :ig, OutlierHalfwidth(), LossWidth(), _ -> PoseLibLm(25)) => 0.002]
     budget = Dict{String,Vector{Float32}}()
     for (arm, tuned_width) in arms
@@ -299,7 +299,7 @@ end
         spec = miscal_evaluation_refit(arm, idxs_of, (selection = a, width = tuned_width), [1.0], grids; d_g = 1)
         miscal = only(values(apply_lo_refits(P, [spec], pairs; scoring = TEMPLATE)))
         ref = deployed_ref(arm.kind, a, width)
-        nat = arm.kind isa ScaleMultiple ? (;) : (; nat_ref = ref, nat_axis = arm.kind)
+        nat = arm.kind isa EfficiencyConstant ? (;) : (; nat_ref = ref, nat_axis = arm.kind)
         cfg = SampleBudgetConfig(; sample_cap = 12, batch_size = 4, lo_every = 4, budget_unit = :models,
                                  lo_strategy = arm.ctor(width), nat...)
         r = evaluate_sample_budget(P, [SampleBudgetMethodSpec(:ig, marginal(a))], pairs, Rs; cfg)
@@ -337,8 +337,8 @@ end
     ig = TEMPLATE
     msac = loss_width_scoring("msac", codimension(P))
     refits_of = (idxs_of, _) -> [
-        LoRefitSpec("IG  sel", NoLocalOptimization(), OutlierHalfwidth(), halfwidths, idxs_of[:ig]),
-        LoRefitSpec("MSAC sel", NoLocalOptimization(), LossWidth(), loss_widths, idxs_of[:msac]),
+        LoRefitSpec("IG  sel", nothing, OutlierHalfwidth(), halfwidths, idxs_of[:ig]),
+        LoRefitSpec("MSAC sel", nothing, LossWidth(), loss_widths, idxs_of[:msac]),
     ]
     M, s2, np = stream_selections(refits_of, Float64, P, loaders,
                                   [:ig => (halfwidths, ig), :msac => (loss_widths, msac)], TEMPLATE, CPU, 1)
@@ -357,12 +357,12 @@ end
 
 @testset "miscal evaluation: the fixed external scale port" begin
     pair, _ = epair(MersenneTwister(7))
-    arm = ComposedSpec("IG  +Lift", :ig, OutlierHalfwidth(), ScaleMultiple(),
-                       m -> HQ{WelschShape}(; max_iter = 25, scale_multiple = m))
-    grids = Dict(:outlier_halfwidth => [0.005, 0.01, 0.02], :scale_multiple => [1.0, 2.0, 3.0],
+    arm = ComposedSpec("IG  +Lift", :ig, OutlierHalfwidth(), EfficiencyConstant(),
+                       m -> HQ{WelschShape}(; max_iter = 25, efficiency_constant = m))
+    grids = Dict(:outlier_halfwidth => [0.005, 0.01, 0.02], :efficiency_constant => [1.0, 2.0, 3.0],
                  :loss_width => [0.001, 0.002, 0.004])
     idxs_of = Dict(:ig => fill(Int32(3), 1, 3))
-    tuned = (selection = grids[:outlier_halfwidth][2], width = grids[:scale_multiple][2])
+    tuned = (selection = grids[:outlier_halfwidth][2], width = grids[:efficiency_constant][2])
     zetas = [0.25, 1.0, 4.0]
     s0 = 2.0e-3
     with = miscal_evaluation_refit(arm, idxs_of, tuned, zetas, grids; d_g = 1)
@@ -385,14 +385,14 @@ end
 @testset "Roster: the gate-enforced readers on the paper's arms" begin
     composed = p -> [
         ComposedSpec("IG  +LO",   :ig, OutlierHalfwidth(), OutlierHalfwidth(), _ -> StudentTUniform(max_iter = 25)),
-        ComposedSpec("IG  +Lift", :ig, OutlierHalfwidth(), ScaleMultiple(),
-                     m -> HQ{WelschShape}(max_iter = 25, scale_multiple = m)),
+        ComposedSpec("IG  +Lift", :ig, OutlierHalfwidth(), EfficiencyConstant(),
+                     m -> HQ{WelschShape}(max_iter = 25, efficiency_constant = m)),
         ComposedSpec("MSAC +LZ",  :msac, LossWidth(), LossWidth(), _ -> PoseLibLZ(25)),
         ComposedSpec("IG  +BCD@a*", :ig, OutlierHalfwidth(), OutlierHalfwidth(), _ -> StuTuBCD(max_iter = 25);
                      source = SelectionWidth()),
     ]
     basin = p -> [
-        ComposedSpec("IG  +Lift",    :ig, OutlierHalfwidth(), LossWidth(), _ -> HQ{WelschShape}(max_iter = 25, scale_multiple = 1.0)),
+        ComposedSpec("IG  +Lift",    :ig, OutlierHalfwidth(), LossWidth(), _ -> HQ{WelschShape}(max_iter = 25, efficiency_constant = 1.0)),
         ComposedSpec("IG  +PoseLib", :ig, OutlierHalfwidth(), LossWidth(), _ -> PoseLibLm(25)),
     ]
     roster = Roster(composed, (p; role = :refinement) -> SoloSpec[], basin)
@@ -402,10 +402,10 @@ end
     mktempdir() do dir
         cpath = joinpath(dir, "composed.jld2"); write_sidecar(cpath, composed(:E); mode = "miscal")
         bud = Dict(deployed_budget_settings(roster, cpath))
-        @test bud["IG  +Lift"].ref == bud["IG  +Lift"].sel                 # scale multiple: refit at the selection native
+        @test bud["IG  +Lift"].ref == bud["IG  +Lift"].sel                 # efficiency constant: refit at the selection native
         @test bud["MSAC +LZ"].ref == g[:loss_width][3]                      # a native width at its tuned value
-        @test bud["IG  +Lift"].kind === ScaleMultiple() && bud["MSAC +LZ"].kind === LossWidth()   # the roster's kind
-        @test bud["IG  +Lift"].lo == HQ{WelschShape}(max_iter = 25, scale_multiple = g[:scale_multiple][3])
+        @test bud["IG  +Lift"].kind === EfficiencyConstant() && bud["MSAC +LZ"].kind === LossWidth()   # the roster's kind
+        @test bud["IG  +Lift"].lo == HQ{WelschShape}(max_iter = 25, efficiency_constant = g[:efficiency_constant][3])
         @test bud["IG  +BCD@a*"].ref == bud["IG  +BCD@a*"].sel == g[:outlier_halfwidth][3]   # pinned at a*
         @test Dict(deployed_arm_settings(roster, cpath))["MSAC +LZ"][2] == g[:loss_width][3]
         @test audit_operating_points(roster, cpath)
@@ -433,7 +433,7 @@ end
             tuned_objective = Dict("IG  +BCD@a*" => 0.0), boundary_hits = Dict("IG  +BCD@a*" => String[]))
         @test_throws ArgumentError deployed_budget_settings(roster, mpath)
 
-        # a scale-multiple arm on the basin roster is refused
+        # an efficiency-constant arm on the basin roster is refused
         bad = Roster(composed, roster.solo, p -> composed(p))
         @test_throws ErrorException deployed_basin_settings(bad, bpath)
     end

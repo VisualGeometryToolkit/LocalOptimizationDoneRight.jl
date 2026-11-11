@@ -10,7 +10,7 @@
 # EXCLUSIVELY at the tuned optima read from THE deployed operating-points
 # sidecar (deployed_budget_settings, problem-aware :H); there is no
 # self-tuning. Selection = each arm's own tuned outlier half-width;
-# refinement at its tuned width (scale multiple partition-anchored /
+# refinement at its tuned width (efficiency constant partition-anchored /
 # loss width at its tuned value).
 # =============================================================================
 

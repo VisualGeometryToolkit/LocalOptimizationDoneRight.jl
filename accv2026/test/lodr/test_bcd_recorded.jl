@@ -101,10 +101,10 @@ problems = (
     (:E, R.EssentialProblem(CameraModel(PIXEL_PAIRS_K), CameraModel(PIXEL_PAIRS_K), contaminated_pixel_pairs(Xoshiro(121), 300; planar = false))),
 )
 arms(kind) = Any[
-    LO.StudentTUniform(), LO.BarronAdaptive(scale_multiple = 2.0),
-    LO.StuTuBCD(), LO.HQ{WelschShape}(scale_multiple = 1.5), LO.HQ{GemanMcclureShape}(scale_multiple = 1.25),
-    LO.Gnc{R.Irls{WelschShape}}(scale_multiple = 1.5),
-    (kind === :E ? Any[LO.WelschHQNewton(scale_multiple = 1.5), LO.WelschHQEcm(scale_multiple = 1.5),
+    LO.StudentTUniform(), LO.BarronAdaptive(efficiency_constant = 2.0),
+    LO.StuTuBCD(), LO.HQ{WelschShape}(efficiency_constant = 1.5), LO.HQ{GemanMcclureShape}(efficiency_constant = VisualGeometryToolkitCore.decision_width(GemanMcclureShape(), 1.25)),
+    LO.Gnc{R.Irls{WelschShape}}(efficiency_constant = 1.5),
+    (kind === :E ? Any[LO.WelschHQNewton(efficiency_constant = 1.5), LO.WelschHQEcm(efficiency_constant = 1.5),
                        LO.StuTuHQTabulated(), LO.StuTuRegemm(max_iter = 12)] : Any[])...,
 ]
 @testset "Recorded == bare: $kind $(nameof(typeof(lo)))" for (kind, p) in problems, lo in arms(kind)
