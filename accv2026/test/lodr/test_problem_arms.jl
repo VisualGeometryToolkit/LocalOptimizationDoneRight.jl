@@ -185,12 +185,12 @@ end
 # Radial homography (radial_homography): the old default (the class's Welsch
 # HQ recipe, stated explicitly) and the Student-t + uniform IRLS.
 # -----------------------------------------------------------------------------
-const _RW, _RH = RADIAL_HOMOGRAPHY_FRAME   # Estimation's RadialScenes: radial_homography, radial_homography_pairs
+const _RW, _RH = RADIAL_HOMOGRAPHY_FRAME   # Estimation's RadialScenes: radial_homography_truth, radial_homography_pairs
 
 @testset "radial homography" begin
     # the battery's RNG stream: its problem-level scene draws first
     rng = MersenneTwister(1234)
-    m_gt = radial_homography(-0.25)
+    m_gt = radial_homography_truth(-0.25)
     radial_homography_pairs(rng, m_gt; n_in = 20, n_out = 0)
     @testset "find_radial_homography: exact data + outliers ($loname)" for (loname, lo) in (
             ("HQ-Welsch (the old default)", welsch_hq(:radial_homography)),
