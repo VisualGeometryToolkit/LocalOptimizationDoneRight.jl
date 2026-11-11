@@ -92,7 +92,7 @@ The package requires Julia 1.12 or later. The Getting started example below
 also loads the packages it composes with:
 
 ```julia-repl
-pkg> add LocalOptimizationDoneRight VisualGeometryToolkitEstimation VisualGeometryToolkitCore StaticArrays
+pkg> add LocalOptimizationDoneRight VisualGeometryToolkitEstimation VisualGeometryToolkitCore
 ```
 
 ### The paper's experiments
@@ -117,7 +117,6 @@ refinement at its cross-validated efficiency constant, on a synthetic two-view s
 
 ```julia
 using Random: MersenneTwister
-using StaticArrays: SA
 using VisualGeometryToolkitCore: CameraModel, Point2, WelschShape, estimate, motion, px
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior
 using VisualGeometryToolkitCore.Synthetic: pose_error, sample_twoview_scene
@@ -132,7 +131,7 @@ R, t, _, _, matches = sample_twoview_scene(rng, 200; f = 600.0, c = 250.0)
 noisy(u) = u + Point2(randn(rng), randn(rng))
 anywhere() = Point2(500 * rand(rng), 500 * rand(rng))
 cs = [[u₁ => noisy(u₂) for (u₁, u₂) in matches]; [anywhere() => anywhere() for _ in 1:100]]
-camera = CameraModel(600.0px, SA[250.0px, 250.0px])
+camera = CameraModel(600.0px, Point2(250.0px, 250.0px))
 
 # Student-t + uniform selection, its outlier half-width 250 px (half the image),
 # the scale integrated out against Jeffreys' prior and the labels flat, then
