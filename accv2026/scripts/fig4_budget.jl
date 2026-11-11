@@ -15,4 +15,4 @@
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
 include(srcdir("cell_stages.jl"))
-run_stages("fig4_budget", budget_cell_stages("PT_E", "pt_e_budget"))
+run_stages("fig4_budget", budget_cell_stages("PT_E", "pt_e_budget"; smoke = "--smoke" in ARGS))

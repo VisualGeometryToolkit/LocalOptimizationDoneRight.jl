@@ -48,7 +48,7 @@ const _ARM_PAPER = Dict(
     # Its objective-matched variant (refit width = a*; arm_rosters.jl
     # `matched_key`, declared per cell): the same strategy, so the same marker and line —
     # the next, darker step of the ramp; label "… (matched)". Opt-in: never in
-    # MAIN_ARMS, drawn only where a render names it (EXTRA_ARMS).
+    # MAIN_ARMS, drawn only where a render names it (--extra-arms).
     "IG  +BCD@a*"  => (color="ColorIGBCDMatched", hex="08306B", shade=10),
     "IG  +GM-HQ"   => (color="ColorIGGMHQ",    hex="807DBA", shade=2),
     "IG  +GM-Irls" => (color="ColorIGGMIrls",  hex="9E9AC8", shade=1),   # lightest BuPu step of the GM family
@@ -189,7 +189,7 @@ oracle_budget_label(m::Symbol) = "oracle (best minimal \$" * MODEL_TEX[m] * "\$)
 # carry the same rows and their legends agree.  Arms outside the roster stay
 # in the bundles/sidecars and in the supplement's full-roster renders; a
 # figure-specific control (the Stu-tU-BCD row of the miscalibration figure)
-# is added per render via EXTRA_ARMS, never by editing this list.
+# is added per render via --extra-arms, never by editing this list.
 #   {Welsch, TLS, GM} x {IRLS, HQ, GNC}  +  TLS-IRLS (PoseLib), TLS-LZ, TLS-LO+
 # Welsch-HQ is THE paper's (PAPER_WELSCH_HQ); the other z-block is never drawn.
 const MAIN_ARMS = [
@@ -203,10 +203,9 @@ end
 
 """
     arm_name_list(s) -> Vector{String}
-    env_arm_set(var) -> Set{String}
 
-THE comma-separated arm-name list a render reads from its environment:
-`EXTRA_ARMS` (added to the main roster, [`main_arms`](@ref)) and `EXCLUDE`
+THE comma-separated arm-name list a render reads from its command line:
+`--extra-arms` (added to the main roster, [`main_arms`](@ref)) and `--exclude`
 (dropped from THIS render, the emitters' `exclude` keyword). Surrounding space
 and blank entries are ignored, so `"a, b"` and a trailing comma both parse.
 
@@ -217,10 +216,9 @@ same two lines, and one of them without the `String.` that makes the result a
 `Set{String}` rather than a set of `SubString`s.
 """
 arm_name_list(s::AbstractString) = String.(filter(!isempty, strip.(split(s, ","))))
-env_arm_set(var::AbstractString) = Set(arm_name_list(get(ENV, var, "")))
 
 """
-    main_arms(present; extra = ENV["EXTRA_ARMS"]) -> Vector{String}
+    main_arms(present; extra = "") -> Vector{String}
 
 Roster gate for a main-paper render: the arm names of `present` (bundle
 methods, sidecar arms, summary keys) that are in `MAIN_ARMS` or in `extra`
@@ -229,7 +227,7 @@ arm missing from the data product is reported with @warn — the figure is
 then inconsistent with its siblings and the experiment needs that arm — but
 never silently dropped from the roster.
 """
-function main_arms(present; extra = get(ENV, "EXTRA_ARMS", ""))
+function main_arms(present; extra::AbstractString = "")
     present = String.(collect(present))
     keep = vcat(MAIN_ARMS, arm_name_list(extra))
     absent = setdiff(MAIN_ARMS, present)

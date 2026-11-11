@@ -6,4 +6,4 @@
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
 include(srcdir("cell_stages.jl"))
-run_stages("supp_ETH_F_budget", budget_cell_stages("ETH_F", "accv2026_eth_f_budget"))
+run_stages("supp_ETH_F_budget", budget_cell_stages("ETH_F", "accv2026_eth_f_budget"; smoke = "--smoke" in ARGS))

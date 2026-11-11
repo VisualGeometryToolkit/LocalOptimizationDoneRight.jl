@@ -132,10 +132,9 @@ function miscal_cell_stages(cfg_name::AbstractString;
                 audit_operating_points(ROSTER, sidecar; problem = Symbol(p))
                 floor_done() ||
                     error("oracle floor $(tag): missing or computed on other pools/scenes — run --stage=oracle first")
-                run_driver("render_miscal_faceted.jl";
-                           env = Dict("SIDECAR" => sidecar, "OUT" => out,
-                                      "DEPLOY" => r["deploy"] ? "1" : "", "ORACLE_TAG" => tag,
-                                      "ROWS" => row))
+                run_driver("render_miscal_faceted.jl", "--sidecar=$(sidecar)", "--out=$(out)",
+                                      "--deploy=$(r["deploy"] ? "1" : "")", "--oracle-tag=$(tag)",
+                                      "--rows=$(row)")
             end))
     return stages
 end
@@ -158,7 +157,7 @@ function sidecar_scale_prior(sidecar::AbstractString)
 end
 
 """
-    budget_cell_stages(tag, cfg_name) -> Vector{Stage}
+    budget_cell_stages(tag, cfg_name; smoke = false) -> Vector{Stage}
 
 The sample-budget cell `tag` of `configs/<cfg_name>.toml` (two-view E/F and
 the HEB homography), under the configs/sample_budget_protocol.toml section
@@ -174,7 +173,7 @@ Each scene file carries every arm's per-pair curve, the oracle column (the
 GT-best minimal model's running-best error at every batch checkpoint), the
 count axes and the arm settings. An existing scene file keeps its curves
 bit-identical: only the sidecar arms it lacks are computed and folded in.
-`RVG_SMOKE=1` runs one scene, the first three arms (sorted) and 30 pairs,
+`smoke = true` (the driver's `--smoke`) runs one scene, the first three arms (sorted) and 30 pairs,
 into DrWatson's `datadir("sims", "budget-<key>-smoke")` — never beside the keyed
 results — writing no run records.
 
@@ -182,13 +181,12 @@ results — writing no run records.
 and `[render.time]` (a panel of mAA against cumulative LO time); it is outside
 the run key.
 """
-function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString)
+function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString; smoke::Bool = false)
     cfg_path = projectdir("configs", cfg_name * ".toml")
     cfg = fold_budget_cell!(load_run_config(cfg_path))   # protocols + the operating points' run, keyed
     sidecar = budget_sidecar(cfg)
     sbp = only(values(cfg["sample_budget_protocol"]))
     key = run_key(cfg)
-    smoke = get(ENV, "RVG_SMOKE", "") == "1"
     ex = cfg["experiment"]
     pool = joinpath(data_root(), ex["pool_dir"])   # an absolute pool_dir stays itself
     p = _cell_problem(cfg)
@@ -305,16 +303,16 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString)
     # THE budget renderer (scripts/tools/render_budget.jl, every two-view
     # budget cell's), launched with one interface: the scene directory, the
     # output panel, the cell config (its [render] there) and the panel kind.
-    render_env(kind, out, legend; extra...) =
-        Dict("KIND" => kind, "SBDIR" => outdir, "OUT" => out, "LEGEND" => legend, "CONFIG" => cfg_path,
-             "EXTRA_ARMS" => get(rnd, "extra_arms", ""), (String(k) => v for (k, v) in extra)...)
+    render_args(kind, out, legend; extra...) =
+        ["--kind=$(kind)", "--sbdir=$(outdir)", "--out=$(out)", "--legend=$(legend)", "--config=$(cfg_path)",
+         "--extra-arms=$(get(rnd, "extra_arms", ""))", ("--$(k)=$(v)" for (k, v) in extra)...]
     fresh(out) = () -> done() && fresher(out, joinpath(outdir, "$(scenes()[end]).jld2"))
     render_stage(name, out, legend, rows) = Stage(name,
             "faceted $tag budget panel ($rows) -> $(out)", fresh(out),
-            () -> run_driver("render_budget.jl";
-                             env = render_env("budget", out, legend;
-                                              XTICKS = join(Int.(rnd["xticks"]), ","),
-                                              DEPLOY = rnd["deploy"] ? "1" : "", ROWS = rows)))
+            () -> run_driver("render_budget.jl",
+                             render_args("budget", out, legend;
+                                         xticks = join(Int.(rnd["xticks"]), ","),
+                                         deploy = rnd["deploy"] ? "1" : "", rows = rows)...))
     stages = Stage[]
     push!(stages, Stage(:budget,
             "$tag budget curves at deployed optima (config $(basename(cfg_path)), key $(key)) -> $(outdir)",
@@ -323,7 +321,7 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString)
     if haskey(rnd, "time")
         tpanel = replace(panel, ".tex" => "_time.tex")
         push!(stages, Stage(:render_time, "mAA vs cumulative LO time -> $(tpanel)", fresh(tpanel),
-                () -> run_driver("render_budget.jl"; env = render_env("time", tpanel, rnd["time"]["legend"]))))
+                () -> run_driver("render_budget.jl", render_args("time", tpanel, rnd["time"]["legend"])...)))
     end
     return stages
 end

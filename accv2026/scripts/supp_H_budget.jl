@@ -13,9 +13,9 @@
 # budget_cell_stages): budget (CPU, julia -t N) per-scene curves -> <scene>.jld2;
 # render (CPU) the faceted mAA panel (the Fig 4 grid's HEB row).
 #
-# SMOKE: RVG_SMOKE=1 → 1 scene, 30 pairs, 3 arms, into data/sims/budget-<key>-smoke (DrWatson datadir("sims")).
+# SMOKE: --smoke → 1 scene, 30 pairs, 3 arms, into data/sims/budget-<key>-smoke (DrWatson datadir("sims")).
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
 include(srcdir("cell_stages.jl"))
 
-run_stages("supp_H_budget", budget_cell_stages("H", "heb_h_budget"))
+run_stages("supp_H_budget", budget_cell_stages("H", "heb_h_budget"; smoke = "--smoke" in ARGS))

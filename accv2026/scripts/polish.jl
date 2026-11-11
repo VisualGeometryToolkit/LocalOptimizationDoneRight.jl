@@ -56,8 +56,7 @@ function _summary()
     write(SUMF, join(lines, '\n') * "\n"); print(read(SUMF, String))
 end
 
-_render() = run_driver("render_polish_diff.jl";
-    env = Dict("POLISH_TEST" => TESTF, "OUT" => PANEL_DIFF, "CONFIG" => CFG_NAME, "DIFF_XMAX" => string(R["diff_xmax"])))
+_render() = run_driver("render_polish_diff.jl", "--polish-test=$(TESTF)", "--out=$(PANEL_DIFF)", "--config=$(CFG_NAME)", "--diff-xmax=$(string(R["diff_xmax"]))")
 
 STAGES = Stage[
     Stage(:test, "every polish of every source's LO output on the test side (config $(CFG_NAME), key $(KEY)) -> $(TESTF)",

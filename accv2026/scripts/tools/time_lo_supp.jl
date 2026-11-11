@@ -51,7 +51,7 @@ mkpath(OUT)
 # only); without a sidecar every one of them is REQUIRED — there is no fallback
 # operating point. The retired `--cv=cv.jld2` shared-knob-CV consumer was
 # REMOVED 2026-07-18 with that CV path.
-const TKPATH = cli_option(ARGS, "operating-points", get(ENV, "SB_OPERATING_POINTS", ""))
+const TKPATH = cli_option(ARGS, "operating-points", "")
 const _DEP = isempty(TKPATH) ? nothing : Dict(deployed_budget_settings(ROSTER, TKPATH))
 _operating_point(flag, deployed) = _DEP === nothing ? parse(Float64, cli_option(ARGS, flag)) :
                                                       parse(Float64, cli_option(ARGS, flag, string(deployed(_DEP))))

@@ -53,11 +53,10 @@ push!(STAGES, Stage(:ladder_test,
 push!(STAGES, Stage(:render,
         "faceted basin matrix → $(PANEL)",
         () -> fresher(PANEL, EXP_LADDER_BUNDLE),
-        () -> run_driver("render_basin_faceted.jl";
-                         env = Dict("BUNDLE" => EXP_LADDER_BUNDLE,
-                                    "OUT" => PANEL,
-                                    "SUCC" => EXP_LADDER_SUCC,
-                                    "DEPLOY" => "1",
+        () -> run_driver("render_basin_faceted.jl", "--bundle=$(EXP_LADDER_BUNDLE)",
+                                    "--out=$(PANEL)",
+                                    "--succ=$(EXP_LADDER_SUCC)",
+                                    "--deploy=1",
                                     # ONE row, mAA@10°. The success and conditional-
                                     # error rows were dropped 2026-09-07: mAA =
                                     # P(e≤T)·(1 − E[e|e≤T]/T) already rewards reach
@@ -72,7 +71,7 @@ push!(STAGES, Stage(:render,
                                     # stay in the bundle; ROSTER=all). Plus the
                                     # same-objective control Stu-tU-BCD, as in the
                                     # miscalibration and budget figures.
-                                    "EXTRA_ARMS" => "IG  +BCD",
-                                    "ROWS" => "maa"))))
+                                    "--extra-arms=IG  +BCD",
+                                    "--rows=maa")))
 
 run_stages("fig2_basin", STAGES)

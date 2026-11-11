@@ -61,11 +61,10 @@ push!(STAGES, Stage(:render,
             _require_with()
             require_input(EXP_ANCHOR_WITHOUT; what = "WITHOUT-anchoring ζ evaluation",
                           provenance = "stage evaluation of this experiment")
-            run_driver("render_anchoring_paired.jl";
-                       env = Dict("EVALUATION_WITHOUT" => EXP_ANCHOR_WITHOUT,
-                                  "EVALUATION_WITH" => EXP_ANCHOR_WITH,
-                                  "OUT" => PANEL,
-                                  "DEPLOY" => "1"))
+            run_driver("render_anchoring_paired.jl", "--evaluation-without=$(EXP_ANCHOR_WITHOUT)",
+                                  "--evaluation-with=$(EXP_ANCHOR_WITH)",
+                                  "--out=$(PANEL)",
+                                  "--deploy=1")
         end))
 
 run_stages("fig_anchoring", STAGES)

@@ -15,19 +15,19 @@
 # TLS-GNC pair is OMITTED to keep the panel at 7 curves — trivial to add
 # ("IG  +GNC-TLS", both sides).
 #
-# ENV: EVALUATION_WITHOUT (the ablation evaluation), EVALUATION_WITH (fig3's sidecar),
-# OUT, DEPLOY=1 (wrap in tikzpicture; main.tex draws the legend via
+# ARGS: --evaluation-without (the ablation evaluation), --evaluation-with (fig3's sidecar),
+# --out, --deploy=1 (wrap in tikzpicture; main.tex draws the legend via
 # \pgfplotslegendfromname{anchorlegend}).
 using DrWatson; @quickactivate "ACCV2026"   # the project this tool runs under (srcdir/projectdir)
 using JLD2, Statistics, Printf
 include(srcdir("config.jl"))   # PAPER_STYLE, the frozen ζ axis blocks
 
 # Both sides are supplied by scripts/fig_anchoring.jl (registry.jl paths).
-const EVALUATION_WITHOUT = ENV["EVALUATION_WITHOUT"]
-const EVALUATION_WITH    = ENV["EVALUATION_WITH"]
-OUT    = ENV["OUT"]
-DEPLOY = get(ENV, "DEPLOY", "") == "1"
-YMIN   = get(ENV, "YMIN", "0.4")
+const EVALUATION_WITHOUT = cli_option(ARGS, "evaluation-without")
+const EVALUATION_WITH    = cli_option(ARGS, "evaluation-with")
+OUT    = cli_option(ARGS, "out")
+DEPLOY = cli_option(ARGS, "deploy", "") == "1"
+YMIN   = cli_option(ARGS, "ymin", "0.4")
 
 # Both through the tuning-artifact reader (another format is refused). The
 # pairing is CHECKED, never assumed: one ζ ladder, and every WITHOUT arm at

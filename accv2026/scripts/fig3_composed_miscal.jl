@@ -71,9 +71,8 @@ push!(STAGES, Stage(:render,
             audit_operating_points(ROSTER, EXP_MISCAL_SIDECAR)
             _oracle_done() ||
                 error("oracle floor PT_E: missing or computed on other pools/scenes — run --stage=oracle first")
-            run_driver("render_miscal_faceted.jl";
-                       env = Dict("SIDECAR" => EXP_MISCAL_SIDECAR, "OUT" => PANEL,
-                                  "DEPLOY" => "1", "ROWS" => "maa", "ORACLE_TAG" => "PT_E"))
+            run_driver("render_miscal_faceted.jl", "--sidecar=$(EXP_MISCAL_SIDECAR)", "--out=$(PANEL)",
+                                  "--deploy=1", "--rows=maa", "--oracle-tag=PT_E")
         end))
 
 run_stages("fig3_composed_miscal", STAGES)

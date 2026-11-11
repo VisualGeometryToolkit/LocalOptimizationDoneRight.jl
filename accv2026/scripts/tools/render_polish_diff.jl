@@ -5,17 +5,17 @@
 # curve per source on ONE axis (launched by scripts/polish.jl, stage render).
 # The axis block is the frozen ACCV one (src/figure_style.jl `polish_diff_axis`).
 #
-# ENV: POLISH_TEST (polish_test.jld2), OUT (the .tex fragment), CONFIG (the
-# polish config's name, for the header), DIFF_XMAX (the half-range in degrees).
+# ARGS: --polish-test (polish_test.jld2), --out (the .tex fragment), --config (the
+# polish config's name, for the header), --diff-xmax (the half-range in degrees).
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
 using JLD2, Printf
 include(srcdir("config.jl"))   # PAPER_STYLE, label_tex, the frozen axis blocks
 
-const TESTF = ENV["POLISH_TEST"]
-const OUT   = ENV["OUT"]
-const CONFIG_NAME = ENV["CONFIG"]
-const W     = parse(Float64, ENV["DIFF_XMAX"])
+const TESTF = cli_option(ARGS, "polish-test")
+const OUT   = cli_option(ARGS, "out")
+const CONFIG_NAME = cli_option(ARGS, "config")
+const W     = parse(Float64, cli_option(ARGS, "diff-xmax"))
 
 # ECDF points of `x` (finite values; non-finite count as never reached) on
 # [xmin, xmax]; the mass below xmin is the curve's starting height.
