@@ -79,7 +79,7 @@ end
 
 STAGES = Stage[
     Stage(:numbers, "every number macro from the results of record (key $(KEY)) -> $(RECORD)",
-          () -> isfile(RECORD) && isfile(joinpath(OUTDIR, "_provenance.toml")), _numbers),
+          () -> run_complete(OUTDIR; sidecar = basename(RECORD)), _numbers),
     Stage(:emit, "the macros (VisualGeometryToolkitEval's write_numbers) -> $(TEX)",
           () -> isfile(TEX) && fresher(TEX, RECORD), _emit),
 ]

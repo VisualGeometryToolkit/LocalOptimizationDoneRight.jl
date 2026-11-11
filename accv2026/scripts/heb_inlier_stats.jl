@@ -70,6 +70,6 @@ end
 
 STAGES = Stage[
     Stage(:counts, "per-pair correspondences and GT inliers of $(SRC_NAME)'s test pairs (config $(CFG_NAME), key $(KEY)) -> $(COUNTS)",
-          () -> isfile(COUNTS) && isfile(joinpath(OUTDIR, "_provenance.toml")), _counts),
+          () -> run_complete(OUTDIR; sidecar = basename(COUNTS)), _counts),
 ]
 run_stages("heb_inlier_stats", STAGES)

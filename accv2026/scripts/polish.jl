@@ -61,7 +61,7 @@ _render() = run_driver("render_polish_diff.jl";
 
 STAGES = Stage[
     Stage(:test, "every polish of every source's LO output on the test side (config $(CFG_NAME), key $(KEY)) -> $(TESTF)",
-          () -> isfile(TESTF) && isfile(joinpath(OUTDIR, "_provenance.toml")),
+          () -> run_complete(OUTDIR; sidecar = basename(TESTF)),
           () -> (_tool(); write_run_records(OUTDIR, CFG; driver = "run_polish.jl", config_source = CFG_PATH,
                                                   key = KEY, inputs = [miscal_sidecar_of(String(CFG["operating_points"]["miscal_config"]))]))),
     Stage(:summary, "before/after accuracy and displacement -> $(SUMF)", () -> isfile(SUMF) && fresher(SUMF, TESTF), _summary),

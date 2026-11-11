@@ -47,8 +47,8 @@ end
 
 _inputs_done() = all(isfile(superansac_inputs_path(OUTDIR, s, side))
                      for (side, ss) in (("validation", validation_scenes(CV)), ("test", test_scenes(CV))) for s in ss)
-_eval_done() = all(isfile(superansac_zeta_path(OUTDIR, s)) for s in test_scenes(CV)) &&
-               isfile(joinpath(OUTDIR, "_provenance.toml"))
+_eval_done() = run_complete(OUTDIR; sidecar = basename(superansac_zeta_path(OUTDIR, last(test_scenes(CV))))) &&
+               all(isfile(superansac_zeta_path(OUTDIR, s)) for s in test_scenes(CV))
 function _eval()
     superansac_evaluation!(CFG, OUTDIR)
     write_run_records(OUTDIR, CFG; driver = "superansac_e2e.jl", config_source = CFG_PATH, key = KEY,

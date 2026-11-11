@@ -83,7 +83,7 @@ STAGES = Stage[
     Stage(:repeats, "$(R) pinned single-threaded repeats × {ours, SupeRANSAC} on CPU $(CFG["timing"]["pinning"]["cpu"]) → $(OUTDIR)",
           _repeats_done, _repeats),
     Stage(:summary, "the time row and its spread → $(SUMMARY)",
-          () -> isfile(SUMMARY) && isfile(joinpath(OUTDIR, "_provenance.toml")) &&
+          () -> run_complete(OUTDIR; sidecar = basename(SUMMARY)) &&
                 fresher(SUMMARY, (timing_repeat_path(OUTDIR, sys, r) for r in 1:R for sys in ("ours", "superansac"))...),
           _summary),
 ]

@@ -300,8 +300,8 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString)
                                    inputs = [pool, sidecar])
     end
 
-    done() = !smoke && isfile(sidecar) && all(isfile(joinpath(outdir, "$s.jld2")) for s in scenes()) &&
-             isfile(joinpath(outdir, "_provenance.toml"))
+    done() = !smoke && run_complete(outdir; sidecar = basename(sidecar)) &&
+             all(isfile(joinpath(outdir, "$s.jld2")) for s in scenes())
     # THE budget renderer (scripts/tools/render_budget.jl, every two-view
     # budget cell's), launched with one interface: the scene directory, the
     # output panel, the cell config (its [render] there) and the panel kind.
