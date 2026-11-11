@@ -37,6 +37,27 @@
     @test !isempty(PAPER_STYLE.arms)
 end
 
+# The Fig 1 selection roster: every loss-width family with a per-residual quality selects on the CPU (the exact
+# selection kernels, VisualGeometryToolkitCore's; best_pool_model per pair), MAGSAC++ and the other RSDR families included.
+@testitem "selection roster: the loss-width families select on the CPU" default_imports = false begin
+    using Test
+    using VisualGeometryToolkitEval
+    using VisualGeometryToolkitEval.Pools: synthetic_e_pool_pair
+    using LocalOptimizationDoneRight
+    import VisualGeometryToolkitCore
+    using VisualGeometryToolkitCore: best_pool_model, has_residual_quality
+    include(joinpath(@__DIR__, "..", "src", "config.jl"))
+    specs = solo_specs(:E; role = :selection)
+    @test [s.base for s in specs] == ["IG", "MSAC", "RANSAC", "MAGSAC", "GAU", "WEL", "GEM"]
+    pair, R = synthetic_e_pool_pair()
+    grid = [0.5e-3, 2.0e-3, 8.0e-3]
+    for s in specs
+        s.axis isa VisualGeometryToolkitCore.LossWidth || continue
+        @test has_residual_quality(s.ctor(1.0e-3))
+        @test all(w -> 0 < best_pool_model(s.ctor(w), pair, R) <= size(R, 2), grid)
+    end
+end
+
 # The research-only zero-clamp Welsch-HQ (src/welsch_zero_clamp.jl): VGC
 # 92597af's z-block at the clamp, Welsch everywhere else, and the opt-in
 # "<key>@zc" arms wired through the rosters.

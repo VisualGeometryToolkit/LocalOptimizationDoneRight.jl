@@ -54,7 +54,7 @@ using VisualGeometryToolkitCore: Point2, EssentialMat, FundMat, intrinsics, Vec3
 using VisualGeometryToolkitCore.Pools
 using VisualGeometryToolkitEval.Evaluation: lo_iteration_budget
 using PoseLib: refine_relpose
-using RANSACScoringDoneRight: StudentTUniformScoring
+using RANSACScoringDoneRight: StudentTUniformScoring, MagsacScoring, MlesacScoring, WelschCostScoring, GemanScoring
 import RANSACScoringDoneRight
 
 "The packages whose code determines a tuning artifact's result (VisualGeometryToolkitEval `save_tuning_artifact` / `code_identity` `code`)."

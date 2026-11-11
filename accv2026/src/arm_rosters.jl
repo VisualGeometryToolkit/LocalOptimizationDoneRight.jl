@@ -380,14 +380,15 @@ refit runs them at the absolute loss width (see `solo_refit_imc!`).
 The default main-figure classical roster is the budget-parity Lebeda pair (LEBEDA_OPTIONS); the
 PRESET_REFERENCE full-LO row is the supplement's reference operating point.
 
-role=:selection — the Fig 1 scorers with a CPU pool-scoring path (each
-`ctor(width)` is the scoring at that width, selected with VisualGeometryToolkitCore's
-`best_pool_model`): IG (:outlier_halfwidth; the Jeffreys marginal), MSAC and
-RANSAC (:loss_width). ROSTER GAP (documented, best-effort): :magsac and the
-other vocab families with sweep-only engines (gau/geman/welsch(_marg)) score
-through KernelAbstractions GPU kernels (RSDR `grid_evaluate` — MAGSAC needs
-the σ-marginalized histogram weights); they stay out of the solo roster until
-a CPU scorer exists.
+role=:selection — the Fig 1 scorers (each `ctor(width)` is the scoring at that
+width, selected with VisualGeometryToolkitCore's pool selection, which runs on the
+CPU): IG (:outlier_halfwidth; the Jeffreys marginal), and on :loss_width MSAC,
+RANSAC and RANSACScoringDoneRight's loss-width families MAGSAC++, GAU (MLESAC),
+WEL (Welsch) and GEM (Geman-McClure), each the sum of its per-residual quality
+(the exact selection kernels, VisualGeometryToolkitCore's, on the CPU backend; and
+`best_pool_model` per pair). The scale marginals (welsch_marg and the like)
+integrate the scale out over the whole pool column and stay sweep-only (RSDR
+`grid_evaluate`); they are not :selection scorers.
 """
 function solo_specs(problem::Symbol = :E; role::Symbol = :refinement)
     if role === :refinement
@@ -400,6 +401,10 @@ function solo_specs(problem::Symbol = :E; role::Symbol = :refinement)
             SoloSpec("IG",     :selection, OutlierHalfwidth(), w -> StudentTUniformScoring(P, Float64(w))),
             SoloSpec("MSAC",   :selection, LossWidth(),        w -> MsacScoring(dg; threshold = Float64(w))),
             SoloSpec("RANSAC", :selection, LossWidth(),        w -> RansacScoring(dg; threshold = Float64(w))),
+            SoloSpec("MAGSAC", :selection, LossWidth(),        w -> MagsacScoring(dg; threshold = Float64(w))),
+            SoloSpec("GAU",    :selection, LossWidth(),        w -> MlesacScoring(dg; threshold = Float64(w))),
+            SoloSpec("WEL",    :selection, LossWidth(),        w -> WelschCostScoring(dg; threshold = Float64(w))),
+            SoloSpec("GEM",    :selection, LossWidth(),        w -> GemanScoring(dg; threshold = Float64(w))),
         ]
     end
     error("solo_specs: unknown role :$role (expected :selection | :refinement)")

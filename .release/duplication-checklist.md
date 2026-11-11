@@ -16,6 +16,8 @@ closes it.
 - [x] accv2026's four keyed cell directories and two config loaders restated (test_duplication `[similar]`: `e2e_timing_dir`, `budget_cell_dir`, `e2e_cell_dir`, `superansac_cell_dir`; `e2e_timing_cell`, `superansac_cell`) → `keyed_cell_dir` and `config_of_record` in accv2026/src/protocol_folds.jl (bb20c31)
 - [x] the two timing benches' call-set reader (`read_fixture`, `pool_csponds`, `problem_of`) and VisualGeometryToolkitCore's `calibration_spread`/record writer restated in both (audit 2; test_duplication `[similar]`) → one test/lo_timing/call_set.jl and Core's test/lo_timing/bench_record.jl (08a5135)
 
+- [x] the twin audit's V1 (cpu-gpu-twin-audit.md): accv2026/src/arm_rosters.jl kept MAGSAC++ and the other loss-width families out of the `:selection` roster "until a CPU scorer exists"; they select on the CPU (VisualGeometryToolkitCore's exact selection kernels, monorepo 6accc512; `best_pool_model` per pair), so the exclusion is dropped and MAGSAC, GAU, WEL and GEM join the roster (this commit; the scale marginals stay sweep-only, not per-residual scorers)
+
 ## Hoists into the stack
 
 Common code no stack package offers yet (each is a copy of a stack package's TEST code, which nothing downstream can
