@@ -35,6 +35,12 @@ const _M = LocalOptimizationDoneRight
     @testset "naming" begin
         VgtkCore.test_naming(_M)
     end
+    # One implementation per concept (VisualGeometryToolkitCore's check_duplication): names
+    # an upstream stack package owns, restated function bodies, copied files and retired
+    # patterns; the other stack repositories in VGTK_STACK_PATHS are compared too.
+    @testset "no duplication" begin
+        VgtkCore.test_duplication(_M)
+    end
     @testset "JET ratchet" begin
         JET_BASELINE = 0          # 2026-09-08; only ever decreases
         r = JET.report_package(_M; target_modules = (_M,))
