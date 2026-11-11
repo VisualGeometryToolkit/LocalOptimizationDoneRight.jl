@@ -111,7 +111,7 @@ end
 snap(x::Union{Number, Symbol, Nothing}) = x
 snap(x::AbstractArray{<:Number}) = collect(x)
 snap(x::StaticArray) = Tuple(x)
-snap(x::Attributed) = (snap(x.value), x.cost)
+snap(x::Attributed{<:Any, @NamedTuple{cost::Float64}}) = (snap(x.value), x.cost)   # a best iterate
 snap(x) = isbits(x) ? x : nameof(typeof(x)) in (:PosteriorWeightState, :_PositionalDivisionState, :MuLadderState) ?
     Tuple(snap(getfield(x, i)) for i in 1:fieldcount(typeof(x))) : :skipped
 snap_state(st) = Tuple(snap(getfield(st, i)) for i in 1:fieldcount(typeof(st)))
