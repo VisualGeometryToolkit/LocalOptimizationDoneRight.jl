@@ -71,34 +71,12 @@ const PAIRS, HALFWIDTH = read_fixture(CALL_SET_FIXTURE)
 const PROBS = [problem_of(pr) for pr in PAIRS]
 const SCORINGS = [StudentTUniformScoring(EssentialProblem, HALFWIDTH; prior = IGPrior(0.0, 0.0)) for _ in PROBS]
 const WORKSPACES = [RansacWorkspace(PROBS[i], SCORINGS[i]) for i in eachindex(PROBS)]
-const NCALLS = sum(length(pr.seeds) for pr in PAIRS)
+const NCALLS = call_set_size(PAIRS)
 
 lo_call(lo, i, seed) =
     locally_optimize(PROBS[i], seed; local_optimization = lo, scoring = SCORINGS[i], workspace = WORKSPACES[i])
 
-function run_set(lo)
-    for i in eachindex(PROBS), s in PAIRS[i].seeds
-        lo_call(lo, i, s)
-    end
-    return nothing
-end
-
-function time_set(lo)
-    t = UInt64(0)
-    for i in eachindex(PROBS), s in PAIRS[i].seeds
-        t0 = time_ns(); lo_call(lo, i, s); t += time_ns() - t0
-    end
-    return t / NCALLS / 1.0e3
-end
-
-# Each arm as Core's record measures it: (its sorted µs per call over the reps, bytes per call).
-function lo_arm(ctor)
-    return function ()
-        lo = ctor()
-        run_set(lo); run_set(lo)                                   # compile + warm the task-local buffers
-        bytes = @allocated run_set(lo)
-        return sort!([time_set(lo) for _ in 1:REPS]), bytes / NCALLS
-    end
-end
+# Each arm as Core's record measures it (call_set.jl's `call_set_arm`): its sorted µs per call over the reps, bytes per call.
+lo_arm(ctor) = call_set_arm(() -> (lo = ctor(); (i, seed) -> lo_call(lo, i, seed)), PAIRS, REPS)
 
 write_bench_record(OUT, "accv2026/test/lo_timing/bench.jl", NCALLS, REPS, [name => lo_arm(ctor) for (name, ctor) in ARMS])

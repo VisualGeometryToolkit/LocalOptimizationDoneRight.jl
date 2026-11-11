@@ -73,7 +73,7 @@ include(joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "bench_
 const BUDGET = 25
 const PAIRS, HALFWIDTH = read_fixture(CALL_SET_FIXTURE)
 const PROBS = [problem_of(pr) for pr in PAIRS]
-const NCALLS = sum(length(pr.seeds) for pr in PAIRS)
+const NCALLS = call_set_size(PAIRS)
 
 const EXTERNAL_ARMS = [
     "TLS-IRLS" => () -> PoseLibLm(BUDGET),
@@ -88,21 +88,6 @@ const LOSS_WIDTH = LossWidth(HALFWIDTH)
 
 external_workspaces(lo) = [external_workspace(lo, PROBS[i], FRAMES[i], nothing) for i in eachindex(PROBS)]
 ext_call(ws, lo, i, seed) = refine_external!(ws[i], lo, PROBS[i], seed, LOSS_WIDTH, nothing)
-
-function run_external_set(ws, lo)
-    for i in eachindex(PROBS), s in PAIRS[i].seeds
-        ext_call(ws, lo, i, s)
-    end
-    return nothing
-end
-
-function time_external_set(ws, lo)
-    t = UInt64(0)
-    for i in eachindex(PROBS), s in PAIRS[i].seeds
-        t0 = time_ns(); ext_call(ws, lo, i, s); t += time_ns() - t0
-    end
-    return t / NCALLS / 1.0e3
-end
 
 # =============================================================================
 # The lift kernels on the seeded scene
@@ -135,16 +120,9 @@ const KERNELS = [
     "lift-GNC" => () -> _lift_gnc_increment!(RWS, LS, GM, 4.0, N, nothing),
 ]
 
-# Each arm as Core's record measures it: (its sorted µs per call over the reps, bytes per call).
-function external_arm(ctor)
-    return function ()
-        lo = ctor()
-        ws = external_workspaces(lo)                               # once per pair, outside the timing
-        run_external_set(ws, lo); run_external_set(ws, lo)         # compile + warm
-        bytes = @allocated run_external_set(ws, lo)
-        return sort!([time_external_set(ws, lo) for _ in 1:REPS]), bytes / NCALLS
-    end
-end
+# Each arm as Core's record measures it (call_set.jl's `call_set_arm`): its sorted µs per call over the reps, bytes
+# per call; the workspaces are built once per pair, outside the timing.
+external_arm(ctor) = call_set_arm(() -> (lo = ctor(); ws = external_workspaces(lo); (i, seed) -> ext_call(ws, lo, i, seed)), PAIRS, REPS)
 
 write_bench_record(OUT, "test/lo_timing/bench.jl", NCALLS, REPS,
                    [[name => external_arm(ctor) for (name, ctor) in EXTERNAL_ARMS];

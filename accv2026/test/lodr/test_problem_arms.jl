@@ -156,11 +156,10 @@ const _CAM₁ = CameraModel(; focal = 500.0, pp = (320.0, 240.0))
 const _CAM₂ = CameraModel(; focal = 600.0, pp = (300.0, 250.0))
 const _R = RotY(0.15)
 const _T = SA[1.0, 0.2, 0.1]
-_box(rng) = box_point(rng; width = 4.0, height = 3.0, near = 5.0, far = 8.0)
 function make_fundmat_data(; n_inliers = 100, n_outliers = 30, noise = 0.5, seed = 42)
     source_pts, target_pts = stereo_pixel_pairs(
         MersenneTwister(seed), _CAM₁, _CAM₂, _R, _T;
-        n = n_inliers, σ₁ = noise, σ₂ = noise, point = _box, n_out = n_outliers,
+        n = n_inliers, σ₁ = noise, σ₂ = noise, point = box_point_far, n_out = n_outliers,
         outlier = rng -> (SA[100.0 + 440.0 * rand(rng), 50.0 + 380.0 * rand(rng)], SA[80.0 + 440.0 * rand(rng), 60.0 + 380.0 * rand(rng)])
     )
     return source_pts, target_pts, n_inliers
