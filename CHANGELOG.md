@@ -4,7 +4,21 @@
 
 On the VisualGeometryToolkit 0.9 stack: VisualGeometryToolkitCore 0.9 and
 VisualGeometryToolkitEstimation of that stack (PoseLib likewise); accv2026 also IO,
-Eval and RANSACScoringDoneRight on 0.9. The package's API is unchanged.
+Eval and RANSACScoringDoneRight on 0.9.
+
+### Breaking
+
+- **`LO_TAGS` is renamed `STRATEGY_TAGS`** (VisualGeometryToolkitEstimation owns the
+  name `LO_TAGS`, its core registry). The registry is unchanged. Migration:
+  `merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.LO_TAGS)` →
+  `merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.STRATEGY_TAGS)`.
+
+### Changed
+
+- The strategies' best iterate is VisualGeometryToolkitCore 0.9's
+  `Attributed(θ, (; cost))` (Core's `Incumbent` is retired): a `ScoreBcdState`,
+  `ManifoldLiftHQState`, `ManifoldLiftGncState`, `LiftedMixtureState` or
+  `LiftedReGeMMState` built by hand takes one (`best.value` its model).
 
 - The docstring gates are VisualGeometryToolkitCore's `test_docs` (the copied
   `test/docs_gates.jl` is deleted); the gates item runs Core's `test_duplication`.
