@@ -23,9 +23,10 @@ using LinearAlgebra: normalize
 using Random: MersenneTwister, randn
 using StaticArrays: SA
 import VisualGeometryToolkitCore as VgtkCore
-using VisualGeometryToolkitCore: AbstractScoring, CameraModel, EssentialMat, GemanMcclureShape, MsacScoring,
-    Point2, Rect, TLSShape, WelschShape, codimension, consensus_set, csponds, estimate, exp_so3, locally_optimize!,
-    mahalanobis_distances!, minimal_sample_size, px, retcode, score_model!
+using VisualGeometryToolkitCore: AbstractScoring, BarronShape, CameraModel, EssentialMat, GemanMcclureShape, LossWidth,
+    MsacScoring, Point2, Rect, ScaleMultiple, TLSShape, WelschShape, codimension, consensus_set, csponds, decision_width,
+    deploy, estimate, exp_so3, locally_optimize!, loss_at, lo_width, mahalanobis_distances!, minimal_sample_size, px,
+    retcode, scale_s2, score_model!, sq_loss_width
 using VisualGeometryToolkitCore.Synthetic: projective_distance, sample_twoview_scene
 using VisualGeometryToolkitEstimation: BoundedProblem, EssentialProblem, Irls, RansacWorkspace
 using LocalOptimizationDoneRight
@@ -65,14 +66,20 @@ function inlier_rms(E)
     return sqrt(sum(abs2, view(d, 1:N_IN)) / N_IN)
 end
 
-# One local optimization from `model`: score it, take its consensus set, refine.
-function run_lo(lo, problem, scoring, model)
+# The consensus set of `model` under `scoring` (and the workspace that scored it).
+function scored_consensus(lo, problem, scoring, model)
     ws = RansacWorkspace(problem, scoring, lo)
     buf = ws.buf
     score_model!(buf, scoring, problem, model)
     cs = consensus_set(scoring, buf.scoring_ws, buf.residuals;
                        model_dof = minimal_sample_size(problem) + 1, d_g = codimension(problem), epoch = buf.epoch)
-    return locally_optimize!(ws.lo_ws, lo, problem, model, cs, buf, scoring)
+    return ws, cs
+end
+
+# One local optimization from `model`: score it, take its consensus set, refine.
+function run_lo(lo, problem, scoring, model)
+    ws, cs = scored_consensus(lo, problem, scoring, model)
+    return locally_optimize!(ws.lo_ws, lo, problem, model, cs, ws.buf, scoring)
 end
 
 @testset "the scene" begin
@@ -150,4 +157,26 @@ end
     kept = estimate(run_lo(WelschHQNewton(scale_multiple = 1.5), problem, msac, refined))
     @test projective_distance(kept, refined) < 1.0e-6
     @test inlier_rms(kept) < 0.4
+end
+
+# Every robust width resolves through ONE schema, VisualGeometryToolkitCore's
+# `loss_at`: no strategy keeps a private width rule.
+@testset "widths resolve through VGC's loss_at" begin
+    ws, cs = scored_consensus(StuTuBCD(), problem, msac, seed)
+    buf = ws.buf
+    s2 = max(scale_s2(cs), eps())
+    # BarronAdaptive's frozen α-fit width: loss_at at the reference shape
+    # BarronShape(0) — bit-identical to m²·ŝ² and m₀²·s2 under a width ...
+    w2(lo) = LocalOptimizationDoneRight._barron_sq_width(lo, cs, msac, buf)
+    @test w2(BarronAdaptive(scale_multiple = 1.5)) === 1.5^2 * s2
+    @test w2(BarronAdaptive(loss_width = 2.0)) === 2.0^2
+    # ... and, following the scorer, the reference shape's DECISION width at the
+    # threshold (Cauchy deciding at t: c² = t²/2), not the threshold itself
+    @test w2(BarronAdaptive()) == decision_width(BarronShape(0.0), 2.0)^2
+    @test w2(BarronAdaptive()) ≈ 2.0^2 / 2
+    # Welsch-HQ-ECM: its one width mode is its scale multiple, deployed by loss_at
+    ecm = WelschHQEcm(scale_multiple = 1.5)
+    @test lo_width(ecm) == ScaleMultiple(1.5)
+    @test loss_at(ecm, WelschShape(), cs, msac, buf) === deploy(WelschShape(), s2; scale_multiple = 1.5)
+    @test_throws MethodError VgtkCore.with_width(ecm, LossWidth(1.0))   # a self-scaling arm: no other mode
 end

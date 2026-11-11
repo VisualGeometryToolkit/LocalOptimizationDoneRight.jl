@@ -36,13 +36,13 @@ using TOML: TOML
 
 # --- Upstream stack: public names only ----------------------------------------
 using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractLocalOptimization, AbstractLossShape, AbstractBlockCoordinateMethod,
-    AbstractWeightPolicy, NormalizedWeightPolicy, AnyLoss, DeployedLoss, deploy, rescale,
+    AbstractWeightPolicy, NormalizedWeightPolicy, AnyLoss, DeployedLoss, rescale,
     sq_loss_width, loss_shape, liftable, weight, conjugate_curvature,
     lift_weight, lift_cost, loss_family, loss_label,
     gnc_surrogate, gnc_weight, gnc_entry_mu0, gnc_mu_cap, band_signal, NoSurrogate, MuScaled,
     BandAnnealed, GaussianShape, WelschShape, GemanMcclureShape, SmoothTLSShape,
-    BarronShape, ConsensusSet, consensus_score, is_predictive, ScoreBuffers, ScaleMultiple, LossWidth, TagRegistry, tag_of,
-    SelfScaling, ConsensusAnchored, FixedScale, ExternalRefit, scale_s2, inlier_count, inlier_threshold,
+    BarronShape, ConsensusSet, consensus_score, is_predictive, ScoreBuffers, ScaleMultiple, TagRegistry, tag_of,
+    SelfScaling, ConsensusAnchored, FixedScale, ExternalRefit, scale_s2, inlier_count,
     outlier_halfwidth, score_model!, loss_at, width_scale_interface, lo_estimate, Attributed,
     keep_best, StoppingCriterion, PosteriorWeightState, reset_posterior!, StudentTMixture, posterior_weight,
     posterior_weight_derivative, mixture_ecm!, mixture_nll, s_hat_sq, student_t_dof,

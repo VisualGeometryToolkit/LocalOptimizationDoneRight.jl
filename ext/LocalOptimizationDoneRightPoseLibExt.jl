@@ -24,7 +24,8 @@ using PoseLib: refine_relpose, refine_fundamental, refine_homography, LeZachTrun
 using StaticArrays: SMatrix
 using VisualGeometryToolkitCore: VisualGeometryToolkitCore, EssentialMat, FundMat, HomographyMat, Csponds, Point2, Vec3,
     EuclideanMap, TLSShape, LossWidth, OutlierHalfwidth, loss_width, sources, targets, cheiral_pose_fast,
-    codimension, data_size, mahalanobis_distances!, with_width, loss_width_to_outlier_halfwidth, FixedS2, scale_s2
+    codimension, data_size, mahalanobis_distances!, with_width, loss_width_to_outlier_halfwidth, FixedS2, scale_s2,
+    deploy, fit_scale, JeffreysPrior
 import VisualGeometryToolkitCore: external_workspace, prepare_external!, refine_external!
 using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem, RansacWorkspace, consensus_s2!
 
@@ -138,18 +139,28 @@ function prepare_external!(ws::AdaptWorkspace, ::PoseLibLmAdaptLossWidth, ::Esse
     return true
 end
 
-# Within-width truncated second moment: ŝ² = mean of rᵢ² over |rᵢ| ≤ loss_width;
-# fewer than `min_support` residuals within the truncation → nothing (a
+# Within-width truncated second moment — the arm's definition of record (the
+# width "re-anchored on the refined partition", accv2026 protocol.toml
+# [arms.tls_adapt]): the partition is the truncated loss's own, |rᵢ| ≤ loss_width
+# (inclusive), and its scale is VGC's estimator `fit_scale(JeffreysPrior(), rss, ν)`
+# = rss/ν, ν the partition's size (a scalar distance: one component per point).
+# Fewer than `min_support` residuals within the truncation → nothing (a
 # consensus too thin for a stable scale).
 const _ADAPT_MIN_SUPPORT = Int(_config_default("local_optimization.poselib_adapt", "min_support"))
 function _truncated_moment_s2(loss_width::Float64, r::AbstractVector; min_support::Int = _ADAPT_MIN_SUPPORT)
-    s2 = 0.0; ν = 0
+    rss = 0.0; ν = 0
     @inbounds for i in eachindex(r)
-        abs(r[i]) <= loss_width && (s2 += r[i]^2; ν += 1)
+        abs(r[i]) <= loss_width && (rss += r[i]^2; ν += 1)
     end
     ν < min_support && return nothing
-    return s2 / ν
+    return fit_scale(JeffreysPrior(), rss, ν)
 end
+
+# The truncated loss the arm refines at: VGC's deployment of `TLSShape()` at
+# the scale ŝ² (floored at eps) and the arm's multiple — its width is
+# `loss_width(deploy(…)) = scale_multiple·ŝ`.
+_adapt_loss_width(lo::PoseLibLmAdaptLossWidth, s2::Float64) =
+    loss_width(deploy(TLSShape(), max(s2, eps()); scale_multiple = lo.scale_multiple))
 
 # The per-round alternation moment of a refined pose: the within-width
 # second moment of its pool-frame distances (`mahalanobis_distances!` on the E
@@ -161,7 +172,7 @@ _adapt_s2(ws::AdaptWorkspace, problem, R, t, loss_width::Float64) =
 function refine_external!(ws::AdaptWorkspace, lo::PoseLibLmAdaptLossWidth, problem::EssentialProblem,
                           seed_E, ::LossWidth, _scoring)
     pl = ws.pl
-    w = lo.scale_multiple * sqrt(max(ws.s2₀, eps()))
+    w = _adapt_loss_width(lo, ws.s2₀)
     inner = max(1, lo.max_iter ÷ lo.rounds)
     pose = _cheiral_seed_pose(problem, seed_E)
     local ref = nothing
@@ -172,7 +183,7 @@ function refine_external!(ws::AdaptWorkspace, lo::PoseLibLmAdaptLossWidth, probl
         round == lo.rounds && break
         s2t = _adapt_s2(ws, problem, ref.R, ref.t, w)
         s2t === nothing && break                 # consensus too thin — freeze the width
-        w = lo.scale_multiple * sqrt(max(s2t, eps()))
+        w = _adapt_loss_width(lo, s2t)
     end
     return EssentialMat(ref.R, ref.t)
 end

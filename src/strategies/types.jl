@@ -476,13 +476,17 @@ struct BarronAdaptive{W} <: AbstractLocalOptimization
     width::W
 end
 
-# The squared loss width the Barron α-fit runs at, from the width mode:
-# `ScaleMultiple(m)` → m²·ŝ², `LossWidth((m₀, s2))` → m₀²·s2 (the scale floored
-# at eps), no width → the scorer's decision point, squared.
-_barron_sq_width(lo::BarronAdaptive, cs, scoring, buf) = _barron_sq_width(lo.width, cs, scoring, buf)
-_barron_sq_width(w::ScaleMultiple{Float64}, cs, _scoring, _buf) = w.value^2 * max(scale_s2(cs), eps())
-_barron_sq_width(w::LossWidth{NTuple{2, Float64}}, _cs, _scoring, _buf) = w.value[1]^2 * max(w.value[2], eps())
-_barron_sq_width(::Nothing, _cs, scoring, buf) = inlier_threshold(scoring, buf)^2
+# The squared loss width the Barron α-fit runs at: VGC's `loss_at` at the arm's
+# REFERENCE shape — `ScaleMultiple(m)` → m²·ŝ², `LossWidth((m₀, s2))` → m₀²·s2
+# (the scale floored at eps), no width → the reference shape's decision width at
+# the scorer's threshold (`decision_width`), squared. The width is frozen while
+# α moves, so it is resolved once, at a fixed shape: Barron's α = 0 (Cauchy),
+# whose facet-B decision width t/√2 is the Cauchy loss deciding at the scorer's
+# threshold t. (The identity default of `deployed_scale_multiple` keeps the
+# scale-multiple currency the plain width multiple.)
+const _BARRON_REFERENCE_SHAPE = BarronShape(0.0)
+_barron_sq_width(lo::BarronAdaptive, cs, scoring, buf) =
+    sq_loss_width(loss_at(lo, _BARRON_REFERENCE_SHAPE, cs, scoring, buf))
 
 
 # The shape of one point of the α-fit grid: VGC's `BarronShape(α)` for α < 2,
@@ -583,6 +587,14 @@ VgtkCore.with_width(lo::BarronHQ, w) = BarronHQ(lo.α, lo.max_iter, lo.μ, lo_wi
 VgtkCore.with_width(lo::GmHqEps, w) = GmHqEps(lo.max_iter, lo.μ, lo_width_value(w))
 VgtkCore.with_width(lo::BarronAdaptive, w) =
     BarronAdaptive(lo.max_iter, lo.α_min, lo.truncation_multiple, lo.n_sub, lo_width_value(w))
+
+# The self-scaling Welsch-HQ-ECM deploys its loss through the same `loss_at`
+# at its ONE width mode: `ScaleMultiple(scale_multiple)`, the multiple at which
+# the ECM re-estimates ŝ² every iteration. An absolute width (`LossWidth`, a
+# multiple of 1 from a `loss_width` key) or the scorer's width would be replaced
+# by 1·ŝ_ECM at the first scale step, so the arm admits neither: no `width`
+# field, no `with_width` setter, its scale interface `SelfScaling` (the row).
+VgtkCore.lo_width(lo::WelschHQEcm) = ScaleMultiple(lo.scale_multiple)
 
 # =============================================================================
 # THE strategy registry — one row of facts per strategy, on

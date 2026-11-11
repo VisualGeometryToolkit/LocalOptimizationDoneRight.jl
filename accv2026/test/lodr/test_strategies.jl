@@ -79,10 +79,11 @@ end
         # and back: the multiple restored is the strategy constructed with it
         @test with_width(out, lo_width(lo)) == lo
     end
-    # A strategy whose scale interface is INTRINSIC to the type carries no
-    # width mode, implements no setter — which is correct, not a gap: there
-    # is no field to set.
-    @test lo_width(WelschHQEcm(scale_multiple = 1.5)) === missing
+    # A self-scaling strategy re-estimates ŝ² at its scale multiple: its ONE
+    # width mode is that multiple (deployed by VGC's `loss_at`), and it has no
+    # setter — an absolute or the scorer's width would be replaced by 1·ŝ at
+    # the first scale step.
+    @test lo_width(WelschHQEcm(scale_multiple = 1.5)) == ScaleMultiple(1.5)
     @test_throws MethodError with_width(WelschHQEcm(scale_multiple = 1.5), LossWidth(1.0))
 end
 

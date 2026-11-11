@@ -86,10 +86,11 @@ end
 
 function locally_optimize!(
         ::LoBuffers, lo::WelschHQEcm, problem::EssentialProblem, model::EssentialMat,
-        cs::ConsensusSet, ::ScoreBuffers, _scoring
+        cs::ConsensusSet, buf::ScoreBuffers, scoring
     )
-    # Self-scaling: the consensus scale is the ECM's initial ŝ² (floored at eps).
-    loss = deploy(WelschShape(), max(scale_s2(cs), eps()); scale_multiple = lo.scale_multiple)
+    # Self-scaling: the consensus scale is the ECM's initial ŝ² (floored at eps),
+    # through VGC's `loss_at` at the arm's one width mode, `ScaleMultiple`.
+    loss = loss_at(lo, WelschShape(), cs, scoring, buf)
     prov = rows_provider(problem)
     method = ManifoldLiftHQ(prov, lift_size(prov), loss, lo.μ)
     θ₀ = lift_init(prov, model)                  # the seed (included in the candidate set)

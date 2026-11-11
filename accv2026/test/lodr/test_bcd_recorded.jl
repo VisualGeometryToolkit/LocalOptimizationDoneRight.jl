@@ -64,7 +64,7 @@ function arm(p, sc, model::M, lo) where {M}
         method = LO.ManifoldLiftHQ(prov, lift_size(prov), loss, lo.μ, LO.WelschConvexNewton())
         return LO._init_manifold_hq(method, θ₀, :flat), FrozenNuisance(), method, p, model, lo.max_iter
     elseif lo isa LO.WelschHQEcm
-        loss = V.deploy(WelschShape(), max(V.scale_s2(cs), eps()); scale_multiple = lo.scale_multiple)
+        loss = V.loss_at(lo, WelschShape(), cs, sc, buf)
         method = LO.ManifoldLiftHQ(prov, lift_size(prov), loss, lo.μ)
         state = LO._init_manifold_hq(method, θ₀, :flat)
         return state, LO.WelschEcmScale(state, prov), method, p, model, lo.max_iter

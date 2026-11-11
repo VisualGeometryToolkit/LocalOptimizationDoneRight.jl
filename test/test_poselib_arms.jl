@@ -44,3 +44,13 @@ end
     @test tm(0.75, r) === nothing
     @test tm(2.0, r[1:7]; min_support = 7) ≈ (10.75 - 1.0) / 7
 end
+
+@testset "the adaptive arm's width is VGC's TLS deployment" begin
+    lw = _EXT._adapt_loss_width
+    for m in (2.5, 1.0, 3.7), s2 in (0.0, 1.0e-6, 0.37, 4.0)
+        lo = PoseLibLmAdaptLossWidth(scale_multiple = m)
+        @test lw(lo, s2) === m * sqrt(max(s2, eps()))      # bit-identical to the width it replaced
+    end
+    # the moment is VGC's Jeffreys scale estimator: floored at eps, never 0
+    @test _EXT._truncated_moment_s2(1.0, zeros(8)) === eps()
+end
