@@ -19,7 +19,7 @@ bound to this project by src/common.jl's set_project_root!(projectdir())):
 Both are returned as the link paths (every keyed path is spelled under them).
 Writers refuse a path under data_root() unless declared a producer (the pool
 cells); smoke runs go to data/sims (DrWatson datadir("sims"), gitignored).
-The data policy (CLAUDE.md "Data") is checked by test/test_data_policy.jl.
+The data policy (CLAUDE.md "Data") is checked by the paper-project check, test/test_paper_project.jl.
 
 Configs state pool_dir RELATIVE to data_root(), so a run key and its
 sidecars are machine-portable (staging tree ≡ any mirror of the root).

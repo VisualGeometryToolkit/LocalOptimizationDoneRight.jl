@@ -248,15 +248,6 @@ end
     include("test_config_vocabulary.jl")
 end
 
-@testitem "data policy" default_imports = false begin
-    using Test
-    import VisualGeometryToolkitEval as VgtkEval
-    using VisualGeometryToolkitEval
-    using LocalOptimizationDoneRight
-    import VisualGeometryToolkitCore
-    include("test_data_policy.jl")
-end
-
 @testitem "engine integration" default_imports = false begin
     using Test
     import VisualGeometryToolkitEval as VgtkEval
@@ -302,6 +293,15 @@ end
     include("protocol_invariants.jl")
 end
 
+@testitem "keyed cells" default_imports = false begin
+    using Test
+    import VisualGeometryToolkitEval as VgtkEval
+    using VisualGeometryToolkitEval
+    using LocalOptimizationDoneRight
+    import VisualGeometryToolkitCore
+    include("test_keyed_cells.jl")
+end
+
 @testitem "protocol completeness" default_imports = false begin
     using Test
     import VisualGeometryToolkitEval as VgtkEval
@@ -345,15 +345,6 @@ end
     using LocalOptimizationDoneRight
     import VisualGeometryToolkitCore
     include("test_public_paths.jl")
-end
-
-@testitem "paper project" default_imports = false begin
-    using Test
-    import VisualGeometryToolkitEval as VgtkEval
-    using VisualGeometryToolkitEval
-    using LocalOptimizationDoneRight
-    import VisualGeometryToolkitCore
-    include("test_paper_project.jl")
 end
 
 @testitem "paper numbers" default_imports = false begin

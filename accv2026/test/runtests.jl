@@ -51,6 +51,11 @@ function run_items(select; kw...)
     end
 end
 
+# The stack's paper-project conventions (rule L4: the suite's entry point calls
+# the check), in the main process before the items; a name pattern runs only
+# the matching items.
+NAME === nothing && include(joinpath(@__DIR__, "test_paper_project.jl"))
+
 run_items(ti -> !(:timing in ti.tags); nworkers = NWORKERS, nworker_threads = 2)
 run_items(ti -> :timing in ti.tags; nworkers = ONE, nworker_threads = 1)
 

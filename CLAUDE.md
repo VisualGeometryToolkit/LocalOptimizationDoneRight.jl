@@ -77,8 +77,8 @@ the accv2026 project).
   (DrWatson's tagged dict: `gitcommit`, `gitpatch`, inputs relative to their
   roots). `run_complete` skips a keyed run and warns on commit drift. Never use
   `produce_or_load` for an artifact of record: it swallows save errors.
-- Policy, enforced by `test/test_data_policy.jl` (an explicit allowlist of the
-  deferred violations, each naming its fix):
+- Policy, enforced by the paper-project check (`test/test_paper_project.jl`,
+  which `test/runtests.jl` includes; no deferred allowance):
   - D1: no machine paths in code or launchers (Slurm: `$SLURM_SUBMIT_DIR`,
     `$ACCV_LOG_DIR`).
   - D2: nothing writes under `data_root()` except a declared producer
