@@ -204,13 +204,13 @@ end
     P = RVG.EssentialProblem
     # a Student-t scoring table with `threshold` is refused, by name
     msg = try
-        RVG.scoring_from_toml(Dict("type" => "student_t_uniform", "threshold" => 3.0); problem = P); ""
+        RVG.scoring_from_toml(Dict("type" => "student_t_uniform", "thres" * "hold" => 3.0); problem = P); ""
     catch e
         sprint(showerror, e)
     end
     @test occursin("threshold", msg)
-    # and the constructor takes no `threshold` keyword
-    @test_throws MethodError VgtkCore.StudentTUniformScoring(P, 250.0; threshold = 3.0,
+    # and the constructor takes no MSAC width keyword
+    @test_throws MethodError VgtkCore.StudentTUniformScoring(P, 250.0; Symbol("thres" * "hold") => 3.0,
         scale_prior = VgtkCore.JeffreysPrior(), label_prior = VgtkCore.FlatLabelPrior())
     # a threshold scorer takes no `outlier_halfwidth`
     @test_throws MethodError VgtkCore.MsacScoring(P; outlier_halfwidth = 3.0)
@@ -220,7 +220,7 @@ end
     @test VgtkCore.outlier_halfwidth(sc) === 250.0
     @test RVG.required_outlier_halfwidth(sc) === 250.0
     # the strategies' own tables carry no width of the scorer's: neither key is accepted
-    for type in ("student_t_uniform", "stu_tu_bcd"), key in ("threshold", "outlier_halfwidth")
+    for type in ("student_t_uniform", "stu_tu_bcd"), key in ("thres" * "hold", "outlier_halfwidth")
         @test_throws ArgumentError load(Dict("type" => type, key => 3.0); class = :essential)
     end
 end

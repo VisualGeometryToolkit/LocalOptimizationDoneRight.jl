@@ -26,7 +26,7 @@ using VisualGeometryToolkitEval.Evaluation: ComposedSpec, SoloSpec, Roster, Widt
     problem_type
 using VisualGeometryToolkitCore: WidthAxis, ScaleMultiple, LossWidth, OutlierHalfwidth
 import PoseLib
-using VisualGeometryToolkitCore: lo_label, decision_threshold
+using VisualGeometryToolkitCore: lo_label, decision_boundary
 # The classical RansacLib LO baseline (LebedaIterLO, LebedaLOPlus) over lib/RansacLibLO.
 include(joinpath(@__DIR__, "lebeda_lo.jl"))
 # The research-only zero-clamp Welsch shape (the "<key>@zc" variants below).
@@ -179,13 +179,13 @@ const _ARM_DEFS = ArmDef[
            timing = ("Welsch-GNC", :ig)),
     # Geman–McClure: same three mechanisms in the half-weight currency (VGC
     # `decision_width`): the shared scale-multiple grid is mapped through the
-    # Welsch half-weight depth `decision_threshold(WelschShape(), m)` = m·√ln2
+    # Welsch half-weight depth `decision_boundary(WelschShape(), m)` = m·√ln2
     # (a Welsch loss of width m·ŝ weighs a residual ½ there), so the GM rows tune
     # on the same grid as the Welsch arms.
     ArmDef("IG  +GM-Irls", :ig, ScaleMultiple(), scale_multiple -> Irls{GemanMcclureShape}(; max_iter = LO_BUDGET, scale_multiple);
-           strategy_scale_multiple = m -> decision_threshold(WelschShape(), m), timing = ("GM-IRLS", :ig)),
+           strategy_scale_multiple = m -> decision_boundary(WelschShape(), m), timing = ("GM-IRLS", :ig)),
     ArmDef("IG  +GM-HQ",   :ig, ScaleMultiple(), scale_multiple -> HQ{GemanMcclureShape}(; max_iter = LO_BUDGET, scale_multiple);
-           strategy_scale_multiple = m -> decision_threshold(WelschShape(), m), timing = ("GM-HQ", :ig)),
+           strategy_scale_multiple = m -> decision_boundary(WelschShape(), m), timing = ("GM-HQ", :ig)),
     ArmDef("IG  +GNC-GM",  :ig, ScaleMultiple(), scale_multiple -> Gnc{Irls{GemanMcclureShape}}(; max_iter = LO_BUDGET, scale_multiple);
            timing = ("GM-GNC", :ig)),
     # TLS: smooth-truncated HQ lift (the scale multiple is the truncation in ŝ units) and GNC.

@@ -109,8 +109,8 @@ fitted(p, halfwidth; seed = 1) =
 @testset "local-optimization contract: the hosted strategies (H scene)" begin
     p = HomographyProblem(csponds(homography_pairs(MersenneTwister(7), H_TRUE; n_in = 80, n_out = 20, σ = 0.5)...))
     θ = fitted(p, 50.0)
-    msac = MsacScoring(p; threshold = 3.0)
     stu = StudentTUniformScoring(p, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
+    msac = MsacScoring(p; threshold = 3.0)
     for (lo, sc) in (
             (HQ{WelschShape}(scale_multiple = 1.5), msac),
             (Gnc{Irls{TLSShape}}(scale_multiple = 2.5), msac),
@@ -127,8 +127,8 @@ end
                               n = 110, σ = 0.001, outlier_every = 12)
     p = ecs(u₁, u₂)                                              # E in ECAM's pixels
     θ = fitted(p, 40.0)
-    msac = MsacScoring(p; threshold = 2.0)
     stu = StudentTUniformScoring(p, 40.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
+    msac = MsacScoring(p; threshold = 2.0)
     for (lo, sc) in (
             (HQ{WelschShape}(scale_multiple = 1.5), msac),
             (Gnc{Irls{TLSShape}}(scale_multiple = 2.5), msac),

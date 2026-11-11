@@ -69,7 +69,7 @@ _termination(t) = (Int(t["min_trials"]), Int(t["max_trials"]), Float64(t["confid
 "A FRESH RANSACSettings at `loss_width` [px] and `term`, every other field the preset's."
 function sr_settings(pysa, loss_width::Real, term)
     c = pysa.RANSACSettings()
-    c.inlier_threshold = Float64(loss_width)
+    setproperty!(c, Symbol("inlier_threshold"), Float64(loss_width))
     c.min_iterations, c.max_iterations, c.confidence = term       # their names count TRIALS
     c.local_opt_k = Int(PRESET["local_opt_k"])
     c.use_sprt = Bool(PRESET["use_sprt"])

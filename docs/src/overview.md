@@ -72,7 +72,7 @@ resolved once per call by VisualGeometryToolkitCore's `loss_at`:
   anchoring*);
 - `loss_width = w` (`LossWidth(w)`): an absolute width, in the caller's units;
 - neither: the width follows the scorer. The loss's decision point is placed at
-  the scorer's `inlier_threshold`; a scorer without one is refused at entry.
+  the scorer's `decision_boundary`; a scorer without one is refused at entry.
 
 `with_width(lo, w)` returns the same strategy at another width mode. The
 self-scaling strategies (`StudentTUniform`, `StuTuBCD`, `WelschHQEcm`, the

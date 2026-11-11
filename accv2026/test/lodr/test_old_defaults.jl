@@ -22,7 +22,7 @@ using Rotations: RotMatrix, RotXYZ, RotY
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: converged, estimate, rotation, translation   # VGC accessors (public)
 using VisualGeometryToolkitEstimation: RansacWorkspace   # public, not exported
-using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior, Predictive   # the Student-t scorer is VisualGeometryToolkitCore's
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior, Predictive, MsacScoring   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination
@@ -130,7 +130,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         @test !converged(r4) && estimate(r4) === nothing
         # The floor refusal: a threshold carried over in the OLD calibrated
         # units is rejected, not silently honoured 800x too tight.
-        @test_throws ArgumentError find_essential(ECAM, ECAM, pxcs; threshold = 0.02)
+        @test_throws ArgumentError find_essential(ECAM, ECAM, pxcs; scoring = MsacScoring(EssentialProblem; threshold = 0.02))
     end
 
     @testset "find_absolute_pose" begin

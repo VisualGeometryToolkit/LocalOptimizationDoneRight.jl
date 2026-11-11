@@ -41,8 +41,8 @@ VgtkCore.scoring_workspace(s::UniformOutlierScoring, n::Int, d_g::Int) = VgtkCor
 VgtkCore.score!(W, s::UniformOutlierScoring, q, r, n::Int; kw...) = VgtkCore.score!(W, s.inner, q, r, n; kw...)
 VgtkCore.inlier_count(s::UniformOutlierScoring, W) = VgtkCore.inlier_count(s.inner, W)
 VgtkCore.consensus_order(s::UniformOutlierScoring, W) = VgtkCore.consensus_order(s.inner, W)
-VgtkCore.inlier_threshold(s::UniformOutlierScoring, buf) = VgtkCore.inlier_threshold(s.inner, buf)
-VgtkCore.has_inlier_threshold(::Type{UniformOutlierScoring{S}}) where {S} = VgtkCore.has_inlier_threshold(S)
+VgtkCore.decision_boundary(s::UniformOutlierScoring, buf) = VgtkCore.decision_boundary(s.inner, buf)
+VgtkCore.has_decision_boundary(::Type{UniformOutlierScoring{S}}) where {S} = VgtkCore.has_decision_boundary(S)
 VgtkCore.score_bound(s::UniformOutlierScoring) = VgtkCore.score_bound(s.inner)
 
 const N_IN = 150

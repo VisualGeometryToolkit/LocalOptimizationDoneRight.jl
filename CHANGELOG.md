@@ -28,6 +28,13 @@ Eval and RANSACScoringDoneRight on 0.9.
   `PaperNumbers`/`write_numbers` and deployed by `deploy_assets`; SIMFIT++ is
   imported from VisualGeometryToolkitEstimation and the scoring registry is
   RANSACScoringDoneRight's `ALL_SCORING_TAGS` (both moved upstream).
+- The scorer's decision point is VisualGeometryToolkitCore's `decision_boundary`
+  (`inlier_threshold`, `has_inlier_threshold` and `decision_threshold` are retired
+  there): a scorer wrapper forwards `decision_boundary`/`has_decision_boundary`,
+  and accv2026's GM arms read the Welsch half-weight depth as
+  `decision_boundary(WelschShape(), m)`. A find_* takes its threshold through its
+  scorer (`scoring = MsacScoring(EssentialProblem; threshold = …)`), never as a
+  bare keyword.
 
 ## 0.5.1 (2026-11-09)
 

@@ -48,8 +48,8 @@ for f in (:ρ, :weight, :conjugate, :conjugate_curvature)
     @eval VgtkCore.$f(::WelschZeroClampShape, x, sq_loss_width) =
         VgtkCore.$f(WelschShape(), x, sq_loss_width)
 end
-VgtkCore.decision_width(::WelschZeroClampShape, decision_threshold::Real) =
-    VgtkCore.decision_width(WelschShape(), decision_threshold)
+VgtkCore.decision_width(::WelschZeroClampShape, boundary::Real) =
+    VgtkCore.decision_width(WelschShape(), boundary)
 VgtkCore.loss_family(::Type{WelschZeroClampShape}) = VgtkCore.loss_family(WelschShape)
 VgtkCore.loss_label(::Type{WelschZeroClampShape}) = VgtkCore.loss_label(WelschShape)
 
