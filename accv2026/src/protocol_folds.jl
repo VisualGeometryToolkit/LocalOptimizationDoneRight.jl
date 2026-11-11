@@ -23,6 +23,23 @@ using VisualGeometryToolkitEval.Experiments:
     load_run_config, run_key, experiment_dir
 include(joinpath(@__DIR__, "protocol.jl"))   # configs/protocol.toml: the arm protocol folded below
 
+"""
+    config_of_record(name) -> Dict
+
+The config of record `name` (configs/<name>.toml), loaded as a run config
+(VisualGeometryToolkitEval's `load_run_config`), not yet folded.
+"""
+config_of_record(name::AbstractString) = load_run_config(projectdir("configs", name * ".toml"))
+
+"""
+    keyed_cell_dir(cfg, experiment, kind) -> String
+
+The keyed directory of a folded cell of `kind` under its experiment's
+`experiment` results: `<experiment_dir(cfg)>/<experiment>/<kind>-<run_key>`.
+"""
+keyed_cell_dir(cfg, experiment::AbstractString, kind::AbstractString) =
+    joinpath(experiment_dir(cfg), experiment, kind * "-" * run_key(cfg))
+
 const _CVP_PATH    = projectdir("configs", "cv_protocol.toml")
 const _MP_PATH     = projectdir("configs", "miscal_protocol.toml")
 const _TUNING_PATH = projectdir("configs", "tuning.toml")
@@ -95,14 +112,13 @@ fold_arm_protocol!(cfg) = (cfg["arm_protocol"] = deepcopy(PROTOCOL["arms"]); cfg
     miscal_sidecar_of(config_name) -> path
 
 Re-derive the named cell's operating-points sidecar EXACTLY as its script
-does (load_run_config + fold_sequential_cv! + sequential_cv_dir) — the
+does (config_of_record + fold_sequential_cv! + sequential_cv_dir) — the
 arms_from_cv discipline: keys derived, never copied. THE one rule for every
 sidecar of record (fig3's PT-E: registry.jl EXP_MISCAL_SIDECAR =
 `miscal_sidecar_of("pt_e_miscal")`; fig2's basin: `miscal_sidecar_of("pt_e_basin")`).
 """
 miscal_sidecar_of(config_name::AbstractString) =
-    joinpath(sequential_cv_dir(fold_sequential_cv!(load_run_config(
-        projectdir("configs", config_name * ".toml")))), SEQUENTIAL_CV_SIDECAR)
+    joinpath(sequential_cv_dir(fold_sequential_cv!(config_of_record(config_name))), SEQUENTIAL_CV_SIDECAR)
 
 # --- the sequential CV (notes/sequential_cv.md) ----------------------------------
 
@@ -155,7 +171,7 @@ function fold_sequential_cv!(cfg)
     # cell's keyed directory keys this one, so a re-tuned scorer re-keys it.
     if haskey(sq, "scorer_of")
         name = String(sq["scorer_of"])
-        src = fold_sequential_cv!(load_run_config(projectdir("configs", name * ".toml")))
+        src = fold_sequential_cv!(config_of_record(name))
         haskey(src["sequential_cv"], "scorer_of") &&
             error("[sequential_cv] scorer_of = \"$name\": that cell reads its scorer from another — name the one that tunes it")
         for k in ("dataset", "matcher", "problem", "pool_dir")
@@ -189,7 +205,7 @@ splices either in) — so a consumer that does not run it keeps its key; one
 that does declares it itself, which re-keys it.
 """
 function operating_points_run(config_name::AbstractString)
-    cfg = fold_sequential_cv!(load_run_config(projectdir("configs", config_name * ".toml")))
+    cfg = fold_sequential_cv!(config_of_record(config_name))
     delete!(cfg["sequential_cv"], "objective_matched")
     delete!(cfg["sequential_cv"], "zero_clamp")
     return run_key(cfg)
@@ -229,8 +245,7 @@ end
 The keyed directory of a folded budget cell:
 `<results>/<dataset>/<matcher>/<problem>/SampleBudget/budget-<run_key>`.
 """
-budget_cell_dir(cfg) = joinpath(experiment_dir(cfg), "SampleBudget",
-                                "budget-" * run_key(cfg))
+budget_cell_dir(cfg) = keyed_cell_dir(cfg, "SampleBudget", "budget")
 
 "The operating-points sidecar a folded budget cell evaluates: its explicit path, or its miscal cell's."
 budget_sidecar(cfg) = haskey(cfg["operating_points"], "sidecar") ? String(cfg["operating_points"]["sidecar"]) :
@@ -274,7 +289,7 @@ end
 The keyed directory of a folded end-to-end cell:
 `<results>/<dataset>/<matcher>/<problem>/EndToEnd/e2e-<run_key>`.
 """
-e2e_cell_dir(cfg) = joinpath(experiment_dir(cfg), "EndToEnd", "e2e-" * run_key(cfg))
+e2e_cell_dir(cfg) = keyed_cell_dir(cfg, "EndToEnd", "e2e")
 
 """
     sequential_cv_scorer_path(cfg) -> String
@@ -317,9 +332,8 @@ any entry, the cv section, the ζ ladder or the arm protocol re-keys all three
 stages together.
 """
 sequential_cv_dir(cfg) =
-    joinpath(experiment_dir(cfg),
-             get(cfg["sequential_cv"], "roster", "composed") == "basin" ? "Basin" : "Miscalibration",
-             "sequential-cv-" * run_key(cfg))
+    keyed_cell_dir(cfg, get(cfg["sequential_cv"], "roster", "composed") == "basin" ? "Basin" : "Miscalibration",
+                   "sequential-cv")
 
 const ACCV2026_PROTOCOL_FOLDS_LOADED = true
 end # include guard

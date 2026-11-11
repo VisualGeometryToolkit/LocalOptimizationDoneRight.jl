@@ -70,7 +70,7 @@ function fold_superansac_cell!(cfg)
         ("zetas", "preset", "tuning_termination", "evaluation_termination"), "SupeRANSAC cell [superansac]")
     VgtkCore.check_keys(cfg["tuning"], (SUPERANSAC_TUNING,), "SupeRANSAC cell [tuning]")
     name = String(cfg["operating_points"]["miscal_config"])
-    op = fold_sequential_cv!(load_run_config(projectdir("configs", name * ".toml")))
+    op = fold_sequential_cv!(config_of_record(name))
     for k in ("dataset", "matcher", "problem", "pool_dir")
         op["experiment"][k] == cfg["experiment"][k] ||
             error("SupeRANSAC cell: [experiment] $k differs from the operating points' ($name)")
@@ -83,8 +83,7 @@ function fold_superansac_cell!(cfg)
 end
 
 "A SupeRANSAC cell's folded config, by name (configs/<name>.toml)."
-superansac_cell(name::AbstractString) =
-    fold_superansac_cell!(load_run_config(projectdir("configs", name * ".toml")))
+superansac_cell(name::AbstractString) = fold_superansac_cell!(config_of_record(name))
 
 "The loss-width tuning spec of a folded cell (its cross-validation: the operating points')."
 superansac_spec(cfg) = tuning_spec(cfg, SUPERANSAC_TUNING)
@@ -97,7 +96,7 @@ superansac_cross_validation(cfg) = superansac_spec(cfg).scheme.cross_validation
 The keyed directory of a folded SupeRANSAC cell:
 `<results>/<dataset>/<matcher>/<problem>/SupeRANSAC/superansac-<run_key>`.
 """
-superansac_cell_dir(cfg) = joinpath(experiment_dir(cfg), "SupeRANSAC", "superansac-" * run_key(cfg))
+superansac_cell_dir(cfg) = keyed_cell_dir(cfg, "SupeRANSAC", "superansac")
 
 "The directory of the STORED results the config names (`[stored] dir`, under the results root)."
 superansac_stored_dir(cfg) = joinpath(results_root(), String(cfg["stored"]["dir"]))

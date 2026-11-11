@@ -79,11 +79,10 @@ function fold_e2e_timing_cell!(cfg)
 end
 
 "A timing cell's folded config, by name (configs/<name>.toml)."
-e2e_timing_cell(name::AbstractString) =
-    fold_e2e_timing_cell!(load_run_config(projectdir("configs", name * ".toml")))
+e2e_timing_cell(name::AbstractString) = fold_e2e_timing_cell!(config_of_record(name))
 
 "The folded e2e cell a timing cell times."
-e2e_timed_cell(cfg) = fold_e2e_cell!(load_run_config(projectdir("configs", String(cfg["timing"]["e2e_config"]) * ".toml")))
+e2e_timed_cell(cfg) = fold_e2e_cell!(config_of_record(String(cfg["timing"]["e2e_config"])))
 
 "The SupeRANSAC cell of the timed e2e cell."
 e2e_timed_superansac(cfg) = superansac_cell(String(e2e_timed_cell(cfg)["e2e"]["superansac"]))
@@ -94,7 +93,7 @@ e2e_timed_superansac(cfg) = superansac_cell(String(e2e_timed_cell(cfg)["e2e"]["s
 The keyed directory of a folded timing cell:
 `<results>/<dataset>/<matcher>/<problem>/EndToEnd/timing-<run_key>`.
 """
-e2e_timing_dir(cfg) = joinpath(experiment_dir(cfg), "EndToEnd", "timing-" * run_key(cfg))
+e2e_timing_dir(cfg) = keyed_cell_dir(cfg, "EndToEnd", "timing")
 
 "The timing sample's file (scene ⇒ the drawn pool indices), its ours and SupeRANSAC inputs, and a repeat's output."
 timing_sample_path(dir) = joinpath(dir, "sample.toml")
