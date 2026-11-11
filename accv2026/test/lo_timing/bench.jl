@@ -48,30 +48,8 @@ Threads.nthreads() == 1 || error("bench.jl: run single-threaded (julia -t 1); go
 # =============================================================================
 # The Table 1 arms on the recorded call set
 # =============================================================================
-function read_fixture(path)
-    open(path) do io
-        String(read(io, 8)) == "LOFX0001" || error("$path: not a LOFX0001 fixture")
-        npairs = read(io, Int64); nseeds = read(io, Int64); halfwidth = read(io, Float64)
-        rd(k) = [read(io, Float64) for _ in 1:k]
-        pairs = map(1:npairs) do _
-            n = Int(read(io, Int64))
-            Kc1 = SMatrix{3, 3, Float64, 9}(rd(9)); Kc2 = SMatrix{3, 3, Float64, 9}(rd(9))
-            x1 = reshape(rd(2n), 2, n); x2 = reshape(rd(2n), 2, n)
-            seeds = [EssentialMat(Tuple(rd(9))) for _ in 1:nseeds]
-            (; n, Kc1, Kc2, x1, x2, seeds)
-        end
-        eof(io) || error("$path: trailing bytes")
-        return pairs, halfwidth
-    end
-end
-
-# The pair's pool-frame correspondences, and its E problem (their bearings
-# through the pool-frame cameras).
-function pool_csponds(pr)
-    P2 = Point2{Float64}
-    return Csponds([P2(pr.x1[1, i], pr.x1[2, i]) for i in 1:pr.n], [P2(pr.x2[1, i], pr.x2[2, i]) for i in 1:pr.n])
-end
-problem_of(pr) = EssentialProblem(CameraModel(pr.Kc1), CameraModel(pr.Kc2), pool_csponds(pr))
+include(joinpath(pkgdir(LocalOptimizationDoneRight), "test", "lo_timing", "call_set.jl"))   # read_fixture, pool_csponds, problem_of (the package bench's)
+include(joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "bench_record.jl"))   # calibration_spread, kernel_arm, write_bench_record: the record the gate reads (VisualGeometryToolkitCore's)
 
 # The Table 1 arms at the equal LO budget. The scale multiples are the Welsch
 # grid's centre (GM in its half-weight currency, as accv2026's arm table maps
@@ -113,33 +91,14 @@ function time_set(lo)
     return t / NCALLS / 1.0e3
 end
 
-# The noise probe: a fixed arithmetic loop timed REPS times; its relative spread
-# (second-fastest over fastest − 1) is the machine's jitter on this core.
-function calibration_spread(reps)
-    f() = (s = 0.0; x = 1.0; for k in 1:2_000_000; x = muladd(x, 1.0000001, 1.0e-9); s += x; end; s)
-    f(); ts = Float64[]
-    for _ in 1:reps
-        t0 = time_ns(); v = f(); push!(ts, time_ns() - t0); v > 0 || error()
+# Each arm as Core's record measures it: (its sorted µs per call over the reps, bytes per call).
+function lo_arm(ctor)
+    return function ()
+        lo = ctor()
+        run_set(lo); run_set(lo)                                   # compile + warm the task-local buffers
+        bytes = @allocated run_set(lo)
+        return sort!([time_set(lo) for _ in 1:REPS]), bytes / NCALLS
     end
-    sort!(ts)
-    return ts[2] / ts[1] - 1
 end
 
-io = IOBuffer()
-println(io, "# written by accv2026/test/lo_timing/bench.jl")
-println(io, "[host]")
-println(io, "cpu = ", repr(Sys.cpu_info()[1].model))
-println(io, "julia = ", repr(string(VERSION)))
-println(io, "calibration_spread = ", calibration_spread(REPS))
-println(io, "ncalls = ", NCALLS)
-for (name, ctor) in ARMS
-    lo = ctor()
-    run_set(lo); run_set(lo)                                   # compile + warm the task-local buffers
-    bytes = @allocated run_set(lo)
-    us = sort!([time_set(lo) for _ in 1:REPS])
-    println(io, "[arms.", repr(name), "]")
-    println(io, "us_per_call = ", us[1])
-    println(io, "reps_us_per_call = [", join(us, ", "), "]")
-    println(io, "bytes_per_call = ", bytes / NCALLS)
-end
-write(OUT, take!(io))
+write_bench_record(OUT, "accv2026/test/lo_timing/bench.jl", NCALLS, REPS, [name => lo_arm(ctor) for (name, ctor) in ARMS])

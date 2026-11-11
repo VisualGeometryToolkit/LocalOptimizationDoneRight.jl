@@ -64,33 +64,8 @@ const REPS = length(ARGS) >= 2 ? parse(Int, ARGS[2]) : 7
 
 Threads.nthreads() == 1 || error("bench.jl: run single-threaded (julia -t 1); got $(Threads.nthreads()) threads")
 
-# =============================================================================
-# The recorded call set
-# =============================================================================
-function read_fixture(path)
-    open(path) do io
-        String(read(io, 8)) == "LOFX0001" || error("$path: not a LOFX0001 fixture")
-        npairs = read(io, Int64); nseeds = read(io, Int64); halfwidth = read(io, Float64)
-        rd(k) = [read(io, Float64) for _ in 1:k]
-        pairs = map(1:npairs) do _
-            n = Int(read(io, Int64))
-            Kc1 = SMatrix{3, 3, Float64, 9}(rd(9)); Kc2 = SMatrix{3, 3, Float64, 9}(rd(9))
-            x1 = reshape(rd(2n), 2, n); x2 = reshape(rd(2n), 2, n)
-            seeds = [EssentialMat(Tuple(rd(9))) for _ in 1:nseeds]
-            (; n, Kc1, Kc2, x1, x2, seeds)
-        end
-        eof(io) || error("$path: trailing bytes")
-        return pairs, halfwidth
-    end
-end
-
-# The pair's pool-frame correspondences, and its E problem (their bearings
-# through the pool-frame cameras).
-function pool_csponds(pr)
-    P2 = Point2{Float64}
-    return Csponds([P2(pr.x1[1, i], pr.x1[2, i]) for i in 1:pr.n], [P2(pr.x2[1, i], pr.x2[2, i]) for i in 1:pr.n])
-end
-problem_of(pr) = EssentialProblem(CameraModel(pr.Kc1), CameraModel(pr.Kc2), pool_csponds(pr))
+include(joinpath(@__DIR__, "call_set.jl"))   # read_fixture, pool_csponds, problem_of
+include(joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "bench_record.jl"))   # calibration_spread, kernel_arm, write_bench_record: the record the gate reads (VisualGeometryToolkitCore's)
 
 # =============================================================================
 # The PoseLib arms on the recorded call set, through the external-refit contract
@@ -178,51 +153,17 @@ const KERNELS = [
     "lift-GNC" => () -> _lift_gnc_increment!(RWS, LS, GM, 4.0, N, nothing),
 ]
 
-function time_kernel(f)
-    t0 = time_ns()
-    for _ in 1:SWEEPS
-        f()
+# Each arm as Core's record measures it: (its sorted µs per call over the reps, bytes per call).
+function external_arm(ctor)
+    return function ()
+        lo = ctor()
+        ws = external_workspaces(lo)                               # once per pair, outside the timing
+        run_external_set(ws, lo); run_external_set(ws, lo)         # compile + warm
+        bytes = @allocated run_external_set(ws, lo)
+        return sort!([time_external_set(ws, lo) for _ in 1:REPS]), bytes / NCALLS
     end
-    return (time_ns() - t0) / SWEEPS / 1.0e3
 end
 
-# The noise probe: a fixed arithmetic loop timed REPS times; its relative spread
-# (second-fastest over fastest − 1) is the machine's jitter on this core.
-function calibration_spread(reps)
-    f() = (s = 0.0; x = 1.0; for k in 1:2_000_000; x = muladd(x, 1.0000001, 1.0e-9); s += x; end; s)
-    f(); ts = Float64[]
-    for _ in 1:reps
-        t0 = time_ns(); v = f(); push!(ts, time_ns() - t0); v > 0 || error()
-    end
-    sort!(ts)
-    return ts[2] / ts[1] - 1
-end
-
-io = IOBuffer()
-println(io, "# written by test/lo_timing/bench.jl")
-println(io, "[host]")
-println(io, "cpu = ", repr(Sys.cpu_info()[1].model))
-println(io, "julia = ", repr(string(VERSION)))
-println(io, "calibration_spread = ", calibration_spread(REPS))
-println(io, "ncalls = ", NCALLS)
-for (name, ctor) in EXTERNAL_ARMS
-    lo = ctor()
-    ws = external_workspaces(lo)                               # once per pair, outside the timing
-    run_external_set(ws, lo); run_external_set(ws, lo)         # compile + warm
-    bytes = @allocated run_external_set(ws, lo)
-    us = sort!([time_external_set(ws, lo) for _ in 1:REPS])
-    println(io, "[arms.", repr(name), "]")
-    println(io, "us_per_call = ", us[1])
-    println(io, "reps_us_per_call = [", join(us, ", "), "]")
-    println(io, "bytes_per_call = ", bytes / NCALLS)
-end
-for (name, f) in KERNELS
-    f(); f()
-    bytes = @allocated f()
-    us = sort!([time_kernel(f) for _ in 1:REPS])
-    println(io, "[arms.", repr(name), "]")
-    println(io, "us_per_call = ", us[1])
-    println(io, "reps_us_per_call = [", join(us, ", "), "]")
-    println(io, "bytes_per_call = ", Float64(bytes))
-end
-write(OUT, take!(io))
+write_bench_record(OUT, "test/lo_timing/bench.jl", NCALLS, REPS,
+                   [[name => external_arm(ctor) for (name, ctor) in EXTERNAL_ARMS];
+                    [name => kernel_arm(f, SWEEPS, REPS) for (name, f) in KERNELS]])
