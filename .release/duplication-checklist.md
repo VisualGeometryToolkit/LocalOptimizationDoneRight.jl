@@ -57,11 +57,11 @@ its configs, scripts and paper (studentt-keyword-overload.md): every Student-t c
 - [x] accv2026/test/lodr/test_old_defaults.jl:133 `find_essential(ECAM, ECAM, pxcs; threshold = 0.02)` (the sub-detector threshold refused) → `find_essential(ECAM, ECAM, pxcs; scoring = MsacScoring(EssentialProblem; threshold = 0.02))`; the refusal is still the 0.06 px floor's (checked: the message names the refinement bound), no longer the bare keyword's (robust-contract port, [sources] at vgtk-robust-core)
 - [x] R12 (Core check_naming): test/test_config_toml.jl:207/213/223 spell the refused key apart (`"thres" * "hold"`, `Symbol("thres" * "hold") => 3.0`), :212's comment reads "takes no MSAC width keyword" (the switch list's "threshold-scorer width" is still within six tokens of the scorer's name, so R12 flags it); accv2026/test/lodr/test_strategies.jl:112/130 build the Student-t scorer before the MSAC one. check_naming over the repository: clean
 
-### decision_boundary (Core 648cd520: `inlier_threshold`, `has_inlier_threshold`, `decision_threshold` retired)
+### decision_boundary (Core 648cd520 retires the three older names of the scorer's decision point; Core's check_naming lists them)
 
 - [x] test/test_strategies.jl:44/45 the `UniformOutlierScoring` wrapper forwards `decision_boundary`/`has_decision_boundary`
 - [x] docs/src/overview.md:75, accv2026/src/arm_rosters.jl:29/182/186/188 (`decision_boundary(WelschShape(), m)`), accv2026/src/welsch_zero_clamp.jl:51/52 (argument `boundary`)
-- [x] accv2026/scripts/tools/superansac_worker.jl:72 pysuperansac's own settings field set as `setproperty!(c, Symbol("inlier_threshold"), …)` (a foreign name, Core's FOREIGN_FORMAT_TOKENS); superansac.jl:300 (a string) and RansacLibLO's `squared_inlier_threshold_` (a C++ member) are foreign names: unchanged
+- [x] accv2026/scripts/tools/superansac_worker.jl:72 pysuperansac's own settings field is set by name, `setproperty!(c, Symbol(…), …)` with the field's name as a string (a foreign name, Core's FOREIGN_FORMAT_TOKENS); superansac.jl:300 (a string) and RansacLibLO's C++ member are foreign names: unchanged
 
 ## Not a duplicate
 
