@@ -20,7 +20,7 @@ using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabe
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitEstimation: RadialHomographyProblem, RadialCameraProblem, find_radial_homography, find_radial_camera,
     minimal_sample_size, model_type, data_size
-using VisualGeometryToolkitCore: mahalanobis_distances!, signed_distance
+using VisualGeometryToolkitCore: mahalanobis_distances!, signed_distance, inlier_mask
 using LocalOptimizationDoneRight
 const RVG = VisualGeometryToolkitEstimation
 using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination, .DivisionBoards, .RadialScenes
@@ -82,7 +82,7 @@ const _SCENES = Dict(
         @test est !== nothing
         @test rotation_error_deg(estimate(est), R_gt) < 0.05
         @test translation_error(estimate(est), t_gt) < 1.0
-        m = est.inlier_mask
+        m = inlier_mask(est)
         @test count(m .& gt) >= count(gt) - 2 && count(m .& .!gt) == 0
         @test count(m .& gt .& (radius .> rim)) >= count(gt .& (radius .> rim)) - 1    # the rim is kept
     end
@@ -108,7 +108,7 @@ end
     @test converged(result)
     test_pts = [SA[300.0, 400.0], SA[600.0, 300.0], SA[450.0, 550.0], SA[200.0, 200.0], SA[700.0, 500.0]]
     @test max_transfer_error(estimate(result), H_true, test_pts) < 2.0
-    @test sum(result.inlier_mask) >= n_inliers * 0.7
+    @test sum(inlier_mask(result)) >= n_inliers * 0.7
 end
 
 # MAPPED homography: pixels in, `K⁻¹`-style measurement maps, a model-frame H
@@ -134,8 +134,8 @@ const mapped_test_pts = [SA[300.0, 400.0], SA[600.0, 300.0], SA[450.0, 550.0], S
         ru = ransac(pu, StudentTUniformScoring(pu, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()); local_optimization_strategy = lo, config = cfg, rng = MersenneTwister(129))
         @test converged(rm)
         @test estimate(rm) isa model_type(pm)
-        @test sum(rm.inlier_mask[1:n_inliers]) >= 0.9 * n_inliers
-        @test sum(rm.inlier_mask[(n_inliers + 1):end]) <= 3
+        @test sum(inlier_mask(rm)[1:n_inliers]) >= 0.9 * n_inliers
+        @test sum(inlier_mask(rm)[(n_inliers + 1):end]) <= 3
         @test max_transfer_error(_to_px(estimate(rm)), H_true, mapped_test_pts) < 1.0
         # The LO objective is the same pixel objective mapped or not, so the
         # two runs land on the same homography.
@@ -178,7 +178,7 @@ end
     @test converged(result)
     sv = svdvals(estimate(result))
     @test sv[3] / sv[1] < 0.01
-    @test sum(result.inlier_mask) >= n_inliers * 0.6
+    @test sum(inlier_mask(result)) >= n_inliers * 0.6
 end
 
 # -----------------------------------------------------------------------------
@@ -234,7 +234,7 @@ const _RW, _RH = RADIAL_HOMOGRAPHY_FRAME   # Estimation's RadialScenes: radial_h
             local_optimization_strategy = StudentTUniform(), rng = MersenneTwister(5)
         )
         @test est !== nothing
-        m = est.inlier_mask
+        m = inlier_mask(est)
         @test count(m .& gt) >= count(gt) - 3 && count(m .& .!gt) == 0
         @test abs(division_coeff(estimate(est)) - division_coeff(m_gt)) < 0.1 * abs(division_coeff(m_gt))
         @test sign(division_coeff(estimate(est))) == sign(division_coeff(m_gt))
@@ -255,7 +255,7 @@ _pd(a::RadialCamera, b::RadialCamera) = projective_distance(radial_rows(a), radi
         est = find_radial_camera(pairs; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs; center = _CC), 5.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization_strategy = StudentTUniform(), rng = MersenneTwister(1))
         @test est !== nothing
         @test _pd(estimate(est), P_gt) < sqrt(2 * 1.0e-6)
-        m = est.inlier_mask
+        m = inlier_mask(est)
         @test count(m .& gt) >= count(gt) - 2 && count(m .& .!gt) == 0
         P_gt2, pairs2, gt2 = radial_board(MersenneTwister(3); σ = 0.3)
         est2 = find_radial_camera(pairs2; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs2; center = _CC), 5.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization_strategy = StudentTUniform(), rng = MersenneTwister(2))
@@ -272,7 +272,7 @@ _pd(a::RadialCamera, b::RadialCamera) = projective_distance(radial_rows(a), radi
         @test est.lo_retcode != :not_run
         rr = zeros(length(pairs)); mahalanobis_distances!(rr, p, estimate(est))
         @test median(abs.(rr[gt])) < 0.4
-        @test count(est.inlier_mask .& .!gt) == 0
+        @test count(inlier_mask(est) .& .!gt) == 0
     end
 end
 
@@ -287,7 +287,7 @@ end
         line = estimate(r)
         @test abs(signed_distance(line, Point2(0.0, 0.0))) < 0.006
         @test abs(signed_distance(line, Point2(56.0, 0.0))) < 0.006
-        @test count(r.inlier_mask[1:57]) >= 55 && !any(r.inlier_mask[58:60])
+        @test count(inlier_mask(r)[1:57]) >= 55 && !any(inlier_mask(r)[58:60])
     end
     @testset "StuTuBCD survives a failed refit" begin
         # The inhomogeneous line has no weighted refit (`refine!` is `nothing`):

@@ -48,6 +48,9 @@ No stack change is needed: VisualGeometryToolkitEstimation src/config_toml.jl `l
 - [x] the stored values migrated once at full precision, bit-identical: GM `m` → `decision_width(GemanMcclureShape(), m)` (test/test_strategies.jl, accv2026 test_lift_losses / scenes_testsetups / test_bcd_recorded / lo_timing bench), BarronHQ `m` → `m / sqrt(2.0)` (test/test_strategies.jl, test_lift_losses); the GM roster arms' grid map is `_gm_at_welsch_depth(m) = decision_width(GM, decision_boundary(Welsch, m))` (arm_rosters.jl), the grid spec unchanged. Before/after capture: identical width², estimate, retcode and iterations on 14 sites
 - [x] the no-local-optimization type → `nothing` (accv2026 experiment_producer, run_sequential_cv, test_engine_integration; TOML `"none"`)
 
+- [x] Q3 weights (B4): the 21 `result.inlier_mask` field reads (README, docs index, test/readme_tests, accv2026 test_old_defaults / test_problem_arms / scenes_testsetups) → Core's `inlier_mask(result)`
+- [x] B6: the raw tuned-width readers (accv2026 run_sequential_cv anchoring stage, render_anchoring_paired) read through Eval's `tuned_width(art, arm)`; the `--arms` resumes refuse a file older than tuning format 7. The GM arms keep `format6_constant`'s default (identity): their stored widths are Welsch-grid values and their maps carry the conversion
+
 ### The Student-t keyword (owner ruling 2026-11-11: "there is no threshold for the Student-t, only the outlier half-width")
 
 Every scorer takes its own keyword: `StudentTUniformScoring` its `outlier_halfwidth` (and its priors), never `threshold`; the

@@ -20,7 +20,7 @@ using StructArrays
 using Random
 using Rotations: RotMatrix, RotXYZ, RotY
 using VisualGeometryToolkitCore
-using VisualGeometryToolkitCore: converged, estimate, rotation, translation   # VGC accessors (public)
+using VisualGeometryToolkitCore: converged, estimate, inlier_mask, rotation, translation   # VGC accessors (public)
 using VisualGeometryToolkitEstimation: RansacWorkspace   # public, not exported
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior, Predictive, MsacScoring   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation
@@ -51,8 +51,8 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         @test converged(r)
         # Every inlier sits in the first 120 slots; demand most of them back
         # and almost no outlier admitted.
-        @test count(r.inlier_mask[1:120]) > 100
-        @test count(r.inlier_mask[121:end]) < 20
+        @test count(inlier_mask(r)[1:120]) > 100
+        @test count(inlier_mask(r)[121:end]) < 20
         Ĥ = estimate(r) / estimate(r)[3, 3]
         @test norm(Ĥ - H / H[3, 3]) / norm(H / H[3, 3]) < 1.0e-2
 
@@ -64,7 +64,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
             r2 = find_homography(StructArray(src .=> dst); scoring = hsc, workspace = ws, local_optimization_strategy = welsch_hq(:homography), rng = MersenneTwister(134))
             @test r2 !== nothing && converged(r2)
             @test estimate(r2) == estimate(r)
-            @test r2.inlier_mask == r.inlier_mask
+            @test inlier_mask(r2) == inlier_mask(r)
             @test r2.quality == r.quality
         end
 
@@ -87,13 +87,13 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         r = find_fundmat(StructArray(u₁ .=> u₂); scoring = fsc, local_optimization_strategy = welsch_hq(:fundmat), rng = MersenneTwister(137))
         @test r !== nothing
         @test converged(r)
-        @test count(r.inlier_mask[1:n_in]) > 0.75 * n_in
+        @test count(inlier_mask(r)[1:n_in]) > 0.75 * n_in
         # A fundamental matrix is rank 2.
         F = SMatrix{3, 3, Float64}(estimate(r))
         @test abs(det(F)) / norm(F)^3 < 1.0e-6
         # Recovered inliers satisfy their own epipolar constraint tightly.
         for i in 1:n_in
-            r.inlier_mask[i] || continue
+            inlier_mask(r)[i] || continue
             @test sampson_distance(estimate(r), u₁[i], u₂[i]) < 5.0
         end
 
@@ -118,7 +118,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         r = find_essential(ECAM, ECAM, pxcs; scoring = esc, local_optimization_strategy = welsch_hq(:essential), rng = MersenneTwister(139))
         @test r !== nothing
         @test converged(r)
-        @test count(r.inlier_mask[1:n_in]) > 0.75 * n_in
+        @test count(inlier_mask(r)[1:n_in]) > 0.75 * n_in
         # An essential matrix has two equal singular values and one zero.
         s = svd(SMatrix{3, 3, Float64}(estimate(r))).S
         @test abs(s[1] - s[2]) / s[1] < 1.0e-6
@@ -147,7 +147,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         r = find_absolute_pose(cam, StructArray(src .=> dst); scoring = psc, local_optimization_strategy = welsch_hq(:absolute_pose), rng = MersenneTwister(141))
         @test r !== nothing
         @test converged(r)
-        @test count(r.inlier_mask[1:120]) > 100
+        @test count(inlier_mask(r)[1:120]) > 100
         @test rotation_error_deg(estimate(r), R_gt) < 1.0
         @test translation_error(estimate(r), t_gt) < 0.05
 

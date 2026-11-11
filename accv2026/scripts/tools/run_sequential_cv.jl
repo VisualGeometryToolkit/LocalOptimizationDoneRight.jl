@@ -400,6 +400,9 @@ function run_refiner()
     old = nothing
     if !isempty(RERUN)
         old = load_tuning_artifact(REFINER_F)
+        # Resume only from the current format: a carried-over width of an older
+        # file would be saved again unconverted (Eval's `tuned_width` is the reader).
+        old.format == 7 || error("--arms: $REFINER_F is tuning format $(old.format), but resuming needs format 7 (an older file's widths would be saved again unconverted); rerun this stage from scratch: delete $REFINER_F and run without --arms")
         all(Float64(old["a_star"][String(s)]) == a[s] for s in SELS) ||
             error("$REFINER_F was tuned at a* = $(old["a_star"]), the scorer artifact says $a — re-run the whole stage")
         backup_for_rerun(REFINER_F)
@@ -527,6 +530,7 @@ function run_evaluate()
     if !isempty(RERUN)
         ROSTER_KIND == "composed" || error("--arms: the basin sidecar has no evaluation to splice")
         prev = load_tuning_artifact(SIDECAR_F)
+        prev.format == 7 || error("--arms: $SIDECAR_F is tuning format $(prev.format), but resuming needs format 7 (an older file's widths would be saved again unconverted); rerun this stage from scratch: delete $SIDECAR_F and run without --arms")
         Float64.(prev["zetas"]) == ZETAS || error("--arms: $SIDECAR_F was evaluated on another ζ ladder")
         backup_for_rerun(SIDECAR_F)
     end
@@ -571,8 +575,10 @@ function run_anchoring()
     Float64.(tk["zetas"]) == ZETAS || error("$SIDECAR_F: its ζ ladder differs from the protocol's")
     # Only the efficiency-constant arms have a partition anchor to remove.
     ro = [arm for arm in ARMS if arm.kind isa EfficiencyConstant]
+    # The tuned width through Eval's one reader (`tuned_width`: a format-6 sidecar's
+    # constant read through the arm's own hook, the identity for every arm here).
     tuned = Dict(arm.base => (selection = Float64(tk["tuned_selection"][arm.base]),
-                              width = Float64(tk["tuned_width"][arm.base])) for arm in ro)
+                              width = tuned_width(tk, arm)) for arm in ro)
     sels = sort!(unique(arm.sel for arm in ro))
     a = Dict(s => only(unique(tuned[arm.base].selection for arm in ro if arm.sel === s)) for s in sels)
     egrid = Dict(s => sort!(unique!([corrupt_native(a[s], ζ) for ζ in ZETAS])) for s in sels)

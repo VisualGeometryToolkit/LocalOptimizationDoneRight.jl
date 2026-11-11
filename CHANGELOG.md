@@ -34,6 +34,10 @@ Eval and RANSACScoringDoneRight on 0.9.
   `NoLocalOptimization()` is `nothing` (TOML `type = "none"`); the strategies'
   defaults tables are `[optimization_strategy.<tag>]` (were
   `[local_optimization.<tag>]`).
+- **A result's inlier set is `inlier_mask(result)`** (VisualGeometryToolkitCore, public): the
+  `inlier_mask` field of a RANSAC result is replaced by per-point `weights` and their kind
+  (`weight_kind`); `inlier_mask(r)` cuts them (binary `w > 0`, posterior the MAP rule). The README,
+  docs and tests read it so.
 
 ### Changed
 

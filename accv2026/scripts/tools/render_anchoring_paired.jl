@@ -40,9 +40,14 @@ zetas = Float64.(dwith["zetas"])
 Float64.(dwithout["zetas"]) == zetas || error("the two evaluations' ζ ladders differ")
 # Format 6: the operating point is a NATIVE VALUE, so the two evaluations are
 # compared on the values themselves rather than on indices into a shared grid.
-for b in dwithout["arms"], k in ("tuned_selection", "tuned_width")
-    dwithout[k][b] == dwith[k][b] ||
-        error("arm $b: the WITHOUT evaluation is not at the WITH operating point ($k)")
+# The selection native is compared raw; the width through Eval's one reader of a
+# tuned width (`tuned_width`, the arm's format-6 hook), on the paper's E roster.
+_ARM_OF = Dict(arm.base => arm for arm in ROSTER.composed(:E))
+for b in dwithout["arms"]
+    dwithout["tuned_selection"][b] == dwith["tuned_selection"][b] ||
+        error("arm $b: the WITHOUT evaluation is not at the WITH operating point (tuned_selection)")
+    tuned_width(dwithout, _ARM_OF[b]) == tuned_width(dwith, _ARM_OF[b]) ||
+        error("arm $b: the WITHOUT evaluation is not at the WITH operating point (tuned_width)")
 end
 @info "WITHOUT evaluation" scale_interface = dwithout["scale_interface"] plugin_scale = dwithout["plugin_scale"]
 ro_with, ro_without = dwith["evaluation"], dwithout["evaluation"]

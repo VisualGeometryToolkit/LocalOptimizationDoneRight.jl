@@ -117,7 +117,7 @@ refinement at its cross-validated efficiency constant, on a synthetic two-view s
 
 ```julia
 using Random: MersenneTwister
-using VisualGeometryToolkitCore: CameraModel, Point2, WelschShape, estimate, motion, px
+using VisualGeometryToolkitCore: CameraModel, Point2, WelschShape, estimate, inlier_mask, motion, px
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior
 using VisualGeometryToolkitCore.Synthetic: pose_error, sample_twoview_scene
 using VisualGeometryToolkitEstimation: EssentialProblem, find_essential
@@ -142,7 +142,7 @@ result = find_essential(camera, camera, cs;
     local_optimization_strategy = HQ{WelschShape}(; efficiency_constant = WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL),
     rng = MersenneTwister(2))
 
-n_inliers = count(result.inlier_mask)   # the 200 matches, and the few mismatches that land on their epipolar lines
+n_inliers = count(inlier_mask(result))   # the 200 matches, and the few mismatches that land on their epipolar lines
 # Rotation and translation-direction errors in degrees, against the closest of
 # the four motions (R, t) the estimated essential matrix factors into.
 rotation_error, translation_error =

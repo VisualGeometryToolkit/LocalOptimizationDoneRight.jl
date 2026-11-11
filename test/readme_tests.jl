@@ -69,7 +69,7 @@
     end
     @testset "documentation examples" begin
         @test docs.n_inliers == readme.n_inliers    # the same scene and seeds
-        @test count(docs.result.inlier_mask) >= 195 # the Overview's recipe on it
+        @test count(docs.inlier_mask(docs.result)) >= 195 # the Overview's recipe on it
     end
     """)
     # Base.julia_cmd() carries the test run's flags (--depwarn=error, coverage).

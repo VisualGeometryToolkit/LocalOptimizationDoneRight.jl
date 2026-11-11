@@ -80,7 +80,7 @@ end
 @testsetup module LiftChecks
 using Test: @test, @testset
 using Random: Random, MersenneTwister
-using VisualGeometryToolkitCore: GemanMcclureShape, WelschShape, converged, estimate, decision_width
+using VisualGeometryToolkitCore: GemanMcclureShape, WelschShape, converged, estimate, decision_width, inlier_mask
 using VisualGeometryToolkitEstimation: Irls, RansacConfig, ransac
 using LocalOptimizationDoneRight: Gnc, HQ
 
@@ -117,8 +117,8 @@ function check_lift_ransac(accurate, problem, scoring, arms, n_in; seed)
         )
         @test converged(res)
         accurate(estimate(res))
-        @test sum(res.inlier_mask[1:n_in]) >= 0.9 * n_in            # inlier recovery
-        @test sum(res.inlier_mask[(n_in + 1):end]) <= 5             # false-positive control
+        @test sum(inlier_mask(res)[1:n_in]) >= 0.9 * n_in            # inlier recovery
+        @test sum(inlier_mask(res)[(n_in + 1):end]) <= 5             # false-positive control
     end
     return nothing
 end
