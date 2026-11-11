@@ -15,7 +15,7 @@ using Test, Random, LinearAlgebra, StaticArrays, StructArrays
 using Rotations: RotY
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: estimate, retcode   # VGC accessors (public)
-using RANSACScoringDoneRight: StudentTUniformScoring   # the paper's marginal (the old core default)
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 const RVGC = VisualGeometryToolkitEstimation
@@ -67,7 +67,7 @@ end
     sqcost(F) = truncated_sampson_cost(F, u₁, u₂)
     c_seed = sqcost(F_seed)
     rf = RVGC.locally_optimize(
-        pf, F_seed; scoring = StudentTUniformScoring(pf, 0.05),
+        pf, F_seed; scoring = StudentTUniformScoring(pf, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
         local_optimization = LODR.Gnc{RVGC.Irls{RVGC.WelschShape}}(scale_multiple = 1.0)
     )
     @test estimate(rf) !== nothing

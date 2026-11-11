@@ -16,7 +16,7 @@ const _FOUR_TRIALS = LebedaLOOptions(num_lo_trials = 4)
 using VisualGeometryToolkitEval.Evaluation: PairCtx, problem_type, model_imc, refit_imc!, refit_seed, solo_refit_imc!,
     SoloSpec, LoRefitSpec
 using VisualGeometryToolkitEstimation: EssentialProblem
-using RANSACScoringDoneRight: StudentTUniformScoring
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitCore: CameraModel
 using PoseLib: calibrated_loss_width
 
@@ -62,7 +62,7 @@ function _lebeda_ctx(s, track::Symbol)
     cs = s.geom.cs
     P = problem_type(track)
     ep = track === :E ? EssentialProblem(CameraModel(s.K1), CameraModel(s.K2), cs) : P(cs)
-    template = StudentTUniformScoring(P, 1.0)
+    template = StudentTUniformScoring(P, 1.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     return PairCtx((models = [_lebeda_pool_model(s, track)],), ep, nothing, s.geom, P, template, template,
                    Dict{Symbol, Any}())
 end

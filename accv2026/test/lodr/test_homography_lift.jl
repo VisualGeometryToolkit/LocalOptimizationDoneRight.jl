@@ -16,7 +16,7 @@
 using Test, Random, LinearAlgebra, StaticArrays
 using VisualGeometryToolkitCore: estimate   # VGC accessor (public)
 using VisualGeometryToolkitCore: HomographyManifold8, retract   # the sl(3) chart (public)
-using RANSACScoringDoneRight: StudentTUniformScoring   # owned and exported by RANSACScoringDoneRight
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 using .HomographyScenes, .Contamination, .LiftChecks
@@ -35,7 +35,7 @@ const RVGL = VisualGeometryToolkitEstimation
         σ = 0.5, n_out, outlier = (rng, k) -> src[n_in + k] => uniform_source(rng)
     )
     prob = HomographyProblem(pairs)
-    sc = StudentTUniformScoring(prob, 50.0)
+    sc = StudentTUniformScoring(prob, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
 
     # Homography error metric: max reprojection error of the GT-inlier
     # region's corners under Ĥ vs the GT homography.

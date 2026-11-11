@@ -19,7 +19,7 @@ using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: Synthetic, Csponds, consensus_set, mahalanobis_distances!, estimate, iterations, lo_width,
     minimal_sample_size, codimension
 using VisualGeometryToolkitEstimation: consensus_s2!
-using RANSACScoringDoneRight: StudentTUniformScoring
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 
 # The evaluator + the paper config.
 using VisualGeometryToolkitEval.Evaluation: perturbed_seed_E
@@ -55,7 +55,7 @@ _gnc(v::Symbol; scale_multiple = 2.5, kw...) =
 const _NIN = 120
 # The scoring a contract run refines under: the Jeffreys Student-t + uniform
 # marginal at outlier half-width `h` (the paper's selection scorer).
-_marginal(h) = StudentTUniformScoring(_LOC_PROB, h)
+_marginal(h) = StudentTUniformScoring(_LOC_PROB, h; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
 function _fit(E)
     r = Vector{Float64}(undef, length(_LOC.w1))
     mahalanobis_distances!(r, _LOC_PROB, E)
@@ -103,7 +103,7 @@ end
     #    imc is not what an LO optimizes; see `_fit`.)
     # -------------------------------------------------------------------------
     @testset "Gnc end-to-end + budget: $v" for v in (:welsch, :tls, :gm)
-        sc = StudentTUniformScoring(prob, _LOC_A)
+        sc = StudentTUniformScoring(prob, _LOC_A; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
         for δ in (0.02, 0.2), s in (14, 15)
             E0 = _loc_seed_E(δ; seed = s)
             lo = _gnc(v, max_iter = LO_BUDGET)

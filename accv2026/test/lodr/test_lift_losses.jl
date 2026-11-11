@@ -23,7 +23,7 @@ using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: Synthetic
 using VisualGeometryToolkitCore.Synthetic: projective_distance
 using VisualGeometryToolkitCore: estimate, retcode   # VGC accessors (public)
-using RANSACScoringDoneRight: StudentTUniformScoring   # owned and exported by RANSACScoringDoneRight
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation: LOSS_TAGS, config_dict, local_optimization_from_toml   # public, not exported
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
@@ -183,9 +183,9 @@ const _LIFT_REGRESSION = Dict(
         # Explicit Float64 workspace: the hex pins were captured at Float64
         # storage; the default workspace is now Float32.
         r = locally_optimize(
-            p, E_seed; scoring = StudentTUniformScoring(p, 0.05),
+            p, E_seed; scoring = StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
             local_optimization = lo,
-            workspace = RansacWorkspace(Float64, p, StudentTUniformScoring(p, 0.05))
+            workspace = RansacWorkspace(Float64, p, StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()))
         )
         @test estimate(r) !== nothing
         @test projective_distance(estimate(r), _unhex9(_LIFT_REGRESSION[name])) < 1.0e-6
@@ -208,7 +208,7 @@ const _LIFT_REGRESSION = Dict(
     pf = FundMatProblem(StructArray(u₁ .=> u₂))
     F_seed = FundMat(Tuple(SMatrix{3, 3, Float64, 9}(E_seed)))
     rf = locally_optimize(
-        pf, F_seed; scoring = StudentTUniformScoring(pf, 0.05),
+        pf, F_seed; scoring = StudentTUniformScoring(pf, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
         local_optimization = HQ{WelschShape}(max_iter = 25, scale_multiple = 1.5)
     )
     @test estimate(rf) !== nothing
@@ -246,7 +246,7 @@ end
     ]
     for lo in arms
         r = locally_optimize(
-            p, E_seed; scoring = StudentTUniformScoring(p, 0.05),
+            p, E_seed; scoring = StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
             local_optimization = lo
         )
         @test estimate(r) !== nothing
@@ -260,7 +260,7 @@ end
     cost_seed = sqcost(F_seed)
     for lo in arms
         rf = locally_optimize(
-            pf, F_seed; scoring = StudentTUniformScoring(pf, 0.05),
+            pf, F_seed; scoring = StudentTUniformScoring(pf, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
             local_optimization = lo
         )
         @test estimate(rf) !== nothing
@@ -281,13 +281,13 @@ end
     p = ecs(u₁, u₂)                                    # the scene in ECAM's pixels
     e_seed = Synthetic.imc_pose_error(E_seed, R_gt, t_gt)
     lift(scale_multiple) = locally_optimize(
-        p, E_seed; scoring = StudentTUniformScoring(p, 0.05 * f),
+        p, E_seed; scoring = StudentTUniformScoring(p, 0.05 * f; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
         local_optimization = HQ{WelschShape}(; max_iter = 25, scale_multiple)
     )
     # The same lift in calibrated units, for the unit-invariance gate below.
     pc = cal_problem(u₁, u₂)
     lift_cal(scale_multiple) = locally_optimize(
-        pc, E_seed; scoring = StudentTUniformScoring(pc, 0.05),
+        pc, E_seed; scoring = StudentTUniformScoring(pc, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
         local_optimization = HQ{WelschShape}(; max_iter = 25, scale_multiple)
     )
     models = Dict{Float64, SMatrix{3, 3, Float64, 9}}()
@@ -324,7 +324,7 @@ end
     u₁, u₂, E_seed = _lift_smoke_scene()
     p = cal_problem(u₁, u₂)
     build(d) = local_optimization_from_toml(d; class = :essential, tags = TAGS)
-    runlo(lo) = locally_optimize(p, E_seed; scoring = StudentTUniformScoring(p, 0.05), local_optimization = lo)
+    runlo(lo) = locally_optimize(p, E_seed; scoring = StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization = lo)
     # a registry entry's owner answers whether it takes a loss
     parametric(T) = RVGK.lo_parametric(T)
     for (tag, T) in TAGS
@@ -391,7 +391,7 @@ end
     p = cal_problem(u₁, u₂)
     RVGB = LocalOptimizationDoneRight
     run(lo) = estimate(locally_optimize(
-        p, E_seed; scoring = StudentTUniformScoring(p, 0.05),
+        p, E_seed; scoring = StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
         local_optimization = lo
     ))
     scale_multiple = 1.5

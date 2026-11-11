@@ -28,6 +28,7 @@
 #       render (CPU) — the faceted budget panel (+ an optional time panel).
 # =============================================================================
 import VisualGeometryToolkitCore as VgtkCore
+using VisualGeometryToolkitCore: JeffreysPrior, FlatLabelPrior   # the Student-t scorer's priors
 using DrWatson
 using JLD2, TOML
 import VisualGeometryToolkitCore   # check_keys: the figure configs' key check
@@ -270,7 +271,7 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString)
                 s = dep[b]
                 r = evaluate_sample_budget(problem_type(p),
                         [SampleBudgetMethodSpec(:ig, StudentTUniformScoring(problem_type(p), s.sel;
-                                                                           prior = sidecar_scale_prior(sidecar)))],   # the operating points' own prior
+                                                                           scale_prior = sidecar_scale_prior(sidecar), label_prior = FlatLabelPrior()))],   # the operating points' own prior
                         pairs, residuals; cfg = arm_cfg(s))
                 r.methods[1] === :ig || error("budget: method order changed — :ig is not column 1 ($(r.methods))")
                 err_lo[b] = r.err_lo[:, 1, :]                    # the scoring column

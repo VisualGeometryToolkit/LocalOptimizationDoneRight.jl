@@ -26,7 +26,7 @@ using VisualGeometryToolkitEval.Render: fmt3
 using VisualGeometryToolkitCore: ScaleMultiple, OutlierHalfwidth, width_axis_name, IGPrior
 using VisualGeometryToolkitCore.Pools: PoolPair
 using VisualGeometryToolkitEstimation: EssentialProblem, RansacConfig, GaussianSampler
-using RANSACScoringDoneRight: StudentTUniformScoring
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using Printf: Printf
 using DrWatson: projectdir   # configs/ of the active (accv2026) project
 using Statistics: mean, median
@@ -89,10 +89,10 @@ function e2e_deployment(sidecar::AbstractString, arms)
         dep[a].kind isa Union{ScaleMultiple, OutlierHalfwidth} ||
             error("e2e: arm \"$a\" is $(dep[a].kind) — a fixed loss width has no in-loop port; not deployable end to end here")
     end
-    template = StudentTUniformScoring(EssentialProblem, 1.0; prior)   # the refit marginal at the operating points' prior
+    template = StudentTUniformScoring(EssentialProblem, 1.0; scale_prior = prior, label_prior = FlatLabelPrior())   # the refit marginal at the operating points' prior
     lo_at(a, ζ) = dep[a].kind isa ScaleMultiple ? dep[a].lo :
                   RefitHalfwidth(dep[a].lo, ζ * dep[a].ref, template)
-    scoring_at(a, ζ) = StudentTUniformScoring(EssentialProblem, ζ * dep[a].sel; prior)
+    scoring_at(a, ζ) = StudentTUniformScoring(EssentialProblem, ζ * dep[a].sel; scale_prior = prior, label_prior = FlatLabelPrior())
     return (; dep, prior, scoring_at, lo_at)
 end
 

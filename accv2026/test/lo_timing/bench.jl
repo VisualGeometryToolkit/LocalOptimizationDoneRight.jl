@@ -37,6 +37,7 @@
 using LocalOptimizationDoneRight, VisualGeometryToolkitEstimation, VisualGeometryToolkitCore, RANSACScoringDoneRight
 using LocalOptimizationDoneRight: HQ, Gnc, StudentTUniform, StuTuBCD
 using VisualGeometryToolkitEstimation: RansacWorkspace, Irls
+using VisualGeometryToolkitCore: JeffreysPrior, FlatLabelPrior   # the Student-t scorer's priors
 using VisualGeometryToolkitCore: IGPrior
 using StaticArrays, LinearAlgebra, Random
 
@@ -69,7 +70,7 @@ const ARMS = [
 
 const PAIRS, HALFWIDTH = read_fixture(CALL_SET_FIXTURE)
 const PROBS = [problem_of(pr) for pr in PAIRS]
-const SCORINGS = [StudentTUniformScoring(EssentialProblem, HALFWIDTH; prior = IGPrior(0.0, 0.0)) for _ in PROBS]
+const SCORINGS = [StudentTUniformScoring(EssentialProblem, HALFWIDTH; scale_prior = IGPrior(0.0, 0.0), label_prior = FlatLabelPrior()) for _ in PROBS]
 const WORKSPACES = [RansacWorkspace(PROBS[i], SCORINGS[i]) for i in eachindex(PROBS)]
 const NCALLS = call_set_size(PAIRS)
 

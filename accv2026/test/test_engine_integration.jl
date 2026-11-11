@@ -27,7 +27,8 @@ using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: LocalOptimizationDoneRight as LODR, HQ, StuTuBCD, StudentTUniform, PoseLibLm,
     PoseLibLZ, PoseLibLmAdaptLossWidth
 import PoseLib            # LocalOptimizationDoneRight's PoseLib extension: the truncated refiners' solver calls
-using RANSACScoringDoneRight: RANSACScoringDoneRight, StudentTUniformScoring, loss_width_scoring
+using RANSACScoringDoneRight: RANSACScoringDoneRight, loss_width_scoring
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEval.Evaluation
 using VisualGeometryToolkitEval.Evaluation: Evaluation, PairGeom, ScoreSelector, OracleSelector, lo_error!,
     lo_iteration_budget, deployed_ref
@@ -43,7 +44,7 @@ using VisualGeometryToolkitCore.Pools: PoolPair, num_models, num_points
 const P = EssentialProblem
 const PRIOR = IGPrior(0.0, 0.0)                           # Jeffreys
 "The Student-t + uniform marginal at outlier half-width `a` (Jeffreys)."
-marginal(a) = StudentTUniformScoring(P, a; prior = PRIOR)
+marginal(a) = StudentTUniformScoring(P, a; scale_prior = PRIOR, label_prior = FlatLabelPrior())
 "THE refit scoring template of every context here."
 const TEMPLATE = marginal(1.0)
 const CPU = RANSACScoringDoneRight.KernelAbstractions.CPU()
@@ -223,7 +224,7 @@ end
         @test res.methods == [:jeffreys, :wide, :msac, :oracle]
         # one scale prior per evaluation: the per-pair context (and every refit) carries one template
         @test_throws ArgumentError evaluate_sample_budget(P,
-            [methods[1], SampleBudgetMethodSpec(:ig_mle, StudentTUniformScoring(P, 0.01; prior = IGPrior(3.0, 0.001)))],
+            [methods[1], SampleBudgetMethodSpec(:ig_mle, StudentTUniformScoring(P, 0.01; scale_prior = IGPrior(3.0, 0.001), label_prior = FlatLabelPrior()))],
             [pair], [R]; cfg)
         @test size(res.err_batch) == (1, 4, 4) && size(res.err_lo) == (1, 4, 3)
         @test all(0 .<= res.best_idx_batch .<= num_models(pair))

@@ -4,9 +4,9 @@
 # package is that code; it once used cameras, correspondences and an outlier
 # half-width it never defined (General registration review, #174579).
 #
-# The example composes this package with RANSACScoringDoneRight's scorer, which
-# the stack allow-list (VisualGeometryToolkitCore configs/stack_dependencies.toml)
-# keeps out of this test target. So the item builds a temporary environment —
+# The example composes this package with VisualGeometryToolkitCore's Student-t +
+# uniform scorer, and runs as a reader runs it: from what the install line adds.
+# So the item builds a temporary environment —
 # this package by path, every other package of the install line from General —
 # and runs the blocks in a child Julia process there. The install line is a
 # `pkg>` block (```julia-repl), so it is not run as code: the item checks

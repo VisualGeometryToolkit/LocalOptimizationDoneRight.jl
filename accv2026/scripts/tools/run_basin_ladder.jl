@@ -141,7 +141,8 @@ _ladder_refit(entry, ctx, seed_E, halfwidth::Float64) =
                scoring = ctx.solo_scoring, on_fail = NaN)
 # The ladder's refit scoring: the Jeffreys marginal (rebuilt at each refit's own
 # outlier half-width), for the deployed and the solo refits alike.
-const _LADDER_TEMPLATE = StudentTUniformScoring(EssentialProblem, 1.0)
+const _LADDER_TEMPLATE = VisualGeometryToolkitEstimation.scoring_from_toml(   # the priors: the stack configuration's
+    Dict{String, Any}("type" => "student_t_uniform", "outlier_halfwidth" => 1.0); problem = EssentialProblem)
 
 # Refinability mask: a pair enters the panels only if refining FROM THE GT POSE
 # ITSELF (δ=0, +LO) stays within the success radius — otherwise the pair's data

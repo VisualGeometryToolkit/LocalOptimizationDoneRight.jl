@@ -14,7 +14,7 @@ using VisualGeometryToolkitEstimation: EssentialProblem
 using VisualGeometryToolkitEval.Evaluation: miscal_evaluation_refit, apply_lo_refits, build_pair_ctx,
     refit_imc!, refit_seed
 using VisualGeometryToolkitCore: ScaleMultiple, FixedScale, SCALE_INTERFACE_TAGS
-using RANSACScoringDoneRight: StudentTUniformScoring
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEval.Pools: synthetic_e_pool_pair
 include(joinpath(@__DIR__, "..", "src", "config.jl"))   # the paper's arm roster (ROSTER)
 
@@ -34,7 +34,7 @@ include(joinpath(@__DIR__, "..", "src", "config.jl"))   # the paper's arm roster
     tuned = (selection = grids[:outlier_halfwidth][2], width = grids[:scale_multiple][2])
     zetas = [0.25, 1.0, 4.0]
     s0 = sqrt(pair.gt_variance)                    # the plug-in (validation reference) scale
-    template = StudentTUniformScoring(EssentialProblem, 1.0)   # the refit scoring template (Jeffreys)
+    template = StudentTUniformScoring(EssentialProblem, 1.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())   # the refit scoring template (Jeffreys)
     ctx = build_pair_ctx(EssentialProblem, pair; scoring = template)
     seed = refit_seed(ctx, pair.models[3])
 

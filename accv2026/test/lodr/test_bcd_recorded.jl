@@ -16,7 +16,7 @@ using Rotations: RotXYZ
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: CameraModel, Point2, Vec3, csponds, estimate, retcode, iterations, Attributed,
     WelschShape, GemanMcclureShape, HuberShape, block_coordinate_descent!, Recorded, current_cost
-using RANSACScoringDoneRight: StudentTUniformScoring
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 const R = VisualGeometryToolkitEstimation
@@ -108,7 +108,7 @@ arms(kind) = Any[
                        LO.StuTuHQTabulated(), LO.StuTuRegemm(max_iter = 12)] : Any[])...,
 ]
 @testset "Recorded == bare: $kind $(nameof(typeof(lo)))" for (kind, p) in problems, lo in arms(kind)
-    sc = StudentTUniformScoring(p, 50.0)
+    sc = StudentTUniformScoring(p, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     θ = estimate(R.ransac(p, sc; rng = Xoshiro(1), config = R.RansacConfig(max_trials = 200)))
     @test V.test_recorded(() -> arm(p, sc, θ, lo)) >= 1
 end

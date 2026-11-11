@@ -30,7 +30,7 @@ using VisualGeometryToolkitEval.Evaluation: build_pair_ctx, refit_model, refit_s
     essential_bearings, deployed_budget_settings
 using LocalOptimizationDoneRight: truncated_refit_pose, PoseLibLm
 using VisualGeometryToolkitEstimation: EssentialProblem, RansacWorkspace
-using RANSACScoringDoneRight: StudentTUniformScoring
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitCore: EssentialMat, EuclideanMap, Vec3, cheiral_pose_fast, GaussianShape, best_pool_model,
     score_model!, consensus_mask, external_workspace
 using VisualGeometryToolkitCore.Synthetic: pose_error
@@ -64,8 +64,8 @@ const BAILS = Threads.Atomic{Int}(0)       # polishes that threw (E_LO kept)
 
 # One pair: every source's E_LO, then every polisher on it → (err_LO, [(err, disp) per polisher]).
 function pair_rows(pair, R)
-    ctx = build_pair_ctx(EssentialProblem, pair; scoring = StudentTUniformScoring(EssentialProblem, 1.0; prior = PRIOR))
-    sc_sel = StudentTUniformScoring(EssentialProblem, A_STAR; prior = PRIOR)
+    ctx = build_pair_ctx(EssentialProblem, pair; scoring = StudentTUniformScoring(EssentialProblem, 1.0; scale_prior = PRIOR, label_prior = FlatLabelPrior()))
+    sc_sel = StudentTUniformScoring(EssentialProblem, A_STAR; scale_prior = PRIOR, label_prior = FlatLabelPrior())
     tls_ws = external_workspace(TLS_LO, ctx.ep, ctx.geom, ctx.scoring)   # PoseLib's pool-frame inputs (the two-view frame: Kc1, Kc2, cs)
     # the pool stores pool-frame F hypotheses; the refit seed is the evaluation's
     # decode of the selected one (`refit_seed`: EssentialMat(F, Kc1, Kc2))
@@ -73,7 +73,7 @@ function pair_rows(pair, R)
     g = ctx.geom; f₁, f₂ = essential_bearings(ctx)
     map(SOURCES) do a
         d = DEP[a]
-        E = try refit_model(ctx.ep, seed, d.lo, StudentTUniformScoring(EssentialProblem, d.ref; prior = PRIOR)) catch; nothing end
+        E = try refit_model(ctx.ep, seed, d.lo, StudentTUniformScoring(EssentialProblem, d.ref; scale_prior = PRIOR, label_prior = FlatLabelPrior())) catch; nothing end
         E === nothing && return (NaN, [(NaN, NaN) for _ in POLISHERS])
         err_LO = Float64(model_imc(E, ctx))
         Rs, ts = cheiral_pose_fast(E, f₁, f₂)                       # static: what EuclideanMap takes

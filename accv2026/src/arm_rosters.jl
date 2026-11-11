@@ -16,11 +16,11 @@
 # audit_operating_points), so they rebuild arms from this ONE table.
 # =============================================================================
 
-using VisualGeometryToolkitEstimation: Irls
+using VisualGeometryToolkitEstimation: Irls, scoring_from_toml
 using LocalOptimizationDoneRight: HQ, Gnc, StuTuBCD, StudentTUniform, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth
 using VisualGeometryToolkitCore: WelschShape, GemanMcclureShape, SmoothTLSShape, TLSShape, MsacScoring, RansacScoring,
     codimension
-using RANSACScoringDoneRight: RANSACScoringDoneRight, StudentTUniformScoring
+using RANSACScoringDoneRight: RANSACScoringDoneRight
 using RansacLibLO: LebedaLOOptions, PRESET_REFERENCE   # the Lebeda ladder's options; RansacLib's defaults
 using VisualGeometryToolkitEval.Evaluation: ComposedSpec, SoloSpec, Roster, WidthSource, TunedWidth, SelectionWidth,
     problem_type
@@ -398,7 +398,7 @@ function solo_specs(problem::Symbol = :E; role::Symbol = :refinement)
     elseif role === :selection
         P = problem_type(problem); dg = codimension(P)
         return SoloSpec[
-            SoloSpec("IG",     :selection, OutlierHalfwidth(), w -> StudentTUniformScoring(P, Float64(w))),
+            SoloSpec("IG",     :selection, OutlierHalfwidth(), w -> scoring_from_toml(Dict{String, Any}("type" => "student_t_uniform", "outlier_halfwidth" => Float64(w)); problem = P)),   # the priors: the stack configuration's
             SoloSpec("MSAC",   :selection, LossWidth(),        w -> MsacScoring(dg; threshold = Float64(w))),
             SoloSpec("RANSAC", :selection, LossWidth(),        w -> RansacScoring(dg; threshold = Float64(w))),
             SoloSpec("MAGSAC", :selection, LossWidth(),        w -> MagsacScoring(dg; threshold = Float64(w))),

@@ -94,6 +94,7 @@
 # =============================================================================
 
 import VisualGeometryToolkitCore as VgtkCore
+using VisualGeometryToolkitCore: JeffreysPrior, FlatLabelPrior   # the Student-t scorer's priors
 using DrWatson; @quickactivate "ACCV2026"
 using CUDA, Statistics, Printf, JLD2, Logging, TOML
 using VisualGeometryToolkitEstimation
@@ -282,8 +283,8 @@ function selection_sweep(refits_of, loaders, grids::AbstractDict{Symbol})
     # own outlier half-width), and the Jeffreys marginal for an absolute-width
     # (loss-width) column — the solo delivery's scoring, whatever the prior.
     M, s2, np = stream_selections((idxs_of, si) -> refits_of(idxs_of), Float64, PT, loaders,
-                                    sweeps, StudentTUniformScoring(PT, 1.0; prior), CUDABackend(), NBATCH;
-                                    solo_scoring = StudentTUniformScoring(PT, 1.0))
+                                    sweeps, StudentTUniformScoring(PT, 1.0; scale_prior = prior, label_prior = FlatLabelPrior()), CUDABackend(), NBATCH;
+                                    solo_scoring = StudentTUniformScoring(PT, 1.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()))
     return Dict(l => reduce(vcat, ms) for (l, ms) in M), reduce(vcat, s2), np
 end
 

@@ -23,7 +23,7 @@ using Test, Random, LinearAlgebra, StaticArrays
 using Rotations: RotMatrix, RotZ, RotXYZ
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: estimate, rotation, translation   # VGC accessors (public)
-using RANSACScoringDoneRight: StudentTUniformScoring   # owned and exported by RANSACScoringDoneRight
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 using .PoseScenes, .Contamination, .LiftChecks
@@ -45,7 +45,7 @@ const RVGP = VisualGeometryToolkitEstimation
         outlier = (rng, _) -> first(frustum_point(rng, cam, R_gt, t_gt)) => SVector(40.0 + 880.0 * rand(rng), 40.0 + 640.0 * rand(rng))
     )
     prob = AbsolutePoseProblem(cam, pairs)
-    sc = StudentTUniformScoring(prob, 50.0)
+    sc = StudentTUniformScoring(prob, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     # A pose within 0.5° and 0.05 scene units of the truth (t_gt ~0.7, depth 4-10).
     function accurate(p)
         @test rotation_error_deg(p, R_gt) < 0.5
@@ -73,7 +73,7 @@ const RVGP = VisualGeometryToolkitEstimation
     end
     refit(p0, lo, outlier_halfwidth) = RVGP.locally_optimize(
         prob, p0; local_optimization = lo,
-        scoring = StudentTUniformScoring(prob, outlier_halfwidth)
+        scoring = StudentTUniformScoring(prob, outlier_halfwidth; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     )
 
     @testset "near seed — every arm recovers" begin
@@ -111,7 +111,7 @@ const RVGP = VisualGeometryToolkitEstimation
         )
         src2 = first.(pairs2)
         prob2 = AbsolutePoseProblem(cam, pairs2)
-        sc2 = StudentTUniformScoring(prob2, 150.0)
+        sc2 = StudentTUniformScoring(prob2, 150.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
         p0 = EuclideanMap(R_gt, Vec3{Float64}(t_gt[1], t_gt[2], t_gt[3] - 0.6))
         n_behind = count(i -> (R_gt * src2[i] + translation(p0))[3] <= 0.0, 1:(n_near + n_far))
         @test n_behind >= 10                             # the stress is real

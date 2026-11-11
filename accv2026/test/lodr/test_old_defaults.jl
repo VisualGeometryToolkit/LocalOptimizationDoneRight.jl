@@ -22,7 +22,7 @@ using Rotations: RotMatrix, RotXYZ, RotY
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: converged, estimate, rotation, translation   # VGC accessors (public)
 using VisualGeometryToolkitEstimation: RansacWorkspace   # public, not exported
-using RANSACScoringDoneRight: StudentTUniformScoring, Predictive   # owned and exported by RANSACScoringDoneRight
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior, Predictive   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination
@@ -33,8 +33,8 @@ welsch_hq(class) = HQ{WelschShape}(scale_multiple = tuning_constant(class, "wels
 # `[pipelines.<class>] outlier_halfwidth` of VisualGeometryToolkitEstimation's
 # configs/default.toml then (pixels; hand-eye a fraction of the problem's L).
 const OLD_OUTLIER_HALFWIDTH = Dict(:homography => 20.0, :fundmat => 50.0, :essential => 20.0, :absolute_pose => 5.0, :hand_eye => 0.05)
-old_scoring(problem, class) = StudentTUniformScoring(problem, OLD_OUTLIER_HALFWIDTH[class])
-old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem, OLD_OUTLIER_HALFWIDTH[:hand_eye] * problem.char_length)
+old_scoring(problem, class) = StudentTUniformScoring(problem, OLD_OUTLIER_HALFWIDTH[class]; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
+old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem, OLD_OUTLIER_HALFWIDTH[:hand_eye] * problem.char_length; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
 
 @testset "fitting pipelines (the per-class Welsch HQ recipes)" begin
 
@@ -168,7 +168,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         # the model type). `_covariance_scored` labels first now, so this runs.
         rp = find_absolute_pose(
             cam, StructArray(src .=> dst);
-            scoring = StudentTUniformScoring{Predictive}(3, 3.0; codimension = 2), local_optimization = welsch_hq(:absolute_pose), rng = MersenneTwister(144)   # model_dof = the P3P minimal sample, m = 3
+            scoring = StudentTUniformScoring{Predictive}(3, 3.0; codimension = 2, scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization = welsch_hq(:absolute_pose), rng = MersenneTwister(144)   # model_dof = the P3P minimal sample, m = 3
         )
         @test rp !== nothing && converged(rp)
         @test rp.lo_retcode !== :not_run                                   # the LO really fired

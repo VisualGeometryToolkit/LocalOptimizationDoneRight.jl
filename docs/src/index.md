@@ -92,7 +92,7 @@ The package requires Julia 1.12 or later. The Getting started example below
 also loads the packages it composes with:
 
 ```julia-repl
-pkg> add LocalOptimizationDoneRight VisualGeometryToolkitEstimation VisualGeometryToolkitCore RANSACScoringDoneRight StaticArrays
+pkg> add LocalOptimizationDoneRight VisualGeometryToolkitEstimation VisualGeometryToolkitCore StaticArrays
 ```
 
 ### The paper's experiments
@@ -119,9 +119,9 @@ refinement at its cross-validated scale multiple, on a synthetic two-view scene:
 using Random: MersenneTwister
 using StaticArrays: SA
 using VisualGeometryToolkitCore: CameraModel, Point2, WelschShape, estimate, motion, px
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior
 using VisualGeometryToolkitCore.Synthetic: pose_error, sample_twoview_scene
 using VisualGeometryToolkitEstimation: EssentialProblem, find_essential
-using RANSACScoringDoneRight: StudentTUniformScoring
 using LocalOptimizationDoneRight: HQ, WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL
 
 # Two 500 × 500 px views of one pinhole camera (focal length 600 px, principal
@@ -135,10 +135,11 @@ cs = [[u₁ => noisy(u₂) for (u₁, u₂) in matches]; [anywhere() => anywhere
 camera = CameraModel(600.0px, SA[250.0px, 250.0px])
 
 # Student-t + uniform selection, its outlier half-width 250 px (half the image),
-# then Welsch half-quadratic refinement at its cross-validated multiple of the
+# the scale integrated out against Jeffreys' prior and the labels flat, then
+# Welsch half-quadratic refinement at its cross-validated multiple of the
 # consensus set's scale.
 result = find_essential(camera, camera, cs;
-    scoring = StudentTUniformScoring(EssentialProblem, 250.0),
+    scoring = StudentTUniformScoring(EssentialProblem, 250.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
     local_optimization = HQ{WelschShape}(; scale_multiple = WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL),
     rng = MersenneTwister(2))
 

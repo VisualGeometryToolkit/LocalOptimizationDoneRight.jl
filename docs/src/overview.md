@@ -31,8 +31,8 @@ optimizer are chosen independently. With the `camera` and the pixel
 correspondences `cs` of the [Getting started](index.md#Getting-started) scene:
 
 ```julia
-using VisualGeometryToolkitEstimation, RANSACScoringDoneRight, LocalOptimizationDoneRight
-using VisualGeometryToolkitCore: WelschShape
+using VisualGeometryToolkitEstimation, LocalOptimizationDoneRight
+using VisualGeometryToolkitCore: WelschShape, StudentTUniformScoring, JeffreysPrior, FlatLabelPrior
 
 # the core default: MSAC at the class's threshold + TLS-IRLS following it
 result = find_essential(camera, camera, cs)
@@ -40,7 +40,7 @@ result = find_essential(camera, camera, cs)
 # the paper's recipe: Student-t + uniform selection (outlier half-width 250 px),
 # Welsch-HQ refinement
 result = find_essential(camera, camera, cs;
-    scoring = StudentTUniformScoring(EssentialProblem, 250.0),
+    scoring = StudentTUniformScoring(EssentialProblem, 250.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
     local_optimization = HQ{WelschShape}(; scale_multiple = WELSCH_HQ_SCALE_MULTIPLE_ESSENTIAL))
 ```
 

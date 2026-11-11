@@ -40,7 +40,8 @@
 
 using CUDA, Statistics, JLD2
 using VisualGeometryToolkitEstimation: NoLocalOptimization, SimFitPP   # SIMFIT++ is Estimation's
-using RANSACScoringDoneRight: loss_spec, loss_scale_bounds, StudentTUniformScoring, loss_width_scoring
+using RANSACScoringDoneRight: loss_spec, loss_scale_bounds, loss_width_scoring
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitCore: AbstractLossShape, WidthAxis, LossWidth, OutlierHalfwidth, width_axis_name, width_axis,
     native_map, IGPrior, codimension, minimal_sample_size
 using VisualGeometryToolkitEval.Stats: reference_scale, finite_median
@@ -146,7 +147,7 @@ codimension (RANSACScoringDoneRight's `loss_width_scoring`).
 """
 function selector_scoring(fam::Symbol, problem_type, prior)
     tag = selector_tag(fam)
-    fam === :ig && return StudentTUniformScoring(problem_type, 1.0; prior)   # the grid supplies the half-widths
+    fam === :ig && return StudentTUniformScoring(problem_type, 1.0; scale_prior = prior, label_prior = FlatLabelPrior())   # the grid supplies the half-widths
     fam === :simfitpp && return SimFitPP()
     return loss_width_scoring(tag, codimension(problem_type))
 end
@@ -371,7 +372,7 @@ function run_experiment(exp::StreamedExperiment, scenes::AbstractVector, nval::I
     # PHASE 2 — streamed stage→sweep→selection rows over the experiment's selectors.
     selectors = _selectors(exp, prior, grids, problem_type, val_sigma2s)
     Mse, s2_by_scene, np_per = stream_selections(_selection_rows(selectors), Float64,
-        problem_type, loaders, _sweeps(selectors), StudentTUniformScoring(problem_type, 1.0; prior), backend, Int(batch))
+        problem_type, loaders, _sweeps(selectors), StudentTUniformScoring(problem_type, 1.0; scale_prior = prior, label_prior = FlatLabelPrior()), backend, Int(batch))
     s0 = reference_scale(reduce(vcat, s2_by_scene))   # over every finite σ̂² in the pool
 
     # Persist the compute-once bundle for offline re-bootstrap + rendering.

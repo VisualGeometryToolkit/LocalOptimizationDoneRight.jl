@@ -15,7 +15,7 @@ using VisualGeometryToolkitCore: AbstractWeightPolicy, NormalizedWeightPolicy, R
     update_nuisance!, update_weights!, lo_width, with_width, LossWidth, ScaleMultiple, FixedScale,
     consensus_set, score_model!, scale_s2, csponds, estimate, converged, codimension, minimal_sample_size,
     test_local_optimization_contract, MsacScoring, WelschShape, GemanMcclureShape, TLSShape
-using RANSACScoringDoneRight: StudentTUniformScoring
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitEstimation: RansacConfig, RansacWorkspace, PosteriorLikelihood
 using LocalOptimizationDoneRight
@@ -89,7 +89,7 @@ end
 
 @testset "a consensus-anchored lift deploys the fresh set's scale" begin
     problem = HomographyProblem(csponds(homography_pairs(MersenneTwister(7), H_TRUE; n_in = 40, n_out = 10, σ = 0.3)...))
-    scoring = StudentTUniformScoring(problem, 20.0)
+    scoring = StudentTUniformScoring(problem, 20.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     ws = RansacWorkspace(problem, scoring, StudentTUniform())
     buf = ws.buf
     model = first(solve(problem, [1, 2, 3, 4]))
@@ -104,13 +104,13 @@ end
 # (VisualGeometryToolkitCore's helper; `allocations = false` for now, as for the
 # core's strategies).
 fitted(p, halfwidth; seed = 1) =
-    estimate(ransac(p, StudentTUniformScoring(p, halfwidth); config = RansacConfig(max_trials = 300), rng = MersenneTwister(seed)))
+    estimate(ransac(p, StudentTUniformScoring(p, halfwidth; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()); config = RansacConfig(max_trials = 300), rng = MersenneTwister(seed)))
 
 @testset "local-optimization contract: the hosted strategies (H scene)" begin
     p = HomographyProblem(csponds(homography_pairs(MersenneTwister(7), H_TRUE; n_in = 80, n_out = 20, σ = 0.5)...))
     θ = fitted(p, 50.0)
     msac = MsacScoring(p; threshold = 3.0)
-    stu = StudentTUniformScoring(p, 50.0)
+    stu = StudentTUniformScoring(p, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     for (lo, sc) in (
             (HQ{WelschShape}(scale_multiple = 1.5), msac),
             (Gnc{Irls{TLSShape}}(scale_multiple = 2.5), msac),
@@ -128,7 +128,7 @@ end
     p = ecs(u₁, u₂)                                              # E in ECAM's pixels
     θ = fitted(p, 40.0)
     msac = MsacScoring(p; threshold = 2.0)
-    stu = StudentTUniformScoring(p, 40.0)
+    stu = StudentTUniformScoring(p, 40.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     for (lo, sc) in (
             (HQ{WelschShape}(scale_multiple = 1.5), msac),
             (Gnc{Irls{TLSShape}}(scale_multiple = 2.5), msac),

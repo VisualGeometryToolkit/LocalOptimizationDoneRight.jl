@@ -24,6 +24,7 @@
 
 using DrWatson; @quickactivate "ACCV2026"   # the project this tool runs under (srcdir/projectdir)
 using VisualGeometryToolkitEstimation; const RVG = VisualGeometryToolkitEstimation
+using VisualGeometryToolkitCore: JeffreysPrior, FlatLabelPrior   # the Student-t scorer's priors
 using VisualGeometryToolkitEval.Pools: load_pool, load_pool_residuals, residuals_path, residual_matrix
 import PoseLib, JLD2
 using Printf
@@ -71,7 +72,7 @@ sub_R = let res = load_pool_residuals(residuals_path(POOL_FILE), pool; pairs = I
 end
 println("timing on $(length(sub)) pairs of $scene  (tag=$TAG, nthreads=$(Threads.nthreads()))"); flush(stdout)
 
-const METHODS = [SampleBudgetMethodSpec(:ig, StudentTUniformScoring(EssentialProblem, OUTLIER_HALFWIDTH))]   # Jeffreys
+const METHODS = [SampleBudgetMethodSpec(:ig, StudentTUniformScoring(EssentialProblem, OUTLIER_HALFWIDTH; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()))]   # Jeffreys
 # The LO checkpoint schedule of the timed dataset: its section of the
 # sample-budget protocol of record (--sb-protocol, required; timing_table.jl).
 const SBP = TOML.parsefile(projectdir("configs", "sample_budget_protocol.toml"))[cli_option(ARGS, "sb-protocol")]
