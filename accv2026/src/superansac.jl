@@ -64,7 +64,7 @@ and that cross-validation, layered beneath `[tuning.superansac_loss_width]`
 refused.
 """
 function fold_superansac_cell!(cfg)
-    known = ("experiment", "operating_points", "superansac", "tuning", "environment", "stored")
+    known = ("experiment", "operating_points", "superansac", "tuning", "environment", "stored", "inputs")
     VgtkCore.check_keys(cfg, known, "SupeRANSAC cell")
     VgtkCore.check_keys(cfg["superansac"],
         ("zetas", "preset", "tuning_termination", "evaluation_termination"), "SupeRANSAC cell [superansac]")

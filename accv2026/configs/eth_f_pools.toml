@@ -38,3 +38,11 @@ max_pairs_per_scene = 2200       # per-scene pair cap (a seeded subsample)
 subsample_overdraw = 2           # the subsample draws this many × the cap, trimmed after the reader's rejections
 subsample_seed = 42              # StableRNG(stable_seed(subsample_seed, scene))
 pool_seed = 42                   # the minimal-sample streams: StableRNG(stable_seed(pool_seed, pair index))
+
+# ---- the inputs of record (VisualGeometryToolkitEval Reproduce: `missing_inputs` checks each
+# path under the data root before a launch). Every input here is a directory tree, so none
+# states a per-file sha256; the published trees are pinned by Artifacts.toml (git-tree-sha1).
+[inputs.eth3d_csponds]
+tier = "eth3d_splg_csponds"
+path = "datasets/eth3d/derived/splg/csponds"
+provenance = "the ETH3D SuperPoint+LightGlue consolidated correspondences (densematch-tools extract_splg_batch.py; REPRODUCE.md, Correspondences)"

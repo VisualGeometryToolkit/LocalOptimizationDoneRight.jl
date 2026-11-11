@@ -70,3 +70,31 @@ max_pairs_per_scene = 2200       # per-scene pair cap (a seeded subsample)
 subsample_overdraw = 2           # the subsample draws this many × the cap, trimmed after the reader's rejections
 subsample_seed = 42              # StableRNG(stable_seed(subsample_seed, scene))
 pool_seed = 42                   # the minimal-sample streams: StableRNG(stable_seed(pool_seed, pair index))
+
+# ---- the inputs of record (VisualGeometryToolkitEval Reproduce: `missing_inputs` checks each
+# path under the data root before a launch). Every input here is a directory tree, so none
+# states a per-file sha256; the published trees are pinned by Artifacts.toml (git-tree-sha1).
+[inputs.matches_tutorial_val]
+tier = "pt_raw_validation"
+path = "accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/val"
+provenance = "the CVPR 2020 RANSAC tutorial RootSIFT matches and confidences, validation scenes"
+
+[inputs.matches_tutorial_train]
+tier = "pt_raw_validation"
+path = "accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/train"
+provenance = "the CVPR 2020 RANSAC tutorial RootSIFT matches and confidences, train scenes"
+
+[inputs.matches_ef_test]
+tier = "pt_raw_test"
+path = "datasets/phototourism/raw_test/RANSAC-Tutorial-Data-Test"
+provenance = "the IMC-PT 2020 test matches and confidences"
+
+[inputs.recon_tutorial]
+tier = "pt_raw_validation"
+path = "datasets/phototourism/raw_train/_track_verified_recons"
+provenance = "the COLMAP models of the IMC-PT release, train/validation scenes"
+
+[inputs.recon_ef_test]
+tier = "pt_raw_test"
+path = "datasets/phototourism/raw_test/imw2020_testdata/_track_verified_recons"
+provenance = "the COLMAP models of the IMC-PT 2020 TestData"

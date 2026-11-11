@@ -52,3 +52,11 @@ subsample_overdraw = 2           # the subsample draws this many × the cap, tri
 subsample_seed = 42              # StableRNG(stable_seed(subsample_seed, scene))
 pool_seed = 42                   # the minimal-sample streams: StableRNG(stable_seed(pool_seed, pair index))
 min_gt_inliers = 5               # a pair with fewer GT inliers has no σ̂² (NaN)
+
+# ---- the inputs of record (VisualGeometryToolkitEval Reproduce: `missing_inputs` checks each
+# path under the data root before a launch). Every input here is a directory tree, so none
+# states a per-file sha256; the published trees are pinned by Artifacts.toml (git-tree-sha1).
+[inputs.heb_raw]
+tier = "heb_raw"
+path = "accv2026/data/heb_raw"
+provenance = "the Homography Estimation Benchmark <scene>_homographies.h5 files (Barath et al., CVPR 2023), unchanged"
