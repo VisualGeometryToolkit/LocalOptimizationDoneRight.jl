@@ -69,10 +69,15 @@ resolved once per call by VisualGeometryToolkitCore's `loss_at`:
 
 - `efficiency_constant = m` (`EfficiencyConstant(m)`): the loss width is `m·ŝ`, with `ŝ`
   the scale of the consensus set the scorer selected (the paper's *partition
-  anchoring*);
+  anchoring*). `m` is always the plain multiple of the scale, whatever the
+  loss shape;
 - `loss_width = w` (`LossWidth(w)`): an absolute width, in the caller's units;
 - neither: the width follows the scorer. The loss's decision point is placed at
   the scorer's `decision_boundary`; a scorer without one is refused at entry.
+
+Give at most one of `efficiency_constant` and `loss_width`. The
+cross-validated constants of [Operating points and TOML](#Operating-points-and-TOML)
+are efficiency constants, tuned per model class.
 
 `with_width(lo, w)` returns the same strategy at another width mode. The
 self-scaling strategies (`StudentTUniform`, `StuTuBCD`, `WelschHQEcm`, the
@@ -95,7 +100,8 @@ cross-validated efficiency constant of a loss on a model class, with its provena
 constants are its Welsch-HQ entries.
 
 [`STRATEGY_TAGS`](@ref) registers the strategies' TOML tags. Merge it with the core's
-to load a `local_optimization_strategy` table of either package:
+to read a strategy table of either package, such as a `find_*` pipeline's
+`local_optimization_strategy = { type = "hq", loss = "welsch", … }`:
 
 ```julia
 lo = optimization_strategy_from_toml(d; class = :essential,

@@ -226,7 +226,7 @@ half-weight radius is `√(√2 − 1)·w ≈ 0.6436·w`.
 The loss width is `efficiency_constant·ŝ` (`ŝ` the consensus set's scale) or an
 absolute `loss_width` in the residuals' units; give at most one. With neither,
 the loss follows the scorer: its half-weight radius sits at the scorer's
-inlier threshold (a loss width of about 1.554 times the threshold). `max_iter` bounds the joint Gauss–Newton iterations and `μ`
+`decision_boundary` (a loss width of about 1.554 times it). `max_iter` bounds the joint Gauss–Newton iterations and `μ`
 is their damping; the defaults are `configs/default.toml`'s
 `[optimization_strategy.gm_hq_eps]`. It runs on the generic lift driver, so on
 every liftable problem, and like every local optimizer it can end in a local
@@ -262,8 +262,8 @@ every IRLS/lift strategy — one code path, one width resolution.
 **Width** (VisualGeometryToolkitCore's `loss_at`): under `EfficiencyConstant(m)` the
 terminal (target) loss width is `c̄ = m·ŝ` with `ŝ` the consensus set's
 Student-t scale (exactly the width the lifted loss arms freeze); under
-`LossWidth(w)` it is `w`; with neither it follows the scorer's inlier
-threshold. There is no plug-in scale bootstrap.
+`LossWidth(w)` it is `w`; with neither it follows the scorer's
+`decision_boundary`. There is no plug-in scale bootstrap.
 
 Variants and μ-schedules:
 

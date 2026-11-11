@@ -10,7 +10,7 @@ VisualGeometryToolkitEstimation's `ransac` and `find_*` pipelines. The core base
 `nothing` (no local optimization) and `Irls{K}`, live in VisualGeometryToolkitEstimation. A
 width-carrying strategy takes `efficiency_constant = m` (a multiple of the consensus
 set's scale), `loss_width = w` (an absolute width), or neither, in which case
-its loss width follows the scorer's inlier threshold. See the
+its loss width follows the scorer's `decision_boundary`. See the
 [Overview](../overview.md).
 
 ## Half-quadratic lifts and graduated non-convexity
