@@ -26,7 +26,8 @@ import VisualGeometryToolkitCore as VgtkCore
 using VisualGeometryToolkitCore: AbstractScoring, BarronShape, CameraModel, EssentialMat, GemanMcclureShape, LossWidth,
     MsacScoring, Point2, Rect, EfficiencyConstant, TLSShape, WelschShape, codimension, consensus_set, csponds, decision_width,
     deploy, estimate, exp_so3, locally_optimize!, loss_at, lo_width, mahalanobis_distances!, minimal_sample_size, px,
-    retcode, scale_s2, score_model!, sq_loss_width
+    retcode, scale_s2, score_model!, sq_loss_width, ReturnCode, stop_rule, IncrementSize, LadderConverged, NoImprovement,
+    LeftBasin, IterationCap, NoRule, StoppingCriterion, StopWhenAny
 using VisualGeometryToolkitCore.Synthetic: projective_distance, sample_twoview_scene
 using VisualGeometryToolkitEstimation: BoundedProblem, EssentialProblem, RansacWorkspace
 using VisualGeometryToolkitCore: Irls
@@ -120,7 +121,7 @@ end
     )
     @testset "$(nameof(typeof(lo)))" for (lo, scoring) in arms
         result = run_lo(lo, problem, scoring, seed)
-        @test retcode(result) in (:converged, :max_iterations, :no_improvement, :left_basin)
+        @test retcode(result) in (ReturnCode.Success, ReturnCode.MaxIters, ReturnCode.Terminated)
         @test estimate(result) isa EssentialMat
         @test inlier_rms(estimate(result)) < 0.6      # from 2.2 px, the truth's 0.32 px
     end
@@ -155,6 +156,39 @@ end
     ws, cs = scored_consensus(StuTuHQTabulated(), problem, stu, seed)
     _, pws = LocalOptimizationDoneRight._mixture_lift_setup(ws.lo_ws, problem, seed, cs, ws.buf, stu)
     @test pws.prior == VgtkCore.JeffreysPrior()          # a scorer without a prior: Jeffreys, as before
+end
+
+# The §14 record: each criterion states the rule it fires; a composite's is its member's
+# that fired (Core's order); leaving the basin is Terminated (a success: the incumbent).
+struct _NeverFires <: StoppingCriterion end
+struct _Fires <: StoppingCriterion end
+VgtkCore.stop_reason(::_NeverFires, state, method, prob, θ, θ_old, iter) = :continue
+VgtkCore.stop_reason(::_Fires, state, method, prob, θ, θ_old, iter) = :converged
+LocalOptimizationDoneRight.success_rule(::_Fires) = LadderConverged
+
+@testset "termination record" begin
+    LO = LocalOptimizationDoneRight
+    @test LO.success_rule(LO.StopWhenIncrementSmall()) === IncrementSize
+    @test LO.success_rule(LO.StopWhenLadderConverged()) === LadderConverged
+    @test LO.success_rule(LO.StopWhenNoImprovement(1, 1)) === NoImprovement
+    @test LO.success_rule(LO.StopWhenLeftBasin()) === NoRule              # it never reports success
+    @test LO.lo_termination(:left_basin, LO.StopWhenLeftBasin(), nothing, nothing, nothing, nothing, 3) ===
+          (ReturnCode.Terminated, LeftBasin)
+    @test LO.lo_termination(:max_iterations, LO.StopWhenIncrementSmall(), nothing, nothing, nothing, nothing, 25) ===
+          (ReturnCode.MaxIters, IterationCap)
+    @test LO.lo_termination(:converged, StopWhenAny((_NeverFires(), _Fires())), nothing, nothing, nothing, nothing, 4) ===
+          (ReturnCode.Success, LadderConverged)
+    @test_throws ArgumentError LO.lo_termination(:no_such_reason, _Fires(), nothing, nothing, nothing, nothing, 1)
+    # the arms on the scene
+    r = run_lo(HQ{WelschShape}(efficiency_constant = 1.5), problem, msac, seed)
+    @test stop_rule(r) in (IncrementSize, IterationCap)
+    r = run_lo(Gnc{Irls{TLSShape}}(efficiency_constant = 2.5), problem, msac, seed)
+    @test stop_rule(r) in (LadderConverged, IterationCap)
+    r = run_lo(StuTuBCD(), problem, msac, seed)
+    @test stop_rule(r) in (NoImprovement, IterationCap)
+    r = run_lo(StuTuHQTabulated(), problem, stu, seed)
+    @test (retcode(r), stop_rule(r)) in ((ReturnCode.Success, NoImprovement), (ReturnCode.Success, IncrementSize),
+                                          (ReturnCode.Terminated, LeftBasin), (ReturnCode.MaxIters, IterationCap))
 end
 
 @testset "HQ dispatch" begin

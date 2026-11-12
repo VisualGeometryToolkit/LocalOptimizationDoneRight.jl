@@ -126,5 +126,6 @@ end
 stopping_criterion(::ScoreBcdMethod) = StopWhenNoImprovement(1, 1)
 current_cost(state::ScoreBcdState) = state.cur_cost
 
-block_coordinate_result(state::ScoreBcdState, ::ScoreBcdMethod, prob, θ, stop_reason, final_iter) =
-    lo_estimate(state.best.value, stop_reason; iterations = final_iter)
+block_coordinate_result(state::ScoreBcdState, method::ScoreBcdMethod, prob, θ, stop_reason, final_iter) =
+    lo_estimate(state.best.value, lo_termination(stop_reason, stopping_criterion(method), state, method, prob, θ, final_iter)...;
+                iterations = final_iter)

@@ -61,7 +61,9 @@ function update_residuals!(state, method::AbstractLiftMethod, prob, θ)
 end
 
 block_coordinate_result(state, method::AbstractLiftMethod, prob, θ, stop_reason, final_iter) =
-    lo_estimate(lift_model(method.prov, state.best.value), stop_reason; iterations = final_iter)
+    lo_estimate(lift_model(method.prov, state.best.value),
+                lo_termination(stop_reason, stopping_criterion(method), state, method, prob, θ, final_iter)...;
+                iterations = final_iter)
 
 
 # =============================================================================

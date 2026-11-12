@@ -100,7 +100,7 @@ function locally_optimize!(
     # D2: the ECM run's incumbent is selected at the FINAL converged scale —
     # one fixed objective for every candidate (see WelschEcmScale header).
     best = _ecm_final_scale_incumbent(prov, θ₀, lh.traj, state.loss)
-    return lo_estimate(lift_model(prov, best), retcode(res); iterations = iterations(res))
+    return lo_estimate(lift_model(prov, best), retcode(res), stop_rule(res); iterations = iterations(res))   # the inner lift's record
 end
 
 # =============================================================================

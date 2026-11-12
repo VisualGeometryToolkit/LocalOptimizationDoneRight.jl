@@ -22,7 +22,7 @@ using Rotations: RotY
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: Synthetic
 using VisualGeometryToolkitCore.Synthetic: projective_distance
-using VisualGeometryToolkitCore: estimate, retcode   # VGC accessors (public)
+using VisualGeometryToolkitCore: estimate, retcode, ReturnCode   # VGC accessors (public)
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation: config_dict, optimization_strategy_from_toml   # public, not exported
 using VisualGeometryToolkitCore: LOSS_TAGS
@@ -251,7 +251,7 @@ end
             local_optimization_strategy = lo
         )
         @test estimate(r) !== nothing
-        @test retcode(r) in (:converged, :max_iterations)
+        @test retcode(r) in (ReturnCode.Success, ReturnCode.MaxIters)
         @test Synthetic.imc_pose_error(estimate(r), R_gt, t_gt) < 0.8 * e_seed  # the lift traveled toward GT
     end
     # F path: every loss arm executes and reduces the truncated Sampson cost.
@@ -295,7 +295,7 @@ end
     for efficiency_constant in (1.0, 1.5, 2.5)
         r = lift(efficiency_constant)
         @test estimate(r) !== nothing
-        @test retcode(r) in (:converged, :max_iterations)
+        @test retcode(r) in (ReturnCode.Success, ReturnCode.MaxIters)
         @test projective_distance(estimate(r), E_seed) > 1.0e-6     # the lift moved the model
         # Moving into pixels changes nothing but the unit: the pose error
         # matches the calibrated lift's at every width (measured: 1.2e-6
@@ -340,7 +340,7 @@ end
         tag == "terminal_lo" && (d["inner"] = Dict{String, Any}("type" => "hq", "loss" => "welsch", "efficiency_constant" => 1.5))
         r = runlo(build(d))
         @test estimate(r) !== nothing
-        @test retcode(r) in (:converged, :max_iterations)
+        @test retcode(r) in (ReturnCode.Success, ReturnCode.MaxIters)
     end
     # Loss families: what each admits runs; what it refuses fails at load.
     admitted = Dict(
@@ -355,7 +355,7 @@ end
         if loss in losses
             r = runlo(build(d))
             @test estimate(r) !== nothing
-            @test retcode(r) in (:converged, :max_iterations)
+            @test retcode(r) in (ReturnCode.Success, ReturnCode.MaxIters)
         else
             @test_throws Exception build(d)            # Gnc's refusal is an ErrorException
             tag == "gnc" || @test_throws ArgumentError build(d)
@@ -378,7 +378,7 @@ end
     for K in (WelschShape, GemanMcclureShape, SmoothTLSShape), init in (:posterior, :consensus)
         r = runlo(HQ{K}(efficiency_constant = 1.5, init = init))
         @test estimate(r) !== nothing
-        @test retcode(r) in (:converged, :max_iterations)
+        @test retcode(r) in (ReturnCode.Success, ReturnCode.MaxIters)
     end
 end
 

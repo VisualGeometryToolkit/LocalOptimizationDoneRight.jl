@@ -14,7 +14,7 @@ import VisualGeometryToolkitCore as VgtkCore
 using Test, Random, LinearAlgebra, StaticArrays, StructArrays
 using Rotations: RotY
 using VisualGeometryToolkitCore
-using VisualGeometryToolkitCore: estimate, retcode   # VGC accessors (public)
+using VisualGeometryToolkitCore: estimate, retcode, ReturnCode   # VGC accessors (public)
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
@@ -71,7 +71,7 @@ end
         local_optimization_strategy = LODR.Gnc{VgtkCore.Irls{VgtkCore.WelschShape}}(efficiency_constant = 1.0)
     )
     @test estimate(rf) !== nothing
-    @test retcode(rf) in (:converged, :max_iterations)
+    @test retcode(rf) in (ReturnCode.Success, ReturnCode.MaxIters)
     @test all(isfinite, Tuple(SMatrix{3, 3, Float64}(estimate(rf))))
     @test sqcost(estimate(rf)) < c_seed                  # GNC improved the perturbed seed
 end

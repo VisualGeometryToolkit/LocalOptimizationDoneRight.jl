@@ -8,6 +8,14 @@ Eval and RANSACScoringDoneRight on 0.9.
 
 ### Breaking
 
+- **The local optimizers state their termination record** (VisualGeometryToolkitCore's
+  `ReturnCode` and `StopRule`, the robust-estimation contract §14). Each refit's
+  `FitResult` says why it stopped: `retcode(r)` is a `ReturnCode.T`, and `stop_rule(r)`
+  is the rule that fired. The rules are `IncrementSize` (the HQ lifts' increment
+  floor), `LadderConverged` (the GNC ladder's terminal rung), `NoImprovement` (the
+  patience rule) and `IterationCap`. Leaving the seed's basin is
+  `(Terminated, LeftBasin)`: a success, with the incumbent returned. The legacy
+  Symbol is `retcode_symbol(r)`.
 - **`LO_TAGS` is renamed `LODR_STRATEGY_TAGS`** (VisualGeometryToolkitEstimation owned the
   name `LO_TAGS`, its core registry, now `OPTIMIZATION_STRATEGY_TAGS`, and
   VisualGeometryToolkitCore `STRATEGY_TAGS`, the registry of its core strategies). The
