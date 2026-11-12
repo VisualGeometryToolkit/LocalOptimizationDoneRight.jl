@@ -19,11 +19,11 @@ VisualGeometryToolkitEstimation = "9a478df9-9a37-4dc7-9070-58617efe7573"
 [sources]
 LocalOptimizationDoneRight = {path = ".."}
 # TEMPORARY: the 0.9 stack is not registered yet; replace by [compat] 0.9 from the registry before any push or registration
-VisualGeometryToolkitCore = {path = "/home/jpr/src/vgtk-pin-4770458a/VisualGeometryToolkitCore"}
+VisualGeometryToolkitCore = {path = "/home/jpr/src/vgtk-pin-9c74e264/VisualGeometryToolkitCore"}
 # TEMPORARY: the 0.9 stack is not registered yet; replace by [compat] 0.9 from the registry before any push or registration
-VisualGeometryToolkitEstimation = {path = "/home/jpr/src/vgtk-pin-4770458a/VisualGeometryToolkitEstimation"}
+VisualGeometryToolkitEstimation = {path = "/home/jpr/src/vgtk-pin-9c74e264/VisualGeometryToolkitEstimation"}
 # TEMPORARY: the 0.9 stack is not registered yet; replace by [compat] 0.9 from the registry before any push or registration
-PoseLib = {path = "/home/jpr/src/vgtk-pin-4770458a/PoseLib"}
+PoseLib = {path = "/home/jpr/src/vgtk-pin-9c74e264/PoseLib"}
 
 [compat]
 Aqua = "0.8.18"
@@ -32,7 +32,7 @@ FiniteDiff = "2.33"
 JET = "0.12.3, 0.13"
 LinearAlgebra = "1"
 LocalOptimizationDoneRight = "0.5"
-PoseLib = "0.1.9"
+PoseLib = "0.2"
 Random = "1"
 ReTestItems = "1.35"
 Rotations = "1.7"
@@ -41,5 +41,5 @@ StructArrays = "0.7.4"
 TOML = "1.0.3"
 Test = "1"
 VisualGeometryToolkitCore = "0.9"
-VisualGeometryToolkitEstimation = "0.8"
+VisualGeometryToolkitEstimation = "0.9"
 julia = "1.12"
