@@ -30,7 +30,7 @@ const CFG = fold_timing_cell!(load_run_config(CFG_PATH))
 const KEY = run_key(CFG)
 const TIMING = CFG["timing"]
 timing_cell_dir(CFG) == EXP_TIMING_DIR || error("timing_table: the keyed directory disagrees with registry.jl EXP_TIMING_DIR")
-joinpath(data_root(), CFG["experiment"]["pool_dir"]) == EXP_POOL_PT_E ||
+pool_path(CFG) == EXP_POOL_PT_E ||
     error("configs/timing_table.toml pool_dir is not the PT-E pool of record ($(EXP_POOL_PT_E))")
 const PT_OUT = joinpath(EXP_TIMING_DIR, "lo_timing_$(TIMING["tag"])_$(TIMING["scene"]).jld2")
 

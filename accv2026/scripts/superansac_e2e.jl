@@ -52,7 +52,7 @@ _eval_done() = run_complete(OUTDIR; sidecar = basename(superansac_zeta_path(OUTD
 function _eval()
     superansac_evaluation!(CFG, OUTDIR)
     write_run_records(OUTDIR, CFG; driver = "superansac_e2e.jl", config_source = CFG_PATH, key = KEY,
-                      inputs = [joinpath(data_root(), CFG["experiment"]["pool_dir"])])
+                      inputs = [pool_input(CFG)])
 end
 
 STAGES = Stage[

@@ -21,7 +21,8 @@ using VisualGeometryToolkitCore: EfficiencyConstant, OutlierHalfwidth, LossWidth
 using VisualGeometryToolkitEval.Tuning: layer_tuning, layered_tuning_entry, tuning_spec, TUNING_TAGS, CoarseFine, tuning_hash
 using VisualGeometryToolkitEval.Experiments:
     load_run_config, run_key, experiment_dir,
-    config_of_record, keyed_cell_dir   # configs/<name>.toml as a run config; <experiment_dir>/<experiment>/<kind>-<run_key>
+    config_of_record, keyed_cell_dir,   # configs/<name>.toml as a run config; <experiment_dir>/<experiment>/<kind>-<run_key>
+    data_root, input_path               # an input's tier root; an input opened, checked to be there
 include(joinpath(@__DIR__, "protocol.jl"))   # configs/protocol.toml: the arm protocol folded below
 
 const _CVP_PATH    = projectdir("configs", "cv_protocol.toml")
@@ -361,6 +362,7 @@ keyed directory is [`ladder_cell_dir`](@ref).
 """
 ladder_cell(config_name::AbstractString) = Dict{String,Any}(
     "experiment" => config_of_record(config_name)["experiment"],
+    "inputs" => Dict{String,Any}("pool" => config_of_record(config_name)["inputs"]["pool"]),
     "operating_points" => Dict{String,Any}("miscal_config" => String(config_name)),
     "operating_points_run" => operating_points_run(config_name),
     "basin_ladder" => protocol_table("basin_ladder"))
@@ -371,6 +373,36 @@ ladder_cell(config_name::AbstractString) = Dict{String,Any}(
 The keyed directory of a ladder cell: `<results>/<dataset>/<matcher>/<problem>/BasinLadder/basin-ladder-<run_key>`.
 """
 ladder_cell_dir(cfg) = keyed_cell_dir(cfg, "BasinLadder", "basin-ladder")
+
+# ---- the scoring pool a cell reads ----------------------------------------------------
+
+# A cell's pool is its `[inputs.pool]`; its `[experiment] pool_dir` (the layout key Eval
+# requires) must name the same tree.
+function _pool_spec(cfg)
+    t = get(get(cfg, "inputs", Dict{String,Any}()), "pool", nothing)
+    t isa AbstractDict || error("config of record: [experiment] pool_dir = $(cfg["experiment"]["pool_dir"]) but no [inputs.pool]")
+    t["path"] == cfg["experiment"]["pool_dir"] ||
+        error("config of record: [inputs.pool] path = $(t["path"]) is not [experiment] pool_dir = $(cfg["experiment"]["pool_dir"])")
+    return t
+end
+
+"""
+    pool_input(cfg) -> String
+
+The scoring pool cell `cfg` reads, opened through Eval's `input_path`: its
+`[inputs.pool]` under that input's tier root, checked to be there. The one way a
+driver reaches its pool.
+"""
+pool_input(cfg) = (_pool_spec(cfg); input_path(cfg, "pool"))
+
+"""
+    pool_path(cfg) -> String
+
+Where cell `cfg`'s pool is (its `[inputs.pool]` under its tier root), unchecked: the
+pool's identity in a record (an oracle floor's source), the same path
+[`pool_input`](@ref) opens.
+"""
+pool_path(cfg) = (t = _pool_spec(cfg); joinpath(data_root(; tier = String(get(t, "tier", ""))), t["path"]))
 
 """
     fold_polish_cell!(cfg) -> cfg

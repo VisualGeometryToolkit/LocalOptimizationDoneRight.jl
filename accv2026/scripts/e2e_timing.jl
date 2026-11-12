@@ -72,7 +72,7 @@ function _summary()
         TOML.print(io, _code_record(); sorted = true)
     end
     write_run_records(OUTDIR, CFG; driver = "e2e_timing.jl", config_source = CFG_PATH, key = KEY,
-                      inputs = [joinpath(data_root(), CFG["experiment"]["pool_dir"]), LIVE])
+                      inputs = [pool_input(CFG), LIVE])
     print(read(path, String))
 end
 

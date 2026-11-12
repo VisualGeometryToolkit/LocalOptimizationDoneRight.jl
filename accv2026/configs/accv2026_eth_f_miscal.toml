@@ -69,7 +69,7 @@ rows = ["maa"]
 # ---- the inputs of record (VisualGeometryToolkitEval Reproduce: `missing_inputs` checks each
 # path under the data root before a launch). Every input here is a directory tree, so none
 # states a per-file sha256; the published trees are pinned by Artifacts.toml (git-tree-sha1).
-[inputs.eth_f_pool]
+[inputs.pool]
 tier = "eth3d_f_pools_1k"
 path = "datasets/eth3d/derived/splg/scoring_data_F_pf3"
 provenance = "the frozen ETH3D F scoring pools of record (scripts/scoring_pools.jl --config=eth_f_pools, 2026-10-04; pool format 4), published as the eth3d_f_pools_1k parts"

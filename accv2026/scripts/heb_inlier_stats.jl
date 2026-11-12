@@ -37,7 +37,7 @@ const SRC_NAME = CELL.source
 const CV = CELL.cv
 const COUNTS_CFG = CELL.keyed
 const KEY = CELL.key
-const POOL = joinpath(data_root(), CFG["experiment"]["pool_dir"])
+const POOL = pool_input(CFG)
 const OUTDIR = CELL.outdir
 const COUNTS = CELL.counts
 

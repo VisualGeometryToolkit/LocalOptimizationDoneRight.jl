@@ -29,8 +29,7 @@ include(srcdir("cell_stages.jl"))   # config + common + registry; THE miscal pro
 const CFG_PATH = projectdir("configs", "pt_e_sel_miscal.toml")
 const CFG = fold_sensitivity_cell!(load_run_config(CFG_PATH))
 sensitivity_cell_dir(CFG) == EXP_SEL_MISCAL_DIR || error("fig1: the keyed directory disagrees with registry.jl EXP_SEL_MISCAL_DIR")
-require_input(joinpath(data_root(), CFG["experiment"]["pool_dir"]); what = "PT-E-SIFT-4K_pf3 scoring pool",
-              provenance = "scripts/tools/generate_scoring_pools.jl --config=pt_e_pools (REPRODUCE.md)")
+pool_input(CFG)   # the PT-E pool of record ([inputs.pool]), there before the run starts
 
 const PANEL  = joinpath(PAPER_FIGDIR, "panel_sel_miscal.tex")
 

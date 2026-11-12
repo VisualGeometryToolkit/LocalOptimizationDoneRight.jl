@@ -81,7 +81,7 @@ function sequential_cv_stage(name::Symbol, cfg::AbstractDict, cfg_path::Abstract
             audit_operating_points(ROSTER, sidecar; problem = p)
             write_run_records(outdir, cfg; driver = "run_sequential_cv.jl",
                               config_source = cfg_path, key = run_key(cfg),
-                              inputs = [joinpath(data_root(), cfg["experiment"]["pool_dir"])])
+                              inputs = [pool_path(cfg)])
         end)
 end
 
@@ -99,7 +99,7 @@ function miscal_cell_stages(cfg_name::AbstractString;
                             cv_stage::Symbol = :cv)
     cfg_path = projectdir("configs", cfg_name * ".toml")
     cfg = fold_sequential_cv!(load_run_config(cfg_path))   # protocols of record, folded into the key
-    pool = joinpath(data_root(), cfg["experiment"]["pool_dir"])
+    pool = pool_input(cfg)
     cv = tuning_spec(cfg, sequential_cv_scorer_entry(cfg["sequential_cv"], :ig)).scheme.cross_validation
     val_sc, test_sc = validation_scenes(cv), test_scenes(cv)
     test = join(test_sc, ",")
@@ -189,7 +189,7 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString; smoke
     sbp = only(values(cfg["sample_budget_protocol"]))
     key = run_key(cfg)
     ex = cfg["experiment"]
-    pool = joinpath(data_root(), ex["pool_dir"])   # an absolute pool_dir stays itself
+    pool = pool_input(cfg)
     p = _cell_problem(cfg)
     # The test side of the deployed sidecar's cross-validation, read lazily
     # (the sidecar is this cell's input, absent until its tuning stage ran).

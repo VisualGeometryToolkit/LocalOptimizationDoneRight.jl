@@ -47,7 +47,7 @@ const OUTDIR  = isempty(SMOKE) ? e2e_cell_dir(CFG) : SMOKE
 # are never mistaken for the cell's.
 const RECORD_CFG = isempty(SMOKE) ? CFG :
     merge(CFG, Dict{String,Any}("smoke" => Dict{String,Any}("scenes" => 1, "pairs_per_scene" => 20, "zetas" => [1.0])))
-const POOL    = joinpath(data_root(), CFG["experiment"]["pool_dir"])
+const POOL    = pool_input(CFG)
 const SIDECAR = miscal_sidecar_of(String(CFG["operating_points"]["miscal_config"]))
 const ARMS    = String.(CFG["e2e"]["arms"])
 const ZETAS   = isempty(SMOKE) ? Float64.(CFG["e2e"]["zetas"]) : [1.0]

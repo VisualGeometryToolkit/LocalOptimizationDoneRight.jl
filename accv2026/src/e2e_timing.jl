@@ -113,7 +113,7 @@ scene's units as the accuracy run keeps them — scene ⇒ pool indices, sorted.
 function draw_timing_sample(cfg)
     e2e = e2e_timed_cell(cfg)
     cv = sidecar_cross_validation(miscal_sidecar_of(String(e2e["operating_points"]["miscal_config"])))
-    pool = joinpath(data_root(), e2e["experiment"]["pool_dir"])
+    pool = pool_input(e2e)
     test = Dict(s => only(values(sample_units(cv.test, Dict(s => collect(1:pool_size(joinpath(pool, s * ".jld2")))))))
                 for s in test_scenes(cv))
     drawn = sample_units(read_tuning(UnitSampling, cfg["timing"]["sample"]), test)
@@ -147,7 +147,7 @@ function timing_inputs!(cfg, dir)
         end
     end
     scenes, drawn = read_timing_sample(dir)
-    pool_dir = joinpath(data_root(), cfg["experiment"]["pool_dir"])
+    pool_dir = pool_input(cfg)
     for s in scenes
         isfile(timing_pairs_path(dir, s)) && isfile(timing_sr_inputs_path(dir, s)) && continue
         pool = pt_pool(s, pool_dir)

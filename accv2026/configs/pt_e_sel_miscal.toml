@@ -31,7 +31,7 @@ n_miscal = 0                          # validation pairs of the sweep; 0 = the f
 # ---- the inputs of record (VisualGeometryToolkitEval Reproduce: `missing_inputs` checks each
 # path under the data root before a launch). Every input here is a directory tree, so none
 # states a per-file sha256; the published trees are pinned by Artifacts.toml (git-tree-sha1).
-[inputs.pt_e_pool]
+[inputs.pool]
 tier = "derived"
 path = "accv2026/data/PT-E-SIFT-4K_pf3"
 provenance = "the PhotoTourism E scoring pools, regenerated bit for bit by the stage pt_e_pools (scripts/pt_e_pools.jl, configs/pt_e_pools.toml) from pt_raw_validation and pt_raw_test; not published (1.6 TB)"

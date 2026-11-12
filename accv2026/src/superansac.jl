@@ -211,7 +211,7 @@ cross-validation. Existing slices are kept.
 """
 function superansac_inputs!(cfg, dir)
     cv = superansac_cross_validation(cfg)
-    pool = joinpath(data_root(), cfg["experiment"]["pool_dir"])
+    pool = pool_input(cfg)
     out = String[]
     for (side, scenes, sampling) in (("validation", validation_scenes(cv), cv.validation),
                                      ("test", test_scenes(cv), cv.test)), s in scenes

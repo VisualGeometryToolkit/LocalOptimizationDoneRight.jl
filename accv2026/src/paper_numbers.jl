@@ -209,7 +209,7 @@ function load_number_source(name, spec::AbstractDict)
     elseif kind == "split"
         cfg = fold_sequential_cv!(load_run_config(_cfg_path(cfg_name)))
         cv = tuning_spec(cfg, sequential_cv_scorer_entry(cfg["sequential_cv"], :ig)).scheme.cross_validation
-        pool_dir = joinpath(data_root(), cfg["experiment"]["pool_dir"])
+        pool_dir = pool_input(cfg)
         sc = Dict("validation" => validation_scenes(cv), "test" => test_scenes(cv))
         return SplitSource(String(cfg_name), sc, Dict(k => sum(s -> pool_size(joinpath(pool_dir, s * ".jld2")), v) for (k, v) in sc))
     end
@@ -370,7 +370,7 @@ function paper_number_floors(cfg::AbstractDict)
         cv = tuning_spec(c, sequential_cv_scorer_entry(c["sequential_cv"], :ig)).scheme.cross_validation
         path = oracle_floors_path(sequential_cv_dir(c))
         oracle_floor_done(path, String(s["oracle"]);
-                          source = oracle_floor_source(joinpath(data_root(), c["experiment"]["pool_dir"]),
+                          source = oracle_floor_source(pool_path(c),
                                                        Symbol(c["experiment"]["problem"]), test_scenes(cv))) ||
             error("[sources.$n]: oracle floor $(s["oracle"]) missing or computed on other pools/scenes — run its cell's oracle stage")
         merge!(floors, JLD2.load(path, "floors"))

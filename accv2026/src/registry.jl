@@ -23,10 +23,8 @@ const EXP_RESULTS_ROOT = results_root()
 # The main-paper cell: PhotoTourism / SIFT / Essential.
 const EXP_PT_CELL   = joinpath(EXP_RESULTS_ROOT, "phototourism", "sift", "E")
 # THE PT-E pool: the one fig3's config of record names (configs/pt_e_miscal.toml
-# [experiment] pool_dir) — part of that run's key, so never overridden here.
-const EXP_POOL_PT_E = let p = load_run_config(projectdir("configs", "pt_e_miscal.toml"))["experiment"]["pool_dir"]
-    isabspath(p) ? p : joinpath(data_root(), p)
-end
+# [inputs.pool]) — part of that run's key, so never overridden here.
+const EXP_POOL_PT_E = pool_path(config_of_record("pt_e_miscal"))
 # The paper repo's figures/ directory (deploy target of every render stage),
 # one path, no override. DEFERRED: DrWatson's papersdir() is papers/, this
 # tree's is paper/ — the move waits for the regeneration.

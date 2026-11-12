@@ -71,7 +71,7 @@ load_run_config(CFG_PATH)["experiment"] == LADDER["experiment"] ||
     error("run_basin_ladder: --config=$(CFG_PATH) is not configs/$(CELL).toml, the config of record of cell $(CELL)")
 const KEY      = run_key(LADDER)
 const BL       = LADDER["basin_ladder"]
-const POOL_DIR = joinpath(data_root(), LADDER["experiment"]["pool_dir"])
+const POOL_DIR = pool_input(LADDER)
 const DELTAS   = round.(deg2rad.(Float64.(BL["deltas_deg"])); digits = 6)   # the δ ladder, in radians
 const OPERATING_MULTIPLE = Float64(OPERATING_EFFICIENCY_CONSTANT)          # eq-28 operating efficiency constant (outlier half-width ≈ 25ŝ)
 const SUCCDEG  = Float64(BL["success_deg"])                                # the success radius (degrees)
