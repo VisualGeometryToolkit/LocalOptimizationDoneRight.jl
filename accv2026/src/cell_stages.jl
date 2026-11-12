@@ -68,7 +68,7 @@ function sequential_cv_stage(name::Symbol, cfg::AbstractDict, cfg_path::Abstract
     sidecar = joinpath(outdir, SEQUENTIAL_CV_SIDECAR)
     p = _cell_problem(cfg)
     return Stage(name,
-        "sequential CV :$p (config $(basename(cfg_path)), key $(sequential_cv_key(cfg))) -> $(sidecar)",
+        "sequential CV :$p (config $(basename(cfg_path)), key $(run_key(cfg; upstream = upstream_runs(cfg)))) -> $(sidecar)",
         () -> run_complete(outdir; sidecar = SEQUENTIAL_CV_SIDECAR),
         () -> begin
             for (path, what, provenance) in inputs
@@ -80,7 +80,7 @@ function sequential_cv_stage(name::Symbol, cfg::AbstractDict, cfg_path::Abstract
             run_driver("run_sequential_cv.jl", "--config=$(config)", "--outdir=$(outdir)")
             audit_operating_points(ROSTER, sidecar; problem = p)
             write_run_records(outdir, cfg; driver = "run_sequential_cv.jl",
-                              config_source = cfg_path, key = sequential_cv_key(cfg),
+                              config_source = cfg_path, key = run_key(cfg; upstream = upstream_runs(cfg)),
                               inputs = [pool_path(cfg)])
         end)
 end
@@ -187,7 +187,7 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString; smoke
     cfg = fold_budget_cell!(load_run_config(cfg_path))   # protocols + the operating points' run, keyed
     sidecar = budget_sidecar(cfg)
     sbp = only(values(cfg["sample_budget_protocol"]))
-    key = run_key(cfg)
+    key = run_key(cfg; upstream = upstream_runs(cfg))
     ex = cfg["experiment"]
     pool = pool_input(cfg)
     p = _cell_problem(cfg)

@@ -27,8 +27,8 @@ include(srcdir("cell_stages.jl"))
 const CFG_NAME = cli_option(ARGS, "config", "polish_pt_e")
 const CFG_PATH = projectdir("configs", CFG_NAME * ".toml")
 # keyed by the config AND the run of the operating points it polishes
-const CFG = fold_polish_cell!(load_run_config(CFG_PATH))
-const KEY = run_key(CFG)
+const CFG = load_run_config(CFG_PATH)
+const KEY = run_key(CFG; upstream = upstream_runs(CFG))
 const OUTDIR = polish_cell_dir(CFG)
 const TESTF, SUMF = joinpath(OUTDIR, "polish_test.jld2"), joinpath(OUTDIR, "summary.tsv")
 const R = CFG["render"]

@@ -54,7 +54,7 @@ start_output_flush!()
 const ARGV     = ARGS
 const CFG_PATH = cli_option(ARGV, "config")
 const CFG      = fold_sensitivity_cell!(load_run_config(CFG_PATH))
-const KEY      = run_key(CFG)
+const KEY      = run_key(CFG; upstream = upstream_runs(CFG))
 const S        = CFG["sensitivity"]
 const NBATCH   = parse(Int, cli_option(ARGV, "batch", "600"))            # pairs staged on-device per chunk (bounds GPU/host)
 const POOL_DIR = pool_input(CFG)

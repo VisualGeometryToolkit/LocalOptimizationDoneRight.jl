@@ -69,7 +69,7 @@ const LADDER   = ladder_cell(CELL)
 # the basin cell named on the command line, read by Eval's loader, must be the config of record the ladder keys
 load_run_config(CFG_PATH)["experiment"] == LADDER["experiment"] ||
     error("run_basin_ladder: --config=$(CFG_PATH) is not configs/$(CELL).toml, the config of record of cell $(CELL)")
-const KEY      = run_key(LADDER)
+const KEY      = run_key(LADDER; upstream = upstream_runs(LADDER))
 const BL       = LADDER["basin_ladder"]
 const POOL_DIR = pool_input(LADDER)
 const DELTAS   = round.(deg2rad.(Float64.(BL["deltas_deg"])); digits = 6)   # the δ ladder, in radians

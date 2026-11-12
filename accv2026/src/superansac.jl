@@ -44,7 +44,7 @@ using VisualGeometryToolkitEval.Evaluation: coarse_fine_cv_batched, enforce_prob
     save_scalar_tuning_artifact, deployed_scalar_setting
 include(joinpath(@__DIR__, "config.jl"))           # the paper prelude (guarded)
 include(joinpath(@__DIR__, "common.jl"))           # run_driver's context: scripts/tools, this project
-include(joinpath(@__DIR__, "protocol_folds.jl"))   # operating_points_run, fold_sequential_cv!
+include(joinpath(@__DIR__, "protocol_folds.jl"))   # upstream_runs, fold_sequential_cv!
 
 # (the `using`s above stay outside the guard: a macro such as `@sprintf` must
 # be bound before the guarded block is parsed)
@@ -76,7 +76,6 @@ function fold_superansac_cell!(cfg)
             error("SupeRANSAC cell: [experiment] $k differs from the operating points' ($name)")
     end
     cv = tuning_spec(op, sequential_cv_scorer_entry(op["sequential_cv"], :ig)).scheme.cross_validation
-    cfg["operating_points_run"] = operating_points_run(name)
     cfg["tuning"][SUPERANSAC_TUNING] = layer_tuning(
         Dict{String,Any}("cross_validation" => tuning_table(cv)), cfg["tuning"][SUPERANSAC_TUNING])
     return cfg
@@ -96,7 +95,7 @@ superansac_cross_validation(cfg) = superansac_spec(cfg).scheme.cross_validation
 The keyed directory of a folded SupeRANSAC cell:
 `<results>/<dataset>/<matcher>/<problem>/SupeRANSAC/superansac-<run_key>`.
 """
-superansac_cell_dir(cfg) = keyed_cell_dir(cfg, "SupeRANSAC", "superansac")
+superansac_cell_dir(cfg) = keyed_cell_dir(cfg, "SupeRANSAC", "superansac"; upstream = upstream_runs(cfg))
 
 "The directory of the STORED results the config names (`[stored] dir`, under the results root)."
 superansac_stored_dir(cfg) = joinpath(results_root(), String(cfg["stored"]["dir"]))

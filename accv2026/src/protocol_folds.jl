@@ -168,7 +168,7 @@ function fold_sequential_cv!(cfg)
     # ONE scorer per (dataset, model class): `scorer_of` names the cell whose
     # scorer stage this cell READS instead of re-tuning it — the same pools,
     # problem, cross-validation and scorer entries, refused otherwise. That
-    # cell's run keys this one as an UPSTREAM run (`sequential_cv_upstream`,
+    # cell's run keys this one as an UPSTREAM run (`upstream_runs`,
     # Eval's `run_key(; upstream)`), so a re-tuned scorer re-keys it.
     if haskey(sq, "scorer_of")
         name = String(sq["scorer_of"])
@@ -208,7 +208,7 @@ function operating_points_run(config_name::AbstractString)
     cfg = fold_sequential_cv!(config_of_record(config_name))
     delete!(cfg["sequential_cv"], "objective_matched")
     delete!(cfg["sequential_cv"], "zero_clamp")
-    return sequential_cv_key(cfg)
+    return run_key(cfg; upstream = upstream_runs(cfg))
 end
 
 """
@@ -233,9 +233,6 @@ function fold_budget_cell!(cfg)
     sbp = TOML.parsefile(projectdir("configs", "sample_budget_protocol.toml"))
     haskey(sbp, name) || error("[budget] protocol = \"$name\": configs/sample_budget_protocol.toml has no such section")
     cfg["sample_budget_protocol"] = Dict(name => sbp[name])
-    op = cfg["operating_points"]
-    cfg["operating_points_run"] = haskey(op, "sidecar") ? basename(dirname(String(op["sidecar"]))) :
-        operating_points_run(String(op["miscal_config"]))
     return fold_arm_protocol!(cfg)
 end
 
@@ -245,7 +242,7 @@ end
 The keyed directory of a folded budget cell:
 `<results>/<dataset>/<matcher>/<problem>/SampleBudget/budget-<run_key>`.
 """
-budget_cell_dir(cfg) = keyed_cell_dir(cfg, "SampleBudget", "budget")
+budget_cell_dir(cfg) = keyed_cell_dir(cfg, "SampleBudget", "budget"; upstream = upstream_runs(cfg))
 
 "The operating-points sidecar a folded budget cell evaluates: its explicit path, or its miscal cell's."
 budget_sidecar(cfg) = haskey(cfg["operating_points"], "sidecar") ? String(cfg["operating_points"]["sidecar"]) :
@@ -279,7 +276,6 @@ function fold_e2e_cell!(cfg)
     all(k -> haskey(e, k), required) ||
         error("[e2e]: keys $(sort!(collect(keys(e)))) — required $(required)")
     e["arms"] isa AbstractVector && !isempty(e["arms"]) || error("[e2e] arms: a non-empty list of deployed arm names")
-    cfg["operating_points_run"] = operating_points_run(String(cfg["operating_points"]["miscal_config"]))
     return fold_arm_protocol!(cfg)
 end
 
@@ -289,7 +285,7 @@ end
 The keyed directory of a folded end-to-end cell:
 `<results>/<dataset>/<matcher>/<problem>/EndToEnd/e2e-<run_key>`.
 """
-e2e_cell_dir(cfg) = keyed_cell_dir(cfg, "EndToEnd", "e2e")
+e2e_cell_dir(cfg) = keyed_cell_dir(cfg, "EndToEnd", "e2e"; upstream = upstream_runs(cfg))
 
 """
     sequential_cv_scorer_path(cfg) -> String
@@ -329,23 +325,42 @@ stages together.
 """
 sequential_cv_dir(cfg) =
     keyed_cell_dir(cfg, get(cfg["sequential_cv"], "roster", "composed") == "basin" ? "Basin" : "Miscalibration",
-                   "sequential-cv"; upstream = sequential_cv_upstream(cfg))
+                   "sequential-cv"; upstream = upstream_runs(cfg))
 
 """
-    sequential_cv_upstream(cfg) -> Union{Nothing, NamedTuple}
+    upstream_runs(cfg) -> Union{Nothing, Dict{String,String}}
 
-The upstream run of a folded sequential-CV cell (Eval's `run_key(; upstream)`):
-for a `scorer_of` cell, the run key of the cell whose scorer stage it reads;
-`nothing` otherwise.
+The runs a folded cell READS, by name, as Eval's `run_key(cfg; upstream)` keys
+them — so a re-tune upstream re-keys every cell that reads it, and no run key is
+held as a config value:
+
+- `scorer_of`: a `[sequential_cv] scorer_of` cell's scorer cell (its run key);
+- `operating_points`: the operating points a consumer evaluates (`[operating_points]
+  miscal_config`: that cell's run without its opt-in variants, [`operating_points_run`](@ref);
+  an explicit `sidecar`: its keyed directory's name);
+- `e2e`, `superansac`: a timing cell's timed e2e cell and that cell's SupeRANSAC
+  cell (their run keys; src/e2e_timing.jl).
+
+`nothing` for a cell that reads none. Every keyed directory and run record of
+this project keys its cell as `run_key(cfg; upstream = upstream_runs(cfg))`.
 """
-function sequential_cv_upstream(cfg)
-    sq = cfg["sequential_cv"]
-    haskey(sq, "scorer_of") || return nothing
-    return (; scorer_of = run_key(fold_sequential_cv!(config_of_record(String(sq["scorer_of"])))))
+function upstream_runs(cfg)
+    up = Dict{String,String}()
+    sq = get(cfg, "sequential_cv", Dict{String,Any}())
+    if haskey(sq, "scorer_of")
+        src = fold_sequential_cv!(config_of_record(String(sq["scorer_of"])))
+        up["scorer_of"] = run_key(src; upstream = upstream_runs(src))
+    end
+    op = get(cfg, "operating_points", nothing)
+    op === nothing || (up["operating_points"] = haskey(op, "sidecar") ? basename(dirname(String(op["sidecar"]))) :
+                                                operating_points_run(String(op["miscal_config"])))
+    if haskey(get(cfg, "timing", Dict{String,Any}()), "e2e_config")
+        e2e, sr = e2e_timed_cell(cfg), e2e_timed_superansac(cfg)
+        up["e2e"] = run_key(e2e; upstream = upstream_runs(e2e))
+        up["superansac"] = run_key(sr; upstream = upstream_runs(sr))
+    end
+    return isempty(up) ? nothing : up
 end
-
-"The run key of a folded sequential-CV cell, its upstream run folded in: the key of its `sequential_cv_dir`."
-sequential_cv_key(cfg) = run_key(cfg; upstream = sequential_cv_upstream(cfg))
 
 """
     fold_sensitivity_cell!(cfg) -> cfg
@@ -375,7 +390,7 @@ The keyed directory of a folded sensitivity cell:
 function sensitivity_cell_dir(cfg)
     mode = String(cfg["sensitivity"]["mode"])
     experiment = mode == "miscal" ? "Miscalibration" : mode == "delta" ? "DeltaSweep" : "LOSensitivity"
-    return keyed_cell_dir(cfg, experiment, "sel-" * replace(mode, "_" => "-"))
+    return keyed_cell_dir(cfg, experiment, "sel-" * replace(mode, "_" => "-"); upstream = upstream_runs(cfg))
 end
 
 """
@@ -391,7 +406,6 @@ ladder_cell(config_name::AbstractString) = Dict{String,Any}(
     "experiment" => config_of_record(config_name)["experiment"],
     "inputs" => Dict{String,Any}("pool" => config_of_record(config_name)["inputs"]["pool"]),
     "operating_points" => Dict{String,Any}("miscal_config" => String(config_name)),
-    "operating_points_run" => operating_points_run(config_name),
     "basin_ladder" => protocol_table("basin_ladder"))
 
 """
@@ -399,7 +413,7 @@ ladder_cell(config_name::AbstractString) = Dict{String,Any}(
 
 The keyed directory of a ladder cell: `<results>/<dataset>/<matcher>/<problem>/BasinLadder/basin-ladder-<run_key>`.
 """
-ladder_cell_dir(cfg) = keyed_cell_dir(cfg, "BasinLadder", "basin-ladder")
+ladder_cell_dir(cfg) = keyed_cell_dir(cfg, "BasinLadder", "basin-ladder"; upstream = upstream_runs(cfg))
 
 # ---- the scoring pool a cell reads ----------------------------------------------------
 
@@ -432,23 +446,11 @@ pool's identity in a record (an oracle floor's source), the same path
 pool_path(cfg) = (t = _pool_spec(cfg); tier_path(String(get(t, "tier", "")), t["path"]))
 
 """
-    fold_polish_cell!(cfg) -> cfg
-
-The fold of the polishing cell (configs/polish_pt_e.toml, scripts/polish.jl): the
-RUN of the operating points it polishes (`[operating_points] miscal_config`,
-that cell's run key — a re-tune re-keys the polish).
-"""
-function fold_polish_cell!(cfg)
-    cfg["operating_points_run"] = operating_points_run(String(cfg["operating_points"]["miscal_config"]))
-    return cfg
-end
-
-"""
     polish_cell_dir(cfg) -> String
 
 The keyed directory of the folded polishing cell: `<results>/<dataset>/<matcher>/<problem>/Polish/polish-<run_key>`.
 """
-polish_cell_dir(cfg) = keyed_cell_dir(cfg, "Polish", "polish")
+polish_cell_dir(cfg) = keyed_cell_dir(cfg, "Polish", "polish"; upstream = upstream_runs(cfg))
 
 """
     fold_timing_cell!(cfg) -> cfg
@@ -464,7 +466,6 @@ function fold_timing_cell!(cfg)
     sbp = TOML.parsefile(projectdir("configs", "sample_budget_protocol.toml"))
     haskey(sbp, name) || error("[timing] sb_protocol = \"$name\": configs/sample_budget_protocol.toml has no such section")
     cfg["sample_budget_protocol"] = Dict(name => sbp[name])
-    cfg["operating_points_run"] = operating_points_run(String(cfg["operating_points"]["miscal_config"]))
     return cfg
 end
 
@@ -474,7 +475,7 @@ end
 The keyed directory of the folded timing cell:
 `<results>/<dataset>/<matcher>/<problem>/Timing/timing-<run_key>`.
 """
-timing_cell_dir(cfg) = keyed_cell_dir(cfg, "Timing", "timing")
+timing_cell_dir(cfg) = keyed_cell_dir(cfg, "Timing", "timing"; upstream = upstream_runs(cfg))
 
 const ACCV2026_PROTOCOL_FOLDS_LOADED = true
 end # include guard

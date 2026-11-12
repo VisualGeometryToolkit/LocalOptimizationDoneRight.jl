@@ -25,8 +25,8 @@ try
     d = timing_cell_dir(cfg)
     @test under(d, results_root())
     @test !under(d, data_root())
-    @test basename(d) == "timing-" * run_key(cfg)
-    @test cfg["operating_points_run"] == operating_points_run("pt_e_miscal")   # a re-tune re-keys it
+    @test upstream_runs(cfg) == Dict("operating_points" => operating_points_run("pt_e_miscal"))   # a re-tune re-keys it
+    @test basename(d) == "timing-" * run_key(cfg; upstream = upstream_runs(cfg)) != "timing-" * run_key(cfg)
 end
 
 @testset "Fig 1: keyed by its config, its tuning spec and the ζ ladder" begin
@@ -44,8 +44,8 @@ end
     lc = ladder_cell("pt_e_basin")
     d = ladder_cell_dir(lc)
     @test under(d, results_root())
-    @test basename(d) == "basin-ladder-" * run_key(lc)
-    @test lc["operating_points_run"] == operating_points_run("pt_e_basin")
+    @test upstream_runs(lc) == Dict("operating_points" => operating_points_run("pt_e_basin"))
+    @test basename(d) == "basin-ladder-" * run_key(lc; upstream = upstream_runs(lc))
 end
 
 @testset "a cell's pool is its [inputs.pool], opened through input_path" begin

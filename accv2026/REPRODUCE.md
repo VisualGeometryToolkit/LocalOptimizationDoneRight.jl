@@ -605,8 +605,10 @@ section a cell tunes on is declared in its TOML as `[protocol] cv_section`,
 which tuning entries as `[sequential_cv]`; each layered entry resolved to
 its complete table) is hashed into its
 run directory (`VisualGeometryToolkitEval.Experiments.run_key`; the `[render]`
-section is excluded). Consumers re-derive a producer's key from the config
-name (`miscal_sidecar_of`, `operating_points_run`) — keys are derived, never copied.
+section is excluded). The runs a cell reads key it as Eval's upstream runs
+(`run_key(cfg; upstream = upstream_runs(cfg))`: a scorer cell, the operating
+points, a timed e2e and SupeRANSAC cell), re-derived from the config names
+(`miscal_sidecar_of`, `operating_points_run`) — keys are derived, never copied.
 
 Pools are the native trees (PT-E-SIFT-4K_pf3, HEB-H-SIFT-4K_pf3,
 `scoring_data_F_pf3` of eth3d/splg); a tree that no longer deserializes natively is converted ONCE,

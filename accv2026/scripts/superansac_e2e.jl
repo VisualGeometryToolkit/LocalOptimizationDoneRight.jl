@@ -34,7 +34,7 @@ include(srcdir("superansac.jl"))
 const CFG_NAME = cli_option(ARGS, "config", "pt_e_superansac")
 const CFG_PATH = projectdir("configs", CFG_NAME * ".toml")
 const CFG = superansac_cell(CFG_NAME)
-const KEY = run_key(CFG)
+const KEY = run_key(CFG; upstream = upstream_runs(CFG))
 const OUTDIR = superansac_cell_dir(CFG)
 const CV = superansac_cross_validation(CFG)
 

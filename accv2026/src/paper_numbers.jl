@@ -145,7 +145,7 @@ function number_source_input(name, spec::AbstractDict)
     elseif kind == "budget"
         return budget_cell_dir(fold_budget_cell!(config_of_record(cfg_name)))
     elseif kind == "polish"
-        return joinpath(polish_cell_dir(fold_polish_cell!(config_of_record(cfg_name))), "polish_test.jld2")
+        return joinpath(polish_cell_dir(config_of_record(cfg_name)), "polish_test.jld2")
     elseif kind == "e2e"
         return joinpath(e2e_cell_dir(fold_e2e_cell!(config_of_record(cfg_name))), "summary.tsv")
     elseif kind == "e2e_timing"
