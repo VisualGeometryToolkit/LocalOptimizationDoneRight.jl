@@ -33,6 +33,7 @@ using CUDA, Random, Statistics, Printf, JLD2, Logging
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitEstimation: EssentialProblem
 using TOML
+import VisualGeometryToolkitCore as VgtkCore
 
 # The paper config (the CLI and flusher come with VisualGeometryToolkitEval) and THE
 # shared streamed-experiment producer (also used by the production cell driver).
@@ -65,7 +66,7 @@ const ZETAS    = MODE == "miscal" ?
                           length = Int(CFG["miscal_protocol"]["n_zeta"]))) : Float64[]
 const NMIS     = Int(get(S, "n_miscal", 0))                             # val size for the miscal sweep; 0 ⇒ the full val pool
 const DELTAS   = Float64.(get(S, "deltas", Float64[]))                   # well depths (delta mode)
-const LOSS_NAME = String(get(S, "loss", "welsch"))                       # delta-mode inlier loss
+const LOSS_NAME = String(get(S, "loss", "welsch"))                       # delta-mode inlier loss: a LOSS_TAGS tag
 # PROTOCOL INVARIANT (2026-07-09, PROTOCOL.md §3): base bundles are
 # SELECTION-ONLY — refined arms exist solely through the sequential CV (run_sequential_cv.jl).
 # Roster: the selector families (arm_rosters.jl SELECTOR_FAMILIES tags).
@@ -105,10 +106,7 @@ elseif MODE == "delta"
     # Well-depth sweep: one Track-B mixture-marginal selector per Δ on the
     # shared outlier-half-width axis, IG/MSAC as anchors. Selection error vs contrast — the
     # paper's Δ dose-response curve.
-    loss = LOSS_NAME == "welsch"    ? WelschShape() :        # the VGC loss shapes (config.jl)
-           LOSS_NAME == "geman"     ? GemanMcclureShape() :
-           LOSS_NAME == "smoothtls" ? SmoothTLSShape() :
-           error("unknown --loss=$LOSS_NAME")
+    loss = VgtkCore.LOSS_TAGS[LOSS_NAME]()                 # THE loss vocabulary (VisualGeometryToolkitCore LOSS_TAGS)
     @info "bundle → $BUNDLE"
     ds = delta_sweep(scenes, NVAL, loss, DELTAS;
         problem_type = PT, spec = SPEC, batch = NBATCH,

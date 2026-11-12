@@ -13,7 +13,7 @@ include(srcdir("config.jl"))   # PAPER_STYLE, the arm vocabulary
 
 BUNDLE = cli_option(ARGS, "bundle",
   EXP_LADDER_BUNDLE)
-OUT    = cli_option(ARGS, "out", "/tmp/faceted_basin_body.tex")
+OUT    = cli_option(ARGS, "out")   # required: the caller names where its panel goes
 SUCC   = parse(Float64, cli_option(ARGS, "succ", EXP_LADDER_SUCC))   # the ladder protocol's success radius (registry.jl)
 DEPLOY = cli_option(ARGS, "deploy", "") == "1"
 

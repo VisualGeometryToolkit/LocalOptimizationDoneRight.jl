@@ -26,8 +26,8 @@
 #   julia -t auto --project=. scripts/e2e_ransac.jl --config=pt_e_e2e_table
 #   --smoke[=<dir>]: the first test scene, its first 20 test pairs, ζ = 1 only,
 #                  written under <dir> (default DrWatson datadir("sims", "e2e-<key>-smoke"),
-#                  never the keyed results tree; no run records — a `_smoke.done`
-#                  marker, never a stand-in _provenance.toml)
+#                  never the keyed results tree; its run records name the smoke subset
+#                  in their config's [smoke] table)
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
 using JLD2, Statistics, Printf, Dates, TOML
@@ -43,8 +43,10 @@ const CFG = fold_e2e_cell!(load_run_config(CFG_PATH))
 const KEY     = run_key(CFG)
 const SMOKE   = "--smoke" in ARGS ? datadir("sims", "e2e-$(KEY)-smoke") : cli_option(ARGS, "smoke", "")
 const OUTDIR  = isempty(SMOKE) ? e2e_cell_dir(CFG) : SMOKE
-# A smoke run writes no run records: its live stage's done marker is a plain file.
-const SMOKE_DONE = joinpath(OUTDIR, "_smoke.done")
+# A smoke run's records state the subset it ran (its config's [smoke] table), so they
+# never pass for the cell's.
+const RECORD_CFG = isempty(SMOKE) ? CFG :
+    merge(CFG, Dict{String,Any}("smoke" => Dict{String,Any}("scenes" => 1, "pairs_per_scene" => 20, "zetas" => [1.0])))
 const POOL    = joinpath(data_root(), CFG["experiment"]["pool_dir"])
 const SIDECAR = miscal_sidecar_of(String(CFG["operating_points"]["miscal_config"]))
 const ARMS    = String.(CFG["e2e"]["arms"])
@@ -83,9 +85,8 @@ function _live()
             cross_validation = tuning_table(CV),
             seed_scheme = "StableRNG(stable_seed($(SEED), \"$(STREAM)\", scene, pool_index))",
             created = string(Dates.now()))
-    isempty(SMOKE) ? write_run_records(OUTDIR, CFG; driver = "e2e_ransac.jl", config_source = CFG_PATH, key = KEY,
-                                       inputs = [SIDECAR, POOL]) :
-                     touch(SMOKE_DONE)   # smoke: the stage's done marker only
+    write_run_records(OUTDIR, RECORD_CFG; driver = "e2e_ransac.jl", config_source = CFG_PATH,
+                      key = run_key(RECORD_CFG), inputs = [SIDECAR, POOL])
 end
 
 function _summary()
@@ -110,7 +111,7 @@ end
 
 STAGES = Stage[
     Stage(:live, "$(join(ARMS, " vs ")) × ζ $(ZETAS) on every test pair (config $(CFG_NAME), key $(KEY)) → $(LIVE)",
-          () -> isempty(SMOKE) ? run_complete(OUTDIR; sidecar = basename(LIVE)) : isfile(LIVE) && isfile(SMOKE_DONE), _live),
+          () -> run_complete(OUTDIR; sidecar = basename(LIVE)), _live),
     Stage(:summary, "arm × ζ scene-averaged summary" * (SR === nothing ? "" : " + SupeRANSAC") * " → $(SUMMARY)",
           () -> isfile(SUMMARY) && fresher(SUMMARY, LIVE) &&
                 (SR === nothing || !isempty(SMOKE) ||

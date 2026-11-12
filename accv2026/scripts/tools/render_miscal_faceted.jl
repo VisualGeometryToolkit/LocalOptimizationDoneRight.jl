@@ -10,7 +10,7 @@ using DrWatson; @quickactivate "ACCV2026"   # the project this tool runs under (
 include(srcdir("config.jl"))   # PAPER_STYLE, the arm vocabulary
 
 SIDECAR = cli_option(ARGS, "sidecar")   # a operating-points sidecar (read through load_tuning_artifact by the emitter)
-OUT = cli_option(ARGS, "out", "/tmp/faceted_miscal_body.tex")
+OUT = cli_option(ARGS, "out")   # required: the caller names where its panel goes
 # Oracle selection bound: NEVER a hard-coded default. The floor/ceiling are
 # computed into oracle_floors.jld2 (compute_supp_oracle_floors.jl, THE
 # writer, by each driver's stage oracle) and selected by --oracle-tag ("PT_E", "HEB_H",
