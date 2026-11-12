@@ -54,7 +54,10 @@ end
     @test pool_path(cfg) == joinpath(data_root(; tier = cfg["inputs"]["pool"]["tier"]), cfg["experiment"]["pool_dir"])
     @test_throws ArgumentError pool_input(cfg)            # input_path: not there under the scratch data root
     mkpath(pool_path(cfg))
-    @test pool_input(cfg) == pool_path(cfg)
+    @test_throws ArgumentError pool_input(cfg)            # there, but not the content of record (its sha256)
+    plain = deepcopy(cfg)                                 # the same input without a digest opens
+    delete!(plain["inputs"]["pool"], "sha256"); delete!(plain["inputs"]["pool"], "sha256_exclude")
+    @test pool_input(plain) == pool_path(plain)
     other = config_of_record("pt_e_miscal"); other["inputs"]["pool"]["path"] = "elsewhere"
     @test_throws ErrorException pool_path(other)          # [inputs.pool] must be the [experiment] pool_dir
     @test_throws ErrorException pool_path(delete!(config_of_record("pt_e_miscal"), "inputs"))

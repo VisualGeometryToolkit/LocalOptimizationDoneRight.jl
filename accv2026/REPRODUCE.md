@@ -360,7 +360,7 @@ frozen input remains: every file a driver consumes is produced by a stage.
 
 Every `[inputs.<id>]` of record states its directory's `sha256`, Eval's `tree_sha256`. Eval's
 `input_path`/`inspect_input` check it before a run reads the input, and the runner's dry run
-checks it before a launch. The digests were computed read-only on dgx01's data root. A pool
+checks it before a launch. The digests were computed read-only on the author's data root. A pool
 tree's archived `_v3/` copy is not a pool of record and is left out (`sha256_exclude = ["_v3/**"]`,
 declared in the config).
 
