@@ -9,40 +9,60 @@
 using Test
 using DrWatson: projectdir
 
-mktempdir() do tmp
-    data, results = mkpath(joinpath(tmp, "data")), mkpath(joinpath(tmp, "results"))
-    withenv("VGTK_DATA_ROOT" => data, "VGTK_RESULTS_ROOT" => results) do
-        include(joinpath(@__DIR__, "..", "src", "config.jl"))
-        include(joinpath(@__DIR__, "..", "src", "protocol_folds.jl"))
-        under(p, root) = startswith(normpath(p), normpath(root) * "/")
+# The roots are bound to empty scratch trees for this file (a key never reads the data);
+# the includes are top level, so their definitions are visible to the testsets below.
+const _SAVED_ROOTS = Dict(k => get(ENV, k, nothing) for k in ("VGTK_DATA_ROOT", "VGTK_RESULTS_ROOT"))
+const _TMP = mktempdir()
+ENV["VGTK_DATA_ROOT"] = mkpath(joinpath(_TMP, "data"))
+ENV["VGTK_RESULTS_ROOT"] = mkpath(joinpath(_TMP, "results"))
+include(joinpath(@__DIR__, "..", "src", "config.jl"))
+include(joinpath(@__DIR__, "..", "src", "protocol_folds.jl"))
+under(p, root) = startswith(normpath(p), normpath(root) * "/")
+try
 
-        @testset "Table 1 timings: a keyed results directory, never under the data root" begin
-            cfg = fold_timing_cell!(config_of_record("timing_table"))
-            d = timing_cell_dir(cfg)
-            @test under(d, results_root())
-            @test !under(d, data_root())
-            @test basename(d) == "timing-" * run_key(cfg)
-            @test cfg["operating_points_run"] == operating_points_run("pt_e_miscal")   # a re-tune re-keys it
-        end
+@testset "Table 1 timings: a keyed results directory, never under the data root" begin
+    cfg = fold_timing_cell!(config_of_record("timing_table"))
+    d = timing_cell_dir(cfg)
+    @test under(d, results_root())
+    @test !under(d, data_root())
+    @test basename(d) == "timing-" * run_key(cfg)
+    @test cfg["operating_points_run"] == operating_points_run("pt_e_miscal")   # a re-tune re-keys it
+end
 
-        @testset "Fig 1: keyed by its config, its tuning spec and the ζ ladder" begin
-            cfg = fold_sensitivity_cell!(config_of_record("pt_e_sel_miscal"))
-            d = sensitivity_cell_dir(cfg)
-            @test under(d, results_root())
-            @test basename(d) == "sel-miscal-" * run_key(cfg)
-            @test haskey(cfg, "tuning_spec_hash") && haskey(cfg, "miscal_protocol")
-            other = config_of_record("pt_e_sel_miscal")
-            other["sensitivity"]["selectors"] = ["msac"]
-            @test sensitivity_cell_dir(fold_sensitivity_cell!(other)) != d
-        end
+@testset "Fig 1: keyed by its config, its tuning spec and the ζ ladder" begin
+    cfg = fold_sensitivity_cell!(config_of_record("pt_e_sel_miscal"))
+    d = sensitivity_cell_dir(cfg)
+    @test under(d, results_root())
+    @test basename(d) == "sel-miscal-" * run_key(cfg)
+    @test haskey(cfg, "tuning_spec_hash") && haskey(cfg, "miscal_protocol")
+    other = config_of_record("pt_e_sel_miscal")
+    other["sensitivity"]["selectors"] = ["msac"]
+    @test sensitivity_cell_dir(fold_sensitivity_cell!(other)) != d
+end
 
-        @testset "Fig 2: the ladder folds its basin cell's run" begin
-            lc = ladder_cell("pt_e_basin")
-            d = ladder_cell_dir(lc)
-            @test under(d, results_root())
-            @test basename(d) == "basin-ladder-" * run_key(lc)
-            @test lc["operating_points_run"] == operating_points_run("pt_e_basin")
-        end
+@testset "Fig 2: the ladder folds its basin cell's run" begin
+    lc = ladder_cell("pt_e_basin")
+    d = ladder_cell_dir(lc)
+    @test under(d, results_root())
+    @test basename(d) == "basin-ladder-" * run_key(lc)
+    @test lc["operating_points_run"] == operating_points_run("pt_e_basin")
+end
+
+@testset "a cell's pool is its [inputs.pool], opened through input_path" begin
+    cfg = config_of_record("pt_e_miscal")
+    @test cfg["inputs"]["pool"]["path"] == cfg["experiment"]["pool_dir"]
+    @test pool_path(cfg) == joinpath(data_root(; tier = cfg["inputs"]["pool"]["tier"]), cfg["experiment"]["pool_dir"])
+    @test_throws ArgumentError pool_input(cfg)            # input_path: not there under the scratch data root
+    mkpath(pool_path(cfg))
+    @test pool_input(cfg) == pool_path(cfg)
+    other = config_of_record("pt_e_miscal"); other["inputs"]["pool"]["path"] = "elsewhere"
+    @test_throws ErrorException pool_path(other)          # [inputs.pool] must be the [experiment] pool_dir
+    @test_throws ErrorException pool_path(delete!(config_of_record("pt_e_miscal"), "inputs"))
+    @test ladder_cell("pt_e_basin")["inputs"]["pool"] == config_of_record("pt_e_basin")["inputs"]["pool"]
+end
+finally
+    for (k, v) in _SAVED_ROOTS
+        v === nothing ? delete!(ENV, k) : (ENV[k] = v)
     end
 end
 

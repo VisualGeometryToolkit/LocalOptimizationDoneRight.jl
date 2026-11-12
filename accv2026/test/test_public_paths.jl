@@ -21,8 +21,10 @@ using Test
     end
     pat = r"/raid/|/home/[a-z]|/Users/[a-z]|~/src/|\$HOME/src|\$\(HOME\)/src|\bdgx\d*\b"i
     # The reproduction launchers name the runner's site profile (VisualGeometryToolkitEval
-    # configs/sites/<name>.toml) by its name: a profile id, not a host path.
-    site = r"--site=[A-Za-z0-9_]+"
+    # configs/sites/<name>.toml) by its name: a profile id, not a host path — on a
+    # command line (`--site=dgx01`, or the generated bootstrap's `--site=<dgx01 | …>`)
+    # or as the profile's file.
+    site = r"--site=<[^>]*>|--site=[A-Za-z0-9_]+|configs/sites/[A-Za-z0-9_]+\.toml"
     hits = [(relpath(f, repo), i, strip(l)) for f in files for (i, l) in enumerate(eachline(f))
             if occursin(pat, replace(l, site => ""))]
     @test isempty(hits) || (@info "host-specific paths in public files" hits; false)

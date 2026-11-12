@@ -202,10 +202,11 @@ end
     using LocalOptimizationDoneRight
     import VisualGeometryToolkitCore
     include(joinpath(@__DIR__, "..", "src", "config.jl"))
-    src = read(joinpath(@__DIR__, "..", "scripts", "fig1_sel_miscal.jl"), String)
-    m = match(r"const SELECTORS = \"([^\"]+)\"", src)
-    @test m !== nothing
-    for t in split(m[1], ',')
+    # the roster is the config of record's ([sensitivity] selectors), not the driver's
+    import TOML
+    sel = TOML.parsefile(joinpath(@__DIR__, "..", "configs", "pt_e_sel_miscal.toml"))["sensitivity"]["selectors"]
+    @test !isempty(sel)
+    for t in sel
         @test selector_key(t) isa Symbol
     end
 end

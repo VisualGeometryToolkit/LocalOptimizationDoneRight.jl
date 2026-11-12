@@ -18,6 +18,12 @@ using Test, TOML
     code = join((read(joinpath(r, f), String) for dir in ("src", "scripts")
                  for (r, _, fs) in walkdir(joinpath(root, dir)) for f in fs if endswith(f, ".jl")), '\n')
     read_keys = Set((m[1], m[2]) for m in eachmatch(r"protocol_value\(\s*\"([A-Za-z0-9_.]+)\"\s*,\s*\"([A-Za-z0-9_]+)\"", code))
+    # A table folded whole into a cell's run key (`protocol_table("basin_ladder")`) is
+    # read from the folded cell: each of its values counts as read where the code
+    # indexes it by name (`BL["seed"]`), so a value nothing reads still fails.
+    for m in eachmatch(r"protocol_table\(\s*\"([A-Za-z0-9_.]+)\"\s*\)", code), (t, k) in declared
+        t == m[1] && occursin("[\"$k\"]", code) && push!(read_keys, (t, k))
+    end
     unread = setdiff(declared, read_keys)
     undeclared = setdiff(read_keys, declared)
     @test isempty(unread)
