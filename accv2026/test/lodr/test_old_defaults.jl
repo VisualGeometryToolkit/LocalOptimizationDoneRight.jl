@@ -20,7 +20,7 @@ using StructArrays
 using Random
 using Rotations: RotMatrix, RotXYZ, RotY
 using VisualGeometryToolkitCore
-using VisualGeometryToolkitCore: converged, estimate, inlier_mask, rotation, translation   # VGC accessors (public)
+using VisualGeometryToolkitCore: converged, estimate, inlier_mask, rotation, translation, ReturnCode, NoRule   # VGC accessors (public)
 using VisualGeometryToolkitEstimation: RansacWorkspace   # public, not exported
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior, Predictive, MsacScoring   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation
@@ -171,7 +171,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
             scoring = StudentTUniformScoring{Predictive}(3, 3.0; codimension = 2, scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization_strategy = welsch_hq(:absolute_pose), rng = MersenneTwister(144)   # model_dof = the P3P minimal sample, m = 3
         )
         @test rp !== nothing && converged(rp)
-        @test rp.lo_retcode !== :not_run                                   # the LO really fired
+        @test (rp.lo_retcode, rp.lo_stop_rule) !== (ReturnCode.Default, NoRule)   # the LO really fired
         @test estimate(rp) isa Extrinsics3                                 # labeled, as the workspace stores it
         @test rotation_error_deg(estimate(rp), R_gt) < 1.0
         @test translation_error(estimate(rp), t_gt) < 0.05
@@ -188,5 +188,5 @@ end
     r = find_hand_eye(A .=> B; scoring = old_scoring(HandEyeProblem(A .=> B), :hand_eye),
                       local_optimization_strategy = StudentTUniform(), rng = MersenneTwister(31))
     @test converged(r)
-    @test r.lo_retcode !== :not_run
+    @test (r.lo_retcode, r.lo_stop_rule) !== (ReturnCode.Default, NoRule)   # the LO really fired
 end

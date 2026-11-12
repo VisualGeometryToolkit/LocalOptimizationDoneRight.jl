@@ -20,7 +20,7 @@ using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabe
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitEstimation: RadialHomographyProblem, RadialCameraProblem, find_radial_homography, find_radial_camera,
     minimal_sample_size, model_type, data_size
-using VisualGeometryToolkitCore: mahalanobis_distances!, signed_distance, inlier_mask
+using VisualGeometryToolkitCore: mahalanobis_distances!, signed_distance, inlier_mask, ReturnCode, NoRule, NonFinite
 using LocalOptimizationDoneRight
 const RVG = VisualGeometryToolkitEstimation
 using .EpipolarScenes, .HomographyScenes, .PoseScenes, .Contamination, .DivisionBoards, .RadialScenes
@@ -269,7 +269,7 @@ _pd(a::RadialCamera, b::RadialCamera) = projective_distance(radial_rows(a), radi
         lo = welsch_hq(:radial_camera)
         est = find_radial_camera(pairs; center = _CC, scoring = StudentTUniformScoring(RadialCameraProblem(pairs; center = _CC), 5.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization_strategy = lo, rng = MersenneTwister(4))
         @test est !== nothing
-        @test est.lo_retcode != :not_run
+        @test (est.lo_retcode, est.lo_stop_rule) !== (ReturnCode.Default, NoRule)   # the LO really fired
         rr = zeros(length(pairs)); mahalanobis_distances!(rr, p, estimate(est))
         @test median(abs.(rr[gt])) < 0.4
         @test count(inlier_mask(est) .& .!gt) == 0
@@ -297,6 +297,6 @@ end
         prob = InhomLineFittingProblem(pts)
         r = ransac(prob, StudentTUniformScoring(prob, 1.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()); local_optimization_strategy = StuTuBCD(), rng = MersenneTwister(60))
         @test converged(r)
-        @test r.lo_retcode === :solve_failed
+        @test (r.lo_retcode, r.lo_stop_rule) === (ReturnCode.Failure, NonFinite)   # the refit failed; the incumbent is kept
     end
 end
