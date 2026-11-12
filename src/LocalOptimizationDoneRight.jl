@@ -55,10 +55,12 @@ import VisualGeometryToolkitCore: locally_optimize!, update_model!, update_resid
     update_nuisance!, update_weights!, stopping_criterion, stop_reason, current_cost,
     current_s2, block_coordinate_result,
     lift_wmax, lift_conjugate, lift_zblock   # the tabulated lift answers the loss's lift facet
-using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation, Irls, LoBuffers, LiftableProblem,
+# The core optimization strategies and the strategy registry machinery (VisualGeometryToolkitCore
+# robust/strategies.jl): the types, the shared loss table and the keyword constructor.
+using VisualGeometryToolkitCore: Irls, LOSS_TAGS, lo_loss, strategy_loss, lo_width_value, lo_construct
+using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation, LoBuffers, LiftableProblem,
     BoundedProblem, EssentialProblem, PosteriorLikelihood, StopWhenNoImprovement,
-    posterior_irls!, consensus_posterior, required_outlier_halfwidth, lo_loss, strategy_loss,
-    lo_width_value, lo_construct, LOSS_TAGS
+    posterior_irls!, consensus_posterior, required_outlier_halfwidth
 
 include("config_defaults.jl")          # configs/default.toml → `_DEFAULTS_OF_RECORD`, `_config_default`
 include("lift/schedules.jl")           # LoSchedule, MuLadder, GeometricAnneal, gnc_schedule

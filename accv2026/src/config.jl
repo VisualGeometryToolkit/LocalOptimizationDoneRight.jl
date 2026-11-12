@@ -45,7 +45,8 @@ using VisualGeometryToolkitEval.Stats, VisualGeometryToolkitEval.Tuning, VisualG
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: StudentTUniform, HQ, Gnc, WelschHQNewton, WelschHQEcm, StuTuRegemm
 using VisualGeometryToolkitEstimation
-using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, locally_optimize, Irls
+using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, locally_optimize
+using VisualGeometryToolkitCore: Irls
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: Point2, EssentialMat, FundMat, intrinsics, Vec3, skew,
     WelschShape, GemanMcclureShape, CauchyShape, SmoothTLSShape, TLSShape, HuberShape, GaussianShape,

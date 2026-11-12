@@ -81,7 +81,8 @@ end
 using Test: @test, @testset
 using Random: Random, MersenneTwister
 using VisualGeometryToolkitCore: GemanMcclureShape, WelschShape, converged, estimate, decision_width, inlier_mask
-using VisualGeometryToolkitEstimation: Irls, RansacConfig, ransac
+using VisualGeometryToolkitEstimation: RansacConfig, ransac
+using VisualGeometryToolkitCore: Irls
 using LocalOptimizationDoneRight: Gnc, HQ
 
 export lift_arms, check_lift_ransac, check_lift_recovers

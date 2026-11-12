@@ -24,7 +24,8 @@ using VisualGeometryToolkitCore: Synthetic
 using VisualGeometryToolkitCore.Synthetic: projective_distance
 using VisualGeometryToolkitCore: estimate, retcode   # VGC accessors (public)
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
-using VisualGeometryToolkitEstimation: LOSS_TAGS, config_dict, optimization_strategy_from_toml   # public, not exported
+using VisualGeometryToolkitEstimation: config_dict, optimization_strategy_from_toml   # public, not exported
+using VisualGeometryToolkitCore: LOSS_TAGS
 using VisualGeometryToolkitEstimation
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: WelschHQEcm, WelschHQNewton
@@ -326,7 +327,7 @@ end
     build(d) = optimization_strategy_from_toml(d; class = :essential, tags = TAGS)
     runlo(lo) = locally_optimize(p, E_seed; scoring = StudentTUniformScoring(p, 0.05; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()), local_optimization_strategy = lo)
     # a registry entry's owner answers whether it takes a loss
-    parametric(T) = RVGK.lo_parametric(T)
+    parametric(T) = VgtkCore.lo_parametric(T)
     for (tag, T) in TAGS
         # "none" (no local optimization) selects `nothing`: no width, no loss
         takes_efficiency_constant = T !== nothing && (:width in fieldnames(T) || hasfield(T, :efficiency_constant))   # WelschHQEcm: a plain multiple

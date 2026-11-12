@@ -97,7 +97,7 @@ end
     cs = consensus_set(scoring, buf.scoring_ws, buf.residuals;
                        model_dof = minimal_sample_size(problem) + 1, d_g = codimension(problem), epoch = buf.epoch)
     # through the owner, VGC's `loss_at` (here via the core's `lo_loss`)
-    @test scale_s2(RVG.lo_loss(HQ{WelschShape}(efficiency_constant = 1.0), cs, scoring, buf)) == max(scale_s2(cs), eps())
+    @test scale_s2(VgtkCore.lo_loss(HQ{WelschShape}(efficiency_constant = 1.0), cs, scoring, buf)) == max(scale_s2(cs), eps())
 end
 
 # The local-optimization contract on the strategies this package hosts

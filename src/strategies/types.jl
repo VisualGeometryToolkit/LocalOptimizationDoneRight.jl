@@ -93,7 +93,7 @@ residual `(zᵢ·rᵢ, κ(zᵢ²))` with the loss's closed-form Geman–Reynolds
 regularizer (`lift_zblock`, VGC's loss family). Per-point weight `zᵢ` is a
 free variable, initialized LARGE (all-inlier = smoothed cost) and **evolved
 jointly with θ**, Schur-eliminating `Δz` — this broadens the basin, escaping a
-poor seed where the static [`Irls`](@extref VisualGeometryToolkitEstimation.Irls)/[`StudentTUniform`](@ref) is trapped,
+poor seed where the static [`Irls`](@extref VisualGeometryToolkitCore.Irls)/[`StudentTUniform`](@ref) is trapped,
 *without* annealing or quadrature. ONE code path for every loss AND every
 problem (`ManifoldLiftHQ` on VisualGeometryToolkitCore's chart-rows contract,
 lift/lifts.jl); `K` contributes only its closed-form z-block
@@ -122,7 +122,7 @@ and the noise variance stored apart and never multiplied into a stored width:
 - `init::Symbol=:flat`: z₀ policy — `:flat` (all-in, default) | `:posterior`
   (soft seed weights) | `:consensus` (hard r½ mask)
 - `width::W`: the width mode (`efficiency_constant = m`, the plain multiple,
-  `loss_width = w`, or neither: follow the scorer), as [`Irls`](@extref VisualGeometryToolkitEstimation.Irls)
+  `loss_width = w`, or neither: follow the scorer), as [`Irls`](@extref VisualGeometryToolkitCore.Irls)
 """
 struct HQ{K <: AbstractLossShape, W} <: AbstractOptimizationStrategy
     max_iter::Int
@@ -337,8 +337,8 @@ end
 # Identity of the loss-parametric strategies — read off the loss tag
 # (VisualGeometryToolkitEstimation's `strategy_loss`, which `Irls{K}` shares).
 # -----------------------------------------------------------------------------
-VgtkEstimation.strategy_loss(::Type{<:HQ{K}}) where {K} = K
-VgtkEstimation.strategy_loss(::Type{<:Gnc{S}}) where {S} = strategy_loss(S)
+VgtkCore.strategy_loss(::Type{<:HQ{K}}) where {K} = K
+VgtkCore.strategy_loss(::Type{<:Gnc{S}}) where {S} = strategy_loss(S)
 
 VgtkCore.lo_label(lo::Union{HQ, Gnc}) =
     loss_label(strategy_loss(lo)) * "-" * path_suffix(optimization_path(lo))
@@ -436,7 +436,7 @@ iteration.
 
 Solver-matched ADAPTIVE-SHAPE robust IRLS: the identical
 `PosteriorIrlsMethod`/`block_coordinate_descent!` machinery as [`StudentTUniform`](@ref) /
-[`Irls{WelschShape}`](@extref VisualGeometryToolkitEstimation.Irls), with Barron's generalized loss ρ(r; α, loss_width)
+[`Irls{WelschShape}`](@extref VisualGeometryToolkitCore.Irls), with Barron's generalized loss ρ(r; α, loss_width)
 (CVPR 2019) whose SHAPE α is re-estimated each iteration from the current
 residuals by minimizing the truncated-partition negative log-likelihood of
 Chebrolu et al. (RA-L 2021, Eq. 11-15): 1-D grid search over
@@ -633,7 +633,7 @@ tag → strategy type or loss-parametric family, the tag `snake_case` of the
 type's name. Retired tags name their successor. Merge it with the core's to
 load either: `merge(VisualGeometryToolkitEstimation.LO_TAGS, LODR_STRATEGY_TAGS)`.
 """
-const LODR_STRATEGY_TAGS = VgtkEstimation.@lo_registry _STRATEGY_ROWS defaults = _DEFAULTS_OF_RECORD["optimization_strategy"] retired = (
+const LODR_STRATEGY_TAGS = VgtkCore.@lo_registry _STRATEGY_ROWS defaults = _DEFAULTS_OF_RECORD["optimization_strategy"] retired = (
     "stutu_bcd" => "stu_tu_bcd", "stutu_hq_tabulated" => "stu_tu_hq_tabulated", "stutu_regemm" => "stu_tu_regemm",
 )
 
@@ -647,11 +647,11 @@ BarronHQ(α::Real; kw...) = lo_construct(BarronHQ; α, kw...)
 
 # The per-strategy exceptions, each a hook of the machinery.
 # Admission of a loss-parametric family, before any field is read.
-VgtkEstimation.lo_admits(::Type{<:HQ}, ::Type{K}) where {K} = _hq_admits_shape(K)
-VgtkEstimation.lo_admits(::Type{<:Gnc}, ::Type{S}) where {S} = _gnc_admits(S)
+VgtkCore.lo_admits(::Type{<:HQ}, ::Type{K}) where {K} = _hq_admits_shape(K)
+VgtkCore.lo_admits(::Type{<:Gnc}, ::Type{S}) where {S} = _gnc_admits(S)
 # The longer ψ̂ schedule of the smooth-TLS lift defaults from its own key.
-VgtkEstimation.lo_key(::Type{<:HQ{SmoothTLSShape}}, ::Val{:max_iter}) = "max_iter_smooth_tls"
-function VgtkEstimation.lo_validate(lo::Gnc{S}) where {S}
+VgtkCore.lo_key(::Type{<:HQ{SmoothTLSShape}}, ::Val{:max_iter}) = "max_iter_smooth_tls"
+function VgtkCore.lo_validate(lo::Gnc{S}) where {S}
     lo.budget in (:parity, :converged) || error("Gnc: budget must be :parity or :converged, got :$(lo.budget)")
     isnan(lo.entry) || S === Irls{WelschShape} ||
         error("Gnc: numeric entry is defined for the annealed-width (Irls{WelschShape}) family only")

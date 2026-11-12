@@ -16,7 +16,8 @@
 # audit_operating_points), so they rebuild arms from this ONE table.
 # =============================================================================
 
-using VisualGeometryToolkitEstimation: Irls, scoring_from_toml
+using VisualGeometryToolkitEstimation: scoring_from_toml
+using VisualGeometryToolkitCore: Irls
 using LocalOptimizationDoneRight: HQ, Gnc, StuTuBCD, StudentTUniform, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth
 using VisualGeometryToolkitCore: WelschShape, GemanMcclureShape, SmoothTLSShape, TLSShape, MsacScoring, RansacScoring,
     codimension

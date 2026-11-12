@@ -18,7 +18,8 @@ using TOML
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: AbstractOptimizationStrategy, GemanMcclureShape, SmoothTLSShape, WelschShape, TagRegistry
 using VisualGeometryToolkitEstimation
-using VisualGeometryToolkitEstimation: Irls, config_dict, optimization_strategy_from_toml
+using VisualGeometryToolkitEstimation: config_dict, optimization_strategy_from_toml
+using VisualGeometryToolkitCore: Irls
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: LODR_STRATEGY_TAGS, BarronAdaptive, StuTuRegemm, _config_default, _DEFAULTS_OF_RECORD
 const RVG = VisualGeometryToolkitEstimation
@@ -77,7 +78,7 @@ sm(lo) = VgtkCore.lo_width(lo).value
             takes_efficiency_constant = :width in fieldnames(T) || hasfield(T, :efficiency_constant)
             # the minimal table for this tag: only the keys it actually takes
             tbl = Dict{String, Any}("type" => tag)
-            RVG.lo_parametric(T) && (tbl["loss"] = "welsch")
+            VgtkCore.lo_parametric(T) && (tbl["loss"] = "welsch")
             takes_efficiency_constant && (tbl["efficiency_constant"] = 1.0)
             tag == "barron_hq" && (tbl["alpha"] = 0.5)
             lo = load(tbl)

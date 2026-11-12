@@ -47,7 +47,7 @@ using .EpipolarScenes
 
     # Any other problem reaches the ONE refusal (VisualGeometryToolkitCore's LO
     # contract), typed on the strategy root only — not a per-strategy stub.
-    for lo in (LODR.HQ{VgtkCore.WelschShape}, LODR.Gnc{RVGC.Irls{VgtkCore.WelschShape}})
+    for lo in (LODR.HQ{VgtkCore.WelschShape}, LODR.Gnc{VgtkCore.Irls{VgtkCore.WelschShape}})
         m = which(VgtkCore.locally_optimize!, Tuple{Any, lo, RVGC.LineFittingProblem{Float64}, Any,
                                                  VgtkCore.ConsensusSet, VgtkCore.ScoreBuffers, Any})
         @test problem_param(m) === Any

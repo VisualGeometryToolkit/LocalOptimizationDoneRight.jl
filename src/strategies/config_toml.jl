@@ -30,7 +30,7 @@ _entry_from_toml(v::AbstractString) = v == "r_max" ? NaN :
 _entry_from_toml(v::Real) = Float64(v)
 _entry_to_toml(x::Float64) = isnan(x) ? "r_max" : x
 
-VgtkEstimation.lo_field_from_toml(::Type{<:Gnc}, ::Val{:entry}, v) = _entry_from_toml(v)
+VgtkCore.lo_field_from_toml(::Type{<:Gnc}, ::Val{:entry}, v) = _entry_from_toml(v)
 VgtkCore.toml_field(lo::Gnc, ::Val{:entry}) = _entry_to_toml(lo.entry)
 
 # Gnc{S} wraps the inner static strategy `inner` (+ `loss`): concrete at

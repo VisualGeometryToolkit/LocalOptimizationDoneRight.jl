@@ -28,7 +28,8 @@ using VisualGeometryToolkitCore: AbstractScoring, BarronShape, CameraModel, Esse
     deploy, estimate, exp_so3, locally_optimize!, loss_at, lo_width, mahalanobis_distances!, minimal_sample_size, px,
     retcode, scale_s2, score_model!, sq_loss_width
 using VisualGeometryToolkitCore.Synthetic: projective_distance, sample_twoview_scene
-using VisualGeometryToolkitEstimation: BoundedProblem, EssentialProblem, Irls, RansacWorkspace
+using VisualGeometryToolkitEstimation: BoundedProblem, EssentialProblem, RansacWorkspace
+using VisualGeometryToolkitCore: Irls
 using LocalOptimizationDoneRight
 
 # MSAC selection with a uniform outlier model of half-width `halfwidth`.
