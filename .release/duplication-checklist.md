@@ -12,7 +12,7 @@ closes it.
 - [x] its TeX writer → Eval's number-macro writer: accv2026/scripts/paper_numbers.jl `_fmt`/`_emit` (audit 11) → VisualGeometryToolkitEval's `PaperNumbers`/`add_number!`/`write_numbers` + `deploy_assets` (e8839ed)
 - [x] test/docs_gates.jl (audit 1) → VisualGeometryToolkitCore's `test_docs` (16ffdfa, 4f4e965)
 - [x] the gates run VisualGeometryToolkitCore's `test_duplication` (4f4e965)
-- [x] `LO_TAGS`, `_LO_REGISTRY`, `_TOML_DEFAULTS`, names VisualGeometryToolkitEstimation owns (test_duplication `[name]`) → `STRATEGY_TAGS`, `_STRATEGY_ROWS`, `_DEFAULTS_OF_RECORD` (7a3013a)
+- [x] the registry Estimation names (see CHANGELOG), `_LO_REGISTRY`, `_TOML_DEFAULTS`, names VisualGeometryToolkitEstimation owns (test_duplication `[name]`) → `STRATEGY_TAGS`, `_STRATEGY_ROWS`, `_DEFAULTS_OF_RECORD` (7a3013a)
 - [x] `STRATEGY_TAGS` (VisualGeometryToolkitCore's name since A2, the registry of its core strategies) → this package's `LODR_STRATEGY_TAGS`
 - [x] accv2026's four keyed cell directories and two config loaders restated (test_duplication `[similar]`: `e2e_timing_dir`, `budget_cell_dir`, `e2e_cell_dir`, `superansac_cell_dir`; `e2e_timing_cell`, `superansac_cell`) → `keyed_cell_dir` and `config_of_record` in accv2026/src/protocol_folds.jl (bb20c31)
 - [x] the two timing benches' call-set reader (`read_fixture`, `pool_csponds`, `problem_of`) and VisualGeometryToolkitCore's `calibration_spread`/record writer restated in both (audit 2; test_duplication `[similar]`) → one test/lo_timing/call_set.jl and Core's test/lo_timing/bench_record.jl (08a5135)
