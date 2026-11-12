@@ -56,7 +56,7 @@ __pycache__/
 # The SupeRANSAC environment's conda environment (accv2026/envs/superansac/CondaPkg.toml)
 .CondaPkg/
 
-# Slurm job logs (scripts/slurm/: ACCV_LOG_DIR, default accv2026/logs)
+# Job logs of a local run (accv2026/logs)
 /accv2026/logs/
 
 # Personal Claude Code state (never shared)

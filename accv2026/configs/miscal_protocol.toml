@@ -7,9 +7,9 @@
 # (n_zeta = 15, zeta_octaves = 7 => zeta = 2^{-7..7}, integer exponents). Tuning is
 # ALWAYS at zeta = 1 (cv_protocol.toml); zeta is a test-time evaluation that
 # scales each arm's own supplied residual unit. THE one authority: every
-# launch derives its --n-zeta/--zeta-octaves from this table
-# or the folded config (src/cell_stages.jl zeta_ladder_args; the sequential
-# CV reads it from its cell's folded `miscal_protocol`), never a literal. The
+# cell reads the ladder from this table, folded into its run key
+# (src/protocol_folds.jl; the sequential CV reads it from its cell's
+# folded `miscal_protocol`), never a literal. The
 # tuning needs no reach into the ladder: the sequential CV tunes at ζ = 1 and
 # the evaluation builds its own selection grid at exactly {ζ_j · a*}. The
 # expand-on-boundary caps are tuning parameters: configs/tuning.toml.

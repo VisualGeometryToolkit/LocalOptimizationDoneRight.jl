@@ -43,7 +43,7 @@ const OUT    = cli_option(ARGS, "outdir")    # the caller's output dir (timing_t
 const TAG    = cli_option(ARGS, "tag", "pt")
 mkpath(OUT)
 
-# Operating point: --operating-points=PATH (or SB_OPERATING_POINTS) reads the deployed
+# Operating point: --operating-points=PATH reads the deployed
 # tuned optima through `deployed_budget_settings` — THE gate-enforced
 # reader (interior-argmin invariant; a clipped sidecar hard-errors here), so
 # each dataset is timed at ITS OWN tuned operating point from the ONE tuning
