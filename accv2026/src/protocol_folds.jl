@@ -22,12 +22,15 @@ using VisualGeometryToolkitEval.Tuning: layer_tuning, layered_tuning_entry, tuni
 using VisualGeometryToolkitEval.Experiments:
     load_run_config, run_key, experiment_dir,
     config_of_record, keyed_cell_dir,   # configs/<name>.toml as a run config; <experiment_dir>/<experiment>/<kind>-<run_key>
-    data_root, input_path               # an input's tier root; an input opened, checked to be there
+    tier_path, input_path               # a path under an input's tier root; an input opened, checked to be there
 include(joinpath(@__DIR__, "protocol.jl"))   # configs/protocol.toml: the arm protocol folded below
 
 const _CVP_PATH    = projectdir("configs", "cv_protocol.toml")
 const _MP_PATH     = projectdir("configs", "miscal_protocol.toml")
 const _TUNING_PATH = projectdir("configs", "tuning.toml")
+
+"The scale interface the consensus-anchoring ablation evaluates (configs/miscal_protocol.toml [anchoring_ablation])."
+const EXP_ANCHOR_SCALE_INTERFACE = String(TOML.parsefile(_MP_PATH)["anchoring_ablation"]["scale_interface"])
 
 "The tuning protocol of record (configs/tuning.toml), parsed."
 const TUNING_PROTOCOL = TOML.parsefile(_TUNING_PATH)
@@ -402,7 +405,7 @@ Where cell `cfg`'s pool is (its `[inputs.pool]` under its tier root), unchecked:
 pool's identity in a record (an oracle floor's source), the same path
 [`pool_input`](@ref) opens.
 """
-pool_path(cfg) = (t = _pool_spec(cfg); joinpath(data_root(; tier = String(get(t, "tier", ""))), t["path"]))
+pool_path(cfg) = (t = _pool_spec(cfg); tier_path(String(get(t, "tier", "")), t["path"]))
 
 """
     fold_polish_cell!(cfg) -> cfg

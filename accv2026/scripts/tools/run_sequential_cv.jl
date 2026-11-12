@@ -562,7 +562,7 @@ end
 # --- the anchoring ablation: the fixed plug-in scale ---------------------------
 function run_anchoring()
     ROSTER_KIND == "composed" || error("--stage=anchoring: the ablation evaluates a COMPOSED sidecar")
-    iface = String(TOML.parsefile(projectdir("configs", "miscal_protocol.toml"))["anchoring_ablation"]["scale_interface"])
+    iface = EXP_ANCHOR_SCALE_INTERFACE
     VgtkCore.SCALE_INTERFACE_TAGS[iface] === VgtkCore.FixedScale ||
         error("miscal_protocol.toml [anchoring_ablation] scale_interface = $(repr(iface)): " *
               "the sequential CV implements the \"fixed_scale\" interface only")

@@ -95,11 +95,10 @@ const EXP_MISCAL_DIR     = dirname(EXP_MISCAL_SIDECAR)
 # --- fig_anchoring (with/without partition anchoring, paired) -----------------
 # ONE tuning, two evaluations of its operating points: WITH = fig3's own ζ evaluation
 # (partition-anchored); WITHOUT = the ablation evaluation under the scale
-# interface of configs/miscal_protocol.toml [anchoring_ablation], inside fig3's
+# interface of configs/miscal_protocol.toml [anchoring_ablation]
+# (`EXP_ANCHOR_SCALE_INTERFACE`, src/protocol_folds.jl), inside fig3's
 # keyed run directory (a new fig3 key is a new ablation) and named by that
 # interface (a change of it is a new artifact).
-const EXP_ANCHOR_SCALE_INTERFACE = String(TOML.parsefile(projectdir("configs",
-    "miscal_protocol.toml"))["anchoring_ablation"]["scale_interface"])
 const EXP_ANCHOR_WITH        = EXP_MISCAL_SIDECAR
 const EXP_ANCHOR_WITHOUT_DIR = joinpath(EXP_MISCAL_DIR, "anchoring_ablation-" * EXP_ANCHOR_SCALE_INTERFACE)
 const EXP_ANCHOR_WITHOUT     = joinpath(EXP_ANCHOR_WITHOUT_DIR, "zeta_evaluation.jld2")

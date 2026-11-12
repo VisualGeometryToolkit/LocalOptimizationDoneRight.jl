@@ -25,7 +25,7 @@ include(srcdir("cell_stages.jl"))
 include(srcdir("e2e_cells.jl"))
 include(srcdir("e2e_timing.jl"))
 
-const TCFG = fold_e2e_timing_cell!(load_run_config(projectdir("configs", cli_option(ARGS, "config") * ".toml")))
+const TCFG = e2e_timing_cell(cli_option(ARGS, "config"))
 const DIR = cli_option(ARGS, "dir")
 const OUT = cli_option(ARGS, "out")
 const CPU = Int(TCFG["timing"]["pinning"]["cpu"])

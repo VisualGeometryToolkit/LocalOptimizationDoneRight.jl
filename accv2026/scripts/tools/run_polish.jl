@@ -40,7 +40,7 @@ start_output_flush!()
 const CFG_NAME = cli_option(ARGS, "config", "polish_pt_e")
 const OUTDIR   = cli_option(ARGS, "outdir")
 const SMOKE    = "--smoke" in ARGS        # one scene, its first 10 pairs (a code check, never a result)
-const CFG      = load_run_config(projectdir("configs", CFG_NAME * ".toml"))
+const CFG      = config_of_record(CFG_NAME)
 const PC       = CFG["polish"]
 const POOL     = pool_input(CFG)
 const SIDECAR  = miscal_sidecar_of(String(CFG["operating_points"]["miscal_config"]))

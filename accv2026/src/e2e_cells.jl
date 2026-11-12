@@ -28,11 +28,11 @@ using VisualGeometryToolkitCore.Pools: PoolPair
 using VisualGeometryToolkitEstimation: EssentialProblem, RansacConfig, GaussianSampler
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using Printf: Printf
-using DrWatson: projectdir   # configs/ of the active (accv2026) project
+using VisualGeometryToolkitEval.Experiments: config_of_record   # configs/<name>.toml of the active (accv2026) project
 using Statistics: mean, median
 
 "The PT-E pool generator's Gaussian-SNN sampler σ (configs/pt_e_pools.toml [pool]): the live loop draws as the pool was drawn."
-const PT_E_SNN_SIGMA = Float64(load_run_config(projectdir("configs", "pt_e_pools.toml"))["pool"]["gaussian_sigma"])
+const PT_E_SNN_SIGMA = Float64(config_of_record("pt_e_pools")["pool"]["gaussian_sigma"])
 
 """
     pt_live_problem(pair::PoolPair) -> EssentialProblem

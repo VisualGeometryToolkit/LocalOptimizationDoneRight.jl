@@ -14,5 +14,5 @@ using DrWatson; @quickactivate "ACCV2026"
 include(srcdir("cell_stages.jl"))
 const CFG_NAME = cli_option(ARGS, "config", "")
 isempty(CFG_NAME) && error("scoring_pools.jl: --config=<name> is required (configs/<name>.toml)")
-const SRC = load_run_config(projectdir("configs", CFG_NAME * ".toml"))["source"]
+const SRC = config_of_record(CFG_NAME)["source"]
 run_stages(CFG_NAME, scoring_pool_stages(CFG_NAME; what = SRC["what"], provenance = SRC["provenance"]))

@@ -22,7 +22,7 @@ using VisualGeometryToolkitEval: cli_option, start_output_flush!
 using VisualGeometryToolkitEval.Datasets: PtRawTrees, PT_SCENES, load_pt_pairs, load_heb_pairs, RomaPair,
     load_roma_pairs
 using VisualGeometryToolkitEval.Pools: write_scene_pool
-using VisualGeometryToolkitEval.Experiments: load_run_config, data_root
+using VisualGeometryToolkitEval.Experiments: config_of_record, data_root
 using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem, GaussianSampler,
     ProsacSampler, UniformSampler, draw_hypotheses, TrackVariance, InlierVariance, minimal_sample_size
 using VisualGeometryToolkitCore: CameraModel, HomographyMap, UnlabeledFrame, GnomonicFrame
@@ -109,6 +109,6 @@ if abspath(PROGRAM_FILE) == @__FILE__
     start_output_flush!()
     name = cli_option(ARGS, "config", "")
     isempty(name) && error("generate_scoring_pools: --config=<name> is required (configs/<name>.toml)")
-    out = generate_scoring_pools(load_run_config(projectdir("configs", "$name.toml")))
+    out = generate_scoring_pools(config_of_record(name))
     println("GENERATE_SCORING_POOLS_DONE ", name, " -> ", out)
 end

@@ -24,10 +24,9 @@ using VisualGeometryToolkitEval.Tuning: tuning_spec, tuning_table, validation_sc
 # Included after cell_stages.jl and e2e_cells.jl (the folds, the registry, the arm tables).
 include(joinpath(@__DIR__, "e2e_timing.jl"))   # the timing cell (kind "e2e_timing")
 
-const PAPER_NUMBERS_PATH = joinpath(@__DIR__, "..", "configs", "paper_numbers.toml")
+const PAPER_NUMBERS_PATH = projectdir("configs", "paper_numbers.toml")
 const PAPER_NUMBERS_TEX = "paper_numbers.tex"
 
-_cfg_path(name) = joinpath(@__DIR__, "..", "configs", String(name) * ".toml")
 
 # ---- the HEB statistics cell (scripts/heb_inlier_stats.jl) ---------------------------
 """
@@ -39,7 +38,7 @@ source cell's cross-validation (its scenes and sampling).
 """
 function heb_counts_cell(cfg::AbstractDict)
     src_name = String(cfg["source"]["miscal_config"])
-    src = fold_sequential_cv!(load_run_config(_cfg_path(src_name)))
+    src = fold_sequential_cv!(config_of_record(src_name))
     for k in ("dataset", "matcher", "problem", "pool_dir")
         src["experiment"][k] == cfg["experiment"][k] || error("heb_stats: [experiment] $k differs from $(src_name)'s")
     end
@@ -144,17 +143,17 @@ function number_source_input(name, spec::AbstractDict)
         cfg_name == "pt_e_miscal" || error("[sources.$name]: the anchoring ablation of record is pt_e_miscal's")
         return EXP_ANCHOR_WITHOUT
     elseif kind == "budget"
-        return budget_cell_dir(fold_budget_cell!(load_run_config(_cfg_path(cfg_name))))
+        return budget_cell_dir(fold_budget_cell!(config_of_record(cfg_name)))
     elseif kind == "polish"
-        return joinpath(polish_cell_dir(fold_polish_cell!(load_run_config(_cfg_path(cfg_name)))), "polish_test.jld2")
+        return joinpath(polish_cell_dir(fold_polish_cell!(config_of_record(cfg_name))), "polish_test.jld2")
     elseif kind == "e2e"
-        return joinpath(e2e_cell_dir(fold_e2e_cell!(load_run_config(_cfg_path(cfg_name)))), "summary.tsv")
+        return joinpath(e2e_cell_dir(fold_e2e_cell!(config_of_record(cfg_name))), "summary.tsv")
     elseif kind == "e2e_timing"
         return timing_summary_path(e2e_timing_dir(e2e_timing_cell(cfg_name)))
     elseif kind == "selection"
         return joinpath(dirname(EXP_SEL_MISCAL_BUNDLE), "summary.jld2")
     elseif kind == "heb_stats"
-        return heb_counts_cell(load_run_config(_cfg_path(cfg_name))).counts
+        return heb_counts_cell(config_of_record(cfg_name)).counts
     end
     error("[sources.$name]: unknown kind $(repr(kind))")
 end
@@ -176,7 +175,7 @@ function load_number_source(name, spec::AbstractDict)
         need("basin ladder", "scripts/fig2_basin.jl ladder_test")
         return BasinSource(path, JLD2.load(path))
     elseif kind == "budget"
-        cfg = fold_budget_cell!(load_run_config(_cfg_path(cfg_name)))
+        cfg = fold_budget_cell!(config_of_record(cfg_name))
         files = [joinpath(path, "$s.jld2") for s in test_scenes(sidecar_cross_validation(budget_sidecar(cfg)))]
         foreach(f -> require_input(f; what = "budget curves", provenance = "the budget cell of $(cfg_name)"), files)
         return BudgetSource(path, budget_curves(files; arms = collect(String, JLD2.load(files[1], "arms"))))
@@ -207,7 +206,7 @@ function load_number_source(name, spec::AbstractDict)
         all(>(0), d["n_cs"]) || error("$(path): a pair without correspondences")
         return HebStatsSource(path, d["n_cs"], d["n_inl"], Float64(spec["low_inlier_ratio"]))
     elseif kind == "split"
-        cfg = fold_sequential_cv!(load_run_config(_cfg_path(cfg_name)))
+        cfg = fold_sequential_cv!(config_of_record(cfg_name))
         cv = tuning_spec(cfg, sequential_cv_scorer_entry(cfg["sequential_cv"], :ig)).scheme.cross_validation
         pool_dir = pool_input(cfg)
         sc = Dict("validation" => validation_scenes(cv), "test" => test_scenes(cv))
@@ -366,7 +365,7 @@ function paper_number_floors(cfg::AbstractDict)
     floors = Dict{String,Any}()
     for (n, s) in cfg["sources"]
         s["kind"] == "miscal" || continue
-        c = fold_sequential_cv!(load_run_config(_cfg_path(s["config"])))
+        c = fold_sequential_cv!(config_of_record(s["config"]))
         cv = tuning_spec(c, sequential_cv_scorer_entry(c["sequential_cv"], :ig)).scheme.cross_validation
         path = oracle_floors_path(sequential_cv_dir(c))
         oracle_floor_done(path, String(s["oracle"]);

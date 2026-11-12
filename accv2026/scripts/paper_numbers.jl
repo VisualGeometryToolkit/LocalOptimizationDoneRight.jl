@@ -37,7 +37,7 @@ const INPUTS = Dict(String(n) => number_source_input(n, s) for (n, s) in CFG["so
 const EFFECTIVE = merge(Dict{String,Any}(CFG),
     Dict{String,Any}("inputs" => Dict(n => relpath(p, results_root()) for (n, p) in INPUTS)))
 const KEY = run_key(EFFECTIVE)
-const OUTDIR = joinpath(results_root(), "PaperNumbers", "numbers-" * KEY)
+const OUTDIR = keyed_cell_dir(EFFECTIVE, "PaperNumbers", "numbers"; base = results_root())   # <results>/PaperNumbers/numbers-<KEY>
 const RECORD = joinpath(OUTDIR, "numbers.toml")
 const TEX = joinpath(PAPER_FIGDIR, PAPER_NUMBERS_TEX)
 
