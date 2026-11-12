@@ -73,6 +73,19 @@ its configs, scripts and paper (studentt-keyword-overload.md): every Student-t c
 - [x] docs/src/overview.md:75, accv2026/src/arm_rosters.jl:29/182/186/188 (`decision_boundary(WelschShape(), m)`), accv2026/src/welsch_zero_clamp.jl:51/52 (argument `boundary`)
 - [x] accv2026/scripts/tools/superansac_worker.jl:72 pysuperansac's own settings field is set by name, `setproperty!(c, Symbol(…), …)` with the field's name as a string (a foreign name, Core's FOREIGN_FORMAT_TOKENS); superansac.jl:300 (a string) and RansacLibLO's C++ member are foreign names: unchanged
 
+### The 0.9 concept-level duplication audit (2026-11-12; ~/logs/dgx-agent/dup-audit-lodr.md)
+
+- [x] the PoseLib extension's F/H re-wrap of PoseLib's FundMat/HomographyMat (SMatrix → Tuple → same type) and its dead `nothing` test → PoseLib's FitResult estimate (b2ab473)
+- [x] the PoseLib workspace's re-pack of the two-view frame's correspondences → the frame as Core's external-refit contract hands it (1b4a226)
+- [x] the mixture lifts' five restated posterior-state values → Core's `reset_posterior!` keeping every omitted keyword; only the inlier prior re-seeded, bit-identical (568bfdd)
+- [x] accv2026's private `_cfg_path` and six `load_run_config(projectdir("configs", …))` loaders → Eval's `config_of_record` (0e65395)
+- [x] accv2026 `pool_path`'s tier-root join → Eval's `tier_path`; the paper-numbers run directory → Eval's `keyed_cell_dir(…; base)` (0e65395)
+- [x] the anchoring ablation's scale interface read twice and its artifact path restated at writer and reader → one constant and `anchoring_ablation_path` (protocol_folds.jl) (0e65395, aa0e75f)
+- [x] the zero-clamp shape's restated Welsch r²(w̄) → Core's `zblock(::WelschShape)` (c361ca1)
+- [x] the pool producer's tree (3×) and scene set (2×), and two private :E/:F/:H problem tables → `pool_tree`/`pool_scenes` (validation_data.jl) and Eval's `problem_type` (1ecf4dc)
+- [x] hand-folded upstream run keys (`scorer_of_run`, `operating_points_run`, `e2e_run`, `superansac_run`) → Eval's `run_key(cfg; upstream)` through `upstream_runs` (1ecf4dc, 7a4cc92; the keys move, the stored runs are promoted)
+- [x] accv2026 scripts/fetch_data.jl's copy of the catalog listing and fetch report → Eval's `fetch_data!(project_catalog())` (6ddf191)
+
 ## Not a duplicate
 
 - `_config_default` (src/config_defaults.jl, audit 20 "defaults readers"): a one-line binding of this package's
