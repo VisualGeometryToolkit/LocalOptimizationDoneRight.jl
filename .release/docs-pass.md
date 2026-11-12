@@ -1,9 +1,9 @@
-docs-pass: 67d770e
+docs-pass: fc68fdb
 landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io c55bb03
 
 # LocalOptimizationDoneRight 0.6.0: docs pass
 
-On the release commit 67d770e ("Bump version: LocalOptimizationDoneRight 0.5.1 → 0.6.0").
+On the release tree: the bump 67d770e ("Bump version: LocalOptimizationDoneRight 0.5.1 → 0.6.0"), re-confirmed on fc68fdb (accv2026's RANSACScoringDoneRight compat 0.7, no docs-relevant change).
 
 - Public API since v0.5.1:
   - Renames, each documented and in the manual, with every mention updated: `LO_TAGS` → `LODR_STRATEGY_TAGS`, `WELSCH_HQ_SCALE_MULTIPLE_*` → `WELSCH_HQ_EFFICIENCY_CONSTANT_*`, `scale_multiple` → `efficiency_constant`.
