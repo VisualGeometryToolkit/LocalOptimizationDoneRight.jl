@@ -58,9 +58,8 @@ VgtkCore.loss_label(::Type{WelschZeroClampShape}) = VgtkCore.loss_label(WelschSh
 #     w̄ >= one(w̄) && return rinv2, zero(rinv2)
 # Below it: the stock Welsch z-block (same arithmetic as 92597af for w̄ < 1).
 @inline function VgtkCore.zblock(::WelschZeroClampShape, w̄, sq_loss_width)
-    rinv2 = -sq_loss_width * log(w̄)                                # r²(w̄) = −c²·ln w̄
-    w̄ >= one(w̄) && return rinv2, zero(rinv2)
-    return VgtkCore.zblock(WelschShape(), w̄, sq_loss_width)
+    rinv2, hreg = VgtkCore.zblock(WelschShape(), w̄, sq_loss_width)   # Welsch's own r²(w̄) and z-block Hessian
+    return rinv2, w̄ >= one(w̄) ? zero(hreg) : hreg                   # the zero clamp: hreg = 0 at w̄ ≥ 1
 end
 
 # The strategy's label: its base's, marked (the arm's figure/legend label).
