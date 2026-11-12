@@ -118,7 +118,7 @@ end
 # mixture's weight and slope after every ECM update.
 
 # The state (`PosteriorWeightState(n; ν, s_hat_sq, log_two_outlier_halfwidth, codimension,
-# inlier_prior)` — Jeffreys, π clamped by the toolkit's one clamp), the ECM cycle
+# inlier_prior, prior)` — the scoring's scale prior, π clamped by the toolkit's one clamp), the ECM cycle
 # (`mixture_ecm!`), the NLL (`mixture_nll(pws, r, n)`) and the κ² table
 # (`tabulate!(tab, StudentTMixture(pws))`) are all VisualGeometryToolkitCore's; nothing of the
 # mixture's math is restated here.
@@ -137,7 +137,8 @@ function _mixture_lift_setup(L::LoBuffers, problem::EssentialProblem, model, cs:
     pws = reset_posterior!(
         rws; ν = student_t_dof(rws), s_hat_sq = s_hat_sq(rws),
         log_two_outlier_halfwidth = log(2 * a),
-        codimension = codimension(problem), inlier_prior = inlier_count(cs) / n
+        codimension = codimension(problem), inlier_prior = inlier_count(cs) / n,
+        prior = scale_prior(scoring)   # the scoring's scale prior, the one consensus_posterior seeded
     )
     return prov, pws
 end

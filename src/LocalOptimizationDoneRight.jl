@@ -56,7 +56,7 @@ import VisualGeometryToolkitCore: locally_optimize!, update_model!, update_resid
     lift_wmax, lift_conjugate, lift_zblock   # the tabulated lift answers the loss's lift facet
 # The core optimization strategies and the strategy registry machinery (VisualGeometryToolkitCore
 # robust/strategies.jl): the types, the shared loss table and the keyword constructor.
-using VisualGeometryToolkitCore: Irls, LOSS_TAGS, lo_loss, strategy_loss, lo_width_value, lo_construct
+using VisualGeometryToolkitCore: Irls, LOSS_TAGS, lo_loss, strategy_loss, lo_width_value, lo_construct, scale_prior
 using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation, LoBuffers, LiftableProblem,
     BoundedProblem, EssentialProblem, PosteriorLikelihood, StopWhenNoImprovement,
     posterior_irls!, consensus_posterior, required_outlier_halfwidth
