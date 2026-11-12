@@ -65,7 +65,7 @@ maamax = 0.70
 
 # ---- the inputs of record (VisualGeometryToolkitEval Reproduce: `missing_inputs` checks each
 # path under the data root before a launch, and its content before a run). Each `sha256` is
-# VisualGeometryToolkitEval's tree_sha256 of the directory, computed read-only on dgx01's
+# VisualGeometryToolkitEval's tree_sha256 of the directory, computed read-only on the author's
 # data root on 2026-11-12 (accv2026 6bfe1bc). A pool tree's `_v3/` directory is an
 # archived earlier copy kept beside the pool (2026-10-02..06; the pool readers open
 # `<scene>.jld2` by name and never read it): not part of the pool of record, so
