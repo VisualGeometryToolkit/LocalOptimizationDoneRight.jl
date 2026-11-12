@@ -39,17 +39,17 @@ _poselib_strategy(::PoseLibLZ) = LeZach()
     PoseLibWorkspace
 
 The per-pair workspace of a PoseLib refiner: the frame's calibrations `Kc₁`,
-`Kc₂` and its correspondences as a concretely typed `Point2{Float64}`
-`Csponds` (the form PoseLib's `refine_*` consume).
+`Kc₂` and its correspondences, as the two-view frame of VisualGeometryToolkitCore's
+external-refit contract hands them over (`Kc1`, `Kc2` 3×3; `cs` a `Csponds` of
+`Point2{Float64}`, the form PoseLib's `refine_*` consume) — held as they are,
+not re-packed.
 """
 struct PoseLibWorkspace
     Kc1::SMatrix{3, 3, Float64, 9}
     Kc2::SMatrix{3, 3, Float64, 9}
     cs::Csponds{Point2{Float64}, Point2{Float64}, Vector{Point2{Float64}}, Vector{Point2{Float64}}, @NamedTuple{}}
 end
-PoseLibWorkspace(frame) =
-    PoseLibWorkspace(SMatrix{3, 3, Float64, 9}(frame.Kc1), SMatrix{3, 3, Float64, 9}(frame.Kc2),
-                     Csponds(Point2{Float64}.(sources(frame.cs)), Point2{Float64}.(targets(frame.cs))))
+PoseLibWorkspace(frame) = PoseLibWorkspace(frame.Kc1, frame.Kc2, frame.cs)
 
 external_workspace(::Union{PoseLibLm, PoseLibLZ}, _problem, frame, _scoring) = PoseLibWorkspace(frame)
 
