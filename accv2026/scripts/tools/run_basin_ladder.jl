@@ -63,10 +63,12 @@ start_output_flush!()
 # applied to the per-pair oracle scale. There is NO fixed-multiple mode: a
 # common efficiency constant does not translate across losses.
 # =============================================================================
-const ARGV     = ARGS
-const CFG_PATH = cli_option(ARGV, "config")
+const CFG_PATH = cli_option(ARGS, "config")
 const CELL     = first(splitext(basename(CFG_PATH)))
 const LADDER   = ladder_cell(CELL)
+# the basin cell named on the command line, read by Eval's loader, must be the config of record the ladder keys
+load_run_config(CFG_PATH)["experiment"] == LADDER["experiment"] ||
+    error("run_basin_ladder: --config=$(CFG_PATH) is not configs/$(CELL).toml, the config of record of cell $(CELL)")
 const KEY      = run_key(LADDER)
 const BL       = LADDER["basin_ladder"]
 const POOL_DIR = joinpath(data_root(), LADDER["experiment"]["pool_dir"])
