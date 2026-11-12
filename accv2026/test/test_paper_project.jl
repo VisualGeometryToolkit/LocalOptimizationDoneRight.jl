@@ -13,6 +13,7 @@ using Test
 using VisualGeometryToolkitEval.PaperProjects: paper_project_violations
 using VisualGeometryToolkitEval.Reproduce: reproduce_script
 
+@testset "paper project" begin
 @testset "paper-project conventions" begin
     v = paper_project_violations(normpath(joinpath(@__DIR__, ".."));
                                  papers = ["paper/main.tex", "paper/supplement.tex"])
@@ -25,4 +26,5 @@ end
 @testset "scripts/reproduce/reproduce.sh is Eval's generated bootstrap" begin
     @test read(joinpath(@__DIR__, "..", "scripts", "reproduce", "reproduce.sh"), String) ==
           reproduce_script(; julia_project = "accv2026")
+end
 end
