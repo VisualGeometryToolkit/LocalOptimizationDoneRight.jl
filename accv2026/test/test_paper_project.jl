@@ -11,10 +11,18 @@
 # =============================================================================
 using Test
 using VisualGeometryToolkitEval.PaperProjects: paper_project_violations
+using VisualGeometryToolkitEval.Reproduce: reproduce_script
 
 @testset "paper-project conventions" begin
     v = paper_project_violations(normpath(joinpath(@__DIR__, ".."));
                                  papers = ["paper/main.tex", "paper/supplement.tex"])
     foreach(x -> @info("paper-project violation", x), v)
     @test isempty(v)
+end
+
+# The runner bootstrap is Eval's, generated (Reproduce.write_reproduce_script(repo_root;
+# julia_project = "accv2026")), never a hand-written copy: regenerate it when this fails.
+@testset "scripts/reproduce/reproduce.sh is Eval's generated bootstrap" begin
+    @test read(joinpath(@__DIR__, "..", "scripts", "reproduce", "reproduce.sh"), String) ==
+          reproduce_script(; julia_project = "accv2026")
 end
