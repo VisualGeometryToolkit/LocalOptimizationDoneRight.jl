@@ -44,7 +44,7 @@ const KEY     = run_key(CFG)
 const SMOKE   = "--smoke" in ARGS ? datadir("sims", "e2e-$(KEY)-smoke") : cli_option(ARGS, "smoke", "")
 const OUTDIR  = isempty(SMOKE) ? e2e_cell_dir(CFG) : SMOKE
 # A smoke run's records state the subset it ran (its config's [smoke] table), so they
-# never pass for the cell's.
+# are never mistaken for the cell's.
 const RECORD_CFG = isempty(SMOKE) ? CFG :
     merge(CFG, Dict{String,Any}("smoke" => Dict{String,Any}("scenes" => 1, "pairs_per_scene" => 20, "zetas" => [1.0])))
 const POOL    = joinpath(data_root(), CFG["experiment"]["pool_dir"])
