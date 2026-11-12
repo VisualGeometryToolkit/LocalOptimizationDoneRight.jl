@@ -46,6 +46,22 @@ VgtkCore.decision_boundary(s::UniformOutlierScoring, buf) = VgtkCore.decision_bo
 VgtkCore.has_decision_boundary(::Type{UniformOutlierScoring{S}}) where {S} = VgtkCore.has_decision_boundary(S)
 VgtkCore.score_bound(s::UniformOutlierScoring) = VgtkCore.score_bound(s.inner)
 
+# The same scorer with a non-Jeffreys scale prior (its own `scale_prior`), for the test
+# that a mixture lift keeps the scoring's prior.
+struct PriorScoring{S <: AbstractScoring} <: AbstractScoring
+    inner::S
+    prior::VgtkCore.IGPrior
+end
+VgtkCore.scale_prior(s::PriorScoring) = s.prior
+VgtkCore.outlier_halfwidth(s::PriorScoring) = VgtkCore.outlier_halfwidth(s.inner)
+VgtkCore.scoring_workspace(s::PriorScoring, n::Int, d_g::Int) = VgtkCore.scoring_workspace(s.inner, n, d_g)
+VgtkCore.score!(W, s::PriorScoring, q, r, n::Int; kw...) = VgtkCore.score!(W, s.inner, q, r, n; kw...)
+VgtkCore.inlier_count(s::PriorScoring, W) = VgtkCore.inlier_count(s.inner, W)
+VgtkCore.consensus_order(s::PriorScoring, W) = VgtkCore.consensus_order(s.inner, W)
+VgtkCore.decision_boundary(s::PriorScoring, buf) = VgtkCore.decision_boundary(s.inner, buf)
+VgtkCore.has_decision_boundary(::Type{PriorScoring{S}}) where {S} = VgtkCore.has_decision_boundary(S)
+VgtkCore.score_bound(s::PriorScoring) = VgtkCore.score_bound(s.inner)
+
 const N_IN = 150
 rng = MersenneTwister(5)
 R, t, _, E_true, matches = sample_twoview_scene(rng, N_IN)
@@ -124,6 +140,21 @@ end
     for lo in (StudentTUniform(), StuTuHQTabulated(), StuTuRegemm())
         @test_throws ArgumentError run_lo(lo, problem, msac, seed)
     end
+end
+
+# The mixture lifts (StuTuHQTabulated, StuTuRegemm) reset the workspace's posterior
+# state: its scale prior is the scoring's (`scale_prior(scoring)`, the prior
+# consensus_posterior seeds), never Jeffreys by default.
+@testset "a mixture lift keeps the scoring's scale prior" begin
+    ig = VgtkCore.IGPrior(3.0, 2.0)
+    @test ig != VgtkCore.JeffreysPrior()
+    sc = PriorScoring(stu, ig)
+    ws, cs = scored_consensus(StuTuHQTabulated(), problem, sc, seed)
+    _, pws = LocalOptimizationDoneRight._mixture_lift_setup(ws.lo_ws, problem, seed, cs, ws.buf, sc)
+    @test pws.prior == ig
+    ws, cs = scored_consensus(StuTuHQTabulated(), problem, stu, seed)
+    _, pws = LocalOptimizationDoneRight._mixture_lift_setup(ws.lo_ws, problem, seed, cs, ws.buf, stu)
+    @test pws.prior == VgtkCore.JeffreysPrior()          # a scorer without a prior: Jeffreys, as before
 end
 
 @testset "HQ dispatch" begin
