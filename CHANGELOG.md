@@ -8,11 +8,16 @@ Eval and RANSACScoringDoneRight on 0.9.
 
 ### Breaking
 
-- **`LO_TAGS` is renamed `LODR_STRATEGY_TAGS`** (VisualGeometryToolkitEstimation owns the
-  name `LO_TAGS`, its core registry, and VisualGeometryToolkitCore `STRATEGY_TAGS`, the
-  registry of its core strategies). The registry is unchanged. Migration:
+- **`LO_TAGS` is renamed `LODR_STRATEGY_TAGS`** (VisualGeometryToolkitEstimation owned the
+  name `LO_TAGS`, its core registry, now `OPTIMIZATION_STRATEGY_TAGS`, and
+  VisualGeometryToolkitCore `STRATEGY_TAGS`, the registry of its core strategies). The
+  registry is unchanged. Migration:
   `merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.LO_TAGS)` →
-  `merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.LODR_STRATEGY_TAGS)`.
+  `merge(VisualGeometryToolkitEstimation.OPTIMIZATION_STRATEGY_TAGS, LocalOptimizationDoneRight.LODR_STRATEGY_TAGS)`.
+- **The mixture lifts keep the scoring's scale prior.** `StuTuHQTabulated` and
+  `StuTuRegemm` reset the posterior state with `scale_prior(scoring)`; they used to
+  reset it to Jeffreys whatever the scoring's prior. A Jeffreys scoring (every E cell
+  of the paper) is unchanged.
 - **`scale_multiple` is `efficiency_constant`** (VisualGeometryToolkitCore's
   `ScaleMultiple` is `EfficiencyConstant`): every strategy keyword and field, the TOML
   key, `[[tuning_constants]] efficiency_constant`, the `WELSCH_HQ_EFFICIENCY_CONSTANT_*`

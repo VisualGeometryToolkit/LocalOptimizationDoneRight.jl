@@ -9,7 +9,7 @@
 #
 # and loaded through the core's one entry with the two registries merged:
 #
-#     optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LODR_STRATEGY_TAGS))
+#     optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.OPTIMIZATION_STRATEGY_TAGS, LODR_STRATEGY_TAGS))
 #
 # `loss` (HQ, Gnc) selects the robust loss from the core's LOSS_TAGS; `gnc`
 # wraps an inner static strategy named by `inner` + `loss`. A width is

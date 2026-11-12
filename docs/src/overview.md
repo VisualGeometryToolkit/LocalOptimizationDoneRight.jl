@@ -105,7 +105,7 @@ to read a strategy table of either package, such as a `find_*` pipeline's
 
 ```julia
 lo = optimization_strategy_from_toml(d; class = :essential,
-    tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LocalOptimizationDoneRight.LODR_STRATEGY_TAGS))
+    tags = merge(VisualGeometryToolkitEstimation.OPTIMIZATION_STRATEGY_TAGS, LocalOptimizationDoneRight.LODR_STRATEGY_TAGS))
 ```
 
 In such a table, `efficiency_constant = "cross_validated"` resolves through

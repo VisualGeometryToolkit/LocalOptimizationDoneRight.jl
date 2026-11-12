@@ -31,7 +31,7 @@ using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: WelschHQEcm, WelschHQNewton
 const LO = LocalOptimizationDoneRight
 # The merged strategy registry: the core's tags and this package's.
-const TAGS = merge(VgtkEstimation.LO_TAGS, LocalOptimizationDoneRight.LODR_STRATEGY_TAGS)
+const TAGS = merge(VgtkEstimation.OPTIMIZATION_STRATEGY_TAGS, LocalOptimizationDoneRight.LODR_STRATEGY_TAGS)
 # NOT exported: under the old serial suite this was visible because an earlier
 # `include` had imported it into the shared namespace. Items get their own
 # module, so it must be named here.

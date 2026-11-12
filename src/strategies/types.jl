@@ -631,7 +631,7 @@ This package's local-optimization strategy registry (VisualGeometryToolkitCore's
 `TagRegistry`, built by VisualGeometryToolkitEstimation's `@lo_registry`): TOML
 tag → strategy type or loss-parametric family, the tag `snake_case` of the
 type's name. Retired tags name their successor. Merge it with the core's to
-load either: `merge(VisualGeometryToolkitEstimation.LO_TAGS, LODR_STRATEGY_TAGS)`.
+load either: `merge(VisualGeometryToolkitEstimation.OPTIMIZATION_STRATEGY_TAGS, LODR_STRATEGY_TAGS)`.
 """
 const LODR_STRATEGY_TAGS = VgtkCore.@lo_registry _STRATEGY_ROWS defaults = _DEFAULTS_OF_RECORD["optimization_strategy"] retired = (
     "stutu_bcd" => "stu_tu_bcd", "stutu_hq_tabulated" => "stu_tu_hq_tabulated", "stutu_regemm" => "stu_tu_regemm",

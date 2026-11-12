@@ -19,7 +19,7 @@ VisualGeometryToolkitEstimation's problems:
   load with PoseLib, a package extension);
 - the cross-validated operating points ([`tuning_constant`](@ref)) and the
   strategies' TOML registry ([`LODR_STRATEGY_TAGS`](@ref)), merged with the core's to load:
-  `optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LODR_STRATEGY_TAGS))`.
+  `optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.OPTIMIZATION_STRATEGY_TAGS, LODR_STRATEGY_TAGS))`.
 
 Compose one with any scorer: `find_essential(cam1, cam2, pairs; local_optimization_strategy
 = HQ{WelschShape}(efficiency_constant = WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL))`.

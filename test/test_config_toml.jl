@@ -3,7 +3,7 @@
 # this package's strategies, and they load through VisualGeometryToolkitEstimation's one
 # entry over the MERGED registry:
 #
-#     optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.LO_TAGS, LODR_STRATEGY_TAGS))
+#     optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.OPTIMIZATION_STRATEGY_TAGS, LODR_STRATEGY_TAGS))
 #
 # What this pins: the shipped file is what the constructors default to and is
 # complete over every strategy field; every tag round-trips through
@@ -25,7 +25,7 @@ using LocalOptimizationDoneRight: LODR_STRATEGY_TAGS, BarronAdaptive, StuTuRegem
 const RVG = VisualGeometryToolkitEstimation
 const LO = LocalOptimizationDoneRight
 
-const TAGS = merge(RVG.LO_TAGS, LO.LODR_STRATEGY_TAGS)
+const TAGS = merge(RVG.OPTIMIZATION_STRATEGY_TAGS, LO.LODR_STRATEGY_TAGS)
 load(d; class = :homography) = optimization_strategy_from_toml(d; class, tags = TAGS)
 # A width-carrying strategy's efficiency constant (its `EfficiencyConstant` width mode).
 sm(lo) = VgtkCore.lo_width(lo).value
@@ -71,9 +71,9 @@ sm(lo) = VgtkCore.lo_width(lo).value
 
     @testset "round trip: every tag, through the merged registry" begin
         # Both registries' tags, no overlap ("none", no strategy, is the core's alone).
-        @test isempty(intersect(collect(keys(RVG.LO_TAGS)), collect(keys(LODR_STRATEGY_TAGS))))
-        @test !haskey(LODR_STRATEGY_TAGS, "none") && RVG.LO_TAGS["none"] === nothing
-        @test sort(collect(keys(TAGS))) == sort([collect(keys(RVG.LO_TAGS)); collect(keys(LODR_STRATEGY_TAGS))])
+        @test isempty(intersect(collect(keys(RVG.OPTIMIZATION_STRATEGY_TAGS)), collect(keys(LODR_STRATEGY_TAGS))))
+        @test !haskey(LODR_STRATEGY_TAGS, "none") && RVG.OPTIMIZATION_STRATEGY_TAGS["none"] === nothing
+        @test sort(collect(keys(TAGS))) == sort([collect(keys(RVG.OPTIMIZATION_STRATEGY_TAGS)); collect(keys(LODR_STRATEGY_TAGS))])
         for (tag, T) in LODR_STRATEGY_TAGS
             takes_efficiency_constant = :width in fieldnames(T) || hasfield(T, :efficiency_constant)
             # the minimal table for this tag: only the keys it actually takes
