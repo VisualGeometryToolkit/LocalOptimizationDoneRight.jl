@@ -9,7 +9,7 @@
 # E `refine_relpose` (camera-aware, from the seed's cheirality-resolved pose),
 # F `refine_fundamental`, H `refine_homography` (symmetric transfer error,
 # per-side truncation), all in the pool frame. `TLSShape()` = TLS-LM,
-# `LeZachTruncation()` = TLS-LZ. The E cheirality (fast cross-product vote,
+# `LeZach()` = TLS-LZ. The E cheirality (fast cross-product vote,
 # strided-subsampled) runs INSIDE the refine — it is part of the refit
 # pipeline, matching a native refit, which decomposes internally.
 # =============================================================================
@@ -20,18 +20,20 @@ using LocalOptimizationDoneRight: LocalOptimizationDoneRight, PoseLibLm, PoseLib
 const _config_default = LocalOptimizationDoneRight._config_default
 const _ADAPT_OPERATING_EFFICIENCY_CONSTANT = LocalOptimizationDoneRight._ADAPT_OPERATING_EFFICIENCY_CONSTANT
 import LocalOptimizationDoneRight: truncated_refit_pose
-using PoseLib: refine_relpose, refine_fundamental, refine_homography, LeZachTruncation
+using PoseLib: refine_relpose, refine_fundamental, refine_homography, LeZach
 using StaticArrays: SMatrix
 using VisualGeometryToolkitCore: VisualGeometryToolkitCore, EssentialMat, FundMat, HomographyMat, Csponds, Point2, Vec3,
     EuclideanMap, TLSShape, LossWidth, OutlierHalfwidth, loss_width, sources, targets, cheiral_pose_fast,
     codimension, data_size, mahalanobis_distances!, with_width, loss_width_to_outlier_halfwidth, FixedS2, scale_s2,
-    deploy, fit_scale, JeffreysPrior
+    deploy, fit_scale, JeffreysPrior, Irls, estimate
 import VisualGeometryToolkitCore: external_workspace, prepare_external!, refine_external!
 using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem, RansacWorkspace, consensus_s2!
 
-# The PoseLib loss each truncated arm refines on.
-_poselib_loss(::PoseLibLm) = TLSShape()
-_poselib_loss(::PoseLibLZ) = LeZachTruncation()
+# The PoseLib strategy each truncated arm refines with (PoseLib's refine_* take
+# Core's `Irls{K}` or PoseLib's own `LeZach()` marker as `optimization_strategy`,
+# the width as `width`; robust-contract B5).
+_poselib_strategy(::PoseLibLm) = Irls{TLSShape}()
+_poselib_strategy(::PoseLibLZ) = LeZach()
 
 """
     PoseLibWorkspace
@@ -65,8 +67,8 @@ end
 
 truncated_refit_pose(lo::Union{PoseLibLm, PoseLibLZ}, ws::PoseLibWorkspace, problem::EssentialProblem, seed_E,
                      loss_width::Float64) =
-    refine_relpose(_cheiral_seed_pose(problem, seed_E), ws.Kc1, ws.Kc2, ws.cs;
-                   loss_width, max_iter = lo.max_iter, loss = _poselib_loss(lo))
+    estimate(refine_relpose(_cheiral_seed_pose(problem, seed_E), ws.Kc1, ws.Kc2, ws.cs;
+                            width = loss_width, max_iter = lo.max_iter, optimization_strategy = _poselib_strategy(lo)))
 
 function refine_external!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, problem::EssentialProblem,
                           seed_E, width::LossWidth, _scoring)
@@ -76,16 +78,16 @@ function refine_external!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ},
 end
 function refine_external!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, ::FundMatProblem,
                           seed_F, width::LossWidth, _scoring)
-    F = refine_fundamental(SMatrix{3, 3, Float64, 9}(seed_F), ws.cs;
-                           loss_width = loss_width(width), max_iter = lo.max_iter, loss = _poselib_loss(lo))
-    F === nothing && return nothing
+    F = estimate(refine_fundamental(SMatrix{3, 3, Float64, 9}(seed_F), ws.cs;
+                                    width = loss_width(width), max_iter = lo.max_iter,
+                                    optimization_strategy = _poselib_strategy(lo)))
     return FundMat(Tuple(SMatrix{3, 3, Float64, 9}(F)))
 end
 function refine_external!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, ::HomographyProblem,
                           seed_H, width::LossWidth, _scoring)
-    H = refine_homography(SMatrix{3, 3, Float64, 9}(seed_H), ws.cs;
-                          loss_width = loss_width(width), max_iter = lo.max_iter, loss = _poselib_loss(lo))
-    H === nothing && return nothing
+    H = estimate(refine_homography(SMatrix{3, 3, Float64, 9}(seed_H), ws.cs;
+                                   width = loss_width(width), max_iter = lo.max_iter,
+                                   optimization_strategy = _poselib_strategy(lo)))
     return HomographyMat{Float64}(Tuple(SMatrix{3, 3, Float64, 9}(H)))
 end
 
@@ -177,8 +179,8 @@ function refine_external!(ws::AdaptWorkspace, lo::PoseLibLmAdaptLossWidth, probl
     pose = _cheiral_seed_pose(problem, seed_E)
     local ref = nothing
     for round in 1:lo.rounds
-        ref = refine_relpose(pose, pl.Kc1, pl.Kc2, pl.cs; loss_width = w, max_iter = inner, loss = TLSShape())
-        ref === nothing && return nothing
+        ref = estimate(refine_relpose(pose, pl.Kc1, pl.Kc2, pl.cs; width = w, max_iter = inner,
+                                      optimization_strategy = Irls{TLSShape}()))
         pose = EuclideanMap(ref.R, Vec3{Float64}(ref.t))
         round == lo.rounds && break
         s2t = _adapt_s2(ws, problem, ref.R, ref.t, w)

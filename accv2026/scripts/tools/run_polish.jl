@@ -9,7 +9,7 @@
 #           (`refit_model` — the refit layer's native refit, model kept); its
 #           error must equal the sidecar's ζ = 1 evaluation, pair for pair
 #   polishers on E_LO ([polish] polishers):
-#     l2_stutu  PoseLib least squares (GaussianShape = TrivialLoss) on the
+#     l2_stutu  PoseLib least squares (`optimization_strategy = nothing` = TrivialLoss) on the
 #               Stu-tU partition I* at E_LO under the scorer at a* — the
 #               pipeline's own inlier set (the RANSAC workspace's score sweep:
 #               `_score_and_sweep!` → ws.mask); no threshold, no parameter
@@ -31,7 +31,7 @@ using VisualGeometryToolkitEval.Evaluation: build_pair_ctx, refit_model, refit_s
 using LocalOptimizationDoneRight: truncated_refit_pose, PoseLibLm
 using VisualGeometryToolkitEstimation: EssentialProblem, RansacWorkspace
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
-using VisualGeometryToolkitCore: EssentialMat, EuclideanMap, Vec3, cheiral_pose_fast, GaussianShape, best_pool_model,
+using VisualGeometryToolkitCore: EssentialMat, EuclideanMap, Vec3, cheiral_pose_fast, estimate, best_pool_model,
     score_model!, consensus_mask, external_workspace
 using VisualGeometryToolkitCore.Synthetic: pose_error
 using PoseLib: refine_relpose
@@ -83,8 +83,8 @@ function pair_rows(pair, R)
         pol = map(POLISHERS) do p
             ref = try
                 p === :tls ? truncated_refit_pose(TLS_LO, tls_ws, ctx.ep, E, TLS_WIDTH) :
-                    (count(stutu) >= 8 ? refine_relpose(EuclideanMap(Rs, Vec3{Float64}(ts)), g.Kc1, g.Kc2, g.cs[stutu];
-                                                        max_iter = MAX_ITER, loss = GaussianShape()) : nothing)
+                    (count(stutu) >= 8 ? estimate(refine_relpose(EuclideanMap(Rs, Vec3{Float64}(ts)), g.Kc1, g.Kc2, g.cs[stutu];
+                                                        max_iter = MAX_ITER, optimization_strategy = nothing)) : nothing)
             catch e
                 BAILS[] += 1
                 BAILS[] <= 3 && @warn "polish bailed (E_LO kept)" polisher = p exception = sprint(showerror, e)[1:min(end, 300)]
