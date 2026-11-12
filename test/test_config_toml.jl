@@ -226,3 +226,14 @@ end
         @test_throws ArgumentError load(Dict("type" => type, key => 3.0); class = :essential)
     end
 end
+
+# One defaults reader (robust-config-one-schema): the package parses its defaults of
+# record through VisualGeometryToolkitCore's `parse_defaults` (which records the file as a
+# precompilation dependency), never a TOML.parsefile of its own.
+@testset "the defaults of record are read by Core's parse_defaults" begin
+    src = joinpath(pkgdir(LocalOptimizationDoneRight), "src")
+    hits = [relpath(joinpath(r, f), src) for (r, _, fs) in walkdir(src) for f in fs
+            if endswith(f, ".jl") && occursin("TOML.parsefile", read(joinpath(r, f), String))]
+    @test isempty(hits)
+    @test LO._DEFAULTS_OF_RECORD == VgtkCore.parse_defaults(joinpath(pkgdir(LocalOptimizationDoneRight), "configs", "default.toml"))
+end

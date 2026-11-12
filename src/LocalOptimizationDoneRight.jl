@@ -32,7 +32,6 @@ import VisualGeometryToolkitEstimation as VgtkEstimation
 using LinearAlgebra: I, dot, norm
 using StaticArrays: SMatrix, SVector
 using Statistics: Statistics
-using TOML: TOML
 
 # --- Upstream stack: public names only ----------------------------------------
 using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractOptimizationStrategy, AbstractLossShape, AbstractBlockCoordinateMethod,
@@ -47,7 +46,7 @@ using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractOptimization
     keep_best, StoppingCriterion, PosteriorWeightState, reset_posterior!, StudentTMixture, posterior_weight,
     posterior_weight_derivative, mixture_ecm!, mixture_nll, s_hat_sq, student_t_dof,
     sq_distances, robust_weight, FrozenNuisance, truncated_log_normaliser, data_size, codimension,
-    refine!, fit_scale, JeffreysPrior, weighted_sq, iterations, retcode, toml_default, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
+    refine!, fit_scale, JeffreysPrior, weighted_sq, iterations, retcode, toml_default, parse_defaults, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
     lift_retract, lift_model, lift_valid, lift_rows, lift_residuals, lift_size,
     block_coordinate_descent!, path_suffix, optimization_path, EssentialMat
 # The contract verbs this package adds methods to.
