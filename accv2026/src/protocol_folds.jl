@@ -168,7 +168,8 @@ function fold_sequential_cv!(cfg)
     # ONE scorer per (dataset, model class): `scorer_of` names the cell whose
     # scorer stage this cell READS instead of re-tuning it — the same pools,
     # problem, cross-validation and scorer entries, refused otherwise. That
-    # cell's keyed directory keys this one, so a re-tuned scorer re-keys it.
+    # cell's run keys this one as an UPSTREAM run (`sequential_cv_upstream`,
+    # Eval's `run_key(; upstream)`), so a re-tuned scorer re-keys it.
     if haskey(sq, "scorer_of")
         name = String(sq["scorer_of"])
         src = fold_sequential_cv!(config_of_record(name))
@@ -187,7 +188,6 @@ function fold_sequential_cv!(cfg)
             haskey(src["tuning"], n) && src["tuning"][n] == cfg["tuning"][n] ||
                 error("[sequential_cv] scorer_of = \"$name\": its [tuning.$n] differs or is absent")
         end
-        cfg["scorer_of_run"] = run_key(src)
     end
     return fold_arm_protocol!(cfg)
 end
@@ -208,7 +208,7 @@ function operating_points_run(config_name::AbstractString)
     cfg = fold_sequential_cv!(config_of_record(config_name))
     delete!(cfg["sequential_cv"], "objective_matched")
     delete!(cfg["sequential_cv"], "zero_clamp")
-    return run_key(cfg)
+    return sequential_cv_key(cfg)
 end
 
 """
@@ -300,11 +300,7 @@ a `scorer_of` cell — the keyed directory of the cell it reads it from.
 function sequential_cv_scorer_path(cfg)
     sq = cfg["sequential_cv"]
     haskey(sq, "scorer_of") || return joinpath(sequential_cv_dir(cfg), SEQUENTIAL_CV_SCORER)
-    src = dirname(miscal_sidecar_of(String(sq["scorer_of"])))
-    basename(src) == "sequential-cv-" * cfg["scorer_of_run"] ||
-        error("scorer_of = $(sq["scorer_of"]): its keyed directory $(basename(src)) is not the run this " *
-              "config was folded against ($(cfg["scorer_of_run"])) — re-fold")
-    return joinpath(src, SEQUENTIAL_CV_SCORER)
+    return joinpath(dirname(miscal_sidecar_of(String(sq["scorer_of"]))), SEQUENTIAL_CV_SCORER)
 end
 
 """
@@ -333,7 +329,23 @@ stages together.
 """
 sequential_cv_dir(cfg) =
     keyed_cell_dir(cfg, get(cfg["sequential_cv"], "roster", "composed") == "basin" ? "Basin" : "Miscalibration",
-                   "sequential-cv")
+                   "sequential-cv"; upstream = sequential_cv_upstream(cfg))
+
+"""
+    sequential_cv_upstream(cfg) -> Union{Nothing, NamedTuple}
+
+The upstream run of a folded sequential-CV cell (Eval's `run_key(; upstream)`):
+for a `scorer_of` cell, the run key of the cell whose scorer stage it reads;
+`nothing` otherwise.
+"""
+function sequential_cv_upstream(cfg)
+    sq = cfg["sequential_cv"]
+    haskey(sq, "scorer_of") || return nothing
+    return (; scorer_of = run_key(fold_sequential_cv!(config_of_record(String(sq["scorer_of"])))))
+end
+
+"The run key of a folded sequential-CV cell, its upstream run folded in: the key of its `sequential_cv_dir`."
+sequential_cv_key(cfg) = run_key(cfg; upstream = sequential_cv_upstream(cfg))
 
 """
     fold_sensitivity_cell!(cfg) -> cfg

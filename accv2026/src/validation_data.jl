@@ -22,8 +22,29 @@ using VisualGeometryToolkitEval.Tuning: CrossValidation, SceneSplit, ExhaustiveS
 import VisualGeometryToolkitEval.Tuning: sampling_unit
 using VisualGeometryToolkitEval.Pools: load_pool, load_pool_residuals, residuals_path
 using VisualGeometryToolkitCore.Pools: PoolPair
+using VisualGeometryToolkitEval.Experiments: data_root
 
 const TWO_VIEW_UNIT = sampling_unit(PoolPair)
+
+"""
+    pool_tree(cfg) -> String
+
+The scoring-pool tree a pool config of record (configs/*_pools.toml) produces:
+its `[experiment] pool_dir` under the data root. The one place the producer
+side spells it — the pool stage (cell_stages.jl), the pool driver
+(generate_scoring_pools.jl) and the sample derivation (derive_pool_samples.jl)
+all read it here. (A consumer opens its pool through `[inputs.pool]`,
+`pool_input`.)
+"""
+pool_tree(cfg) = joinpath(data_root(), cfg["experiment"]["pool_dir"])
+
+"""
+    pool_scenes(cfg) -> Vector{String}
+
+The scenes a pool config of record produces: every side of its `[source] splits`
+(`split_scenes`), sorted, each once.
+"""
+pool_scenes(cfg) = sort(unique(reduce(vcat, split_scenes.(cfg["source"]["splits"]))))
 
 "The cross-validations a two-view driver runs: every pair, or a stratified sample of each scene's pairs, per side."
 const TwoViewCrossValidation =

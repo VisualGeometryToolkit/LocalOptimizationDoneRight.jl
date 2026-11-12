@@ -23,14 +23,14 @@ using VisualGeometryToolkitEval.Datasets: PtRawTrees, PT_SCENES, load_pt_pairs, 
     load_roma_pairs
 using VisualGeometryToolkitEval.Pools: write_scene_pool
 using VisualGeometryToolkitEval.Experiments: config_of_record, data_root
+using VisualGeometryToolkitEval.Evaluation: problem_type   # :E/:F/:H → the RANSAC problem type
 using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem, GaussianSampler,
     ProsacSampler, UniformSampler, draw_hypotheses, TrackVariance, InlierVariance, minimal_sample_size
 using VisualGeometryToolkitCore: CameraModel, HomographyMap, UnlabeledFrame, GnomonicFrame
 using VisualGeometryToolkitCore.Pools: PoolPair, pair_csponds, pair_snn, pair_K1, pair_K2
 using StaticArrays: SMatrix
-include(srcdir("validation_data.jl"))   # split_scenes
+include(srcdir("validation_data.jl"))   # pool_tree, pool_scenes (split_scenes)
 
-const _PROBLEMS = Dict(:E => EssentialProblem, :F => FundMatProblem, :H => HomographyProblem)
 
 # The pool's minimal-sample sampler over the raw SNN (low = good).
 function pool_sampler(pool, snn, mss)
@@ -87,12 +87,11 @@ function raw_pairs(cfg, scene)
 end
 
 "Generate (or skip) every scene of the config's splits into `out_dir`."
-function generate_scoring_pools(cfg; out_dir = joinpath(data_root(), cfg["experiment"]["pool_dir"]),
-                                scenes = sort(unique(reduce(vcat, split_scenes.(cfg["source"]["splits"])))),
+function generate_scoring_pools(cfg; out_dir = pool_tree(cfg), scenes = pool_scenes(cfg),
                                 limit = nothing)
     ex, pool = cfg["experiment"], cfg["pool"]
     cfg["source"]["image_unit"] == "px" || error("source.image_unit must be px (got $(cfg["source"]["image_unit"]))")
-    P = _PROBLEMS[Symbol(ex["problem"])]
+    P = problem_type(Symbol(ex["problem"]))
     build = pair_builder(ex["dataset"], P, pool)
     for scene in scenes
         raws = [r for r in raw_pairs(cfg, scene) if length(pair_csponds(r)) >= minimal_sample_size(P)]

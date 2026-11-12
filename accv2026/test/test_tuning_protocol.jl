@@ -104,7 +104,9 @@ _cell_cv(cfg) = tuning_spec(cfg, sequential_cv_scorer_entry(cfg["sequential_cv"]
 
     @testset "one scorer per (dataset, model class)" begin
         pte, basin = _cell("pt_e_miscal"), _cell("pt_e_basin")
-        @test basin["scorer_of_run"] == run_key(pte)
+        @test sequential_cv_upstream(basin) == (; scorer_of = run_key(pte))   # the scorer cell's run keys this one
+        @test sequential_cv_upstream(pte) === nothing
+        @test sequential_cv_key(basin) == run_key(basin; upstream = (; scorer_of = run_key(pte)))
         bound = try results_root(); true catch; false end
         bound && @test sequential_cv_scorer_path(basin) == joinpath(sequential_cv_dir(pte), SEQUENTIAL_CV_SCORER)
         # a cell that is not the same (dataset, model class) is refused

@@ -27,8 +27,9 @@ _t_cfg(n) = TOML.parsefile(joinpath(_T_ROOT, "configs", n * ".toml"))
     @test all(k -> haskey(t["pinning"], k), ("launcher", "cpu", "numa_node", "env"))
     @test all(k -> t["pinning"]["env"][k] == "1", ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS"))
     cfg = e2e_timing_cell("pt_e_e2e_timing")
-    @test cfg["e2e_run"] == run_key(e2e_timed_cell(cfg))      # it times THE e2e cell of record
-    @test haskey(cfg, "superansac_run")
+    # it times THE e2e cell of record: that run and its SupeRANSAC run key it as upstream runs
+    @test e2e_timing_upstream(cfg) == (; e2e = run_key(e2e_timed_cell(cfg)), superansac = run_key(e2e_timed_superansac(cfg)))
+    @test e2e_timing_key(cfg) == run_key(cfg; upstream = e2e_timing_upstream(cfg)) != run_key(cfg)
     bad = deepcopy(raw); bad["timing"]["repeats"] = 3
     @test_throws ErrorException fold_e2e_timing_cell!(bad)
     bad = deepcopy(raw); bad["timing"]["pinning"]["julia_threads"] = 2

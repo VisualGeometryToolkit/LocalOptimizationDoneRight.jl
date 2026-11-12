@@ -42,10 +42,11 @@ if !@isdefined(ACCV2026_E2E_TIMING_LOADED)
 """
     fold_e2e_timing_cell!(cfg) -> cfg
 
-The fold of a timing cell into its run key: the run of the e2e cell it times
-(`[timing] e2e_config`, its run key — a re-tune or a new ζ ladder re-keys the
-timing) and of that cell's SupeRANSAC cell (its run key: SupeRANSAC is timed at
-that cell's tuned loss width). `[timing]`:
+The fold of a timing cell: its `[timing]` checked against the e2e cell it times.
+That cell's run (`[timing] e2e_config` — a re-tune or a new ζ ladder re-keys the
+timing) and its SupeRANSAC cell's run (SupeRANSAC is timed at that cell's tuned
+loss width) key the timing as UPSTREAM runs ([`e2e_timing_upstream`](@ref),
+Eval's `run_key(; upstream)`), not as config values. `[timing]`:
 
 - `e2e_config`: the accuracy cell (arms, ζ ladder, per-pair streams, termination);
 - `sample`: the timed pairs, a COMPLETE unit-sampling table in VisualGeometryToolkitEval's
@@ -73,8 +74,6 @@ function fold_e2e_timing_cell!(cfg)
             error("timing cell: [experiment] $k differs from the e2e cell's ($(t["e2e_config"]))")
     end
     haskey(e2e["e2e"], "superansac") || error("timing cell: the e2e cell $(t["e2e_config"]) names no [e2e] superansac")
-    cfg["e2e_run"] = run_key(e2e)
-    cfg["superansac_run"] = run_key(superansac_cell(String(e2e["e2e"]["superansac"])))
     return cfg
 end
 
@@ -93,7 +92,18 @@ e2e_timed_superansac(cfg) = superansac_cell(String(e2e_timed_cell(cfg)["e2e"]["s
 The keyed directory of a folded timing cell:
 `<results>/<dataset>/<matcher>/<problem>/EndToEnd/timing-<run_key>`.
 """
-e2e_timing_dir(cfg) = keyed_cell_dir(cfg, "EndToEnd", "timing")
+e2e_timing_dir(cfg) = keyed_cell_dir(cfg, "EndToEnd", "timing"; upstream = e2e_timing_upstream(cfg))
+
+"""
+    e2e_timing_upstream(cfg) -> NamedTuple
+
+The upstream runs of a folded timing cell (Eval's `run_key(; upstream)`): the run
+key of the e2e cell it times and of that cell's SupeRANSAC cell.
+"""
+e2e_timing_upstream(cfg) = (; e2e = run_key(e2e_timed_cell(cfg)), superansac = run_key(e2e_timed_superansac(cfg)))
+
+"The run key of a folded timing cell, its upstream runs folded in: the key of its `e2e_timing_dir`."
+e2e_timing_key(cfg) = run_key(cfg; upstream = e2e_timing_upstream(cfg))
 
 "The timing sample's file (scene ⇒ the drawn pool indices), its ours and SupeRANSAC inputs, and a repeat's output."
 timing_sample_path(dir) = joinpath(dir, "sample.toml")

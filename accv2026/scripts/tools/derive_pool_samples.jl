@@ -27,11 +27,12 @@
 using DrWatson; @quickactivate "ACCV2026"
 using VisualGeometryToolkitEval: cli_option, start_output_flush!
 using VisualGeometryToolkitEval.Pools: load_pool, derive_sample_starts, save_sample_starts, sample_starts
-using VisualGeometryToolkitEval.Experiments: load_run_config, data_root, run_key, keyed_cell_dir, write_run_records
+using VisualGeometryToolkitEval.Experiments: load_run_config, run_key, keyed_cell_dir, write_run_records
+using VisualGeometryToolkitEval.Evaluation: problem_type   # :E/:F/:H → the RANSAC problem type
 using VisualGeometryToolkitEval.Stats: stable_seed, POOL_RNG
-using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem, minimal_sample_size
+using VisualGeometryToolkitEstimation: minimal_sample_size
+include(srcdir("validation_data.jl"))   # pool_tree
 
-const _PROBLEMS = Dict(:E => EssentialProblem, :F => FundMatProblem, :H => HomographyProblem)
 
 # The generating Gaussian-SNN draw (VisualGeometryToolkitEstimation 0.23), as a stream.
 function gaussian_stream(snn, m, σ, seed)
@@ -51,9 +52,9 @@ function derive_pool_samples(cfg; config_source)
     ex, pool = cfg["experiment"], cfg["pool"]
     pool["sampler"] == "gaussian" ||
         error("derive_pool_samples: replays the Gaussian-SNN sampler; [pool] sampler = $(pool["sampler"])")
-    m = minimal_sample_size(_PROBLEMS[Symbol(ex["problem"])])
+    m = minimal_sample_size(problem_type(Symbol(ex["problem"])))
     σ, seed = Float64(pool["gaussian_sigma"]), Int(pool["pool_seed"])
-    in_dir = joinpath(data_root(), ex["pool_dir"])
+    in_dir = pool_tree(cfg)
     key = run_key(cfg)
     out = keyed_cell_dir(cfg, "PoolSamples", "samples")
     mkpath(out)

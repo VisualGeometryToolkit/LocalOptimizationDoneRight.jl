@@ -68,7 +68,7 @@ function sequential_cv_stage(name::Symbol, cfg::AbstractDict, cfg_path::Abstract
     sidecar = joinpath(outdir, SEQUENTIAL_CV_SIDECAR)
     p = _cell_problem(cfg)
     return Stage(name,
-        "sequential CV :$p (config $(basename(cfg_path)), key $(run_key(cfg))) -> $(sidecar)",
+        "sequential CV :$p (config $(basename(cfg_path)), key $(sequential_cv_key(cfg))) -> $(sidecar)",
         () -> run_complete(outdir; sidecar = SEQUENTIAL_CV_SIDECAR),
         () -> begin
             for (path, what, provenance) in inputs
@@ -80,7 +80,7 @@ function sequential_cv_stage(name::Symbol, cfg::AbstractDict, cfg_path::Abstract
             run_driver("run_sequential_cv.jl", "--config=$(config)", "--outdir=$(outdir)")
             audit_operating_points(ROSTER, sidecar; problem = p)
             write_run_records(outdir, cfg; driver = "run_sequential_cv.jl",
-                              config_source = cfg_path, key = run_key(cfg),
+                              config_source = cfg_path, key = sequential_cv_key(cfg),
                               inputs = [pool_path(cfg)])
         end)
 end
@@ -411,10 +411,10 @@ function scoring_pool_stages(cfg_name::AbstractString;
     # than at the generation subprocess after a scheduler wait.
     Symbol(exp["problem"]) in (:E, :F, :H) ||
         error("$(cfg_name): experiment.problem must be E, F or H (got $(exp["problem"]))")
-    outdir = joinpath(data_root(), exp["pool_dir"])
+    outdir = pool_tree(cfg)
     # The scene set is exactly what the config's sides resolve to, through the
     # protocol's registry — this paper states no scene list (protocol_invariants).
-    scenes = sort(unique(reduce(vcat, split_scenes.(src["splits"]))))
+    scenes = pool_scenes(cfg)
     # EVERY raw root the config declares — every `[source] *_dir` key plus the
     # per-scene `recon_special` exceptions — resolved against data_root() and
     # declared as an input, so the tree's `_provenance.toml` names the raw data
