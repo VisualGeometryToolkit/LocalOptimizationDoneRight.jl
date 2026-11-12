@@ -1,12 +1,26 @@
 # LocalOptimizationDoneRight changelog
 
-## Unreleased (the VisualGeometryToolkit 0.9 stack)
+## 0.6.0 (2026-11-12): the VisualGeometryToolkit 0.9 stack
 
-On the VisualGeometryToolkit 0.9 stack: VisualGeometryToolkitCore 0.9 and
-VisualGeometryToolkitEstimation of that stack (PoseLib likewise); accv2026 also IO,
-Eval and RANSACScoringDoneRight on 0.9.
+On the VisualGeometryToolkit 0.9 stack: VisualGeometryToolkitCore 0.9,
+VisualGeometryToolkitEstimation 0.9 and PoseLib 0.2; accv2026 also
+VisualGeometryToolkitIO 0.9, VisualGeometryToolkitEval 0.7 and RANSACScoringDoneRight
+on that stack.
 
 ### Breaking
+
+- **Requires the 0.9 stack**: VisualGeometryToolkitCore 0.9, VisualGeometryToolkitEstimation
+  0.9 and (the extension) PoseLib 0.2.
+- **The PoseLib refiners take the two-view frame as VisualGeometryToolkitCore's
+  external-refit contract states it**: `frame.Kc1`, `frame.Kc2` 3×3 and `frame.cs` a
+  `Csponds` of `Point2{Float64}` (VisualGeometryToolkitEval's `PairGeom`), held as given;
+  the extension no longer re-packs another correspondence type.
+- **accv2026's run keys move**: every run a cell reads (a `scorer_of` cell's scorer,
+  the operating points of the budget, e2e, polish, ladder, timing and SupeRANSAC cells,
+  a timing cell's e2e and SupeRANSAC runs) keys it through VisualGeometryToolkitEval's
+  `run_key(cfg; upstream)` (`upstream_runs`), no longer as config values
+  (`scorer_of_run`, `operating_points_run`, `e2e_run`, `superansac_run`). The stored
+  runs of record are promoted to the new keys (`promote_run`); no result changes.
 
 - **The local optimizers state their termination record** (VisualGeometryToolkitCore's
   `ReturnCode` and `StopRule`, the robust-estimation contract §14). Each refit's
