@@ -45,6 +45,10 @@ after = ["setup"]
 command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/pt_e_pools.jl"]
 driver = "accv2026/scripts/pt_e_pools.jl"
 config = "accv2026/configs/pt_e_pools.toml"
+# its own resources (the site's are a cv stage's): the pool generation is CPU-threaded for days,
+# and the audit holds the largest scene file whole (96 × 8000M ≈ 768 G); never a GPU
+cpus_per_task = 96
+mem_per_cpu = "8000M"
 
 [[stage]]
 name = "heb_h_pools"
@@ -53,6 +57,10 @@ after = ["setup"]
 command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/heb_h_pools.jl"]
 driver = "accv2026/scripts/heb_h_pools.jl"
 config = "accv2026/configs/heb_h_pools.toml"
+# its own resources (the site's are a cv stage's): the pool generation is CPU-threaded for days,
+# and the audit holds the largest scene file whole (96 × 8000M ≈ 768 G); never a GPU
+cpus_per_task = 96
+mem_per_cpu = "8000M"
 
 # ---- the tunings and their rows (Fig. 2 and its cells) -------------------------------
 [[stage]]
