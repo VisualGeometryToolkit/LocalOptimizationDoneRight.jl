@@ -46,7 +46,7 @@ using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractOptimization
     keep_best, StoppingCriterion, PosteriorWeightState, reset_posterior!, StudentTMixture, posterior_weight,
     posterior_weight_derivative, mixture_ecm!, mixture_nll, s_hat_sq, student_t_dof,
     sq_distances, robust_weight, FrozenNuisance, truncated_log_normaliser, data_size, codimension,
-    refine!, fit_scale, JeffreysPrior, weighted_sq, iterations, retcode, stop_rule, ReturnCode, StopRule, NoRule,
+    refine!, fit_scale, JeffreysPrior, weighted_sq, iterations, retcode, stop_rule, ReturnCode, NoRule,
     IncrementSize, LadderConverged, NoImprovement, LeftBasin, retcode_from_symbol, StopWhenAny, toml_default, parse_defaults, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
     lift_retract, lift_model, lift_valid, lift_rows, lift_residuals, lift_size,
     block_coordinate_descent!, path_suffix, optimization_path, EssentialMat
