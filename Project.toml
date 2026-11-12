@@ -21,9 +21,9 @@ LocalOptimizationDoneRightPoseLibExt = "PoseLib"
 
 [sources]
 # TEMPORARY: the 0.9 stack is not registered yet; replace by [compat] 0.9 from the registry before any push or registration
-VisualGeometryToolkitCore = {path = "/home/jpr/src/vgtk-pin-cd6a2a76/VisualGeometryToolkitCore"}
+VisualGeometryToolkitCore = {path = "/home/jpr/src/vgtk-pin-4770458a/VisualGeometryToolkitCore"}
 # TEMPORARY: the 0.9 stack is not registered yet; replace by [compat] 0.9 from the registry before any push or registration
-VisualGeometryToolkitEstimation = {path = "/home/jpr/src/vgtk-pin-cd6a2a76/VisualGeometryToolkitEstimation"}
+VisualGeometryToolkitEstimation = {path = "/home/jpr/src/vgtk-pin-4770458a/VisualGeometryToolkitEstimation"}
 
 [compat]
 LinearAlgebra = "1"
