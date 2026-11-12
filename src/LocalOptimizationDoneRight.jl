@@ -44,8 +44,8 @@ using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractOptimization
     SelfScaling, ConsensusAnchored, FixedScale, ExternalRefit, scale_s2, inlier_count,
     outlier_halfwidth, score_model!, loss_at, width_scale_interface, lo_estimate, Attributed,
     keep_best, StoppingCriterion, PosteriorWeightState, reset_posterior!, StudentTMixture, posterior_weight,
-    posterior_weight_derivative, mixture_ecm!, mixture_nll, s_hat_sq, student_t_dof,
-    sq_distances, robust_weight, FrozenNuisance, truncated_log_normaliser, data_size, codimension,
+    posterior_weight_derivative, mixture_ecm!, mixture_nll, s_hat_sq,
+    sq_distances, robust_weight, FrozenNuisance, truncated_log_normaliser, data_size,
     refine!, fit_scale, JeffreysPrior, weighted_sq, iterations, retcode, stop_rule, ReturnCode, NoRule,
     IncrementSize, LadderConverged, NoImprovement, LeftBasin, retcode_from_symbol, StopWhenAny, toml_default, parse_defaults, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
     lift_retract, lift_model, lift_valid, lift_rows, lift_residuals, lift_size,
@@ -57,7 +57,7 @@ import VisualGeometryToolkitCore: locally_optimize!, update_model!, update_resid
     lift_wmax, lift_conjugate, lift_zblock   # the tabulated lift answers the loss's lift facet
 # The core optimization strategies and the strategy registry machinery (VisualGeometryToolkitCore
 # robust/strategies.jl): the types, the shared loss table and the keyword constructor.
-using VisualGeometryToolkitCore: Irls, LOSS_TAGS, lo_loss, strategy_loss, lo_width_value, lo_construct, scale_prior
+using VisualGeometryToolkitCore: Irls, LOSS_TAGS, lo_loss, strategy_loss, lo_width_value, lo_construct
 using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation, LoBuffers, LiftableProblem,
     BoundedProblem, EssentialProblem, PosteriorLikelihood, StopWhenNoImprovement,
     posterior_irls!, consensus_posterior, required_outlier_halfwidth

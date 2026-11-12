@@ -132,14 +132,10 @@ function _mixture_lift_setup(L::LoBuffers, problem::EssentialProblem, model, cs:
     rws = consensus_posterior(L, problem, cs, buf, scoring, a)
     prov = rows_provider(problem)
     # The ECM state at the seed's (ν, ŝ², π), on the workspace's posterior
-    # state itself (the seed is read first; VGC's `reset_posterior!`, the
-    # in-place `PosteriorWeightState(n; …)`: buffers written before read).
-    pws = reset_posterior!(
-        rws; ν = student_t_dof(rws), s_hat_sq = s_hat_sq(rws),
-        log_two_outlier_halfwidth = log(2 * a),
-        codimension = codimension(problem), inlier_prior = inlier_count(cs) / n,
-        prior = scale_prior(scoring)   # the scoring's scale prior, the one consensus_posterior seeded
-    )
+    # state itself: the seed's ν, ŝ², outlier support, codimension and scale
+    # prior kept (VGC's `reset_posterior!` keeps every keyword left out), and
+    # only the inlier prior re-seeded at the consensus set's fraction (clamped).
+    pws = reset_posterior!(rws; inlier_prior = inlier_count(cs) / n)
     return prov, pws
 end
 
