@@ -55,9 +55,15 @@ panel_diff = "panel_polish_diff.tex"      # ECDF of e_polished − e_LO per pair
 diff_xmax = 0.5                            # degrees; the error-change axis is [−diff_xmax, diff_xmax]
 
 # ---- the inputs of record (VisualGeometryToolkitEval Reproduce: `missing_inputs` checks each
-# path under the data root before a launch). Every input here is a directory tree, so none
-# states a per-file sha256; the published trees are pinned by Artifacts.toml (git-tree-sha1).
+# path under the data root before a launch, and its content before a run). Each `sha256` is
+# VisualGeometryToolkitEval's tree_sha256 of the directory, computed read-only on dgx01's
+# data root on 2026-11-12 (accv2026 6bfe1bc). A pool tree's `_v3/` directory is an
+# archived earlier copy kept beside the pool (2026-10-02..06; the pool readers open
+# `<scene>.jld2` by name and never read it): not part of the pool of record, so
+# `sha256_exclude` leaves it out.
 [inputs.pool]
 tier = "derived"
 path = "accv2026/data/PT-E-SIFT-4K_pf3"
+sha256 = "d563419d547f16b2cb83a7ab1883c5567d470433f4409f0c09b0d17eb98dc690"
+sha256_exclude = ["_v3/**"]   # the archived copy, not a pool of record
 provenance = "the PhotoTourism E scoring pools, regenerated bit for bit by the stage pt_e_pools (scripts/pt_e_pools.jl, configs/pt_e_pools.toml) from pt_raw_validation and pt_raw_test; not published (1.6 TB)"

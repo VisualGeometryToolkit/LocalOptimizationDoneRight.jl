@@ -356,6 +356,49 @@ frozen input remains: every file a driver consumes is produced by a stage.
   `PROVENANCE.toml` and `SHA256SUMS`. The table reads them when the SupeRANSAC
   cell has not run.
 
+### Input digests (VisualGeometryToolkitEval `tree_sha256`, 2026-11-12)
+
+Every `[inputs.<id>]` of record states its directory's `sha256`, Eval's `tree_sha256`. Eval's
+`input_path`/`inspect_input` check it before a run reads the input, and the runner's dry run
+checks it before a launch. The digests were computed read-only on dgx01's data root. A pool
+tree's archived `_v3/` copy is not a pool of record and is left out (`sha256_exclude = ["_v3/**"]`,
+declared in the config).
+
+| input tree (under its tier root) | files | size | sha256 |
+|---|---|---|---|
+| `accv2026/data/HEB-H-SIFT-4K_pf3` | 22 | 114.8 GB | `bc9e2ce17ae2d786…` |
+| `accv2026/data/PT-E-SIFT-4K_pf3` | 45 | 1649.2 GB | `d563419d547f16b2…` |
+| `accv2026/data/heb_raw` | 10 | 33.1 GB | `d835eceb45aca04f…` |
+| `accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/train` | 84 | 80.8 GB | `629d32dd5cbe5e8a…` |
+| `accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/val` | 14 | 0.7 GB | `0d8390bcceeeff86…` |
+| `datasets/eth3d/derived/splg/csponds` | 3095 | 0.2 GB | `3377f13f941e3762…` |
+| `datasets/eth3d/derived/splg/scoring_data_F_pf3` | 29 | 18.4 GB | `0438172b08d3009e…` |
+| `datasets/phototourism/raw_test/RANSAC-Tutorial-Data-Test` | 1096 | 4.1 GB | `97706acab2e9653b…` |
+| `datasets/phototourism/raw_test/imw2020_testdata/_track_verified_recons` | 21 | 0.5 GB | `0d5022a42d9d7ac4…` |
+| `datasets/phototourism/raw_train/_track_verified_recons` | 36 | 4.6 GB | `7ff39334979d0126…` |
+
+## Known follow-up: the derived pools move to their producer tier (after the release)
+
+A planned data operation, after the 0.9 release (the owner's ruling, 2026-11-12):
+nothing moves before it.
+
+- **What moves:** the pool cells' outputs, the derived scoring-pool trees.
+  These are PT-E-SIFT-4K_pf3 (~1.6 TB of pool of record; its archived `_v3/` copy is
+  not a pool of record) and HEB-H-SIFT-4K_pf3. The ETH3D F pools are fetched and
+  frozen, not produced, and stay.
+- **From where to where:** from `<data root>/accv2026/data/<pool>` (the
+  `[experiment] pool_dir` of record) to VisualGeometryToolkitEval's producer layout,
+  `<derived tier root>/<tier>/<kind>-<run key>` (`keyed_data_dir(cfg, tier, kind)`).
+  Each consumer's `[inputs.pool]` then names that path and its tier.
+- **Why:** a producer writes through its tier's root (`keyed_data_dir`), and a
+  consumer reads through the same root (`input_path`). The directory is keyed by
+  the producer's config, so producer and consumer agree on every machine, and a
+  changed pool config is a new directory, never an overwritten one.
+- **Meanwhile:** the pool cells write to `<data root>/<pool_dir>` and the consumers
+  read `[inputs.pool]` under the `derived` tier's root. The two are the same
+  directory as long as no derived-tier root is set: no `VGTK_DATA_ROOT_DERIVED`
+  and no `[sites.<site>.tiers] derived`. Setting one before the move would split them.
+
 ## THE single-CV-path contract (binding)
 
 All hyperparameter tuning flows through one code path under one spec — no

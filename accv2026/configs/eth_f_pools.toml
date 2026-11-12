@@ -40,9 +40,14 @@ subsample_seed = 42              # StableRNG(stable_seed(subsample_seed, scene))
 pool_seed = 42                   # the minimal-sample streams: StableRNG(stable_seed(pool_seed, pair index))
 
 # ---- the inputs of record (VisualGeometryToolkitEval Reproduce: `missing_inputs` checks each
-# path under the data root before a launch). Every input here is a directory tree, so none
-# states a per-file sha256; the published trees are pinned by Artifacts.toml (git-tree-sha1).
+# path under the data root before a launch, and its content before a run). Each `sha256` is
+# VisualGeometryToolkitEval's tree_sha256 of the directory, computed read-only on dgx01's
+# data root on 2026-11-12 (accv2026 6bfe1bc). A pool tree's `_v3/` directory is an
+# archived earlier copy kept beside the pool (2026-10-02..06; the pool readers open
+# `<scene>.jld2` by name and never read it): not part of the pool of record, so
+# `sha256_exclude` leaves it out.
 [inputs.eth3d_csponds]
 tier = "eth3d_splg_csponds"
 path = "datasets/eth3d/derived/splg/csponds"
+sha256 = "3377f13f941e376223b328ea185508d434ae5ba704866ef5a9fce7d80befb15e"
 provenance = "the ETH3D SuperPoint+LightGlue consolidated correspondences (densematch-tools extract_splg_batch.py; REPRODUCE.md, Correspondences)"

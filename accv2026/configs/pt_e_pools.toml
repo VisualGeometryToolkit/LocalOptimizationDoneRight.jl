@@ -72,29 +72,38 @@ subsample_seed = 42              # StableRNG(stable_seed(subsample_seed, scene))
 pool_seed = 42                   # the minimal-sample streams: StableRNG(stable_seed(pool_seed, pair index))
 
 # ---- the inputs of record (VisualGeometryToolkitEval Reproduce: `missing_inputs` checks each
-# path under the data root before a launch). Every input here is a directory tree, so none
-# states a per-file sha256; the published trees are pinned by Artifacts.toml (git-tree-sha1).
+# path under the data root before a launch, and its content before a run). Each `sha256` is
+# VisualGeometryToolkitEval's tree_sha256 of the directory, computed read-only on dgx01's
+# data root on 2026-11-12 (accv2026 6bfe1bc). A pool tree's `_v3/` directory is an
+# archived earlier copy kept beside the pool (2026-10-02..06; the pool readers open
+# `<scene>.jld2` by name and never read it): not part of the pool of record, so
+# `sha256_exclude` leaves it out.
 [inputs.matches_tutorial_val]
 tier = "pt_raw_validation"
 path = "accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/val"
+sha256 = "0d8390bcceeeff8657410cf896728a08384c79d7338e20e0c45521a0e373faa8"
 provenance = "the CVPR 2020 RANSAC tutorial RootSIFT matches and confidences, validation scenes"
 
 [inputs.matches_tutorial_train]
 tier = "pt_raw_validation"
 path = "accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/train"
+sha256 = "629d32dd5cbe5e8a24ca368165b6a957f1426139da5bf2c5b12896eaadedd92c"
 provenance = "the CVPR 2020 RANSAC tutorial RootSIFT matches and confidences, train scenes"
 
 [inputs.matches_ef_test]
 tier = "pt_raw_test"
 path = "datasets/phototourism/raw_test/RANSAC-Tutorial-Data-Test"
+sha256 = "97706acab2e9653b083cd653993898063b78d08065172ec5ebfd697d3b8e5f65"
 provenance = "the IMC-PT 2020 test matches and confidences"
 
 [inputs.recon_tutorial]
 tier = "pt_raw_validation"
 path = "datasets/phototourism/raw_train/_track_verified_recons"
+sha256 = "7ff39334979d01265ab73a9f74c1e9ae7b1bb1bbf57180b82dc1affe388f1c07"
 provenance = "the COLMAP models of the IMC-PT release, train/validation scenes"
 
 [inputs.recon_ef_test]
 tier = "pt_raw_test"
 path = "datasets/phototourism/raw_test/imw2020_testdata/_track_verified_recons"
+sha256 = "0d5022a42d9d7ac47b755cbf1a7dd520794021d6695f7e19bd404280d870c407"
 provenance = "the COLMAP models of the IMC-PT 2020 TestData"

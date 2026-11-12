@@ -54,9 +54,14 @@ pool_seed = 42                   # the minimal-sample streams: StableRNG(stable_
 min_gt_inliers = 5               # a pair with fewer GT inliers has no σ̂² (NaN)
 
 # ---- the inputs of record (VisualGeometryToolkitEval Reproduce: `missing_inputs` checks each
-# path under the data root before a launch). Every input here is a directory tree, so none
-# states a per-file sha256; the published trees are pinned by Artifacts.toml (git-tree-sha1).
+# path under the data root before a launch, and its content before a run). Each `sha256` is
+# VisualGeometryToolkitEval's tree_sha256 of the directory, computed read-only on dgx01's
+# data root on 2026-11-12 (accv2026 6bfe1bc). A pool tree's `_v3/` directory is an
+# archived earlier copy kept beside the pool (2026-10-02..06; the pool readers open
+# `<scene>.jld2` by name and never read it): not part of the pool of record, so
+# `sha256_exclude` leaves it out.
 [inputs.heb_raw]
 tier = "heb_raw"
 path = "accv2026/data/heb_raw"
+sha256 = "d835eceb45aca04fa28bdb636d5a53d195292b698f260664d450efda6798bd93"
 provenance = "the Homography Estimation Benchmark <scene>_homographies.h5 files (Barath et al., CVPR 2023), unchanged"
