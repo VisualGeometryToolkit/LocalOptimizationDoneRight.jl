@@ -26,11 +26,10 @@ include(srcdir("cell_stages.jl"))
 
 const CFG_NAME = cli_option(ARGS, "config", "polish_pt_e")
 const CFG_PATH = projectdir("configs", CFG_NAME * ".toml")
-const CFG = load_run_config(CFG_PATH)
 # keyed by the config AND the run of the operating points it polishes
-CFG["operating_points_run"] = operating_points_run(String(CFG["operating_points"]["miscal_config"]))
+const CFG = fold_polish_cell!(load_run_config(CFG_PATH))
 const KEY = run_key(CFG)
-const OUTDIR = joinpath(experiment_dir(CFG), "Polish", "polish-" * KEY)
+const OUTDIR = polish_cell_dir(CFG)
 const TESTF, SUMF = joinpath(OUTDIR, "polish_test.jld2"), joinpath(OUTDIR, "summary.tsv")
 const R = CFG["render"]
 const PANEL_DIFF = joinpath(PAPER_FIGDIR, R["panel_diff"])

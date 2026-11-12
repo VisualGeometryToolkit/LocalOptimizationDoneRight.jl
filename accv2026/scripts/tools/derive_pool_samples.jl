@@ -27,7 +27,7 @@
 using DrWatson; @quickactivate "ACCV2026"
 using VisualGeometryToolkitEval: cli_option, start_output_flush!
 using VisualGeometryToolkitEval.Pools: load_pool, derive_sample_starts, save_sample_starts, sample_starts
-using VisualGeometryToolkitEval.Experiments: load_run_config, data_root, run_key, experiment_dir, write_run_records
+using VisualGeometryToolkitEval.Experiments: load_run_config, data_root, run_key, keyed_cell_dir, write_run_records
 using VisualGeometryToolkitEval.Stats: stable_seed, POOL_RNG
 using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem, minimal_sample_size
 
@@ -55,7 +55,7 @@ function derive_pool_samples(cfg; config_source)
     σ, seed = Float64(pool["gaussian_sigma"]), Int(pool["pool_seed"])
     in_dir = joinpath(data_root(), ex["pool_dir"])
     key = run_key(cfg)
-    out = joinpath(experiment_dir(cfg), "PoolSamples", "samples-" * key)
+    out = keyed_cell_dir(cfg, "PoolSamples", "samples")
     mkpath(out)
     scenes = sort([f[1:end-5] for f in readdir(in_dir) if endswith(f, ".jld2") && !startswith(f, "_") &&
                    !endswith(f, ".residuals.jld2") && !endswith(f, "_snn.jld2")])

@@ -47,7 +47,7 @@ function heb_counts_cell(cfg::AbstractDict)
     keyed = Dict{String,Any}("experiment" => cfg["experiment"],
         "test_side" => Dict{String,Any}("scenes" => test_scenes(cv), "sampling" => tuning_table(cv)["test"]))
     key = run_key(keyed)
-    outdir = joinpath(experiment_dir(cfg), "DatasetStats", "heb-stats-" * key)
+    outdir = keyed_cell_dir(keyed, "DatasetStats", "heb-stats")
     return (; key, keyed, outdir, counts = joinpath(outdir, "counts.jld2"), cv, source = src_name)
 end
 
@@ -146,9 +146,7 @@ function number_source_input(name, spec::AbstractDict)
     elseif kind == "budget"
         return budget_cell_dir(fold_budget_cell!(load_run_config(_cfg_path(cfg_name))))
     elseif kind == "polish"
-        cfg = load_run_config(_cfg_path(cfg_name))
-        cfg["operating_points_run"] = operating_points_run(String(cfg["operating_points"]["miscal_config"]))
-        return joinpath(experiment_dir(cfg), "Polish", "polish-" * run_key(cfg), "polish_test.jld2")
+        return joinpath(polish_cell_dir(fold_polish_cell!(load_run_config(_cfg_path(cfg_name)))), "polish_test.jld2")
     elseif kind == "e2e"
         return joinpath(e2e_cell_dir(fold_e2e_cell!(load_run_config(_cfg_path(cfg_name)))), "summary.tsv")
     elseif kind == "e2e_timing"

@@ -373,6 +373,25 @@ The keyed directory of a ladder cell: `<results>/<dataset>/<matcher>/<problem>/B
 ladder_cell_dir(cfg) = keyed_cell_dir(cfg, "BasinLadder", "basin-ladder")
 
 """
+    fold_polish_cell!(cfg) -> cfg
+
+The fold of the polishing cell (configs/polish_pt_e.toml, scripts/polish.jl): the
+RUN of the operating points it polishes (`[operating_points] miscal_config`,
+that cell's run key — a re-tune re-keys the polish).
+"""
+function fold_polish_cell!(cfg)
+    cfg["operating_points_run"] = operating_points_run(String(cfg["operating_points"]["miscal_config"]))
+    return cfg
+end
+
+"""
+    polish_cell_dir(cfg) -> String
+
+The keyed directory of the folded polishing cell: `<results>/<dataset>/<matcher>/<problem>/Polish/polish-<run_key>`.
+"""
+polish_cell_dir(cfg) = keyed_cell_dir(cfg, "Polish", "polish")
+
+"""
     fold_timing_cell!(cfg) -> cfg
 
 The fold of the timing cell (configs/timing_table.toml, scripts/timing_table.jl)
