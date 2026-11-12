@@ -88,7 +88,7 @@ VgtkCore.lo_label(::PoseLibLmAdaptLossWidth) = raw"TLS-IRLS-$\hat s$"
 VgtkCore.lo_marker(::PoseLibLmAdaptLossWidth) = Symbol("square*")
 
 """
-    truncated_refit_pose(lo, ws, problem, seed_E, loss_width) -> Union{Nothing, refined pose}
+    truncated_refit_pose(lo, ws, problem, seed_E, loss_width) -> refined pose
 
 The relative pose a PoseLib truncated refiner reaches from an essential-matrix seed.
 

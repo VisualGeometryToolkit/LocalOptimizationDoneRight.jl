@@ -22,7 +22,7 @@ const _ADAPT_OPERATING_EFFICIENCY_CONSTANT = LocalOptimizationDoneRight._ADAPT_O
 import LocalOptimizationDoneRight: truncated_refit_pose
 using PoseLib: refine_relpose, refine_fundamental, refine_homography, LeZach
 using StaticArrays: SMatrix
-using VisualGeometryToolkitCore: VisualGeometryToolkitCore, EssentialMat, FundMat, HomographyMat, Csponds, Point2, Vec3,
+using VisualGeometryToolkitCore: VisualGeometryToolkitCore, EssentialMat, Csponds, Point2, Vec3,
     EuclideanMap, TLSShape, LossWidth, OutlierHalfwidth, loss_width, sources, targets, cheiral_pose_fast,
     codimension, data_size, mahalanobis_distances!, with_width, loss_width_to_outlier_halfwidth, FixedS2, scale_s2,
     deploy, fit_scale, JeffreysPrior, Irls, estimate
@@ -73,22 +73,19 @@ truncated_refit_pose(lo::Union{PoseLibLm, PoseLibLZ}, ws::PoseLibWorkspace, prob
 function refine_external!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, problem::EssentialProblem,
                           seed_E, width::LossWidth, _scoring)
     pose = truncated_refit_pose(lo, ws, problem, seed_E, loss_width(width))
-    pose === nothing && return nothing
     return EssentialMat(pose.R, pose.t)
 end
 function refine_external!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, ::FundMatProblem,
                           seed_F, width::LossWidth, _scoring)
-    F = estimate(refine_fundamental(SMatrix{3, 3, Float64, 9}(seed_F), ws.cs;
-                                    width = loss_width(width), max_iter = lo.max_iter,
-                                    optimization_strategy = _poselib_strategy(lo)))
-    return FundMat(Tuple(SMatrix{3, 3, Float64, 9}(F)))
+    return estimate(refine_fundamental(SMatrix{3, 3, Float64, 9}(seed_F), ws.cs;
+                                       width = loss_width(width), max_iter = lo.max_iter,
+                                       optimization_strategy = _poselib_strategy(lo)))
 end
 function refine_external!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, ::HomographyProblem,
                           seed_H, width::LossWidth, _scoring)
-    H = estimate(refine_homography(SMatrix{3, 3, Float64, 9}(seed_H), ws.cs;
-                                   width = loss_width(width), max_iter = lo.max_iter,
-                                   optimization_strategy = _poselib_strategy(lo)))
-    return HomographyMat{Float64}(Tuple(SMatrix{3, 3, Float64, 9}(H)))
+    return estimate(refine_homography(SMatrix{3, 3, Float64, 9}(seed_H), ws.cs;
+                                      width = loss_width(width), max_iter = lo.max_iter,
+                                      optimization_strategy = _poselib_strategy(lo)))
 end
 
 # =============================================================================
