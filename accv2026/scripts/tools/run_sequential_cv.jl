@@ -58,8 +58,9 @@
 # instead of the seed partition's ŝ. The scale interface is
 # miscal_protocol.toml [anchoring_ablation] scale_interface, and the artifact
 # (`mode = "evaluation"`, render_anchoring_paired.jl) is written to
-# <outdir>/anchoring_ablation-<interface>/zeta_evaluation.jld2 — the path
-# registry.jl EXP_ANCHOR_WITHOUT derives from the same two facts.
+# <outdir>/anchoring_ablation-<interface>/zeta_evaluation.jld2 — the one path
+# rule `anchoring_ablation_path` (src/protocol_folds.jl), which registry.jl's
+# EXP_ANCHOR_WITHOUT reads too.
 #
 # The objective of every stage is the per-pair pose error `model_imc` scores
 # (rotation only on H — the LO engine's geometry.jl), aggregated by the entry's
@@ -566,7 +567,7 @@ function run_anchoring()
     VgtkCore.SCALE_INTERFACE_TAGS[iface] === VgtkCore.FixedScale ||
         error("miscal_protocol.toml [anchoring_ablation] scale_interface = $(repr(iface)): " *
               "the sequential CV implements the \"fixed_scale\" interface only")
-    out = joinpath(OUTDIR, "anchoring_ablation-" * iface, "zeta_evaluation.jld2")
+    out = anchoring_ablation_path(OUTDIR)
     isfile(out) && (@info "anchoring: artifact exists — skipping (delete to re-run)" out; return)
     isfile(SIDECAR_F) || error("no sidecar at $SIDECAR_F — run the evaluate stage first")
     tk = load_tuning_artifact(SIDECAR_F)

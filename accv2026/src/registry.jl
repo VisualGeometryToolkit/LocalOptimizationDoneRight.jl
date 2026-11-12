@@ -100,8 +100,7 @@ const EXP_MISCAL_DIR     = dirname(EXP_MISCAL_SIDECAR)
 # keyed run directory (a new fig3 key is a new ablation) and named by that
 # interface (a change of it is a new artifact).
 const EXP_ANCHOR_WITH        = EXP_MISCAL_SIDECAR
-const EXP_ANCHOR_WITHOUT_DIR = joinpath(EXP_MISCAL_DIR, "anchoring_ablation-" * EXP_ANCHOR_SCALE_INTERFACE)
-const EXP_ANCHOR_WITHOUT     = joinpath(EXP_ANCHOR_WITHOUT_DIR, "zeta_evaluation.jld2")
+const EXP_ANCHOR_WITHOUT     = anchoring_ablation_path(EXP_MISCAL_DIR)
 
 # --- timing --------------------------------------------------------------------
 # Table 1's per-call LO timings: a RESULT, in the keyed directory of

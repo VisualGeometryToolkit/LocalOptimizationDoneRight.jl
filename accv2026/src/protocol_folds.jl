@@ -32,6 +32,18 @@ const _TUNING_PATH = projectdir("configs", "tuning.toml")
 "The scale interface the consensus-anchoring ablation evaluates (configs/miscal_protocol.toml [anchoring_ablation])."
 const EXP_ANCHOR_SCALE_INTERFACE = String(TOML.parsefile(_MP_PATH)["anchoring_ablation"]["scale_interface"])
 
+"""
+    anchoring_ablation_path(dir) -> String
+
+The consensus-anchoring ablation's ζ evaluation inside the keyed sequential-CV
+directory `dir`: `<dir>/anchoring_ablation-<EXP_ANCHOR_SCALE_INTERFACE>/zeta_evaluation.jld2`,
+named by the scale interface it evaluates (a change of it is a new artifact). The
+one path rule: the writer (run_sequential_cv.jl `--stage=anchoring`) and the
+reader (registry.jl `EXP_ANCHOR_WITHOUT`) both call it.
+"""
+anchoring_ablation_path(dir::AbstractString) =
+    joinpath(dir, "anchoring_ablation-" * EXP_ANCHOR_SCALE_INTERFACE, "zeta_evaluation.jld2")
+
 "The tuning protocol of record (configs/tuning.toml), parsed."
 const TUNING_PROTOCOL = TOML.parsefile(_TUNING_PATH)
 
