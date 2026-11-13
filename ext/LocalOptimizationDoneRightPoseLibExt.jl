@@ -41,14 +41,15 @@ _poselib_strategy(::PoseLibLZ) = LeZach()
 The per-pair workspace of a PoseLib refiner: the frame's calibrations `Kc₁`,
 `Kc₂` and its correspondences, as the two-view frame of VisualGeometryToolkitCore's
 external-refit contract hands them over (`Kc1`, `Kc2` 3×3; `cs` a `Correspondences` of
-`Point2{Float64}`, the form PoseLib's `refine_*` consume) — held as they are,
-not re-packed.
+2-vectors, which PoseLib's `refine_*` consume) — held as they are, of whatever
+type and layout the frame carries (attribute columns, element type), not re-packed.
 """
-struct PoseLibWorkspace
+struct PoseLibWorkspace{C}
     Kc1::SMatrix{3, 3, Float64, 9}
     Kc2::SMatrix{3, 3, Float64, 9}
-    cs::Correspondences{Point2{Float64}, Point2{Float64}, Vector{Point2{Float64}}, Vector{Point2{Float64}}, @NamedTuple{}}
+    cs::C
 end
+PoseLibWorkspace(Kc1, Kc2, cs) = PoseLibWorkspace{typeof(cs)}(Kc1, Kc2, cs)
 PoseLibWorkspace(frame) = PoseLibWorkspace(frame.Kc1, frame.Kc2, frame.cs)
 
 external_workspace(::Union{PoseLibLm, PoseLibLZ}, _problem, frame, _scoring) = PoseLibWorkspace(frame)
@@ -100,8 +101,8 @@ inputs, a RANSAC workspace for the consensus-scale bootstrap (the refit
 scoring's), the bootstrap's ŝ² of the current refit, and a residual buffer for
 the per-round scale moment.
 """
-mutable struct AdaptWorkspace{W}
-    pl::PoseLibWorkspace
+mutable struct AdaptWorkspace{P <: PoseLibWorkspace, W}
+    pl::P
     rws::W
     s2₀::Float64
     r::Vector{Float64}

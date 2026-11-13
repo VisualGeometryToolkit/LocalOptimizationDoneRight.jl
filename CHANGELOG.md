@@ -11,7 +11,8 @@ accv2026 also VisualGeometryToolkitEval 0.8 and RANSACScoringDoneRight 0.8.
   (`[compat]` of the package, test and accv2026); accv2026 VisualGeometryToolkitEval 0.8 and RANSACScoringDoneRight 0.8.
 - **The terminology taxonomy (correspondence, observation)**: the PoseLib refiners' two-view frame carries
   `frame.cs` as a `Correspondences` of `Point2{Float64}` (VisualGeometryToolkitCore 0.10's name for the
-  retired `Csponds`); "measurement" and "keypoint" are gone from this repository's names and prose.
+  retired `Csponds`); "measurement" and "keypoint" are gone from this repository's own names and prose (the
+  paper's LaTeX, the vendored RansacLib and VisualGeometryToolkitEval's field names it reads are not this repository's).
 - **`LiftableProblem` is retired upstream (no alias)**: the HQ/GNC `locally_optimize!` methods are typed on
   VisualGeometryToolkitEstimation's `MinimalSolveProblem` (the same type the alias named).
 - **accv2026's configs of record rename their keys**: the pool configs' `min_csponds` is `min_correspondences`
@@ -23,6 +24,29 @@ accv2026 also VisualGeometryToolkitEval 0.8 and RANSACScoringDoneRight 0.8.
   `POOL_RNG`, the same type): the same streams; the recorded derivation string names `StableRNG`.
 - accv2026 no longer lists VisualGeometryToolkitIO: nothing in the project imports it (it arrives through
   VisualGeometryToolkitEval).
+- **The PoseLib refiners' workspace holds the frame's correspondences as given** (`PoseLibWorkspace{C}`): any
+  `Correspondences` the external-refit contract admits (attribute columns, another element type), no longer only
+  `Correspondences{Point2{Float64}, …, @NamedTuple{}}`, which refused (`convert` MethodError) any other.
+- **accv2026's pool trees must be at VisualGeometryToolkitEval 0.8's pool format 6** (the correspondences' pair key):
+  `load_pool` refuses formats ≤ 5. The stored `_pf3` trees and the Zenodo `eth3d_f_pools_1k` parts (format 4) are migrated
+  into NEW trees with Eval's `scripts/migrate_pools.jl DIR --apply` (the data step after the release); the `[inputs.pool]`
+  `sha256` pins follow the migrated trees.
+- **accv2026's data-root override of the ETH3D SuperPoint+LightGlue tier is renamed with the tier**:
+  `VGTK_DATA_ROOT_ETH3D_SPLG_CORRESPONDENCES` (was `..._ETH3D_SPLG_CSPONDS`), and a site's `[sites.<site>.tiers]` key
+  `eth3d_splg_correspondences`. A launcher binding the old name is no longer read.
+- **The renamed `[pool]` key re-keys every run keyed on a pool config** (`run_key` of pt_e_pools, heb_h_pools, eth_f_pools):
+  the derived sample starts (`PoolSamples/samples-<key>`) are derived again at the new key.
+
+### Fixed
+
+- **The 0.6.0 entry's "bit-identical" did not hold for `BarronAdaptive()` without a width** (catch-up review LODR#1):
+  since 0.6.0 its frozen α-fit width resolves through Core's `loss_at` like every other arm's, so with no width the
+  Barron scale is the one whose decision flips at the scorer's decision point t, `decision_width(BarronShape(0), t)` =
+  t/√2 (squared t²/2), where 0.5.1 used t² — the threshold read AS the Barron scale, which decides at √2·t. The 0.6.0
+  value is the derivation's and stays (now tested against the decision point); `BarronAdaptive(loss_width = t)`
+  reproduces 0.5.1. The paper's arms state an `efficiency_constant` and never took this path.
+- CI: the Downgrade workflow is deleted (the stack's policy: every release raises its floors to the gated resolve,
+  `floor_compat --raise`; Resolver.jl does not run on Julia 1.13).
 
 ## 0.6.2 (unreleased)
 

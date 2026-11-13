@@ -7,12 +7,14 @@
 # accv2026/test/test_engine_integration.jl.
 # =============================================================================
 using Test
+using LinearAlgebra: I
 using LocalOptimizationDoneRight
 using LocalOptimizationDoneRight: LocalOptimizationDoneRight as LODR, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth
 import PoseLib
 using VisualGeometryToolkitCore: AbstractOptimizationStrategy, RefitFamily, ExternalRefit, FixedScale, ConsensusAnchored,
     LossWidth, FixedS2, scale_interface, optimization_path, lo_label, external_workspace, refine_external!,
-    prepare_external!
+    prepare_external!, Correspondences, Point2, withattrs
+using StaticArrays: SMatrix
 
 const _EXT = Base.get_extension(LODR, :LocalOptimizationDoneRightPoseLibExt)
 
@@ -53,4 +55,16 @@ end
     end
     # the moment is VGC's Jeffreys scale estimator: floored at eps, never 0
     @test _EXT._truncated_moment_s2(1.0, zeros(8)) === eps()
+end
+
+# LODR#7 (wave-10 catch-up review): the workspace holds the frame's correspondences as given — any layout the
+# external-refit contract admits (attribute columns, another element type), not one concrete Correspondences type.
+@testset "PoseLib workspace: the frame's correspondences as given" begin
+    K = SMatrix{3, 3, Float64, 9}(1.0I)
+    x = [Point2(0.1i, -0.2i) for i in 1:8]
+    plain = Correspondences(x, x)
+    for cs in (plain, withattrs(plain; weights = fill(1.0, 8)), Correspondences(Point2{Float32}.(x), Point2{Float32}.(x)))
+        ws = external_workspace(PoseLibLm(25), nothing, (; Kc1 = K, Kc2 = K, cs), nothing)
+        @test ws.cs === cs && ws.Kc1 === K
+    end
 end

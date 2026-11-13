@@ -103,9 +103,10 @@ n_sub               = 256
 # efficiency constant is an operating point for ONE shape, not a unit that converts
 # between them, so it is looked up BY shape and a strategy deploying a
 # different one is refused rather than served a number nobody validated for
-# it. (An arm that states its efficiency constant in another currency — the
-# GM/Cauchy half-weight depth — converts it where it reads it; that is per-arm
-# arithmetic and is not what `shape` records.)
+# it. Every value is the PLAIN multiple of the scale (the robust contract,
+# 2026-11-11): the GM/Cauchy half-weight currency is retired, and a value once
+# stated as a half-weight depth m_½ was converted once, efficiency_constant =
+# decision_width(shape, m_½).
 #
 # PROVENANCE — one source of truth, each entry exactly one of:
 #   tuning   = { config, name, hash, arm }   a VALIDATED value: the deployed

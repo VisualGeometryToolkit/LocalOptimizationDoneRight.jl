@@ -218,18 +218,18 @@ is now VisualGeometryToolkitCore's `Pools.PoolPair`, read and written by
 VisualGeometryToolkitEval's pool IO, its destination map named
 `destination_map` since pool format 5), and pool files carried `pool_format = 2`
 (then the evaluation engine's `ARTIFACT_FORMATS.pool`, now VisualGeometryToolkitEval's; 3 with the stable streams —
-see "Result-changing changes of 2026-10-01" below — then 4, and now 5). Every pool written before is format 1 and is refused on
+see "Result-changing changes of 2026-10-01" below — then 4, then 5, and now 6: the correspondences' pair key, VisualGeometryToolkitEval 0.8). Every pool written before is format 1 and is refused on
 read — `ArgumentError: <file>: pool format v1 predates the destination map's pair key,
 destination_map (v5) — migrate a format-4 pool with Pools.migrate_pool; convert an
 older one to format 4 first with <a conversion script Eval names that this repository
-does not contain>` — and is NOT migratable: regenerate it. A format-4 pool is the exception: `VisualGeometryToolkitCore.Pools.migrate_pool`
-carries it over to format 5 (it validates and compares before writing); there
-is no format-4 reader.
+does not contain>` — and is NOT migratable: regenerate it. A format-4 or -5 pool is the exception: `Pools.migrate_pool`
+(a tree: VisualGeometryToolkitEval's `scripts/migrate_pools.jl DIR --apply`) carries it over to format 6 (it
+validates and compares before writing); there is no format-4 or -5 reader.
 
 **The pools on disk are format 4.** The existing `_pf3` trees (PT-E-SIFT-4K_pf3,
 HEB-H-SIFT-4K_pf3, the ETH3D-F `scoring_data_F_pf3`) and the ETH3D-F pools
 published on Zenodo (record 23240469) are format 4. No driver of the
-VisualGeometryToolkit 0.2 wave reads them: migrate each tree with
+wave-10 stack (VisualGeometryToolkitEval 0.8) reads them: migrate each tree with
 `migrate_pool` into a NEW tree (or regenerate it through its producer), and
 re-publish the Zenodo artifact and update `configs/data_artifacts.toml`, before
 any driver runs.

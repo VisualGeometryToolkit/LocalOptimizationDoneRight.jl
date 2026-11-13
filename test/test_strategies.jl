@@ -24,7 +24,7 @@ using Random: MersenneTwister, randn
 using StaticArrays: SA
 import VisualGeometryToolkitCore as VgtkCore
 using VisualGeometryToolkitCore: AbstractScoring, BarronShape, CameraModel, EssentialMat, GemanMcclureShape, LossWidth,
-    MsacScoring, Point2, Rect, EfficiencyConstant, TLSShape, WelschShape, codimension, consensus_set, correspondences, decision_width,
+    MsacScoring, Point2, Rect, EfficiencyConstant, TLSShape, WelschShape, codimension, consensus_set, correspondences, decision_boundary, decision_width,
     deploy, estimate, exp_so3, locally_optimize!, loss_at, lo_width, mahalanobis_distances!, minimal_sample_size, px,
     retcode, scale_s2, score_model!, sq_loss_width, ReturnCode, stop_rule, IncrementSize, LadderConverged, NoImprovement,
     LeftBasin, IterationCap, NoRule, StoppingCriterion, StopWhenAny
@@ -240,6 +240,11 @@ end
     # threshold (Cauchy deciding at t: c² = t²/2), not the threshold itself
     @test w2(BarronAdaptive()) == decision_width(BarronShape(0.0), 2.0)^2
     @test w2(BarronAdaptive()) ≈ 2.0^2 / 2
+    # The derivation (LODR#1, wave-10 catch-up review): with no width the α-fit's Barron scale is the one
+    # whose decision flips at the scorer's decision point, like every other arm's no-width width
+    # (Core's `loss_at`). 0.5.1's t² read the threshold AS the Barron scale: that scale decides at √2·t.
+    @test decision_boundary(BarronShape(0.0), sqrt(w2(BarronAdaptive()))) ≈ decision_boundary(msac, buf)
+    @test !(decision_boundary(BarronShape(0.0), 2.0) ≈ decision_boundary(msac, buf))
     # Welsch-HQ-ECM: its one width mode is its efficiency constant, deployed by loss_at
     ecm = WelschHQEcm(efficiency_constant = 1.5)
     @test lo_width(ecm) == EfficiencyConstant(1.5)
