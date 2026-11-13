@@ -371,7 +371,7 @@ declared in the config).
 | `accv2026/data/heb_raw` | 10 | 33.1 GB | `d835eceb45aca04f…` |
 | `accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/train` | 84 | 80.8 GB | `629d32dd5cbe5e8a…` |
 | `accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/val` | 14 | 0.7 GB | `0d8390bcceeeff86…` |
-| `datasets/eth3d/derived/splg/csponds` | 3095 | 0.2 GB | `3377f13f941e3762…` |
+| `datasets/eth3d/derived/splg/`: the published correspondence tree (`[inputs.eth3d_correspondences]`, configs/eth_f_pools.toml) | 3095 | 0.2 GB | `3377f13f941e3762…` |
 | `datasets/eth3d/derived/splg/scoring_data_F_pf3` | 29 | 18.4 GB | `0438172b08d3009e…` |
 | `datasets/phototourism/raw_test/RANSAC-Tutorial-Data-Test` | 1096 | 4.1 GB | `97706acab2e9653b…` |
 | `datasets/phototourism/raw_test/imw2020_testdata/_track_verified_recons` | 21 | 0.5 GB | `0d5022a42d9d7ac4…` |
