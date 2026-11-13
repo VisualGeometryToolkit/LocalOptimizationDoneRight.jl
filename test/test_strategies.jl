@@ -24,7 +24,7 @@ using Random: MersenneTwister, randn
 using StaticArrays: SA
 import VisualGeometryToolkitCore as VgtkCore
 using VisualGeometryToolkitCore: AbstractScoring, BarronShape, CameraModel, EssentialMat, GemanMcclureShape, LossWidth,
-    MsacScoring, Point2, Rect, EfficiencyConstant, TLSShape, WelschShape, codimension, consensus_set, csponds, decision_width,
+    MsacScoring, Point2, Rect, EfficiencyConstant, TLSShape, WelschShape, codimension, consensus_set, correspondences, decision_width,
     deploy, estimate, exp_so3, locally_optimize!, loss_at, lo_width, mahalanobis_distances!, minimal_sample_size, px,
     retcode, scale_s2, score_model!, sq_loss_width, ReturnCode, stop_rule, IncrementSize, LadderConverged, NoImprovement,
     LeftBasin, IterationCap, NoRule, StoppingCriterion, StopWhenAny
@@ -70,7 +70,7 @@ noisy(u) = u + Point2(0.5 * randn(rng), 0.5 * randn(rng))
 anywhere() = Point2(500 * rand(rng), 500 * rand(rng))
 pairs_px = [[u₁ => noisy(u₂) for (u₁, u₂) in matches]; [anywhere() => anywhere() for _ in 1:50]]
 camera = CameraModel(600.0px, SA[250.0px, 250.0px])
-problem = EssentialProblem(camera, camera, csponds(first.(pairs_px), last.(pairs_px)))
+problem = EssentialProblem(camera, camera, correspondences(first.(pairs_px), last.(pairs_px)))
 msac = MsacScoring(problem; threshold = 2.0)
 stu = UniformOutlierScoring(msac, 250.0)
 # A fixed perturbation (no RNG: the Random streams differ across Julia versions):

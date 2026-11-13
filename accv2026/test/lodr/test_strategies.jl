@@ -13,7 +13,7 @@ using Rotations: RotY
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: AbstractWeightPolicy, NormalizedWeightPolicy, RefitFamily, NativeRefit,
     update_nuisance!, update_weights!, lo_width, with_width, LossWidth, EfficiencyConstant, FixedScale,
-    consensus_set, score_model!, scale_s2, csponds, estimate, converged, codimension, minimal_sample_size,
+    consensus_set, score_model!, scale_s2, correspondences, estimate, converged, codimension, minimal_sample_size,
     test_local_optimization_contract, MsacScoring, WelschShape, GemanMcclureShape, TLSShape
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation
@@ -88,7 +88,7 @@ end
 end
 
 @testset "a consensus-anchored lift deploys the fresh set's scale" begin
-    problem = HomographyProblem(csponds(homography_pairs(MersenneTwister(7), H_TRUE; n_in = 40, n_out = 10, σ = 0.3)...))
+    problem = HomographyProblem(correspondences(homography_pairs(MersenneTwister(7), H_TRUE; n_in = 40, n_out = 10, σ = 0.3)...))
     scoring = StudentTUniformScoring(problem, 20.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     ws = RansacWorkspace(problem, scoring, StudentTUniform())
     buf = ws.buf
@@ -107,7 +107,7 @@ fitted(p, halfwidth; seed = 1) =
     estimate(ransac(p, StudentTUniformScoring(p, halfwidth; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()); config = RansacConfig(max_trials = 300), rng = MersenneTwister(seed)))
 
 @testset "local-optimization contract: the hosted strategies (H scene)" begin
-    p = HomographyProblem(csponds(homography_pairs(MersenneTwister(7), H_TRUE; n_in = 80, n_out = 20, σ = 0.5)...))
+    p = HomographyProblem(correspondences(homography_pairs(MersenneTwister(7), H_TRUE; n_in = 80, n_out = 20, σ = 0.5)...))
     θ = fitted(p, 50.0)
     stu = StudentTUniformScoring(p, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     msac = MsacScoring(p; threshold = 3.0)

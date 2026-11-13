@@ -28,7 +28,7 @@ using Random: MersenneTwister, randn
 using LinearAlgebra: normalize
 using StaticArrays: SMatrix, SVector, SA
 using Rotations: RotY
-using VisualGeometryToolkitCore: Point2, Csponds
+using VisualGeometryToolkitCore: Point2, Correspondences
 using VisualGeometryToolkitCore.Synthetic: perturbed_pose
 using VisualGeometryToolkitEval.Evaluation: PairGeom
 
@@ -64,7 +64,7 @@ function two_view_scene(; fov::Symbol = :wide, planar::Bool = false, n_in::Int =
     K2 = SMatrix{3, 3, Float64, 9}(f2, 0, 0, 0, f2, 0, 0.48, 0.42, 1)
     x1c = [Point2{Float64}((K1 * SVector(u[1], u[2], 1.0))[1:2]...) for u in w1]
     x2c = [Point2{Float64}((K2 * SVector(u[1], u[2], 1.0))[1:2]...) for u in w2]
-    geom = PairGeom(K1, K2, R, SVector{3, Float64}(t), Csponds(x1c, x2c))
+    geom = PairGeom(K1, K2, R, SVector{3, Float64}(t), Correspondences(x1c, x2c))
     Rp, tp = perturbed_pose(MersenneTwister(11), R, t, 0.02)
     return (; geom, R, t, w1, w2, x1c, x2c, f1, f2, K1, K2, Rp, tp, loss_width = 0.01 * (f1 + f2) / 2)
 end

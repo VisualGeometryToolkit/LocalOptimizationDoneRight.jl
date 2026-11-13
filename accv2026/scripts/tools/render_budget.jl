@@ -12,7 +12,7 @@
 # the cell's wiring: its scene files, its roster gate, its [render] settings.
 #
 # DETERMINISTIC per-call times (2026-07-23): the time panel's x axis is the
-# SINGLE-THREAD per-call measurement of time_lo_supp.jl ([render.time] timing,
+# SINGLE-THREAD per-call timing of time_lo_supp.jl ([render.time] timing,
 # under EXP_TIMING_DIR) — the in-situ sweep counters are contention-noisy (up
 # to ~40 percent for sub-ms arms) and stay in the scene files (`lo_timing`)
 # for audit only.

@@ -36,7 +36,7 @@ using VisualGeometryToolkitEval.Pools: PoolResiduals, ScoringPool, synthetic_e_p
 using VisualGeometryToolkitEval.Tuning: tuning_spec, GridSpec, SpacedGrid, LinearCount, grid, save_tuning_artifact,
     tuning_table, EfficiencyConstantWindow, PairUnit
 using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, RansacWorkspace, consensus_s2!
-using VisualGeometryToolkitCore: EssentialMat, FundMat, Point2, Csponds, CameraModel, WelschShape, IGPrior, MsacScoring,
+using VisualGeometryToolkitCore: EssentialMat, FundMat, Point2, Correspondences, CameraModel, WelschShape, IGPrior, MsacScoring,
     ConsensusAnchored, EfficiencyConstant, LossWidth, OutlierHalfwidth, scale_interface, width_axis_name, with_width,
     codimension, select_on_grid!, stage_selection, selection_staging, best_pool_model, scoring_workspace
 using VisualGeometryToolkitCore.Pools: PoolPair, num_models, num_points
@@ -79,7 +79,7 @@ function wide_scene(rng; n_in = 120, n_out = 40)
     for _ in 1:n_out
         push!(x1, inside()); push!(x2, inside())
     end
-    cs = Csponds(x1, x2)
+    cs = Correspondences(x1, x2)
     geom = PairGeom(Kc, Kc, R, SVector{3,Float64}(t), cs)
     return (; R, t, Kc, cs, geom, loss_width = 2.0 / s, n_in)
 end

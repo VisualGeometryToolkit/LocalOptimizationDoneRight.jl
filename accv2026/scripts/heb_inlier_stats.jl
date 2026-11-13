@@ -53,9 +53,9 @@ function _counts()
         idx = only(values(sample_units(CV.test, Dict(s => collect(eachindex(pool.pairs))))))
         for i in idx
             p = pool.pairs[i]
-            length(p.gt_inliers) == length(p.csponds) ||
-                error("$s pair $i: gt_inliers mask of length $(length(p.gt_inliers)) for $(length(p.csponds)) correspondences")
-            push!(n_cs, length(p.csponds)); push!(n_inl, count(p.gt_inliers))
+            length(p.gt_inliers) == length(p.correspondences) ||
+                error("$s pair $i: gt_inliers mask of length $(length(p.gt_inliers)) for $(length(p.correspondences)) correspondences")
+            push!(n_cs, length(p.correspondences)); push!(n_inl, count(p.gt_inliers))
             push!(scene_of, s); push!(pool_index, i)
         end
         @info "scene counted" s pairs = length(idx)

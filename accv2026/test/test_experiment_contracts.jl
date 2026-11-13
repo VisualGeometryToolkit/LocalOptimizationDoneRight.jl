@@ -11,7 +11,7 @@
 # contract over its own papers/ tree. This file is the invocation.
 #
 # Scope: experiments/*.jl (top level; supp/, exploratory/, posebench/,
-# validation/ subtrees are support or diagnostics). Non-experiment drivers are exempt (they are measurement records /
+# validation/ subtrees are support or diagnostics). Non-experiment drivers are exempt (they are timing records /
 # legacy ACCV drivers with their own byte-frozen conventions).
 # =============================================================================
 using Test

@@ -29,7 +29,8 @@ using VisualGeometryToolkitEval: cli_option, start_output_flush!
 using VisualGeometryToolkitEval.Pools: load_pool, derive_sample_starts, save_sample_starts, sample_starts
 using VisualGeometryToolkitEval.Experiments: load_run_config, run_key, keyed_cell_dir, write_run_records
 using VisualGeometryToolkitEval.Evaluation: problem_type   # :E/:F/:H → the RANSAC problem type
-using VisualGeometryToolkitEval.Stats: stable_seed, POOL_RNG
+using VisualGeometryToolkitEval.Stats: stable_seed
+using StableRNGs: StableRNG
 using VisualGeometryToolkitEstimation: minimal_sample_size
 include(srcdir("validation_data.jl"))   # pool_tree
 
@@ -38,7 +39,7 @@ include(srcdir("validation_data.jl"))   # pool_tree
 function gaussian_stream(snn, m, σ, seed)
     w = [exp(-Float64(s)^2 / (2σ^2)) + 1e-6 for s in snn]
     invw = 1.0 ./ (w ./ sum(w))
-    rng = POOL_RNG(seed)
+    rng = StableRNG(seed)
     keys = similar(invw)
     return () -> begin
         @inbounds for i in eachindex(invw)
@@ -72,7 +73,7 @@ function derive_pool_samples(cfg; config_source)
         st = derive_sample_starts(p, i -> gaussian_stream(p.pairs[i].snn, m, σ, stable_seed(seed, i));
                                   max_trials = Int(pool["max_trials"]))
         save_sample_starts(dst, p, st;
-            derivation = "replay: POOL_RNG(stable_seed($seed, i)), Gaussian-SNN σ = $σ, keys U^(1/w) (RVG 0.23)",
+            derivation = "replay: StableRNG(stable_seed($seed, i)), Gaussian-SNN σ = $σ, keys U^(1/w) (RVG 0.23)",
             provenance = Dict{String,Any}("driver" => "derive_pool_samples.jl", "pool_config_key" => key,
                                           "structural_certified" => certified))
         @info "derived" scene pairs = length(p.pairs) samples = sum(length, st) structural_certified = certified

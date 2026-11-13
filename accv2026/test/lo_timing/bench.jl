@@ -50,7 +50,7 @@ Threads.nthreads() == 1 || error("bench.jl: run single-threaded (julia -t 1); go
 # =============================================================================
 # The Table 1 arms on the recorded call set
 # =============================================================================
-include(joinpath(pkgdir(VisualGeometryToolkitEstimation), "test", "lo_timing", "call_set.jl"))   # CALL_SET_FIXTURE, read_fixture, pool_csponds, problem_of: the call set's one reader (VisualGeometryToolkitEstimation's)
+include(joinpath(pkgdir(VisualGeometryToolkitEstimation), "test", "lo_timing", "call_set.jl"))   # CALL_SET_FIXTURE, read_fixture, pool_correspondences, problem_of: the call set's one reader (VisualGeometryToolkitEstimation's)
 include(joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "bench_record.jl"))   # calibration_spread, kernel_arm, write_bench_record: the record the gate reads (VisualGeometryToolkitCore's)
 
 # The Table 1 arms at the equal LO budget. The efficiency constants are the Welsch

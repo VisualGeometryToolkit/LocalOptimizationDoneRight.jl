@@ -58,7 +58,7 @@ three records split by licence:
 |---|---|---|
 | PhotoTourism, [10.5281/zenodo.23240462](https://doi.org/10.5281/zenodo.23240462) | `pt_raw_validation`, `pt_raw_test` | CC BY 4.0 (our packaging; the IMC 2020 / RANSAC-tutorial / YFCC100M sources keep their terms) |
 | HEB + stored baselines, [10.5281/zenodo.23240467](https://doi.org/10.5281/zenodo.23240467) | `heb_raw`, `pt_e_superansac_stored` | CC BY 4.0 (our packaging; HEB keeps its terms) |
-| ETH3D, [10.5281/zenodo.23240469](https://doi.org/10.5281/zenodo.23240469) | `eth3d_splg_csponds`, `eth3d_f_pools_1k` (20 files: `eth3d_f_pools_1k_meta`, one `eth3d_f_pools_1k_<scene>` per scene, `facade` as `eth3d_f_pools_1k_facade_part1..7`) | CC BY-NC-SA 4.0 (inherited from ETH3D, share-alike) |
+| ETH3D, [10.5281/zenodo.23240469](https://doi.org/10.5281/zenodo.23240469) | `eth3d_splg_correspondences` (its Zenodo file published as `eth3d_splg_csponds`), `eth3d_f_pools_1k` (20 files: `eth3d_f_pools_1k_meta`, one `eth3d_f_pools_1k_<scene>` per scene, `facade` as `eth3d_f_pools_1k_facade_part1..7`) | CC BY-NC-SA 4.0 (inherited from ETH3D, share-alike) |
 
 Each record's description lists the upstream sources to cite alongside it.
 
@@ -66,7 +66,7 @@ Each record's description lists the upstream sources to cite alongside it.
 |---|---|---|---|
 | `pt_raw_validation`, `pt_raw_test` (required) | the RootSIFT matches + confidences and COLMAP models of the 10 + 11 PhotoTourism scenes | data | `scripts/pt_e_pools.jl` → every PT-E cell |
 | `heb_raw` (required) | the HEB `<scene>_homographies.h5` of the 10 `heb` scenes | data | `scripts/heb_h_pools.jl` → the HEB cells, `scripts/heb_inlier_stats.jl` |
-| `eth3d_splg_csponds` (required) | the ETH3D SuperPoint+LightGlue correspondences (the one input made outside this repository) | data | provenance of the ETH3D-F pools |
+| `eth3d_splg_correspondences` (required) | the ETH3D SuperPoint+LightGlue correspondences (the one input made outside this repository) | data | provenance of the ETH3D-F pools |
 | `pt_e_superansac_stored` (required) | the stored SupeRANSAC results of Tab. 3 | results | `scripts/e2e_ransac.jl` when `scripts/superansac_e2e.jl` has not run |
 | `eth3d_f_pools_1k` (required) | the ETH3D-F pools of record, frozen; bound as one artifact per scene plus `eth3d_f_pools_1k_meta` (the run records), a scene over 1.6 GB (`facade`) as sub-parts whose chunks the fetch reassembles; fetched together | data | the ETH3D cells (`scoring_pools.jl --config=eth_f_pools` then reports them done) |
 
@@ -504,8 +504,8 @@ curve is accordingly TLS-IRLS-ŝ at the fixed plug-in, not the old fixed
 
 ## Correspondences (the one step outside this repository)
 
-The `derived/splg/csponds` tree under `data/exp_raw/datasets/eth3d/`
-(SuperPoint+LightGlue) is produced by a separate feature-matching tool
+The SuperPoint+LightGlue correspondence tree under `data/exp_raw/datasets/eth3d/derived/splg/`
+(`input_jld2_dir` of configs/eth_f_pools.toml) is produced by a separate feature-matching tool
 (`densematch-tools`, `extract_splg_batch.py --manifest <pairs.tsv>`), not by
 this project. It carries the `manifest.tsv` of the image
 pairs it was extracted for and one file per scene; the pool generator reads

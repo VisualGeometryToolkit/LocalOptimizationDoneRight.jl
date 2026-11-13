@@ -1,5 +1,29 @@
 # LocalOptimizationDoneRight changelog
 
+## 0.7.0 (unreleased): the wave-10 stack and the terminology taxonomy
+
+On the wave-10 stack: VisualGeometryToolkitCore 0.10 and VisualGeometryToolkitEstimation 0.11 (package and test);
+accv2026 also VisualGeometryToolkitEval 0.8 and RANSACScoringDoneRight 0.8.
+
+### Breaking
+
+- **Requires the wave-10 stack**: VisualGeometryToolkitCore 0.10 and VisualGeometryToolkitEstimation 0.11
+  (`[compat]` of the package, test and accv2026); accv2026 VisualGeometryToolkitEval 0.8 and RANSACScoringDoneRight 0.8.
+- **The terminology taxonomy (correspondence, observation)**: the PoseLib refiners' two-view frame carries
+  `frame.cs` as a `Correspondences` of `Point2{Float64}` (VisualGeometryToolkitCore 0.10's name for the
+  retired `Csponds`); "measurement" and "keypoint" are gone from this repository's names and prose.
+- **`LiftableProblem` is retired upstream (no alias)**: the HQ/GNC `locally_optimize!` methods are typed on
+  VisualGeometryToolkitEstimation's `MinimalSolveProblem` (the same type the alias named).
+- **accv2026's configs of record rename their keys**: the pool configs' `min_csponds` is `min_correspondences`
+  (VisualGeometryToolkitEval's keyword), eth_f_pools' `[inputs.eth3d_csponds]` is `[inputs.eth3d_correspondences]`,
+  and the ETH3D SuperPoint+LightGlue artifact is bound as `eth3d_splg_correspondences` (catalog and Artifacts.toml),
+  its Zenodo file name of record kept as `published_name = "eth3d_splg_csponds"` (no re-deposit). The pool configs'
+  run keys move with their keys.
+- **accv2026's pool-sample derivation draws with StableRNGs' `StableRNG`** (VisualGeometryToolkitEval retired its alias
+  `POOL_RNG`, the same type): the same streams; the recorded derivation string names `StableRNG`.
+- accv2026 no longer lists VisualGeometryToolkitIO: nothing in the project imports it (it arrives through
+  VisualGeometryToolkitEval).
+
 ## 0.6.2 (unreleased)
 
 A patch: requires Julia 1.13 (`julia = "1.13"` in the `[compat]` of the package and of every

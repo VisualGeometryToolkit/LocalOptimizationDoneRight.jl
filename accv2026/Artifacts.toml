@@ -158,11 +158,11 @@ lazy = true
     sha256 = "da9badabab4e5656d07fcc35e9768cfcc2091279b6ab40f034e8190c895e4429"
     url = "https://zenodo.org/records/23240469/files/eth3d_f_pools_1k_terrains.tar.gz?download=1"
 
-[eth3d_splg_csponds]
+[eth3d_splg_correspondences]
 git-tree-sha1 = "e622fb709682d75a9924638e47a9f4d329b1fbd4"
 lazy = true
 
-    [[eth3d_splg_csponds.download]]
+    [[eth3d_splg_correspondences.download]]
     sha256 = "15bb2a631ee8492570a59d9e04af5e23bd0b4e73f5532ef96f27fef91616bc6e"
     url = "https://zenodo.org/records/23240469/files/eth3d_splg_csponds.tar.gz?download=1"
 

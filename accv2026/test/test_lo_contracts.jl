@@ -16,7 +16,7 @@ import VisualGeometryToolkitEstimation as VgtkEstimation
 using Test, Random, LinearAlgebra, StaticArrays
 using VisualGeometryToolkitEstimation
 using VisualGeometryToolkitCore
-using VisualGeometryToolkitCore: Synthetic, Csponds, consensus_set, mahalanobis_distances!, estimate, iterations, lo_width,
+using VisualGeometryToolkitCore: Synthetic, Correspondences, consensus_set, mahalanobis_distances!, estimate, iterations, lo_width,
     minimal_sample_size, codimension
 using VisualGeometryToolkitEstimation: consensus_s2!
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
@@ -34,7 +34,7 @@ const _LOC_A = 0.05                        # operating half-width of the scene
 # The scene's calibrated plane points through the identity camera: the one
 # E-problem construction (unit bearings by back-projection).
 const _LOC_PROB = EssentialProblem(CameraModel(SMatrix{3, 3, Float64, 9}(I)), CameraModel(SMatrix{3, 3, Float64, 9}(I)),
-                                   Csponds(_LOC.w1, _LOC.w2))
+                                   Correspondences(_LOC.w1, _LOC.w2))
 
 # Symbol → wrapped-strategy map for the three GNC arms (the historical
 # per-variant construction sites). `efficiency_constant` has no mechanism default

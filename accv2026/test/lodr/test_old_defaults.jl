@@ -113,7 +113,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         # Calibrated points moved into the PIXEL domain of ECAM: `find_essential`
         # takes pixels and the cameras that produced them, and its threshold is
         # in pixels too.
-        pxcs = csponds(topx.(u₁), topx.(u₂))
+        pxcs = correspondences(topx.(u₁), topx.(u₂))
         esc = old_scoring(EssentialProblem(ECAM, ECAM, pxcs), :essential)
         r = find_essential(ECAM, ECAM, pxcs; scoring = esc, local_optimization_strategy = welsch_hq(:essential), rng = MersenneTwister(139))
         @test r !== nothing
@@ -125,7 +125,7 @@ old_scoring(problem::HandEyeProblem, ::Symbol) = StudentTUniformScoring(problem,
         @test s[3] / s[1] < 1.0e-6
 
         r4 = find_essential(
-            ECAM, ECAM, csponds(topx.(u₁[1:4]), topx.(u₂[1:4])); scoring = esc, local_optimization_strategy = welsch_hq(:essential), rng = MersenneTwister(140)
+            ECAM, ECAM, correspondences(topx.(u₁[1:4]), topx.(u₂[1:4])); scoring = esc, local_optimization_strategy = welsch_hq(:essential), rng = MersenneTwister(140)
         )
         @test !converged(r4) && estimate(r4) === nothing
         # The floor refusal: a threshold carried over in the OLD calibrated

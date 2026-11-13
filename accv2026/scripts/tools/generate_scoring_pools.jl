@@ -11,7 +11,7 @@
 # variance)` on a PIXEL-frame problem carrying the pool's sampler; one scene is
 # written by VisualGeometryToolkitEval's `write_scene_pool` (threads, per-pair seeds,
 # skip-existing, the light file and its residuals). Per dataset:
-#   phototourism — σ̂² over the SfM-track keypoints (`TrackVariance`), the
+#   phototourism — σ̂² over the SfM-track observations (`TrackVariance`), the
 #                  reader's pixel-Sampson GT mask;
 #   heb          — σ̂² over the GT inliers (`InlierVariance`), H solved in the
 #                  calibrated chart through labelled K⁻¹ maps;
@@ -27,7 +27,7 @@ using VisualGeometryToolkitEval.Evaluation: problem_type   # :E/:F/:H → the RA
 using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem, GaussianSampler,
     ProsacSampler, UniformSampler, draw_hypotheses, TrackVariance, InlierVariance, minimal_sample_size
 using VisualGeometryToolkitCore: CameraModel, HomographyMap, UnlabeledFrame, GnomonicFrame
-using VisualGeometryToolkitCore.Pools: PoolPair, pair_csponds, pair_snn, pair_K1, pair_K2
+using VisualGeometryToolkitCore.Pools: PoolPair, pair_correspondences, pair_snn, pair_K1, pair_K2
 using StaticArrays: SMatrix
 include(srcdir("validation_data.jl"))   # pool_tree, pool_scenes (split_scenes)
 
@@ -41,19 +41,19 @@ function pool_sampler(pool, snn, mss)
     error("[pool] sampler = $s: expected gaussian | prosac | uniform")
 end
 
-# The PIXEL-frame generation problem of a raw pair (csponds Float64, the sampler on the problem).
+# The PIXEL-frame generation problem of a raw pair (correspondences Float64, the sampler on the problem).
 function generation_problem(P, raw, pool)
-    cs, sampler = pair_csponds(raw), pool_sampler(pool, pair_snn(raw), minimal_sample_size(P))
+    cs, sampler = pair_correspondences(raw), pool_sampler(pool, pair_snn(raw), minimal_sample_size(P))
     P === EssentialProblem && return EssentialProblem(CameraModel(pair_K1(raw)), CameraModel(pair_K2(raw)), cs; sampler)
     P === FundMatProblem && return FundMatProblem(cs; sampler)
-    # A HEB homography is solved in the calibrated chart: K⁻¹ measurement maps labelled into it.
+    # A HEB homography is solved in the calibrated chart: K⁻¹ observation maps labelled into it.
     raw isa RomaPair && return HomographyProblem(cs; sampler)
     K⁻¹(K, side) = HomographyMap{UnlabeledFrame{2}, GnomonicFrame{side}}(SMatrix{3,3,Float64,9}(inv(K)))
     return HomographyProblem(cs; sampler, src_map = K⁻¹(pair_K1(raw), :src), dst_map = K⁻¹(pair_K2(raw), :dst),
                              model_frames = (GnomonicFrame{:src}, GnomonicFrame{:dst}))
 end
 
-# σ̂²: the SfM-track keypoints (PhotoTourism), else the GT inliers.
+# σ̂²: the SfM-track observations (PhotoTourism), else the GT inliers.
 pool_variance(dataset, P, raw, pool) =
     dataset == "phototourism" ? TrackVariance(raw.track_kpts_A, raw.track_kpts_B) :
     InlierVariance(; min_inliers = dataset == "heb" ? Int(pool["min_gt_inliers"]) : minimal_sample_size(P))
@@ -69,7 +69,7 @@ end
 "The raw pairs of `scene` (pixels), read as the config's [source] and [pool] state."
 function raw_pairs(cfg, scene)
     src, pool = cfg["source"], cfg["pool"]
-    sub = (; min_csponds = Int(pool["min_csponds"]), max_pairs_per_scene = Int(pool["max_pairs_per_scene"]),
+    sub = (; min_correspondences = Int(pool["min_correspondences"]), max_pairs_per_scene = Int(pool["max_pairs_per_scene"]),
            subsample_overdraw = Int(pool["subsample_overdraw"]), subsample_seed = Int(pool["subsample_seed"]))
     root(k) = joinpath(data_root(), src[k])
     route = get(src, "route", cfg["experiment"]["dataset"])
@@ -94,7 +94,7 @@ function generate_scoring_pools(cfg; out_dir = pool_tree(cfg), scenes = pool_sce
     P = problem_type(Symbol(ex["problem"]))
     build = pair_builder(ex["dataset"], P, pool)
     for scene in scenes
-        raws = [r for r in raw_pairs(cfg, scene) if length(pair_csponds(r)) >= minimal_sample_size(P)]
+        raws = [r for r in raw_pairs(cfg, scene) if length(pair_correspondences(r)) >= minimal_sample_size(P)]
         limit === nothing || (raws = raws[1:min(limit, end)])   # smoke runs only
         write_scene_pool(joinpath(out_dir, "$scene.jld2"), raws, build; problem = Symbol(ex["problem"]),
                          residual_kind = P === EssentialProblem ? :tangent_sampson : :sampson,

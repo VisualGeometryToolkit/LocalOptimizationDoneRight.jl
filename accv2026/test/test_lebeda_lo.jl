@@ -35,7 +35,7 @@ end
 # test regime; a planar variant for H), in a fake
 # pool frame with non-trivial focals so the E-track loss-width conversion is live.
 using Random, LinearAlgebra, StaticArrays
-using VisualGeometryToolkitCore: Point2, EssentialMat, FundMat, HomographyMat, Csponds
+using VisualGeometryToolkitCore: Point2, EssentialMat, FundMat, HomographyMat, Correspondences
 using RansacLibLO: lebeda_iterlo
 
 include(joinpath(@__DIR__, "two_view_scene.jl"))
@@ -54,8 +54,8 @@ _lebeda_pool_model(s, track::Symbol) = track === :E ? FundMat(_lebeda_seed(s, :E
 
 # The refit layer's per-pair context, laid out as `build_pair_ctx` builds it
 # from a pool pair: the E track reads its bearings from the E problem (the
-# pool-frame csponds back-projected by the pool cameras); F and H take the
-# pool-frame csponds verbatim. Its one stored model is the track's seed; its
+# pool-frame correspondences back-projected by the pool cameras); F and H take the
+# pool-frame correspondences verbatim. Its one stored model is the track's seed; its
 # refit template is the Jeffreys Student-t + uniform marginal (an external
 # refiner reads none).
 function _lebeda_ctx(s, track::Symbol)

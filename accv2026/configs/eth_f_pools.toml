@@ -20,7 +20,7 @@ pool_dir = "datasets/eth3d/derived/splg/scoring_data_F_pf3"
 route = "roma"
 splits = ["eth3d:validation", "eth3d:test"]
 image_unit = "px"
-input_jld2_dir = "datasets/eth3d/derived/splg/csponds"
+input_jld2_dir = "datasets/eth3d/derived/splg/csponds"   # the published tree's directory (Zenodo 23240469), a foreign token: never renamed
 what = "eth3d SuperPoint+LightGlue consolidated correspondences (with depth-warp GT inlier labels)"
 provenance = "the eth3d splg extraction + consolidation (a retired consolidation step; the files are read by VisualGeometryToolkitEval Datasets load_roma_pairs); REPRODUCE.md"
 
@@ -33,7 +33,7 @@ sampler = "gaussian"             # the Gaussian-SNN minimal-sample sampler
 gaussian_sigma = 0.125           # its σ (the e2e live loop draws with the same)
 target = 1000                # accepted minimal samples per pair
 max_trials = 100000        # minimal-sample draws per pair, at most
-min_csponds = 20                 # a raw pair with fewer kept correspondences is dropped
+min_correspondences = 20                 # a raw pair with fewer kept correspondences is dropped
 max_pairs_per_scene = 2200       # per-scene pair cap (a seeded subsample)
 subsample_overdraw = 2           # the subsample draws this many × the cap, trimmed after the reader's rejections
 subsample_seed = 42              # StableRNG(stable_seed(subsample_seed, scene))
@@ -46,8 +46,8 @@ pool_seed = 42                   # the minimal-sample streams: StableRNG(stable_
 # archived earlier copy kept beside the pool (2026-10-02..06; the pool readers open
 # `<scene>.jld2` by name and never read it): not part of the pool of record, so
 # `sha256_exclude` leaves it out.
-[inputs.eth3d_csponds]
-tier = "eth3d_splg_csponds"
-path = "datasets/eth3d/derived/splg/csponds"
+[inputs.eth3d_correspondences]
+tier = "eth3d_splg_correspondences"
+path = "datasets/eth3d/derived/splg/csponds"   # the published tree's directory (Zenodo 23240469), a foreign token: never renamed
 sha256 = "3377f13f941e376223b328ea185508d434ae5ba704866ef5a9fce7d80befb15e"
 provenance = "the ETH3D SuperPoint+LightGlue consolidated correspondences (densematch-tools extract_splg_batch.py; REPRODUCE.md, Correspondences)"

@@ -86,7 +86,7 @@
 # one `residual_rows!` / `residual_jacobian_rows!` for every Sampson-constraint
 # problem, on `ChartLm{<:HomographyManifold8, …}`: VGC's exact
 # `whitened_jacobian_rows!`, robust/lm_core.jl; until VGC 0.4 the rows froze the
-# whitening at the chart's anchor, as in the measurement below). With UNIT weights that is plain
+# whitening at the chart's anchor, as in the experiment below). With UNIT weights that is plain
 # nonlinear least squares on Sampson — the Gold Standard step — and it is the
 # same machinery every LO arm in this paper runs on (`Irls{K}`, `HQ{K}`,
 # `Gnc{…}`, the Welsch/Barron variants). The weighted ALGEBRAIC DLT

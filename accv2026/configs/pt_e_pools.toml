@@ -31,7 +31,7 @@ pool_dir = "accv2026/data/PT-E-SIFT-4K_pf3"
 # the cell's scene set is exactly what this list resolves to, through
 # `split_scenes` (src/validation_data.jl).
 splits = ["phototourism:validation", "phototourism:test"]
-image_unit = "px"                # raw csponds are pixels (driver asserts)
+image_unit = "px"                # raw correspondences are pixels (driver asserts)
 
 # The raw PhotoTourism trees, RELATIVE to data_root(). Declared HERE because
 # they are THIS HOST'S layout, not the dataset's: the two tutorial splits'
@@ -65,7 +65,7 @@ sampler = "gaussian"             # the Gaussian-SNN minimal-sample sampler
 gaussian_sigma = 0.125           # its σ (the e2e live loop draws with the same)
 target = 4000                # accepted minimal samples per pair
 max_trials = 400000        # minimal-sample draws per pair, at most
-min_csponds = 20                 # a raw pair with fewer kept correspondences is dropped
+min_correspondences = 20                 # a raw pair with fewer kept correspondences is dropped
 max_pairs_per_scene = 2200       # per-scene pair cap (a seeded subsample)
 subsample_overdraw = 2           # the subsample draws this many × the cap, trimmed after the reader's rejections
 subsample_seed = 42              # StableRNG(stable_seed(subsample_seed, scene))

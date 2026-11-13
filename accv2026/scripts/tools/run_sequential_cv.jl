@@ -2,7 +2,7 @@
 # =============================================================================
 # run_sequential_cv.jl — THE SEQUENTIAL CV driver (GPU): each selector's width
 # once, then every refiner's width at its selector's fixed value, then the ζ
-# evaluation at the tuned points. Design and the measurements behind it:
+# evaluation at the tuned points. Design and the experiments behind it:
 # notes/sequential_cv.md.
 #
 # EVERY parameter is the cell's folded config (`--config`, written by

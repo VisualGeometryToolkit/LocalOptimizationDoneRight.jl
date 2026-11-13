@@ -142,7 +142,7 @@ current_cost(state::ManifoldLiftHQState) = state.cur_cost
 # the loss from `lo_loss` (scoring_glue.jl: the shape at its width mode's
 # width, VGC `loss_at`), the manifold from the provider.
 function locally_optimize!(
-        ::LoBuffers, lo::HQ, problem::LiftableProblem, model,
+        ::LoBuffers, lo::HQ, problem::MinimalSolveProblem, model,
         cs::ConsensusSet, buf::ScoreBuffers, scoring
     )
     loss = lo_loss(lo, cs, scoring, buf)
@@ -169,7 +169,7 @@ end
 # tail steepness only. The retired `m/√2` currency's values are migrated once
 # (×1/√2). Flat z₀, as the arm always started.
 function locally_optimize!(
-        ::LoBuffers, lo::BarronHQ, problem::LiftableProblem, model,
+        ::LoBuffers, lo::BarronHQ, problem::MinimalSolveProblem, model,
         cs::ConsensusSet, buf::ScoreBuffers, scoring
     )
     loss = loss_at(lo, BarronShape(lo.α), cs, scoring, buf)
@@ -181,7 +181,7 @@ end
 # or the scorer's decision point (its GM half-weight radius at the scorer's
 # threshold). Flat z₀, as the arm always started.
 function locally_optimize!(
-        ::LoBuffers, lo::GmHqEps, problem::LiftableProblem, model,
+        ::LoBuffers, lo::GmHqEps, problem::MinimalSolveProblem, model,
         cs::ConsensusSet, buf::ScoreBuffers, scoring
     )
     loss = loss_at(lo, GemanMcclureShape(), cs, scoring, buf)
@@ -192,11 +192,11 @@ end
 # problem: its extent is consumed by RANSAC's post-IRLS consensus hook
 # (`_check_extent` — cheirality and quad-convexity over the board rectangle),
 # never by the manifold lift, which only refines θ. The wrapper is not a
-# `LiftableProblem` (it wraps one), so it forwards to the inner problem to
+# `MinimalSolveProblem` (it wraps one), so it forwards to the inner problem to
 # reach its lift provider; the extent guard still fires upstream on the
 # wrapper. Every provider-backed arm forwards — the HQ family and GNC alike.
 locally_optimize!(
-    L::LoBuffers, lo::Union{HQ, BarronHQ, GmHqEps, Gnc{<:Irls}}, problem::BoundedProblem{<:LiftableProblem},
+    L::LoBuffers, lo::Union{HQ, BarronHQ, GmHqEps, Gnc{<:Irls}}, problem::BoundedProblem{<:MinimalSolveProblem},
     model, cs::ConsensusSet, buf::ScoreBuffers, scoring
 ) =
     locally_optimize!(L, lo, getfield(problem, :inner), model, cs, buf, scoring)
@@ -286,7 +286,7 @@ current_cost(state::ManifoldLiftGncState) = state.cur_cost
 # to a vacuous breadth) → μ₀ (Yang–Carlone seed extreme / entry policy) →
 # schedule state; the seed model enters best-tracking at the target loss.
 function locally_optimize!(
-        ::LoBuffers, lo::Gnc{<:Irls}, problem::LiftableProblem, model,
+        ::LoBuffers, lo::Gnc{<:Irls}, problem::MinimalSolveProblem, model,
         cs::ConsensusSet, buf::ScoreBuffers, scoring
     )
     # c̄² = efficiency_constant²·ŝ², deployed as a (efficiency_constant, ŝ²) pair.

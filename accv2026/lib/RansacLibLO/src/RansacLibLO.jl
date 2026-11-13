@@ -87,7 +87,7 @@ m_θ = 2^(1/4) ≈ 1.19 on θ, vs Lebeda's published m_θ = 2 (⇒ 4.0 on θ²).
 Model-update budget (linear solves per call, every stage active): full LO =
 `1 + num_lo_trials·(2 + num_lsq_iterations)`; ILSQ-only =
 `1 + num_lsq_iterations`. Stages whose consensus gate is thinner than the
-minimal sample size skip their solve, so the count is a per-call measurement
+minimal sample size skip their solve, so the count is recorded per call
 (returned as `updates`), not a constant.
 """
 struct LebedaLOOptions

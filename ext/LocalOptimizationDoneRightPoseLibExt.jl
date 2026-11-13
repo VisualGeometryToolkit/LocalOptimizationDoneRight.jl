@@ -22,7 +22,7 @@ const _ADAPT_OPERATING_EFFICIENCY_CONSTANT = LocalOptimizationDoneRight._ADAPT_O
 import LocalOptimizationDoneRight: truncated_refit_pose
 using PoseLib: refine_relpose, refine_fundamental, refine_homography, LeZach
 using StaticArrays: SMatrix
-using VisualGeometryToolkitCore: VisualGeometryToolkitCore, EssentialMat, Csponds, Point2, Vec3,
+using VisualGeometryToolkitCore: VisualGeometryToolkitCore, EssentialMat, Correspondences, Point2, Vec3,
     EuclideanMap, TLSShape, LossWidth, OutlierHalfwidth, loss_width, sources, targets, cheiral_pose_fast,
     codimension, data_size, mahalanobis_distances!, with_width, loss_width_to_outlier_halfwidth, FixedS2, scale_s2,
     deploy, fit_scale, JeffreysPrior, Irls, estimate
@@ -40,14 +40,14 @@ _poselib_strategy(::PoseLibLZ) = LeZach()
 
 The per-pair workspace of a PoseLib refiner: the frame's calibrations `Kc₁`,
 `Kc₂` and its correspondences, as the two-view frame of VisualGeometryToolkitCore's
-external-refit contract hands them over (`Kc1`, `Kc2` 3×3; `cs` a `Csponds` of
+external-refit contract hands them over (`Kc1`, `Kc2` 3×3; `cs` a `Correspondences` of
 `Point2{Float64}`, the form PoseLib's `refine_*` consume) — held as they are,
 not re-packed.
 """
 struct PoseLibWorkspace
     Kc1::SMatrix{3, 3, Float64, 9}
     Kc2::SMatrix{3, 3, Float64, 9}
-    cs::Csponds{Point2{Float64}, Point2{Float64}, Vector{Point2{Float64}}, Vector{Point2{Float64}}, @NamedTuple{}}
+    cs::Correspondences{Point2{Float64}, Point2{Float64}, Vector{Point2{Float64}}, Vector{Point2{Float64}}, @NamedTuple{}}
 end
 PoseLibWorkspace(frame) = PoseLibWorkspace(frame.Kc1, frame.Kc2, frame.cs)
 

@@ -58,7 +58,7 @@ import VisualGeometryToolkitCore: locally_optimize!, update_model!, update_resid
 # The core optimization strategies and the strategy registry machinery (VisualGeometryToolkitCore
 # robust/strategies.jl): the types, the shared loss table and the keyword constructor.
 using VisualGeometryToolkitCore: Irls, LOSS_TAGS, lo_loss, strategy_loss, lo_width_value, lo_construct
-using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation, LoBuffers, LiftableProblem,
+using VisualGeometryToolkitEstimation: VisualGeometryToolkitEstimation, LoBuffers, MinimalSolveProblem,
     BoundedProblem, EssentialProblem, PosteriorLikelihood, StopWhenNoImprovement,
     posterior_irls!, consensus_posterior, required_outlier_halfwidth
 

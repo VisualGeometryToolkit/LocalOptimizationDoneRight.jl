@@ -34,7 +34,7 @@ raw_dir = "accv2026/data/heb_raw"
 # operating points it reads (supp_H_miscal, stage h_cv) tunes on the 5
 # VALIDATION scenes.
 splits = ["heb:validation", "heb:test"]
-image_unit = "px"                # raw csponds are pixels (driver asserts)
+image_unit = "px"                # raw correspondences are pixels (driver asserts)
 
 [pool]
 version = "v2"                   # v1 = the refused pre-pool_format-3 trees
@@ -46,7 +46,7 @@ sampler = "gaussian"             # the Gaussian-SNN minimal-sample sampler
 gaussian_sigma = 0.125           # its σ (the e2e live loop draws with the same)
 target = 4000                # accepted minimal samples per pair
 max_trials = 100000        # minimal-sample draws per pair, at most
-min_csponds = 20                 # a raw pair with fewer kept correspondences is dropped
+min_correspondences = 20                 # a raw pair with fewer kept correspondences is dropped
 max_pairs_per_scene = 2200       # per-scene pair cap (a seeded subsample)
 subsample_overdraw = 2           # the subsample draws this many × the cap, trimmed after the reader's rejections
 subsample_seed = 42              # StableRNG(stable_seed(subsample_seed, scene))

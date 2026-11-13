@@ -4,7 +4,7 @@
 # 1. One-code-path enforcement: the `locally_optimize!` entries for HQ{K} and
 #    Gnc{<:Irls} have exactly ONE implementation each (the generic
 #    ManifoldLiftHQ/ManifoldLiftGnc dispatch on VisualGeometryToolkitEstimation's
-#    `LiftableProblem`, src/lift/lifts.jl). Reintroducing a per-problem port fails here.
+#    `MinimalSolveProblem`, src/lift/lifts.jl). Reintroducing a per-problem port fails here.
 # 2. F gains GNC for free: `Gnc{Irls{WelschShape}}` on FundMatProblem works
 #    through the F provider (it error-stubbed before the collapse) and improves
 #    a perturbed seed on a seeded synthetic scene.
@@ -38,12 +38,12 @@ using .EpipolarScenes
     # not a per-problem port — census the core implementations without it.
     hq_core = [m for m in hq_impl if !(problem_param(m) <: RVGC.BoundedProblem)]
     @test length(hq_core) == 1                       # ONE generic HQ implementation
-    @test problem_param(hq_core[1]) == RVGC.LiftableProblem
+    @test problem_param(hq_core[1]) == RVGC.MinimalSolveProblem
 
     gnc_ms = [m for m in ms if lo_base(m) === LODR.Gnc]
     gnc_impl = [m for m in gnc_ms if problem_param(m) !== Any]
     @test length(gnc_impl) == 1                      # ONE generic Gnc{<:Irls} implementation
-    @test problem_param(gnc_impl[1]) == RVGC.LiftableProblem
+    @test problem_param(gnc_impl[1]) == RVGC.MinimalSolveProblem
 
     # Any other problem reaches the ONE refusal (VisualGeometryToolkitCore's LO
     # contract), typed on the strategy root only — not a per-strategy stub.

@@ -12,7 +12,7 @@ using Test, Random, LinearAlgebra, StaticArrays, StructArrays
 using Statistics: median
 using Rotations: RotMatrix, RotXYZ, RotY, RotZ, MRP
 using VisualGeometryToolkitCore
-using VisualGeometryToolkitCore: Csponds, csponds, converged, estimate, rotation, translation, center, division_coeff,
+using VisualGeometryToolkitCore: Correspondences, correspondences, converged, estimate, rotation, translation, center, division_coeff,
     homography, radial_rows, is_map_inlier, IGPrior, FundMatManifold7, retract, project, Point2, Point3, Line2D,
     RadialHomography, RadialCamera, radial_transfer, unit_normalize, calibration_matrix
 using VisualGeometryToolkitCore.Synthetic: projective_distance
@@ -98,7 +98,7 @@ end
 
 @testset "H: LO-RANSAC — StudentTUniform" begin
     source_pts, target_pts, H_true, n_inliers = make_homography_data(n_inliers = 100, n_outliers = 30, noise = 0.5, seed = 42)
-    problem = HomographyProblem(csponds(source_pts, target_pts))
+    problem = HomographyProblem(correspondences(source_pts, target_pts))
     result = ransac(
         problem, StudentTUniformScoring(problem, 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior());
         local_optimization_strategy = StudentTUniform(),
@@ -111,7 +111,7 @@ end
     @test sum(inlier_mask(result)) >= n_inliers * 0.7
 end
 
-# MAPPED homography: pixels in, `K⁻¹`-style measurement maps, a model-frame H
+# MAPPED homography: pixels in, `K⁻¹`-style observation maps, a model-frame H
 # out. The maps are anisotropic, differ per view and carry a ROLL, so a
 # consumer that applies the model-frame H to raw pixels (the LM refit, the HQ
 # lift) is caught rather than accidentally agreeing.
@@ -125,7 +125,7 @@ const mapped_test_pts = [SA[300.0, 400.0], SA[600.0, 300.0], SA[450.0, 550.0], S
 
 @testset "mapped H — the strategies refit in a consistent frame" begin
     source_pts, target_pts, H_true, n_inliers = make_homography_data(n_inliers = 100, n_outliers = 30, noise = 0.5, seed = 42)
-    cs = csponds(source_pts, target_pts)
+    cs = correspondences(source_pts, target_pts)
     pm = HomographyProblem(cs; src_map = C₁, dst_map = C₂)
     pu = HomographyProblem(cs)
     for lo in (StudentTUniform(), welsch_hq(:homography))
@@ -167,7 +167,7 @@ end
 
 @testset "F: LO-RANSAC — StudentTUniform" begin
     source_pts, target_pts, n_inliers = make_fundmat_data(n_inliers = 100, n_outliers = 30, noise = 0.5, seed = 42)
-    problem = FundMatProblem(csponds(source_pts, target_pts))
+    problem = FundMatProblem(correspondences(source_pts, target_pts))
     result = ransac(
         problem,
         StudentTUniformScoring(minimal_sample_size(problem), 50.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior());

@@ -101,7 +101,8 @@ required = true
 what = "HEB <scene>_homographies.h5 files (SIFT matches, GT homographies, per-match GT inlier flags) of the 10 scenes of the registered heb split"
 provenance = "Homography Estimation Benchmark (Barath et al., CVPR 2023), unchanged"
 
-[artifacts.eth3d_splg_csponds]
+[artifacts.eth3d_splg_correspondences]
+published_name = "eth3d_splg_csponds"   # the Zenodo file name of record, published before the terminology ruling (VisualGeometryToolkitEval DataArtifacts `published_name`)
 kind = "pool_sources"
 config = "eth_f_pools"
 splits = ["eth3d:validation", "eth3d:test"]

@@ -14,7 +14,7 @@
 using Test, Random, LinearAlgebra, StaticArrays
 using Rotations: RotXYZ
 using VisualGeometryToolkitCore
-using VisualGeometryToolkitCore: CameraModel, Point2, Vec3, csponds, estimate, retcode, iterations, Attributed,
+using VisualGeometryToolkitCore: CameraModel, Point2, Vec3, correspondences, estimate, retcode, iterations, Attributed,
     WelschShape, GemanMcclureShape, HuberShape, block_coordinate_descent!, Recorded, current_cost
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer is VisualGeometryToolkitCore's
 using VisualGeometryToolkitEstimation

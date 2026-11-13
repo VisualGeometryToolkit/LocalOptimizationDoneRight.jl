@@ -53,7 +53,7 @@ using LocalOptimizationDoneRight, VisualGeometryToolkitEstimation, VisualGeometr
 import PoseLib                # the PoseLib extension: the truncated refiners' solver calls
 using LocalOptimizationDoneRight: LiftState, _lift_hq_increment!, _lift_gnc_increment!, _seed_lift_z!,
     PoseLibLm, PoseLibLZ
-using VisualGeometryToolkitCore: RowsWorkspace, sampson_residuals!, sampson_jacobian_rows!, Csponds, withattrs,
+using VisualGeometryToolkitCore: RowsWorkspace, sampson_residuals!, sampson_jacobian_rows!, Correspondences, withattrs,
     retract, retract_directions,
     zero_tangent, backproject_with_jacobian, EssentialManifold5, deploy, external_workspace, refine_external!,
     LossWidth
@@ -64,7 +64,7 @@ const REPS = length(ARGS) >= 2 ? parse(Int, ARGS[2]) : 7
 
 Threads.nthreads() == 1 || error("bench.jl: run single-threaded (julia -t 1); got $(Threads.nthreads()) threads")
 
-include(joinpath(pkgdir(VisualGeometryToolkitEstimation), "test", "lo_timing", "call_set.jl"))   # CALL_SET_FIXTURE, read_fixture, pool_csponds, problem_of: the call set's one reader (VisualGeometryToolkitEstimation's)
+include(joinpath(pkgdir(VisualGeometryToolkitEstimation), "test", "lo_timing", "call_set.jl"))   # CALL_SET_FIXTURE, read_fixture, pool_correspondences, problem_of: the call set's one reader (VisualGeometryToolkitEstimation's)
 include(joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "bench_record.jl"))   # calibration_spread, kernel_arm, write_bench_record: the record the gate reads (VisualGeometryToolkitCore's)
 
 # =============================================================================
@@ -81,7 +81,7 @@ const EXTERNAL_ARMS = [
 ]
 # The refit's two-view frame (VisualGeometryToolkitEval hands over its pair geometry): the
 # pool-frame calibrations and correspondences.
-const FRAMES = [(; Kc1 = pr.Kc1, Kc2 = pr.Kc2, cs = pool_csponds(pr)) for pr in PAIRS]
+const FRAMES = [(; Kc1 = pr.Kc1, Kc2 = pr.Kc2, cs = pool_correspondences(pr)) for pr in PAIRS]
 # The truncation loss width, absolute in the pool frame: the selection's
 # outlier half-width of the call set.
 const LOSS_WIDTH = LossWidth(HALFWIDTH)
@@ -108,9 +108,9 @@ const GM = deploy(GemanMcclureShape(), 1.0; efficiency_constant = 1.25)
 
 const aE = zero_tangent(CHE)
 const EE = retract(CHE, aE); const dE = retract_directions(CHE, aE)
-# The bearing pairs as a measurement set, their back-projection Jacobians as
+# The bearing pairs as a correspondence set, their back-projection Jacobians as
 # attribute columns (unit weights: no `sqrt_weights` column).
-const XS = withattrs(Csponds(F1, F2); M₁ = M1, M₂ = M2)
+const XS = withattrs(Correspondences(F1, F2); M₁ = M1, M₂ = M2)
 sampson_residuals!(RWS.r, EE, XS)
 sampson_jacobian_rows!(RWS.J, EE, dE, XS)
 _seed_lift_z!(LS, WELSCH, RWS.r, N, :flat)

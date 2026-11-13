@@ -60,7 +60,7 @@ _as_loader(scene::Tuple) = () -> scene
 
 # =============================================================================
 # THE validation scale — configs/protocol.toml [scale_estimation], which carries
-# the measurements behind the floor.
+# the experiments behind the floor.
 #
 # The estimator is the pools' stored `gt_variance`, unchanged. What is applied
 # here is a FLOOR on the GT inlier count: below it, the stored value is biased

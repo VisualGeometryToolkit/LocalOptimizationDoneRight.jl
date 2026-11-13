@@ -49,7 +49,7 @@
 # ACCOUNTING: the refit is bracketed by the evaluator's `guarded_refit` — lo_ns
 # spans the optimizer call exactly like every other external arm (the ladder's
 # documented lo_ns/lo_calls semantics; calls = count(lo_ns > 0)). The
-# wrapper's own (updates, ns) measurement is surfaced per call in the arm's
+# wrapper's own (updates, ns) timing is surfaced per call in the arm's
 # workspace, `lebeda_last(ws)` (updates = measured linear solves — the
 # budget-parity audit; ns = steady-clock inside the LO, marshalling excluded).
 #
