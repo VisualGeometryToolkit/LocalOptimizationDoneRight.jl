@@ -39,9 +39,8 @@ using DrWatson: projectdir   # configs/ of the active (accv2026) project
 using Statistics: median, mean
 using VisualGeometryToolkitEval.Pools: load_pool, export_pixel_inputs
 using VisualGeometryToolkitEval.Tuning: layer_tuning, tuning_spec, tuning_table, grid_spec, sample_units,
-    validation_scenes, test_scenes
-using VisualGeometryToolkitEval.Evaluation: coarse_fine_cv_batched, enforce_probe_interior,
-    save_scalar_tuning_artifact, deployed_scalar_setting
+    validation_scenes, test_scenes, save_tuning_artifact
+using VisualGeometryToolkitEval.Evaluation: coarse_fine_cv_batched, enforce_probe_interior, deployed_setting
 include(joinpath(@__DIR__, "config.jl"))           # the paper prelude (guarded)
 include(joinpath(@__DIR__, "common.jl"))           # run_driver's context: scripts/tools, this project
 include(joinpath(@__DIR__, "protocol_folds.jl"))   # upstream_runs, fold_sequential_cv!
@@ -288,9 +287,12 @@ function superansac_loss_width_cv!(cfg, dir)
     rec = recs[:superansac]
     enforce_probe_interior(rec; context = "SupeRANSAC loss-width CV")
     build = only(builds)
-    # the single-scalar artifact (VisualGeometryToolkitEval): grids, CV record and x_star_fine, read back
-    # only through deployed_scalar_setting
-    save_scalar_tuning_artifact(out, spec, rec; unit = TWO_VIEW_UNIT, code = (VisualGeometryToolkitCore,),
+    # the one-scalar tuning artifact (VisualGeometryToolkitEval's `save_tuning_artifact`): the coarse grid, the CV
+    # record and x_star_fine — the layout `deployed_setting` reads (its one-scalar form: `record["param_name"]`,
+    # so the record is stored with String keys), the one way it is read back
+    save_tuning_artifact(out, spec; grids = Dict(:loss_width => grid_spec(scheme.coarse)), unit = TWO_VIEW_UNIT,
+        code = (VisualGeometryToolkitCore,), record = Dict{String,Any}(String(k) => v for (k, v) in rec),
+        x_star_fine = Float64(rec[:x_star_fine]),
         tuning_inputs = inputs, scenes,
         pair_indices = [JLD2.load(f, "pair_indices") for f in inputs], build,
         objective = "the spec's criterion over the pooled validation units' per-pair max(dR, dt) [deg] " *
@@ -315,7 +317,7 @@ wall, trials)` with the scene's `units`, `zetas`, `loss_width_cv` and `build`.
 """
 function superansac_evaluation!(cfg, dir)
     require_superansac(cfg)
-    w = deployed_scalar_setting(superansac_cv_path(dir); context = "SupeRANSAC loss-width CV")
+    w = deployed_setting(superansac_cv_path(dir); context = "SupeRANSAC loss-width CV").loss_width
     zetas = Float64.(cfg["superansac"]["zetas"])
     scenes, inputs = _checked_inputs(cfg, dir, "test")
     settings = _write_effective_config(cfg, dir)

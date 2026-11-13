@@ -30,7 +30,7 @@ using JLD2, TOML, Printf, Dates
 using Statistics: median, mean
 using DrWatson: projectdir, scriptsdir
 using VisualGeometryToolkitEval.Tuning: read_tuning, UnitSampling, sample_units, test_scenes, tuning_table
-using VisualGeometryToolkitEval.Evaluation: deployed_scalar_setting
+using VisualGeometryToolkitEval.Evaluation: deployed_setting
 using VisualGeometryToolkitEval.Stats: scene_mean
 using VisualGeometryToolkitEval.Pools: pool_size
 using VisualGeometryToolkitEval.Render: fmt3, write_tsv
@@ -192,8 +192,8 @@ function run_timing_repeat(cfg, cfg_name::AbstractString, dir, system::AbstractS
     elseif system == "superansac"
         sr = e2e_timed_superansac(cfg)
         scenes, _ = read_timing_sample(dir)
-        w = deployed_scalar_setting(superansac_cv_path(superansac_results(sr, scenes).dir);
-                                    context = "SupeRANSAC loss-width CV (timing)")
+        w = deployed_setting(superansac_cv_path(superansac_results(sr, scenes).dir);
+                             context = "SupeRANSAC loss-width CV (timing)").loss_width
         settings = _write_effective_config(sr, dir)
         cmd = pinned_worker_cmd(cfg, scriptsdir("tools", "superansac_worker.jl"), "--mode=time",
                                 "--settings=$(settings)",
