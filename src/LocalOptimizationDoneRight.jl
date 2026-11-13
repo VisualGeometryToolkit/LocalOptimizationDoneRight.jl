@@ -47,7 +47,7 @@ using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractOptimization
     posterior_weight_derivative, mixture_ecm!, mixture_nll, s_hat_sq,
     sq_distances, robust_weight, FrozenNuisance, truncated_log_normaliser, data_size,
     refine!, fit_scale, JeffreysPrior, weighted_sq, iterations, retcode, stop_rule, ReturnCode,
-    IncrementSize, LadderConverged, NoImprovement, LeftBasin, retcode_from_symbol, toml_default, parse_defaults, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
+    IncrementSize, LadderConverged, LeftBasin, retcode_from_symbol, toml_default, parse_defaults, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
     lift_retract, lift_model, lift_valid, lift_rows, lift_residuals, lift_size,
     block_coordinate_descent!, path_suffix, optimization_path, EssentialMat
 # The contract verbs this package adds methods to.
