@@ -7,7 +7,8 @@ accv2026 also VisualGeometryToolkitEval 0.8 and RANSACScoringDoneRight 0.8.
 
 ### Breaking
 
-- **Requires the wave-10 stack**: VisualGeometryToolkitCore 0.10 and VisualGeometryToolkitEstimation 0.11,
+- **Requires the wave-10 stack**: VisualGeometryToolkitCore 0.10 and VisualGeometryToolkitEstimation 0.11 (0.11.1: its
+  shared two-camera F scene and LO bench arm, which accv2026's tests use in place of their own copies),
   and (the extension) PoseLib 0.3, whose refiners return the seed with `InitialFailure` below the minimal sample
   (`[compat]` of the package, test and accv2026); accv2026 VisualGeometryToolkitEval 0.8 and RANSACScoringDoneRight 0.8.
 - **The terminology taxonomy (correspondence, observation)**: the PoseLib refiners' two-view frame carries
