@@ -1,3 +1,25 @@
+docs-pass: 17a5e10
+landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.0 once main's Docs job deploys it)
+
+# 0.7.0 docs pass (julia-docs-pass) — the wave-10 stack, Julia 1.13
+
+LocalOptimizationDoneRight 0.7.0 (breaking) on VisualGeometryToolkitCore 0.10, VisualGeometryToolkitEstimation 0.11
+(accv2026: VisualGeometryToolkitEval 0.8, RANSACScoringDoneRight 0.8).
+- [x] API diff since 0.6.2: no public name added, removed or re-signatured. The retired upstream names this package used
+  (`LiftableProblem` → `MinimalSolveProblem` in src/lift/lifts.jl; `Csponds` → `Correspondences` in the PoseLib extension)
+  are internal uses; the extension's `PoseLibWorkspace` (internal) is `PoseLibWorkspace{C}` and its docstring says so.
+- [x] Docstrings: the `docs` item (every public name documented, attached, signatures matching) green at gate 42850cfe.
+  One link fixed: `BarronAdaptive`'s docstring (src/strategies/types.jl:59) @extref'd
+  `RANSACScoringDoneRight.StudentTUniformScoring`; the scorer is VisualGeometryToolkitCore's, linked there now.
+- [x] README / landing / guides: no retired name (concept grep over docs/, README.md, accv2026/REPRODUCE.md for cspond,
+  measurement, keypoint, the retired aliases); REPRODUCE.md updated for pool format 6 and the renamed ETH3D-SPLG binding.
+  No version is named in the install lines.
+- [x] Docs build (strict, linkcheck): green at gate 42850cfe (Julia 1.13.3, up-v6 snapshot).
+- [ ] README test (fresh environment from the registry): a KNOWN PRE-REGISTRATION failure (coordinator, 2026-11-13): it
+  cannot resolve Core 0.10 / Estimation 0.11 until the wave registers; it must pass in the final no-tmp gate.
+
+---
+
 docs-pass: 804bcef
 landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io a2805ed (no hand edit: the site is the Docs workflow's build of docs/src, which says Julia 1.13 from this commit on; it shows 1.13 once main's Docs job deploys it)
 

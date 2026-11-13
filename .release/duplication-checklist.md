@@ -1,3 +1,26 @@
+# LocalOptimizationDoneRight 0.7.0: duplication checklist (wave 10)
+
+Concept-level check of every function this wave added or changed, against the stack (Core, IO, Features, Estimation,
+Eval, PoseLib, BB, RSDR, LODR, PS, CB), and Core's `check_duplication` over the repository with VGTK_STACK_PATHS
+(RSDR, BB, CB, PS working trees) at gate 42850cfe:
+
+    == check_duplication(LocalOptimizationDoneRight 0.7.0): 0 finding(s)
+
+- [x] `PoseLibWorkspace{C}` + `PoseLibWorkspace(Kc1, Kc2, cs)` (ext/LocalOptimizationDoneRightPoseLibExt.jl:47-53):
+  a field-type change of the extension's own workspace; considered Core's external-refit contract (src/robust/lo_contract.jl,
+  which defines no workspace type) and Estimation's RansacWorkspace (another quantity). No new concept.
+- [x] the SupeRANSAC cell's tuning artifact (accv2026/src/superansac.jl:292, e2e_timing.jl:195): now Eval's
+  `save_tuning_artifact` (Tuning) and `deployed_setting` (Evaluation), the owners; the never-existing
+  `save_scalar_tuning_artifact` / `deployed_scalar_setting` calls are gone.
+- [x] the criterion → StopRule map (src/lift/termination.jl `success_rule`, `_fired_rule`) is duplicated with
+  Estimation's `_stop_rule` (catch-up LODR#2): OPEN, blocked on the one public map (handoffs.md, lodr → core10 + est-eval);
+  deleted here when it lands.
+- [x] `_entry_from_toml` (src/strategies/config_toml.jl:28) vs CaliBlobs' `_optimization_strategy_from_toml`: resolved by
+  CaliBlobs (w10-cb 30b49af now reads through Estimation's reader); no DUPLICATION.toml entry needed.
+- [x] Removed: accv2026's direct VisualGeometryToolkitIO dependency (unused; Eval carries it).
+
+---
+
 # LocalOptimizationDoneRight: duplicate removals of the 0.9 leg
 
 Owner decision 12 (2026-11-11) and the owner's ruling "all duplicates must be gone; all common code must be hoisted
