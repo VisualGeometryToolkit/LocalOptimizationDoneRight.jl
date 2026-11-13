@@ -10,11 +10,14 @@ name: Downgrade
 # The workspace is narrowed to the package and test/ in this checkout: the
 # docs, paper and other members are not resolved at their floors. Julia 1.13,
 # the package's floor (`julia = "1.13"` in [compat]).
+#
+# Manual only (workflow_dispatch) since the package requires Julia 1.13
+# (2026-11-13): Resolver.jl, which julia-downgrade-compat@v2 runs, fails on
+# Julia 1.13.3 in its registry reader (`yanked_versions` -> `struck_versions`,
+# dgx01 probe Slurm 10754), and the 1.12 job it ran on before cannot resolve a
+# package that requires 1.13. Restore the push and pull_request triggers when
+# Resolver.jl runs on 1.13.
 on:
-  push:
-    branches: [main]
-    paths-ignore: ['docs/**', '**.md']
-  pull_request:
   workflow_dispatch:
 
 concurrency:

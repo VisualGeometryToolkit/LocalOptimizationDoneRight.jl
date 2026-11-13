@@ -5,6 +5,9 @@
 A patch: requires Julia 1.13 (`julia = "1.13"` in the `[compat]` of the package and of every
 workspace member: test, docs, accv2026 (with its envs/superansac and lib/RansacLibLO, and that one's test)). CI runs Julia 1.13 only. No API change.
 
+- CI: the Downgrade workflow (the suite at the compat floors) runs on demand only: Resolver.jl, which it uses,
+  does not run on Julia 1.13 yet.
+
 ## 0.6.1 (2026-11-13)
 
 A patch: no API change, the same results. On VisualGeometryToolkitEstimation 0.10 (`[compat]`
