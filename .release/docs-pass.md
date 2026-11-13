@@ -1,4 +1,4 @@
-docs-pass: 17a5e10
+docs-pass: 6a8adfa
 landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.0 once main's Docs job deploys it)
 
 # 0.7.0 docs pass (julia-docs-pass) — the wave-10 stack, Julia 1.13
@@ -14,7 +14,7 @@ LocalOptimizationDoneRight 0.7.0 (breaking) on VisualGeometryToolkitCore 0.10, V
 - [x] README / landing / guides: no retired name (concept grep over docs/, README.md, accv2026/REPRODUCE.md for cspond,
   measurement, keypoint, the retired aliases); REPRODUCE.md updated for pool format 6 and the renamed ETH3D-SPLG binding.
   No version is named in the install lines.
-- [x] Docs build (strict, linkcheck): green at gate 42850cfe (Julia 1.13.3, up-v6 snapshot).
+- [x] Docs build (strict, linkcheck): green at gates 42850cfe (up-v6) and eec82d9 (up-v8, PoseLib 0.3; Julia 1.13.3).
 - [ ] README test (fresh environment from the registry): a KNOWN PRE-REGISTRATION failure (coordinator, 2026-11-13): it
   cannot resolve Core 0.10 / Estimation 0.11 until the wave registers; it must pass in the final no-tmp gate.
 
