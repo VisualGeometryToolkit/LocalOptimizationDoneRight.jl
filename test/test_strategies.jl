@@ -27,7 +27,7 @@ using VisualGeometryToolkitCore: AbstractScoring, BarronShape, CameraModel, Esse
     MsacScoring, Point2, Rect, EfficiencyConstant, TLSShape, WelschShape, codimension, consensus_set, correspondences, decision_boundary, decision_width,
     deploy, estimate, exp_so3, locally_optimize!, loss_at, lo_width, mahalanobis_distances!, minimal_sample_size, px,
     retcode, scale_s2, score_model!, sq_loss_width, ReturnCode, stop_rule, IncrementSize, LadderConverged, NoImprovement,
-    LeftBasin, IterationCap, NoRule, StoppingCriterion, StopWhenAny
+    LeftBasin, IterationCap, NoRule
 using VisualGeometryToolkitCore.Synthetic: projective_distance, sample_twoview_scene
 using VisualGeometryToolkitEstimation: BoundedProblem, EssentialProblem, RansacWorkspace
 using VisualGeometryToolkitCore: Irls
@@ -158,27 +158,31 @@ end
     @test pws.prior == VgtkCore.JeffreysPrior()          # a scorer without a prior: Jeffreys, as before
 end
 
-# The §14 record: each criterion states the rule it fires; a composite's is its member's
-# that fired (Core's order); leaving the basin is Terminated (a success: the incumbent).
-struct _NeverFires <: StoppingCriterion end
-struct _Fires <: StoppingCriterion end
-VgtkCore.stop_reason(::_NeverFires, state, method, prob, θ, θ_old, iter) = :continue
-VgtkCore.stop_reason(::_Fires, state, method, prob, θ, θ_old, iter) = :converged
-LocalOptimizationDoneRight.success_rule(::_Fires) = LadderConverged
-
+# The §14 record: Core's loop hands `block_coordinate_result` the `stop_rule(criterion, method)` of the criterion that
+# FIRED (a composite's member, in Core's order); each criterion of this package states its rule, and its methods state
+# Estimation's no-improvement stop's. Leaving the basin is Terminated (a success: the incumbent).
 @testset "termination record" begin
     LO = LocalOptimizationDoneRight
-    @test LO.success_rule(LO.StopWhenIncrementSmall()) === IncrementSize
-    @test LO.success_rule(LO.StopWhenLadderConverged()) === LadderConverged
-    @test LO.success_rule(LO.StopWhenNoImprovement(1, 1)) === NoImprovement
-    @test LO.success_rule(LO.StopWhenLeftBasin()) === NoRule              # it never reports success
-    @test LO.lo_termination(:left_basin, LO.StopWhenLeftBasin(), nothing, nothing, nothing, nothing, 3) ===
-          (ReturnCode.Terminated, LeftBasin)
-    @test LO.lo_termination(:max_iterations, LO.StopWhenIncrementSmall(), nothing, nothing, nothing, nothing, 25) ===
-          (ReturnCode.MaxIters, IterationCap)
-    @test LO.lo_termination(:converged, StopWhenAny((_NeverFires(), _Fires())), nothing, nothing, nothing, nothing, 4) ===
-          (ReturnCode.Success, LadderConverged)
-    @test_throws ArgumentError LO.lo_termination(:no_such_reason, _Fires(), nothing, nothing, nothing, nothing, 1)
+    @test stop_rule(LO.StopWhenIncrementSmall(), nothing) === IncrementSize
+    @test stop_rule(LO.StopWhenLadderConverged(), nothing) === LadderConverged
+    @test stop_rule(LO.StopWhenLeftBasin(), nothing) === LeftBasin
+    @test LO.lo_termination(:left_basin, LeftBasin) === (ReturnCode.Terminated, LeftBasin)
+    @test LO.lo_termination(:max_iterations, IterationCap) === (ReturnCode.MaxIters, IterationCap)
+    @test LO.lo_termination(:converged, LadderConverged) === (ReturnCode.Success, LadderConverged)
+    @test_throws ArgumentError LO.lo_termination(:no_such_reason, NoRule)
+    # LODR#2 (wave-10 catch-up): the rule is the one Core passes, never re-derived from the final state. Fail-first: 0.6
+    # re-ran each composite member's `stop_reason` at the final state (θ as θ_old) to guess the member that fired, so a
+    # member whose verdict had changed since (impure, or reading state the last iteration moved) was named instead.
+    # Here the state says "improved" — re-evaluating the no-improvement stop answers :continue, the old guess NoRule —
+    # while the loop reports that stop fired.
+    ws, cs = scored_consensus(StuTuBCD(), problem, msac, seed)
+    m = LO.ScoreBcdMethod(msac, ws.lo_ws, ws.buf, 0.0)
+    @test stop_rule(LO.StopWhenNoImprovement(1, 1), m) === NoImprovement
+    st = LO.ScoreBcdState(VgtkCore.Attributed(seed, (; cost = -1.0)), -1.0, true)
+    for (reason, rule, rc) in ((:converged, NoImprovement, ReturnCode.Success), (:max_iterations, IterationCap, ReturnCode.MaxIters))
+        r = VgtkCore.block_coordinate_result(st, m, problem, seed, reason, 4, rule)
+        @test (retcode(r), stop_rule(r)) === (rc, rule)
+    end
     # the arms on the scene
     r = run_lo(HQ{WelschShape}(efficiency_constant = 1.5), problem, msac, seed)
     @test stop_rule(r) in (IncrementSize, IterationCap)

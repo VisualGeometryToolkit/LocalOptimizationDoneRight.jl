@@ -47,6 +47,7 @@ const _LIFT_INCREMENT_TOL = 1.0e-10
 struct StopWhenIncrementSmall <: StoppingCriterion end
 @inline stop_reason(::StopWhenIncrementSmall, state, method, prob, θ, θ_old, iter) =
     _increment_stalled(state) ? :converged : :continue
+VgtkCore.stop_rule(::StopWhenIncrementSmall, _method) = IncrementSize
 
 post_iteration!(state, ::AbstractLiftMethod, prob, θ, iter) = (_track_incumbent!(state); nothing)
 
@@ -60,10 +61,8 @@ function update_residuals!(state, method::AbstractLiftMethod, prob, θ)
     return nothing
 end
 
-block_coordinate_result(state, method::AbstractLiftMethod, prob, θ, stop_reason, final_iter) =
-    lo_estimate(lift_model(method.prov, state.best.value),
-                lo_termination(stop_reason, stopping_criterion(method), state, method, prob, θ, final_iter)...;
-                iterations = final_iter)
+block_coordinate_result(state, method::AbstractLiftMethod, prob, θ, stop_reason, final_iter, rule) =
+    lo_estimate(lift_model(method.prov, state.best.value), lo_termination(stop_reason, rule)...; iterations = final_iter)
 
 
 # =============================================================================
@@ -278,6 +277,7 @@ end
 struct StopWhenLadderConverged <: StoppingCriterion end
 @inline stop_reason(::StopWhenLadderConverged, state, method, prob, θ, θ_old, iter) =
     state.converged ? :converged : :continue
+VgtkCore.stop_rule(::StopWhenLadderConverged, _method) = LadderConverged
 stopping_criterion(::ManifoldLiftGnc) = StopWhenLadderConverged()
 current_cost(state::ManifoldLiftGncState) = state.cur_cost
 

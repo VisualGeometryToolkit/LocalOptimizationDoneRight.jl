@@ -46,8 +46,8 @@ using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractOptimization
     keep_best, StoppingCriterion, PosteriorWeightState, reset_posterior!, StudentTMixture, posterior_weight,
     posterior_weight_derivative, mixture_ecm!, mixture_nll, s_hat_sq,
     sq_distances, robust_weight, FrozenNuisance, truncated_log_normaliser, data_size,
-    refine!, fit_scale, JeffreysPrior, weighted_sq, iterations, retcode, stop_rule, ReturnCode, NoRule,
-    IncrementSize, LadderConverged, NoImprovement, LeftBasin, retcode_from_symbol, StopWhenAny, toml_default, parse_defaults, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
+    refine!, fit_scale, JeffreysPrior, weighted_sq, iterations, retcode, stop_rule, ReturnCode,
+    IncrementSize, LadderConverged, NoImprovement, LeftBasin, retcode_from_symbol, toml_default, parse_defaults, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
     lift_retract, lift_model, lift_valid, lift_rows, lift_residuals, lift_size,
     block_coordinate_descent!, path_suffix, optimization_path, EssentialMat
 # The contract verbs this package adds methods to.
@@ -67,7 +67,7 @@ include("lift/schedules.jl")           # LoSchedule, MuLadder, GeometricAnneal, 
 include("lift/lift_core.jl")           # the lift θ/z-blocks, LiftState, TabulatedLift
 include("strategies/types.jl")         # the strategies, their identity and registry (LODR_STRATEGY_TAGS)
 include("lift/lifts.jl")               # ManifoldLiftHQ / ManifoldLiftGnc and the HQ/GNC locally_optimize!
-include("lift/termination.jl")         # the §14 record: each criterion's StopRule, lo_termination
+include("lift/termination.jl")         # the §14 record: lo_termination (the rule is Core's stop_rule of the criterion that fired)
 include("strategies/irls.jl")          # StudentTUniform, BarronAdaptive, StuTuBCD
 include("strategies/essential.jl")     # the essential-matrix research lifts
 include("tuning_constants.jl")         # [[tuning_constants]] → tuning_constant
