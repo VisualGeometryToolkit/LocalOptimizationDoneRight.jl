@@ -38,7 +38,7 @@ using LocalOptimizationDoneRight, VisualGeometryToolkitEstimation, VisualGeometr
 using LocalOptimizationDoneRight: HQ, Gnc, StudentTUniform, StuTuBCD
 using VisualGeometryToolkitEstimation: RansacWorkspace
 using VisualGeometryToolkitCore: Irls
-using VisualGeometryToolkitCore: JeffreysPrior, FlatLabelPrior   # the Student-t scorer's priors
+using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior   # the Student-t scorer (Core's) and its priors
 using VisualGeometryToolkitCore: IGPrior
 using StaticArrays, LinearAlgebra, Random
 
