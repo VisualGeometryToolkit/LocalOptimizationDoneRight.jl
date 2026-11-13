@@ -2,9 +2,16 @@
 
 Concept-level check of every function this wave added or changed, against the stack (Core, IO, Features, Estimation,
 Eval, PoseLib, BB, RSDR, LODR, PS, CB), and Core's `check_duplication` over the repository with VGTK_STACK_PATHS
-(RSDR, BB, CB, PS working trees) at gates 42850cfe, eec82d9 (up-v8) and 5a26b9b (up-v11):
+(RSDR, BB, CB, PS working trees) at gates 42850cfe, eec82d9 (up-v8), 5a26b9b (up-v11) and 32e7c7d (up-v12):
 
     == check_duplication(LocalOptimizationDoneRight 0.7.0): 0 finding(s)
+
+Core's `check_splat` (up-v12), over the package and the paper project's RansacLibLO:
+
+    == check_splat(LocalOptimizationDoneRight 0.7.0): 0 finding(s)
+    == check_splat(RansacLibLO 0.2.0): 0 finding(s)
+
+Core's ONE LM adapter: no direct NLLSsolver / `lmsolve_chart!` / `static_lm` / `nlls_options` call anywhere here.
 
 - [x] `PoseLibWorkspace{C}` + `PoseLibWorkspace(Kc1, Kc2, cs)` (ext/LocalOptimizationDoneRightPoseLibExt.jl:47-53):
   a field-type change of the extension's own workspace; considered Core's external-refit contract (src/robust/lo_contract.jl,
