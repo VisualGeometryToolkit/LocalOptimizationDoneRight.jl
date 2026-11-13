@@ -1,5 +1,12 @@
 # LocalOptimizationDoneRight changelog
 
+## 0.6.1 (unreleased)
+
+A patch: no API change, the same results. On VisualGeometryToolkitEstimation 0.10 (`[compat]`
+VisualGeometryToolkitEstimation "0.10" in the package, test and accv2026 environments). Estimation 0.10.0 retired the image-space refine of
+a free SplineLens camera's controls (`refine_camera_and_poses` on a SplineLens camera now takes `fixed = (:controls,)`
+only); LocalOptimizationDoneRight never called that route, so nothing here changes.
+
 ## 0.6.0 (2026-11-12): the VisualGeometryToolkit 0.9 stack
 
 On the VisualGeometryToolkit 0.9 stack: VisualGeometryToolkitCore 0.9,
