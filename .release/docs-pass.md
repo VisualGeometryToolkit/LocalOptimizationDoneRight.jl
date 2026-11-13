@@ -1,3 +1,19 @@
+docs-pass: fceab66
+landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io a2805ed (no hand edit: the site is the Docs workflow's build of docs/src, which says Julia 1.13 from this commit on; it shows 1.13 once main's Docs job deploys it)
+
+# 0.6.2 docs pass (julia-docs-pass) — Julia 1.13
+
+LocalOptimizationDoneRight 0.6.2 is a patch whose only change is the Julia requirement: `julia = "1.13"` in the `[compat]` of every
+Project.toml in the repository, the CI workflows on Julia 1.13 only, and the CHANGELOG section.
+- API diff since the last release: none (no source file under src/ or ext/ changed).
+- Docstrings: unchanged; the suite's docs item runs in the fresh-clone gate.
+- README / landing / guides: every statement of the required Julia version says 1.13 now: README.md, docs/src/index.md and accv2026/REPRODUCE.md.
+  Mentions of Julia 1.12 left in test comments record why a bound or a workaround was set (LLVM 18 vs 20 rounding,
+  Julia 1.12's docstring rules, which 1.13 keeps); they are history, not instructions.
+- Docs build: run by the fresh-clone gate on Julia 1.13.3 against the registered stack (General from GitHub).
+
+---
+
 docs-pass: a2fe836
 landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io c55bb03 (no change: a compat patch; nothing the site shows moved)
 
