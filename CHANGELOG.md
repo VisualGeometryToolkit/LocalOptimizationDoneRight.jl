@@ -1,6 +1,6 @@
 # LocalOptimizationDoneRight changelog
 
-## 0.7.0 (unreleased): the wave-10 stack and the terminology taxonomy
+## 0.7.0 (2026-11-13): the wave-10 stack and the terminology taxonomy
 
 On the wave-10 stack: VisualGeometryToolkitCore 0.10 and VisualGeometryToolkitEstimation 0.11 (package and test);
 accv2026 also VisualGeometryToolkitEval 0.8 and RANSACScoringDoneRight 0.8.
