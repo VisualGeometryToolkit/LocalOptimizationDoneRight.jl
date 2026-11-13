@@ -21,7 +21,7 @@ LocalOptimizationDoneRightPoseLibExt = "PoseLib"
 
 [compat]
 LinearAlgebra = "1"
-PoseLib = "0.2"
+PoseLib = "0.3"
 StaticArrays = "1.9"
 Statistics = "1.11"
 VisualGeometryToolkitCore = "0.10"

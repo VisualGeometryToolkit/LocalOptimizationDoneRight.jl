@@ -7,7 +7,8 @@ accv2026 also VisualGeometryToolkitEval 0.8 and RANSACScoringDoneRight 0.8.
 
 ### Breaking
 
-- **Requires the wave-10 stack**: VisualGeometryToolkitCore 0.10 and VisualGeometryToolkitEstimation 0.11
+- **Requires the wave-10 stack**: VisualGeometryToolkitCore 0.10 and VisualGeometryToolkitEstimation 0.11,
+  and (the extension) PoseLib 0.3, whose refiners return the seed with `InitialFailure` below the minimal sample
   (`[compat]` of the package, test and accv2026); accv2026 VisualGeometryToolkitEval 0.8 and RANSACScoringDoneRight 0.8.
 - **The terminology taxonomy (correspondence, observation)**: the PoseLib refiners' two-view frame carries
   `frame.cs` as a `Correspondences` of `Point2{Float64}` (VisualGeometryToolkitCore 0.10's name for the
