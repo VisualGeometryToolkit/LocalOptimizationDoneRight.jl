@@ -1,3 +1,21 @@
+docs-pass: 0a7086f
+landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.0 once main's Docs job deploys it)
+
+# 0.7.0 docs pass at the release (julia-docs-pass), resolved from General alone
+
+The release tree is the wave branch's (153bc9f) with no temporary [sources] (only the members' own paths: accv2026 → .. and
+lib/RansacLibLO) plus two commits: 32d4b86, accv2026's reproduce.sh regenerated with the registered Eval 0.8.0's generator
+(it includes Core's canonical.jl for the run keys; RSDR's release gate caught the same staleness in its paper project), and
+0a7086f, the CHANGELOG dated. Resolved from General (refreshed from GitHub) alone (job 15097): Core 0.10.0, IO 0.10.0,
+Estimation 0.11.0, Eval 0.8.0, PoseLib 0.3.0, RANSACScoringDoneRight 0.8.0 (registered). floor_compat --raise: 0 entries
+raised; --latest: 0.
+[x] API diff, docstrings, README/landing/guides: unchanged since the wave pass below (no docs change in these commits).
+[x] README test: the readme item resolves the install line from the registry in the release gate (the wave pass's open
+    "known pre-registration failure" line below is closed by it).
+[x] Docs build: docs/make.jl (strict, linkcheck) in the release gate.
+
+---
+
 docs-pass: e995245
 landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.0 once main's Docs job deploys it)
 
