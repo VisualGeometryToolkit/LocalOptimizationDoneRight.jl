@@ -265,8 +265,6 @@ VgtkCore.stop_rule(::StopWhenLeftBasin, _method) = LeftBasin
 @inline VgtkEstimation.iterations_without_improvement(state::LiftedMixtureState) = state.no_improve
 stopping_criterion(method::LiftedMixtureMethod) =
     StopWhenLeftBasin() | StopWhenNoImprovement(method.patience, 2) | StopWhenIncrementSmall()
-# The mixture lift refits the model each iteration: its no-improvement stop is NoImprovement.
-VgtkCore.stop_rule(::StopWhenNoImprovement, ::LiftedMixtureMethod) = NoImprovement
 current_cost(state::LiftedMixtureState) = state.cur_cost
 
 # RANSAC LO dispatch — EssentialProblem specialization (VisualGeometryToolkitCore's

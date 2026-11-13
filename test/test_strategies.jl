@@ -159,8 +159,8 @@ end
 end
 
 # The §14 record: Core's loop hands `block_coordinate_result` the `stop_rule(criterion, method)` of the criterion that
-# FIRED (a composite's member, in Core's order); each criterion of this package states its rule, and its methods state
-# Estimation's no-improvement stop's. Leaving the basin is Terminated (a success: the incumbent).
+# FIRED (a composite's member, in Core's order); each criterion of this package states its rule (Estimation's
+# no-improvement stop its own). Leaving the basin is Terminated (a success: the incumbent).
 @testset "termination record" begin
     LO = LocalOptimizationDoneRight
     @test stop_rule(LO.StopWhenIncrementSmall(), nothing) === IncrementSize

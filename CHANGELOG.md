@@ -49,7 +49,7 @@ accv2026 also VisualGeometryToolkitEval 0.8 and RANSACScoringDoneRight 0.8.
 - **The termination record's rule is Core's** (catch-up review LODR#2): `block_coordinate_descent!` hands the result the
   `stop_rule(criterion, method)` of the criterion that fired (VisualGeometryToolkitCore 0.10); this package states the
   rule of each criterion it defines (`StopWhenIncrementSmall` → IncrementSize, `StopWhenLadderConverged` → LadderConverged,
-  `StopWhenLeftBasin` → LeftBasin) and of Estimation's no-improvement stop under its methods (NoImprovement). Its own
+  `StopWhenLeftBasin` → LeftBasin); Estimation's no-improvement stop states its own (NoImprovement). Its own
   criterion → rule map (`success_rule`) and the post-hoc guess of a composite's fired member (`_fired_rule`, which re-ran
   each member at the final state) are deleted.
 - CI: the Downgrade workflow is deleted (the stack's policy: every release raises its floors to the gated resolve,

@@ -124,8 +124,6 @@ function post_iteration!(state::ScoreBcdState{M}, method::ScoreBcdMethod, prob, 
 end
 
 stopping_criterion(::ScoreBcdMethod) = StopWhenNoImprovement(1, 1)
-# The score BCD refits the model each iteration: its no-improvement stop is NoImprovement.
-VgtkCore.stop_rule(::StopWhenNoImprovement, ::ScoreBcdMethod) = NoImprovement
 current_cost(state::ScoreBcdState) = state.cur_cost
 
 block_coordinate_result(state::ScoreBcdState, method::ScoreBcdMethod, prob, θ, stop_reason, final_iter, rule) =

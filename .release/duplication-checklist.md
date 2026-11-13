@@ -14,8 +14,8 @@ Eval, PoseLib, BB, RSDR, LODR, PS, CB), and Core's `check_duplication` over the 
   `save_scalar_tuning_artifact` / `deployed_scalar_setting` calls are gone.
 - [x] the criterion → StopRule map (src/lift/termination.jl `success_rule`, `_fired_rule`), duplicated with
   Estimation's `_stop_rule` (catch-up LODR#2): DELETED; the one map is Core's `stop_rule(criterion, method)` (core10
-  4981053a), with a method beside each criterion this package defines (lifts.jl, essential.jl) and its methods' rule for
-  Estimation's `StopWhenNoImprovement` (irls.jl, essential.jl); Core's loop passes the fired member's rule.
+  4981053a), with a method beside each criterion this package defines (lifts.jl, essential.jl); Estimation's
+  `StopWhenNoImprovement` rule is Estimation's own (no copy here); Core's loop passes the fired member's rule.
 - [x] `_entry_from_toml` (src/strategies/config_toml.jl:28) vs CaliBlobs' `_optimization_strategy_from_toml`: resolved by
   CaliBlobs (w10-cb 30b49af now reads through Estimation's reader); no DUPLICATION.toml entry needed.
 - [x] Removed: accv2026's direct VisualGeometryToolkitIO dependency (unused; Eval carries it).
