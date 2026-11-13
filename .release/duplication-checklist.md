@@ -2,7 +2,7 @@
 
 Concept-level check of every function this wave added or changed, against the stack (Core, IO, Features, Estimation,
 Eval, PoseLib, BB, RSDR, LODR, PS, CB), and Core's `check_duplication` over the repository with VGTK_STACK_PATHS
-(RSDR, BB, CB, PS working trees) at gates 42850cfe and eec82d9 (up-v8):
+(RSDR, BB, CB, PS working trees) at gates 42850cfe, eec82d9 (up-v8) and 5a26b9b (up-v11):
 
     == check_duplication(LocalOptimizationDoneRight 0.7.0): 0 finding(s)
 
