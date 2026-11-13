@@ -88,7 +88,7 @@ graduated non-convexity*
 
 ### The package
 
-The package requires Julia 1.12 or later. The Getting started example below
+The package requires Julia 1.13 or later. The Getting started example below
 also loads the packages it composes with:
 
 ```julia-repl

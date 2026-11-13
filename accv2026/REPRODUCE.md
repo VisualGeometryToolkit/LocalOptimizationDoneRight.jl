@@ -80,7 +80,7 @@ and the first PhotoTourism pairs likewise) and far beyond a Zenodo record
 PT-E generation took days on one multi-GPU node).
 
 ```
-# Julia 1.12 (juliaup). Every dependency is in General; add it once per depot
+# Julia 1.13 (juliaup). Every dependency is in General; add it once per depot
 # (Pkg adds it on its own only to a depot with no registry):
 julia -e 'using Pkg; Pkg.Registry.add("General")'
 git clone https://github.com/VisualGeometryToolkit/LocalOptimizationDoneRight.jl.git && cd LocalOptimizationDoneRight.jl/accv2026

@@ -14,7 +14,7 @@ VisualGeometryToolkitEstimation's `find_*` estimators.
 
 ## Installation
 
-The package requires Julia 1.12 or later. The example below also loads the
+The package requires Julia 1.13 or later. The example below also loads the
 packages it composes with:
 
 ```julia-repl

@@ -74,7 +74,7 @@
     """)
     # Base.julia_cmd() carries the test run's flags (--depwarn=error, coverage).
     # The load path is the project and the standard library only: no default
-    # environment (@v1.12) can supply a package the install line does not add.
+    # environment (@v1.13) can supply a package the install line does not add.
     cmd = `$(Base.julia_cmd()) --startup-file=no --project=$env $script`
     proc = withenv("JULIA_LOAD_PATH" => "@:@stdlib", "JULIA_PROJECT" => nothing) do
         run(ignorestatus(cmd))

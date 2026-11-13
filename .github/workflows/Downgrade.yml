@@ -8,8 +8,8 @@ name: Downgrade
 # that starts using the newer feature (the cau-release policy of 2026-10-16).
 #
 # The workspace is narrowed to the package and test/ in this checkout: the
-# docs, paper and other members are not resolved at their floors. Julia 1.12:
-# Resolver.jl does not run on 1.13 yet (UndefRefError in Pkg's registry code).
+# docs, paper and other members are not resolved at their floors. Julia 1.13,
+# the package's floor (`julia = "1.13"` in [compat]).
 on:
   push:
     branches: [main]
@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
         with:
-          version: '1.12'
+          version: '1.13'
       - uses: julia-actions/cache@v2
       # General only: every dependency is registered there.
       - name: Registries
@@ -42,7 +42,7 @@ jobs:
         with:
           mode: deps
           projects: ., test
-          julia_version: '1.12'
+          julia_version: '1.13'
       - name: Test at the compat floors
         run: |
           julia --color=yes --project=. -e 'using Pkg; Pkg.test(; allow_reresolve = false, force_latest_compatible_version = false)' 2>&1 | tee test.log
