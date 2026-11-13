@@ -75,10 +75,8 @@ const SCORINGS = [StudentTUniformScoring(EssentialProblem, HALFWIDTH; scale_prio
 const WORKSPACES = [RansacWorkspace(PROBS[i], SCORINGS[i]) for i in eachindex(PROBS)]
 const NCALLS = call_set_size(PAIRS)
 
-lo_call(lo, i, seed) =
-    locally_optimize(PROBS[i], seed; local_optimization_strategy = lo, scoring = SCORINGS[i], workspace = WORKSPACES[i])
-
-# Each arm as Core's record measures it (call_set.jl's `call_set_arm`): its sorted µs per call over the reps, bytes per call.
-lo_arm(ctor) = call_set_arm(() -> (lo = ctor(); (i, seed) -> lo_call(lo, i, seed)), PAIRS, REPS)
-
-write_bench_record(OUT, "accv2026/test/lo_timing/bench.jl", NCALLS, REPS, [name => lo_arm(ctor) for (name, ctor) in ARMS])
+# Each arm as Core's record measures it: VisualGeometryToolkitEstimation's `lo_call_set_arm` (call_set.jl, THE binding of every LO
+# timing bench), `locally_optimize` of pair i's problem from each recorded seed with this bench's Student-t scorings and workspaces:
+# its sorted µs per call over the reps, bytes per call.
+write_bench_record(OUT, "accv2026/test/lo_timing/bench.jl", NCALLS, REPS,
+                   [name => lo_call_set_arm(ctor, PROBS, SCORINGS, WORKSPACES, PAIRS, REPS) for (name, ctor) in ARMS])

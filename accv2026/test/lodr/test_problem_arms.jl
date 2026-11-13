@@ -10,7 +10,7 @@
 import VisualGeometryToolkitCore as VgtkCore
 using Test, Random, LinearAlgebra, StaticArrays, StructArrays
 using Statistics: median
-using Rotations: RotMatrix, RotXYZ, RotY, RotZ, MRP
+using Rotations: RotMatrix, RotXYZ, RotZ, MRP
 using VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: Correspondences, correspondences, converged, estimate, rotation, translation, center, division_coeff,
     homography, radial_rows, is_map_inlier, IGPrior, FundMatManifold7, retract, project, Point2, Point3, Line2D,
@@ -152,21 +152,9 @@ end
 # -----------------------------------------------------------------------------
 # Fundamental matrix (ransac_fundmat)
 # -----------------------------------------------------------------------------
-const _CAM₁ = CameraModel(; focal = 500.0, pp = (320.0, 240.0))
-const _CAM₂ = CameraModel(; focal = 600.0, pp = (300.0, 250.0))
-const _R = RotY(0.15)
-const _T = SA[1.0, 0.2, 0.1]
-function make_fundmat_data(; n_inliers = 100, n_outliers = 30, noise = 0.5, seed = 42)
-    source_pts, target_pts = stereo_pixel_pairs(
-        MersenneTwister(seed), _CAM₁, _CAM₂, _R, _T;
-        n = n_inliers, σ₁ = noise, σ₂ = noise, point = box_point_far, n_out = n_outliers,
-        outlier = rng -> (SA[100.0 + 440.0 * rand(rng), 50.0 + 380.0 * rand(rng)], SA[80.0 + 440.0 * rand(rng), 60.0 + 380.0 * rand(rng)])
-    )
-    return source_pts, target_pts, n_inliers
-end
-
 @testset "F: LO-RANSAC — StudentTUniform" begin
-    source_pts, target_pts, n_inliers = make_fundmat_data(n_inliers = 100, n_outliers = 30, noise = 0.5, seed = 42)
+    # THE two-camera F scene (VisualGeometryToolkitEstimation 0.11.1's EpipolarScenes.fundmat_scene), this arm's draws of record
+    source_pts, target_pts, _, n_inliers = EpipolarScenes.fundmat_scene(MersenneTwister(42); n_inliers = 100, n_outliers = 30, σ = 0.5)
     problem = FundMatProblem(correspondences(source_pts, target_pts))
     result = ransac(
         problem,
