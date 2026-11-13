@@ -1,4 +1,4 @@
-docs-pass: baa4fd6
+docs-pass: dcddbcc
 landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.0 once main's Docs job deploys it)
 
 # 0.7.0 docs pass at the release (julia-docs-pass), resolved from General alone
@@ -17,6 +17,9 @@ raised; --latest: 0.
     one copies (EpipolarScenes.fundmat_scene; lo_call_set_arm), make_fundmat_data / lo_call / lo_arm deleted (5e0ceb0); compat
     Estimation "0.11.1" (package, test, accv2026) from the registry resolve (job 15216), CHANGELOG names it. No docs change:
     docs/src, README and REPRODUCE.md name neither helper (grep).
+[x] Re-recorded at dcddbcc: the opt-in LO timing bench (accv2026/test/lo_timing/bench.jl, run by no default item) imports
+    Core's StudentTUniformScoring, which RANSACScoringDoneRight 0.8 no longer brings; a 2-rep smoke run writes its record (job
+    15251). No docs change.
 
 ---
 
