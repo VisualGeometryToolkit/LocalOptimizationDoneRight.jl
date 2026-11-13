@@ -1,5 +1,17 @@
-docs-pass: fc68fdb
-landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io c55bb03
+docs-pass: a2fe836
+landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io c55bb03 (no change: a compat patch; nothing the site shows moved)
+
+# 0.6.1 docs pass (julia-docs-pass) — on VisualGeometryToolkitEstimation 0.10
+
+LocalOptimizationDoneRight 0.6.1 is a patch: `[compat]` VisualGeometryToolkitEstimation "0.10" in every member that declares it, and the
+CHANGELOG section. No public name added, removed or re-signatured.
+- API diff since the last release: none.
+- stale mentions: nothing here names the SplineLens image-space refine Estimation 0.10.0 retired (its free route,
+  `penalty`, the GCV and window metadata): checked by grep over src, docs, README and the paper projects.
+- README / install lines: unchanged (no version is named); the README rows resolve the registry and pass once
+  Estimation 0.10.0 is registered.
+
+---
 
 # LocalOptimizationDoneRight 0.6.0: docs pass
 

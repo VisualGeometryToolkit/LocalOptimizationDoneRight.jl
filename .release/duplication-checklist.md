@@ -94,3 +94,8 @@ its configs, scripts and paper (studentt-keyword-overload.md): every Student-t c
 ## test_duplication
 
 See the leg report (/home/jpr/logs/dgx-agent/cascade-09-LocalOptimizationDoneRight.md).
+
+## 0.6.1 (on VisualGeometryToolkitEstimation 0.10)
+
+Nothing to delete: the release widens one compat entry; the stack duplication audit lists no item for LocalOptimizationDoneRight at
+this release (its open items: none). `check_duplication` runs in the suite.
