@@ -56,8 +56,8 @@ end
 """
     StuTuBCD <: AbstractOptimizationStrategy
 
-Exact same-objective refinement for RANSACScoringDoneRight's
-[`StudentTUniformScoring`](@extref RANSACScoringDoneRight.StudentTUniformScoring): block-coordinate
+Exact same-objective refinement for VisualGeometryToolkitCore's
+[`StudentTUniformScoring`](@extref VisualGeometryToolkitCore.StudentTUniformScoring): block-coordinate
 ascent **on the scoring objective S itself**. Alternates
 
   (model)      θ⁺ = argmin_θ Σ_{i∈I} rᵢ(θ)²        — hard-inlier least squares

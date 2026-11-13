@@ -22,7 +22,7 @@ const _ADAPT_OPERATING_EFFICIENCY_CONSTANT = LocalOptimizationDoneRight._ADAPT_O
 import LocalOptimizationDoneRight: truncated_refit_pose
 using PoseLib: refine_relpose, refine_fundamental, refine_homography, LeZach
 using StaticArrays: SMatrix
-using VisualGeometryToolkitCore: VisualGeometryToolkitCore, EssentialMat, Correspondences, Point2, Vec3,
+using VisualGeometryToolkitCore: VisualGeometryToolkitCore, EssentialMat, Vec3,
     EuclideanMap, TLSShape, LossWidth, OutlierHalfwidth, loss_width, sources, targets, cheiral_pose_fast,
     codimension, data_size, mahalanobis_distances!, with_width, loss_width_to_outlier_halfwidth, FixedS2, scale_s2,
     deploy, fit_scale, JeffreysPrior, Irls, estimate

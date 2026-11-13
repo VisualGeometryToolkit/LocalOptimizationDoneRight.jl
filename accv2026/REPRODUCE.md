@@ -223,7 +223,7 @@ read — `ArgumentError: <file>: pool format v1 predates the destination map's p
 destination_map (v5) — migrate a format-4 pool with Pools.migrate_pool; convert an
 older one to format 4 first with <a conversion script Eval names that this repository
 does not contain>` — and is NOT migratable: regenerate it. A format-4 or -5 pool is the exception: `Pools.migrate_pool`
-(a tree: VisualGeometryToolkitEval's `scripts/migrate_pools.jl DIR --apply`) carries it over to format 6 (it
+(a tree: VisualGeometryToolkitEval's pool-migration script in its `scripts/`, `DIR --apply`) carries it over to format 6 (it
 validates and compares before writing); there is no format-4 or -5 reader.
 
 **The pools on disk are format 4.** The existing `_pf3` trees (PT-E-SIFT-4K_pf3,
