@@ -58,7 +58,7 @@ three records split by licence:
 |---|---|---|
 | PhotoTourism, [10.5281/zenodo.23240462](https://doi.org/10.5281/zenodo.23240462) | `pt_raw_validation`, `pt_raw_test` | CC BY 4.0 (our packaging; the IMC 2020 / RANSAC-tutorial / YFCC100M sources keep their terms) |
 | HEB + stored baselines, [10.5281/zenodo.23240467](https://doi.org/10.5281/zenodo.23240467) | `heb_raw`, `pt_e_superansac_stored` | CC BY 4.0 (our packaging; HEB keeps its terms) |
-| ETH3D, [10.5281/zenodo.23240469](https://doi.org/10.5281/zenodo.23240469) | `eth3d_splg_correspondences` (its Zenodo file published as `eth3d_splg_csponds`), `eth3d_f_pools_1k` (20 files: `eth3d_f_pools_1k_meta`, one `eth3d_f_pools_1k_<scene>` per scene, `facade` as `eth3d_f_pools_1k_facade_part1..7`) | CC BY-NC-SA 4.0 (inherited from ETH3D, share-alike) |
+| ETH3D, [10.5281/zenodo.23240469](https://doi.org/10.5281/zenodo.23240469) | `eth3d_splg_correspondences` (its Zenodo file name: `published_name` in configs/data_artifacts.toml), `eth3d_f_pools_1k` (20 files: `eth3d_f_pools_1k_meta`, one `eth3d_f_pools_1k_<scene>` per scene, `facade` as `eth3d_f_pools_1k_facade_part1..7`) | CC BY-NC-SA 4.0 (inherited from ETH3D, share-alike) |
 
 Each record's description lists the upstream sources to cite alongside it.
 
