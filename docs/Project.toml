@@ -9,9 +9,9 @@ LocalOptimizationDoneRight = "87a2e6a3-7afc-471f-bd1b-aa3740a29cd9"
 path = ".."
 
 [compat]
-Documenter = "1.17"
+Documenter = "1.20"
 DocumenterCodeBlocks = "1.5.1"
-DocumenterInterLinks = "1"
+DocumenterInterLinks = "1.1"
 DocumenterLandingPage = "0.2.2"
 julia = "1.13"
 LocalOptimizationDoneRight = "0.7"
