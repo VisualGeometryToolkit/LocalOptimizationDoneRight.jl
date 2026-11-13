@@ -1,4 +1,4 @@
-docs-pass: 0a7086f
+docs-pass: baa4fd6
 landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.0 once main's Docs job deploys it)
 
 # 0.7.0 docs pass at the release (julia-docs-pass), resolved from General alone
@@ -13,6 +13,10 @@ raised; --latest: 0.
 [x] README test: the readme item resolves the install line from the registry in the release gate (the wave pass's open
     "known pre-registration failure" line below is closed by it).
 [x] Docs build: docs/make.jl (strict, linkcheck) in the release gate.
+[x] Re-recorded at baa4fd6 (owner ruling: no duplication entries): accv2026's tests use VisualGeometryToolkitEstimation 0.11.1's
+    one copies (EpipolarScenes.fundmat_scene; lo_call_set_arm), make_fundmat_data / lo_call / lo_arm deleted (5e0ceb0); compat
+    Estimation "0.11.1" (package, test, accv2026) from the registry resolve (job 15216), CHANGELOG names it. No docs change:
+    docs/src, README and REPRODUCE.md name neither helper (grep).
 
 ---
 
