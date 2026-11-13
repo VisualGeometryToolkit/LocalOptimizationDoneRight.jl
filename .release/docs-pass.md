@@ -6,7 +6,7 @@ landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no han
 LocalOptimizationDoneRight 0.7.0 (breaking) on VisualGeometryToolkitCore 0.10, VisualGeometryToolkitEstimation 0.11
 (accv2026: VisualGeometryToolkitEval 0.8, RANSACScoringDoneRight 0.8).
 - [x] API diff since 0.6.2: no public name added, removed or re-signatured. The retired upstream names this package used
-  (`LiftableProblem` → `MinimalSolveProblem` in src/lift/lifts.jl; `Csponds` → `Correspondences` in the PoseLib extension)
+  (now `MinimalSolveProblem` in src/lift/lifts.jl and `Correspondences` in the PoseLib extension; the old names: CHANGELOG 0.7.0)
   are internal uses; the extension's `PoseLibWorkspace` (internal) is `PoseLibWorkspace{C}` and its docstring says so.
 - [x] Docstrings: the `docs` item (every public name documented, attached, signatures matching) green at gate 42850cfe.
   One link fixed: `BarronAdaptive`'s docstring (src/strategies/types.jl:59) @extref'd
