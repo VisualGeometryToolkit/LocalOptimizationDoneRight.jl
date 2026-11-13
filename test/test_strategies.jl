@@ -170,7 +170,7 @@ end
     @test LO.lo_termination(:max_iterations, IterationCap) === (ReturnCode.MaxIters, IterationCap)
     @test LO.lo_termination(:converged, LadderConverged) === (ReturnCode.Success, LadderConverged)
     @test_throws ArgumentError LO.lo_termination(:no_such_reason, NoRule)
-    # LODR#2 (wave-10 catch-up): the rule is the one Core passes, never re-derived from the final state. Fail-first: 0.6
+    # LODR#2 (wave-10 catch-up): the rule is the one Core hands over, never re-derived from the final state. Fail-first: 0.6
     # re-ran each composite member's `stop_reason` at the final state (θ as θ_old) to guess the member that fired, so a
     # member whose verdict had changed since (impure, or reading state the last iteration moved) was named instead.
     # Here the state says "improved" — re-evaluating the no-improvement stop answers :continue, the old guess NoRule —
