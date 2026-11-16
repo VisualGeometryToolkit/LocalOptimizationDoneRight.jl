@@ -6,6 +6,12 @@ A patch: compat only. The package, test and accv2026 move to the registry latest
 0.11, VisualGeometryToolkitEstimation 0.12 and (the extension) PoseLib 0.3.1; accv2026 also VisualGeometryToolkitEval 0.9.2
 and RANSACScoringDoneRight RSDR_VERSION_PLACEHOLDER. No API change.
 
+Known break, accv2026 only: Core 0.11 forces the paper project onto VisualGeometryToolkitEval 0.9.2, and main's accv2026
+still calls Eval 0.8's retired `keyed_cell_dir` (and `run_complete`, `fresher`, the 4-argument `Stage` in its scripts). Its
+test item "keyed cells" errors in three testsets (Table 1 timings, Fig 1, Fig 2: `keyed_cell_dir is retired`); the
+package, its test and docs members are unaffected. The paper needs its held Eval 0.9 port, which this release does not
+take.
+
 Why a patch: Core 0.11.0's breaking change is its host LM's verdict (a tolerance stop on a finite step is `Success`, with no
 stationarity test), and nothing here reads it. The local optimizers' termination records come from their own lift loops
 (Core's `refine!` with this package's stop criteria: `StopWhenIncrementSmall`, `StopWhenLadderConverged`,
