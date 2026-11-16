@@ -4,7 +4,7 @@
 
 A patch: compat only. The package, test and accv2026 move to the registry latest of the stack: VisualGeometryToolkitCore
 0.11, VisualGeometryToolkitEstimation 0.12 and (the extension) PoseLib 0.3.1; accv2026 also VisualGeometryToolkitEval 0.9.2
-and RANSACScoringDoneRight RSDR_VERSION_PLACEHOLDER. No API change.
+and RANSACScoringDoneRight 0.8.1. No API change.
 
 Known break, accv2026 only: Core 0.11 forces the paper project onto VisualGeometryToolkitEval 0.9.2, and main's accv2026
 still calls Eval 0.8's retired `keyed_cell_dir` (and `run_complete`, `fresher`, the 4-argument `Stage` in its scripts). Its
