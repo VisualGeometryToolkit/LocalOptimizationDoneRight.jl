@@ -1,3 +1,18 @@
+docs-pass: a14df07
+landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.1 once main's Docs job deploys it)
+
+# 0.7.1 docs review, at a14df07
+
+On 0.7.0 (2b6854b): the Core 0.11.0 cascade, compat only.
+[x] API diff since 0.7.0: none (no src/, ext/ or docs/ change; the diff is [compat] in every member and the CHANGELOG).
+[x] Docstrings, README, docs/src, accv2026/REPRODUCE.md: no version of the stack and no LM verdict named (grep): unchanged.
+[x] CHANGELOG 0.7.1: why a patch (nothing reads Core's LM verdict); the floors (Core 0.11, Estimation 0.12, PoseLib 0.3.1;
+    accv2026 Eval 0.9.2, RANSACScoringDoneRight 0.8.1); accv2026's known break on Eval 0.9.2 (its "keyed cells" item calls the
+    retired keyed_cell_dir; the paper needs its held Eval 0.9 port).
+[x] The suite's docs and README items and the strict docs build (docs/make.jl): in the release gate.
+
+---
+
 docs-pass: dcddbcc
 landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.0 once main's Docs job deploys it)
 
