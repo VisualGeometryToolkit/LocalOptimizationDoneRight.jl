@@ -1,5 +1,18 @@
 # LocalOptimizationDoneRight changelog
 
+## 0.7.1: on VisualGeometryToolkitCore 0.11
+
+A patch: compat only. The package, test and accv2026 move to the registry latest of the stack: VisualGeometryToolkitCore
+0.11, VisualGeometryToolkitEstimation 0.12 and (the extension) PoseLib 0.3.1; accv2026 also VisualGeometryToolkitEval 0.9.2
+and RANSACScoringDoneRight RSDR_VERSION_PLACEHOLDER. No API change.
+
+Why a patch: Core 0.11.0's breaking change is its host LM's verdict (a tolerance stop on a finite step is `Success`, with no
+stationarity test), and nothing here reads it. The local optimizers' termination records come from their own lift loops
+(Core's `refine!` with this package's stop criteria: `StopWhenIncrementSmall`, `StopWhenLadderConverged`,
+`StopWhenLeftBasin`, through `lo_termination`), never from `lmsolve_chart!` / `LmProblem`; the PoseLib refiners'
+records are PoseLib's. So this release changes no estimate, inlier set or termination record of this package's (Estimation
+0.12 changed no code path either: its RANSAC's model and inliers are unchanged).
+
 ## 0.7.0 (2026-11-13): the wave-10 stack and the terminology taxonomy
 
 On the wave-10 stack: VisualGeometryToolkitCore 0.10 and VisualGeometryToolkitEstimation 0.11 (package and test);
