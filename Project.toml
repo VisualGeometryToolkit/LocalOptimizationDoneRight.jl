@@ -21,7 +21,6 @@ LocalOptimizationDoneRightPoseLibExt = "PoseLib"
 
 [sources]
 # TEMPORARY (the cascade of VisualGeometryToolkitCore 0.12.0): removed before this tree is registered.
-PoseLib = {url = "https://github.com/VisualGeometryToolkit/VisualGeometryToolkit.jl", rev = "vrtk/retire-radiometric", subdir = "PoseLib"}
 VisualGeometryToolkitCore = {url = "https://github.com/VisualGeometryToolkit/VisualGeometryToolkit.jl", rev = "vrtk/retire-radiometric", subdir = "VisualGeometryToolkitCore"}
 VisualGeometryToolkitEstimation = {url = "https://github.com/VisualGeometryToolkit/VisualGeometryToolkit.jl", rev = "vrtk/retire-radiometric", subdir = "VisualGeometryToolkitEstimation"}
 
