@@ -4,7 +4,7 @@
 # Reproduce, the runner). This file is data only: which driver runs on which
 # config of record, after what. How a stage runs (Slurm or here, the CPUs, the
 # GPUs) is the site's, a machine profile shipped with VisualGeometryToolkitEval
-# (configs/sites/dgx01.toml, desktop.toml, vcai.toml); where the data, the results
+# (configs/sites/<site>.toml); where the data, the results
 # and the artifact store are is the site profile's [storage] (or VGTK_DATA_ROOT,
 # VGTK_RESULTS_ROOT and VGTK_ARTIFACT_STORE in the job's environment); this file
 # names no machine path.
