@@ -93,6 +93,11 @@ julia --project=. -t auto scripts/pt_e_pools.jl
 julia --project=. -t auto scripts/heb_h_pools.jl
 # (the ETH3D-F pools are fetched, frozen: NOT regenerated — the current F solver
 #  does not reproduce them bit for bit; scoring_pools.jl --config=eth_f_pools reports them done)
+# the three pool trees carried to pool format 6, the cells' inputs (new trees *_pf6:
+# every light pool migrated and bit-verified, the residuals linked)
+julia --project=. scripts/migrated_pools.jl --config=pt_e_pools_v6
+julia --project=. scripts/migrated_pools.jl --config=heb_h_pools_v6
+julia --project=. scripts/migrated_pools.jl --config=eth_f_pools_v6
 # then every experiment of the index below, e.g.
 julia --project=. scripts/fig3_composed_miscal.jl --plan
 ```

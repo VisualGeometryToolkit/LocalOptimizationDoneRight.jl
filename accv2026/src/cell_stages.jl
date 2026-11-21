@@ -478,7 +478,7 @@ end
 The POOL MIGRATION cell of `configs/<cfg_name>.toml`: the pool tree of record its
 `[inputs.pool]` names, carried to the current pool format into the NEW tree
 `[experiment] pool_dir` (both relative to their tier roots). Every file of the source tree
-but its run records and its archived `_v3/` copy is hard-linked into the new tree, and
+but its run records and its subdirectories (an archived copy) is hard-linked into the new tree, and
 VisualGeometryToolkitEval's `migrate_pools` (scripts/migrate_pools.jl, one `Pools.migrate_pool`
 per light pool: verified bit for bit, then renamed over the link) rewrites each light pool in
 the new tree; the residuals stay linked (`pool_key` binds them, unchanged). The source tree is
@@ -504,7 +504,7 @@ function pool_migration_stages(cfg_name::AbstractString)
     function _migrate()
         mkpath(dst)
         for f in readdir(src)
-            (_records(f) || f == "_v3" || isdir(joinpath(src, f))) && continue
+            (_records(f) || isdir(joinpath(src, f))) && continue   # a subdirectory (an archived copy) is no pool of the tree
             ispath(joinpath(dst, f)) || hardlink(joinpath(src, f), joinpath(dst, f))
         end
         n = Base.invokelatest(migrate_pools, dst; apply = true)

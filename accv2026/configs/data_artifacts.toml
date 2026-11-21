@@ -168,3 +168,30 @@ covers = ["accv2026/data/HEB-H-SIFT-4K_pf3"]
 tier = "derived"
 what = "the HEB H scoring pools (pool format 3) the HEB cells read"
 provenance = "scripts/heb_h_pools.jl on configs/heb_h_pools.toml, from heb_raw"
+
+# The pools at pool format 6 (Eval 0.10's), migrated from the format-4 trees above and from
+# the published eth3d_f_pools_1k by the migration stages (scripts/migrated_pools.jl); the cells
+# read these.
+[artifacts.pt_e_pools_v6]
+kind = "produced"
+producer = "pt_e_pools_v6"
+covers = ["accv2026/data/PT-E-SIFT-4K_pf6"]
+tier = "derived"
+what = "the PhotoTourism E scoring pools at pool format 6 the PT-E cells read"
+provenance = "scripts/migrated_pools.jl on configs/pt_e_pools_v6.toml, from pt_e_pools (residuals linked, every pool_key kept)"
+
+[artifacts.heb_h_pools_v6]
+kind = "produced"
+producer = "heb_h_pools_v6"
+covers = ["accv2026/data/HEB-H-SIFT-4K_pf6"]
+tier = "derived"
+what = "the HEB H scoring pools at pool format 6 the HEB cells read"
+provenance = "scripts/migrated_pools.jl on configs/heb_h_pools_v6.toml, from heb_h_pools (residuals linked, every pool_key kept)"
+
+[artifacts.eth3d_f_pools_v6]
+kind = "produced"
+producer = "eth_f_pools_v6"
+covers = ["datasets/eth3d/derived/splg/scoring_data_F_pf6"]
+tier = "derived"
+what = "the ETH3D-F scoring pools of record at pool format 6 the ETH3D cells read"
+provenance = "scripts/migrated_pools.jl on configs/eth_f_pools_v6.toml, from the published eth3d_f_pools_1k (pool format 4; residuals linked, every pool_key kept)"
