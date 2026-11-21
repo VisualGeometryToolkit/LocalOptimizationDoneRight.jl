@@ -40,14 +40,18 @@ const ONE = NWORKERS == 0 ? 0 : 1          # the timing run: one worker (serial 
 
 # One run. With a name pattern a run may match no item, which ReTestItems
 # reports by throwing; that run is then skipped, and only a pattern that
-# matches no item in any run is an error.
+# matches no item in any run is an error. A run whose items fail is recorded
+# and rethrown at the end, so the later run and the conventions check still run.
 const RAN = Ref(false)
+const FAILED = Ref{Any}(nothing)
 function run_items(select; kw...)
     try
         runtests(select, @__DIR__; name = NAME, testitem_timeout = 3600, kw...)
         RAN[] = true
     catch e
-        (e isa ReTestItems.NoTestException && NAME !== nothing) || rethrow()
+        e isa ReTestItems.NoTestException && NAME !== nothing && return
+        RAN[] = true
+        FAILED[] === nothing && (FAILED[] = e)
     end
 end
 
@@ -56,7 +60,9 @@ run_items(ti -> :timing in ti.tags; nworkers = ONE, nworker_threads = 1)
 
 # The stack's paper-project conventions (rule L4: the suite's entry point calls
 # the check), in the main process after the items, so a violation never hides an
-# item's result; a name pattern runs only the matching items.
+# item's result nor an item's failure the check; a name pattern runs only the
+# matching items.
 NAME === nothing && include(joinpath(@__DIR__, "test_paper_project.jl"))
 
+FAILED[] === nothing || throw(FAILED[])
 RAN[] || error("no test item matches $(repr(NAME))")
