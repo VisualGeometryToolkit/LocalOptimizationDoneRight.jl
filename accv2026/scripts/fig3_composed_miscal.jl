@@ -36,7 +36,6 @@ const PANEL = joinpath(PAPER_FIGDIR, "panel_lo_miscal.tex")
 
 # The PT-E pool-best oracle bound (floor + mAA ceiling) of record for these pools and test scenes.
 const FLOORS = oracle_floors_path(EXP_MISCAL_DIR)   # the cell's own keyed directory
-_oracle_done() = oracle_floor_done(FLOORS, "PT_E"; source = oracle_floor_source(EXP_POOL_PT_E, :E, split(TEST, ",")))
 
 STAGES = Stage[]
 # The PT-E composed tuning: the SEQUENTIAL CV (2026-10-04, notes/sequential_cv.md)
@@ -54,23 +53,16 @@ const TEST = join(test_scenes(tuning_spec(PT_E_TUNING, sequential_cv_scorer_entr
 push!(STAGES, sequential_cv_stage(:cv, PT_E_TUNING, PT_E_PATH))
 # THE PT-E pool-best oracle bound (floor + mAA ceiling) drawn on the panel,
 # computed by the one floors writer on the panel's own pools and test scenes.
-push!(STAGES, Stage(:oracle,
-        "PT-E pool-best oracle bound (floor + mAA ceiling) → $(FLOORS)[PT_E]",
-        () -> _oracle_done(),
-        () -> run_driver("compute_supp_oracle_floors.jl",
-                         "--tag=PT_E", "--problem=E",
-                         "--pool-dir=$(EXP_POOL_PT_E)",
-                         "--scenes=$(TEST)", "--floors=$(FLOORS)")))
+push!(STAGES, oracle_stage("PT_E", :E, EXP_POOL_PT_E, TEST, FLOORS))
 # The full Table 1 roster, so Fig 3 carries the same arms as Figs 2 and 4, at
 # mAA@10°, with the PT-E pool-best bound of stage oracle.
 push!(STAGES, Stage(:render,
-        "objective-faceted composed-miscal panel, maa row → $(PANEL)",
-        () -> fresher(PANEL, EXP_MISCAL_SIDECAR),
-        () -> begin
+        "objective-faceted composed-miscal panel, maa row → $(PANEL)";
+        check = () -> begin
             require_input(EXP_MISCAL_SIDECAR; what = "PT-E full-roster operating-points sidecar",
                           provenance = "stage cv of this experiment")
             audit_operating_points(ROSTER, EXP_MISCAL_SIDECAR)
-            _oracle_done() ||
+            oracle_floor_done(FLOORS, "PT_E"; source = oracle_floor_source(EXP_POOL_PT_E, :E, split(TEST, ","))) ||
                 error("oracle floor PT_E: missing or computed on other pools/scenes — run --stage=oracle first")
             run_driver("render_miscal_faceted.jl", "--sidecar=$(EXP_MISCAL_SIDECAR)", "--out=$(PANEL)",
                                   "--deploy=1", "--rows=maa", "--oracle-tag=PT_E", "--oracle-floors=$(FLOORS)")

@@ -40,13 +40,11 @@ include(srcdir("e2e_timing.jl"))     # [render] time: the time row's cell
 const CFG_NAME = cli_option(ARGS, "config")
 const CFG_PATH = projectdir("configs", CFG_NAME * ".toml")
 const CFG = fold_e2e_cell!(load_run_config(CFG_PATH))
-const KEY     = run_key(CFG; upstream = upstream_runs(CFG))
+const PRODUCT = e2e_product(CFG)
+const KEY     = PRODUCT.key
+# a smoke run is a code check into DrWatson's datadir("sims"), never the cell's product
 const SMOKE   = "--smoke" in ARGS ? datadir("sims", "e2e-$(KEY)-smoke") : cli_option(ARGS, "smoke", "")
-const OUTDIR  = isempty(SMOKE) ? e2e_cell_dir(CFG) : SMOKE
-# A smoke run's records state the subset it ran (its config's [smoke] table), so they
-# are never mistaken for the cell's.
-const RECORD_CFG = isempty(SMOKE) ? CFG :
-    merge(CFG, Dict{String,Any}("smoke" => Dict{String,Any}("scenes" => 1, "pairs_per_scene" => 20, "zetas" => [1.0])))
+const OUTDIR  = isempty(SMOKE) ? product_dir(PRODUCT) : SMOKE
 const POOL    = pool_input(CFG)
 const SIDECAR = miscal_sidecar_of(String(CFG["operating_points"]["miscal_config"]))
 const ARMS    = String.(CFG["e2e"]["arms"])
@@ -75,8 +73,6 @@ if SR !== nothing
     superansac_cross_validation(SR) == CV ||
         error("$CFG_NAME: the SupeRANSAC cell reads another cross-validation than these operating points'")
 end
-"SupeRANSAC's result files for these scenes (nothing when neither its run nor its stored results hold them)."
-_sr_files() = try superansac_results(SR, SCENES) catch; nothing end
 
 function _live()
     r = e2e_live(SIDECAR, ARMS, SCENES, units_of; zetas = ZETAS, seed = SEED, stream = STREAM, pool_dir = POOL, config = RCFG)
@@ -85,8 +81,6 @@ function _live()
             cross_validation = tuning_table(CV),
             seed_scheme = "StableRNG(stable_seed($(SEED), \"$(STREAM)\", scene, pool_index))",
             created = string(Dates.now()))
-    write_run_records(OUTDIR, RECORD_CFG; driver = "e2e_ransac.jl", config_source = CFG_PATH,
-                      key = run_key(RECORD_CFG; upstream = upstream_runs(RECORD_CFG)), inputs = [SIDECAR, POOL])
 end
 
 function _summary()
@@ -109,15 +103,15 @@ function _summary()
     print(read(SUMMARY, String))
 end
 
-STAGES = Stage[
-    Stage(:live, "$(join(ARMS, " vs ")) × ζ $(ZETAS) on every test pair (config $(CFG_NAME), key $(KEY)) → $(LIVE)",
-          () -> run_complete(OUTDIR; sidecar = basename(LIVE)), _live),
-    Stage(:summary, "arm × ζ scene-averaged summary" * (SR === nothing ? "" : " + SupeRANSAC") * " → $(SUMMARY)",
-          () -> isfile(SUMMARY) && fresher(SUMMARY, LIVE) &&
-                (SR === nothing || !isempty(SMOKE) ||
-                 ((f = _sr_files()) !== nothing && fresher(SUMMARY, values(f.files)...))),
-          _summary),
-]
+# The cell's product: the live runs and their scene-averaged summary (with SupeRANSAC's rows from
+# whichever of its sources holds every scene, named in the summary), the summary written last.
+STAGES = Stage[isempty(SMOKE) ?
+    Stage(:live, "$(join(ARMS, " vs ")) × ζ $(ZETAS) on every test pair, the arm × ζ scene-averaged summary" *
+                 (SR === nothing ? "" : " + SupeRANSAC") * " (config $(CFG_NAME), key $(KEY)) → $(SUMMARY)";
+          items = () -> [PRODUCT], product = identity,
+          run = p -> produce(_ -> (_live(); _summary(); nothing), p; driver = "e2e_ransac.jl", config_source = CFG_PATH,
+                             inputs = [SIDECAR, POOL])) :
+    Stage(:live, "smoke run → $(SUMMARY)"; check = () -> (_live(); _summary()))]
 # THE main-paper table (`[render] panel`, deployed when `deploy`): ours vs
 # SupeRANSAC × ζ, median error / mAA@10 / median wall time, the best system
 # per column in bold (src/e2e_cells.jl `e2e_table_tex`). The FIRST arm is
@@ -132,7 +126,7 @@ if haskey(CFG, "render") && haskey(CFG["render"], "panel")
     const TIMING_CFG = let n = get(CFG["render"], "time", nothing)
         n === nothing ? nothing : (String(n), e2e_timing_cell(String(n)))
     end
-    TIMING_CFG === nothing || upstream_runs(TIMING_CFG[2])["e2e"] == KEY ||
+    TIMING_CFG === nothing || upstream_products(TIMING_CFG[2])["e2e"].key == KEY ||
         error("$CFG_NAME: [render] time = $(TIMING_CFG[1]) times another e2e run than this one ($KEY)")
     const TIMING_TSV = TIMING_CFG === nothing ? SUMMARY : timing_summary_path(e2e_timing_dir(TIMING_CFG[2]))
     function _table()
@@ -145,12 +139,11 @@ if haskey(CFG, "render") && haskey(CFG["render"], "panel")
                 [(a, [raw"\stuU{}+" * label_tex(a)]) for a in ARMS[2:end]]...,
                 ("SupeRANSAC", [raw"SupeRANSAC~\cite{BarathSupeRANSAC2025}"])]
         src = TIMING_CFG === nothing ? "summary.tsv" :
-              "summary.tsv, the time row from $(TIMING_CFG[1]) (key $(run_key(TIMING_CFG[2]; upstream = upstream_runs(TIMING_CFG[2]))), timing.tsv)"
+              "summary.tsv, the time row from $(TIMING_CFG[1]) (key $(e2e_timing_product(TIMING_CFG[2]).key), timing.tsv)"
         write(TABLE, e2e_table_tex(val, arms, ZETAS; header =
             "% Auto-generated by scripts/e2e_ransac.jl stage table (config $(CFG_NAME), key $(KEY)) from $(src); do not hand-edit."))
         @info "e2e table written" TABLE
     end
-    push!(STAGES, Stage(:table, "ours vs SupeRANSAC × ζ table → $(TABLE)",
-          () -> isfile(TABLE) && fresher(TABLE, SUMMARY) && fresher(TABLE, TIMING_TSV), _table))
+    push!(STAGES, Stage(:table, "ours vs SupeRANSAC × ζ table → $(TABLE)"; check = _table))
 end
 run_stages("e2e_ransac[$(CFG_NAME)]", STAGES)

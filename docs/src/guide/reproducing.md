@@ -62,10 +62,11 @@ into `paper/figures/`. The whole paper is one command of the runner,
 
 A cell is a config of record (`configs/<cell>.toml`) plus the driver that runs it.
 Its *effective* config — the TOML with the protocols of record folded in by
-`src/protocol_folds.jl` — is hashed into its run key
-(VisualGeometryToolkitEval `Experiments.run_key`, the SHA-256 of the sorted TOML; the
-`[render]` section is excluded). Results are written to keyed directories such as
-`phototourism/sift/E/Miscalibration/sequential-cv-<key>/` under the add-only
+`src/protocol_folds.jl` — keys its result, a keyed product
+(VisualGeometryToolkitEval `Experiments.Product`: the SHA-256 of the effective config, the
+`[render]` section excluded, with the products it reads and the code it runs folded in).
+Results are written to keyed product directories such as
+`phototourism/sift/E/Miscalibration/sequential-cv/<key>/` under the add-only
 results root, never rewritten. Consumers re-derive a producer's key from its
 config name, so keys are derived, never copied.
 

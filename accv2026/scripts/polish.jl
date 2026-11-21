@@ -28,8 +28,9 @@ const CFG_NAME = cli_option(ARGS, "config", "polish_pt_e")
 const CFG_PATH = projectdir("configs", CFG_NAME * ".toml")
 # keyed by the config AND the run of the operating points it polishes
 const CFG = load_run_config(CFG_PATH)
-const KEY = run_key(CFG; upstream = upstream_runs(CFG))
-const OUTDIR = polish_cell_dir(CFG)
+const PRODUCT = polish_product(CFG)
+const KEY = PRODUCT.key
+const OUTDIR = product_dir(PRODUCT)
 const TESTF, SUMF = joinpath(OUTDIR, "polish_test.jld2"), joinpath(OUTDIR, "summary.tsv")
 const R = CFG["render"]
 const PANEL_DIFF = joinpath(PAPER_FIGDIR, R["panel_diff"])
@@ -58,12 +59,11 @@ end
 _render() = run_driver("render_polish_diff.jl", "--polish-test=$(TESTF)", "--out=$(PANEL_DIFF)", "--config=$(CFG_NAME)", "--diff-xmax=$(string(R["diff_xmax"]))")
 
 STAGES = Stage[
-    Stage(:test, "every polish of every source's LO output on the test side (config $(CFG_NAME), key $(KEY)) -> $(TESTF)",
-          () -> run_complete(OUTDIR; sidecar = basename(TESTF)),
-          () -> (_tool(); write_run_records(OUTDIR, CFG; driver = "run_polish.jl", config_source = CFG_PATH,
-                                                  key = KEY, inputs = [miscal_sidecar_of(String(CFG["operating_points"]["miscal_config"]))]))),
-    Stage(:summary, "before/after accuracy and displacement -> $(SUMF)", () -> isfile(SUMF) && fresher(SUMF, TESTF), _summary),
-    Stage(:render, "ECDF of the per-pair error change -> $(PANEL_DIFF)",
-          () -> isfile(PANEL_DIFF) && fresher(PANEL_DIFF, TESTF), _render),
+    Stage(:test, "every polish of every source's LO output on the test side and its before/after accuracy and displacement " *
+                 "(config $(CFG_NAME), key $(KEY)) -> $(SUMF)";
+          items = () -> [PRODUCT], product = identity,
+          run = p -> produce(_ -> (isfile(TESTF) || _tool(); _summary(); nothing), p; driver = "run_polish.jl", config_source = CFG_PATH,
+                             inputs = [miscal_sidecar_of(String(CFG["operating_points"]["miscal_config"]))])),
+    Stage(:render, "ECDF of the per-pair error change -> $(PANEL_DIFF)"; check = _render),
 ]
 run_stages("polish[$(CFG_NAME)]", STAGES)

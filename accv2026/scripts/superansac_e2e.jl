@@ -34,8 +34,9 @@ include(srcdir("superansac.jl"))
 const CFG_NAME = cli_option(ARGS, "config", "pt_e_superansac")
 const CFG_PATH = projectdir("configs", CFG_NAME * ".toml")
 const CFG = superansac_cell(CFG_NAME)
-const KEY = run_key(CFG; upstream = upstream_runs(CFG))
-const OUTDIR = superansac_cell_dir(CFG)
+const PRODUCT = superansac_product(CFG)
+const KEY = PRODUCT.key
+const OUTDIR = product_dir(PRODUCT)
 const CV = superansac_cross_validation(CFG)
 
 if "--check" in ARGS
@@ -47,21 +48,20 @@ end
 
 _inputs_done() = all(isfile(superansac_inputs_path(OUTDIR, s, side))
                      for (side, ss) in (("validation", validation_scenes(CV)), ("test", test_scenes(CV))) for s in ss)
-_eval_done() = run_complete(OUTDIR; sidecar = basename(superansac_zeta_path(OUTDIR, last(test_scenes(CV))))) &&
-               all(isfile(superansac_zeta_path(OUTDIR, s)) for s in test_scenes(CV))
-function _eval()
-    superansac_evaluation!(CFG, OUTDIR)
-    write_run_records(OUTDIR, CFG; driver = "superansac_e2e.jl", config_source = CFG_PATH, key = KEY,
-                      inputs = [pool_input(CFG)])
+# The cell's product: its raw-pixel inputs, its loss-width CV and the ζ evaluation, each step
+# resumed from what an interrupted run left in the product's directory; the last test scene's
+# ζ-sweep file is written last.
+function _cell(dir)
+    _inputs_done() || superansac_inputs!(CFG, dir)
+    isfile(superansac_cv_path(dir)) || superansac_loss_width_cv!(CFG, dir)
+    superansac_evaluation!(CFG, dir)
+    return nothing
 end
 
 STAGES = Stage[
-    Stage(:inputs, "SupeRANSAC raw-pixel inputs: $(length(validation_scenes(CV))) validation and " *
-                   "$(length(test_scenes(CV))) test scenes (config $(CFG_NAME), key $(KEY)) → $(joinpath(OUTDIR, "inputs"))",
-          _inputs_done, () -> superansac_inputs!(CFG, OUTDIR)),
-    Stage(:cv, "SupeRANSAC loss-width CV on the validation units → $(superansac_cv_path(OUTDIR))",
-          () -> isfile(superansac_cv_path(OUTDIR)), () -> superansac_loss_width_cv!(CFG, OUTDIR)),
-    Stage(:eval, "SupeRANSAC on every test pair × ζ $(CFG["superansac"]["zetas"]) → $(OUTDIR)",
-          _eval_done, _eval),
+    Stage(:eval, "SupeRANSAC raw-pixel inputs ($(length(validation_scenes(CV))) validation and $(length(test_scenes(CV))) test " *
+                 "scenes), loss-width CV and every test pair × ζ $(CFG["superansac"]["zetas"]) (config $(CFG_NAME), key $(KEY)) → $(OUTDIR)";
+          items = () -> [PRODUCT], product = identity,
+          run = p -> produce(_cell, p; driver = "superansac_e2e.jl", config_source = CFG_PATH, inputs = [pool_input(CFG)])),
 ]
 run_stages("superansac_e2e[$(CFG_NAME)]", STAGES)

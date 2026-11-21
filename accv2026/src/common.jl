@@ -2,8 +2,8 @@
 # src/common.jl — THIN SHIM over the stage/run-record framework.
 #
 # The stage runner (Stage, run_stages with --plan/--force/--stage), driver
-# shell-out (run_driver), input declarations (require_input) and the
-# done-predicate helper (fresher) are VisualGeometryToolkitEval.Experiments; the
+# shell-out (run_driver), input declarations (require_input) and the keyed
+# products (Product, produce, produced) are VisualGeometryToolkitEval.Experiments; the
 # interior-argmin audit is the LO engine's `audit_operating_points(ROSTER,
 # path)`. This file keeps only THIS paper's wiring: the repo root, the
 # driver-directory helper, and the run_driver context (scripts resolve against

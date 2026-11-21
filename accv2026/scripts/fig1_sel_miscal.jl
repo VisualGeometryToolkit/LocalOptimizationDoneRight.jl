@@ -35,13 +35,13 @@ const PANEL  = joinpath(PAPER_FIGDIR, "panel_sel_miscal.tex")
 
 STAGES = Stage[]
 push!(STAGES, Stage(:produce,
-        "selection-only miscal sweep (all pairs, $(join(CFG["sensitivity"]["selectors"], ","))) → $(EXP_SEL_MISCAL_BUNDLE)",
-        () -> run_complete(EXP_SEL_MISCAL_DIR; sidecar = basename(EXP_SEL_MISCAL_BUNDLE)),
-        () -> run_driver("run_lo_sensitivity.jl", "--config=$(CFG_PATH)")))
+        "selection-only miscal sweep (all pairs, $(join(CFG["sensitivity"]["selectors"], ","))) → $(EXP_SEL_MISCAL_BUNDLE)";
+        items = () -> [EXP_SEL_MISCAL_PRODUCT], product = identity,
+        run = p -> produce(_ -> (run_driver("run_lo_sensitivity.jl", "--config=$(CFG_PATH)"); nothing), p;
+                           driver = "run_lo_sensitivity.jl", config_source = CFG_PATH, inputs = [pool_path(CFG)])))
 push!(STAGES, Stage(:render,
-        "median + mAA panels via figures_registry (:fig1, :fig1_maa) → $(PANEL)",
-        () -> fresher(PANEL, EXP_SEL_MISCAL_BUNDLE),
-        () -> begin
+        "median + mAA panels via figures_registry (:fig1, :fig1_maa) → $(PANEL)";
+        check = () -> begin
             require_input(EXP_SEL_MISCAL_BUNDLE; what = "sel-miscal bundle",
                           provenance = "stage produce of this experiment")
             run_driver("figures_registry.jl", "fig1", "fig1_maa")

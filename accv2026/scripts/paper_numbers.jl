@@ -36,25 +36,24 @@ VgtkCore.check_keys(CFG, ("sources", "macro"), CFG_PATH)
 const INPUTS = Dict(String(n) => number_source_input(n, s) for (n, s) in CFG["sources"])
 const EFFECTIVE = merge(Dict{String,Any}(CFG),
     Dict{String,Any}("inputs" => Dict(n => relpath(p, results_root()) for (n, p) in INPUTS)))
-const KEY = run_key(EFFECTIVE)
-const OUTDIR = keyed_cell_dir(EFFECTIVE, "PaperNumbers", "numbers"; base = results_root())   # <results>/PaperNumbers/numbers-<KEY>
-const RECORD = joinpath(OUTDIR, "numbers.toml")
+const PRODUCT = Product("PaperNumbers", "numbers", EFFECTIVE; output = "numbers.toml")   # <results>/PaperNumbers/numbers/<key>
+const KEY = PRODUCT.key
+const OUTDIR = product_dir(PRODUCT)
+const RECORD = product_output(PRODUCT)
 const TEX = joinpath(PAPER_FIGDIR, PAPER_NUMBERS_TEX)
 
-function _numbers()
+function _numbers(_)
     r = paper_numbers(CFG; floors = paper_number_floors(CFG))
-    mkpath(OUTDIR)
     rec = Dict{String,Any}("key" => KEY, "macros" => [
         Dict{String,Any}("name" => x.name, "tex" => x.tex, "source" => x.source,
                          "input" => INPUTS[x.source],
                          "value" => x.value isa Tuple ? collect(Float64.(x.value)) : Float64(x.value))
         for x in r.rows])
     open(io -> TOML.print(io, rec; sorted = true), RECORD, "w")
-    write_run_records(OUTDIR, EFFECTIVE; driver = "paper_numbers.jl", config_source = CFG_PATH, key = KEY,
-                      inputs = sort(unique(collect(values(INPUTS)))))
     for x in r.rows
         println(rpad("\\" * x.name, 24), rpad(x.tex, 22), x.source)
     end
+    return nothing
 end
 
 # The macros through VisualGeometryToolkitEval's one number-macro writer: one
@@ -78,9 +77,10 @@ function _emit()
 end
 
 STAGES = Stage[
-    Stage(:numbers, "every number macro from the results of record (key $(KEY)) -> $(RECORD)",
-          () -> run_complete(OUTDIR; sidecar = basename(RECORD)), _numbers),
-    Stage(:emit, "the macros (VisualGeometryToolkitEval's write_numbers) -> $(TEX)",
-          () -> isfile(TEX) && fresher(TEX, RECORD), _emit),
+    Stage(:numbers, "every number macro from the results of record (key $(KEY)) -> $(RECORD)";
+          items = () -> [PRODUCT], product = identity,
+          run = p -> produce(_numbers, p; driver = "paper_numbers.jl", config_source = CFG_PATH,
+                             inputs = sort(unique(collect(values(INPUTS)))))),
+    Stage(:emit, "the macros (VisualGeometryToolkitEval's write_numbers) -> $(TEX)"; check = _emit),
 ]
 run_stages("paper_numbers", STAGES)

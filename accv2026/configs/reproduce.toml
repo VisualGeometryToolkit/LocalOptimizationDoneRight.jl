@@ -15,7 +15,7 @@
 # Without --only: every stage below that is not `default = false`. --only=<stage>,…
 # runs those and what they run after; --no-deps those alone. A finished stage is
 # reused by its run key (the runner's manifests), and every driver skips its own
-# complete keyed stages (Eval's run_complete). Each driver stays callable on its
+# produced keyed products (Eval's `produced`). Each driver stays callable on its
 # own: julia --project=accv2026 accv2026/scripts/<driver>.jl [--plan | --stage=NAME].
 # Paths are relative to the repository root, where the jobs are submitted from.
 # =============================================================================

@@ -104,9 +104,9 @@ _cell_cv(cfg) = tuning_spec(cfg, sequential_cv_scorer_entry(cfg["sequential_cv"]
 
     @testset "one scorer per (dataset, model class)" begin
         pte, basin = _cell("pt_e_miscal"), _cell("pt_e_basin")
-        @test upstream_runs(basin) == Dict("scorer_of" => run_key(pte))   # the scorer cell's run keys this one
-        @test upstream_runs(pte) === nothing
-        @test run_key(basin; upstream = upstream_runs(basin)) != run_key(basin)        # it keys the cell (its keyed dir: bound only)
+        up = upstream_products(basin)
+        @test collect(keys(up)) == ["scorer_of"] && up["scorer_of"].key == sequential_cv_product(pte).key   # the scorer cell keys this one
+        @test upstream_products(pte) === nothing
         bound = try results_root(); true catch; false end
         bound && @test sequential_cv_scorer_path(basin) == joinpath(sequential_cv_dir(pte), SEQUENTIAL_CV_SCORER)
         # a cell that is not the same (dataset, model class) is refused
@@ -134,7 +134,7 @@ _cell_cv(cfg) = tuning_spec(cfg, sequential_cv_scorer_entry(cfg["sequential_cv"]
         bound = try results_root(); true catch; false end
         if bound
             sc = miscal_sidecar_of("accv2026_eth_f_miscal")
-            @test basename(sc) == SEQUENTIAL_CV_SIDECAR && occursin(key, sc)
+            @test basename(sc) == SEQUENTIAL_CV_SIDECAR && occursin(sequential_cv_product(cfg).key, sc)
         else
             @info "results root not bound — keyed sidecar path not checked"
         end

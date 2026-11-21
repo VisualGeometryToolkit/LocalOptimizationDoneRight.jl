@@ -45,8 +45,8 @@ if !@isdefined(ACCV2026_E2E_TIMING_LOADED)
 The fold of a timing cell: its `[timing]` checked against the e2e cell it times.
 That cell's run (`[timing] e2e_config` — a re-tune or a new ζ ladder re-keys the
 timing) and its SupeRANSAC cell's run (SupeRANSAC is timed at that cell's tuned
-loss width) key the timing as UPSTREAM runs ([`upstream_runs`](@ref),
-Eval's `run_key(; upstream)`), not as config values. `[timing]`:
+loss width) key the timing as UPSTREAM runs ([`upstream_products`](@ref),
+Eval's `Product(…; upstream)`), not as config values. `[timing]`:
 
 - `e2e_config`: the accuracy cell (arms, ζ ladder, per-pair streams, termination);
 - `sample`: the timed pairs, a COMPLETE unit-sampling table in VisualGeometryToolkitEval's
@@ -87,12 +87,13 @@ e2e_timed_cell(cfg) = fold_e2e_cell!(config_of_record(String(cfg["timing"]["e2e_
 e2e_timed_superansac(cfg) = superansac_cell(String(e2e_timed_cell(cfg)["e2e"]["superansac"]))
 
 """
-    e2e_timing_dir(cfg) -> String
+    e2e_timing_product(cfg) -> Product
 
-The keyed directory of a folded timing cell:
-`<results>/<dataset>/<matcher>/<problem>/EndToEnd/timing-<run_key>`.
+The keyed product of a folded timing cell:
+`<results>/<dataset>/<matcher>/<problem>/EndToEnd/timing/<key>`, its time row (`timing.tsv`, written last).
 """
-e2e_timing_dir(cfg) = keyed_cell_dir(cfg, "EndToEnd", "timing"; upstream = upstream_runs(cfg))
+e2e_timing_product(cfg) = cell_product(cfg, "EndToEnd", "timing"; output = "timing.tsv")
+e2e_timing_dir(cfg) = product_dir(e2e_timing_product(cfg))
 
 "The timing sample's file (scene ⇒ the drawn pool indices), its ours and SupeRANSAC inputs, and a repeat's output."
 timing_sample_path(dir) = joinpath(dir, "sample.toml")

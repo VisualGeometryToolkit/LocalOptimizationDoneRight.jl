@@ -39,11 +39,11 @@ _require_with() = (require_input(EXP_ANCHOR_WITH; what = "WITH-anchoring sidecar
 STAGES = Stage[]
 # The WITHOUT evaluation: fig3's tuned points under the ablation's scale
 # interface, through the sequential-CV tool's anchoring stage (its operating
-# points, ζ ladder and s0 are fig3's sidecar's, checked there).
+# points, ζ ladder and s0 are fig3's sidecar's, checked there). It lives in fig3's keyed product
+# directory, so a new fig3 product is a new ablation; computed when it is not there.
 push!(STAGES, Stage(:evaluation,
-        "WITHOUT: fig3's operating points at scale interface \"$(EXP_ANCHOR_SCALE_INTERFACE)\" → $(EXP_ANCHOR_WITHOUT)",
-        () -> fresher(EXP_ANCHOR_WITHOUT, EXP_ANCHOR_WITH),
-        () -> begin
+        "WITHOUT: fig3's operating points at scale interface \"$(EXP_ANCHOR_SCALE_INTERFACE)\" → $(EXP_ANCHOR_WITHOUT)";
+        check = () -> isfile(EXP_ANCHOR_WITHOUT) || begin
             _require_with()
             # The sequential CV's anchoring stage, on fig3's own keyed cell: its
             # effective config (written by the cv stage) and its directory, which
@@ -55,9 +55,8 @@ push!(STAGES, Stage(:evaluation,
                 error("fig_anchoring: the anchoring stage did not write $(EXP_ANCHOR_WITHOUT)")
         end))
 push!(STAGES, Stage(:render,
-        "paired with/without-anchoring ζ panel → $(PANEL)",
-        () -> fresher(PANEL, EXP_ANCHOR_WITH, EXP_ANCHOR_WITHOUT),
-        () -> begin
+        "paired with/without-anchoring ζ panel → $(PANEL)";
+        check = () -> begin
             _require_with()
             require_input(EXP_ANCHOR_WITHOUT; what = "WITHOUT-anchoring ζ evaluation",
                           provenance = "stage evaluation of this experiment")

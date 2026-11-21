@@ -31,11 +31,12 @@ include(srcdir("e2e_timing.jl"))
 const CFG_NAME = cli_option(ARGS, "config")
 const CFG_PATH = projectdir("configs", CFG_NAME * ".toml")
 const CFG = e2e_timing_cell(CFG_NAME)
-const KEY = run_key(CFG; upstream = upstream_runs(CFG))
-const OUTDIR = e2e_timing_dir(CFG)
+const PRODUCT = e2e_timing_product(CFG)
+const KEY = PRODUCT.key
+const OUTDIR = product_dir(PRODUCT)
 const R = Int(CFG["timing"]["repeats"])
 const E2E = e2e_timed_cell(CFG)
-const LIVE = joinpath(e2e_cell_dir(E2E), "live.jld2")
+const LIVE = joinpath(product_dir(e2e_product(E2E)), "live.jld2")
 const SR = e2e_timed_superansac(CFG)
 const SUMMARY = timing_summary_path(OUTDIR)
 
@@ -71,20 +72,23 @@ function _summary()
         println(io, "# The code the timed repeats ran (each package's checkout; this project's commit is _provenance.toml's).")
         TOML.print(io, _code_record(); sorted = true)
     end
-    write_run_records(OUTDIR, CFG; driver = "e2e_timing.jl", config_source = CFG_PATH, key = KEY,
-                      inputs = [pool_input(CFG), LIVE])
     print(read(path, String))
 end
 
+# The cell's product: the drawn pairs and their inputs, the pinned repeats (each resumed from what an
+# interrupted run left) and the time row with its spread, written last.
+function _cell(_)
+    _inputs_done() || timing_inputs!(CFG, OUTDIR)
+    _repeats_done() || _repeats()
+    _summary()
+    return nothing
+end
+
 STAGES = Stage[
-    Stage(:inputs, "the drawn pairs ([timing] sample) of the e2e cell $(CFG["timing"]["e2e_config"]) and their inputs " *
-                   "(config $(CFG_NAME), key $(KEY)) → $(joinpath(OUTDIR, "inputs"))",
-          _inputs_done, () -> timing_inputs!(CFG, OUTDIR)),
-    Stage(:repeats, "$(R) pinned single-threaded repeats × {ours, SupeRANSAC} on CPU $(CFG["timing"]["pinning"]["cpu"]) → $(OUTDIR)",
-          _repeats_done, _repeats),
-    Stage(:summary, "the time row and its spread → $(SUMMARY)",
-          () -> run_complete(OUTDIR; sidecar = basename(SUMMARY)) &&
-                fresher(SUMMARY, (timing_repeat_path(OUTDIR, sys, r) for r in 1:R for sys in ("ours", "superansac"))...),
-          _summary),
+    Stage(:timing, "the drawn pairs ([timing] sample) of the e2e cell $(CFG["timing"]["e2e_config"]), $(R) pinned single-threaded " *
+                   "repeats × {ours, SupeRANSAC} on CPU $(CFG["timing"]["pinning"]["cpu"]) and the time row " *
+                   "(config $(CFG_NAME), key $(KEY)) → $(SUMMARY)";
+          items = () -> [PRODUCT], product = identity,
+          run = p -> produce(_cell, p; driver = "e2e_timing.jl", config_source = CFG_PATH, inputs = [pool_input(CFG), LIVE])),
 ]
 run_stages("e2e_timing[$(CFG_NAME)]", STAGES)

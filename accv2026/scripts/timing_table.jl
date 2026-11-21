@@ -14,7 +14,7 @@
 #   the PT-E pool + EXP_MISCAL_SIDECAR (fig3_composed_miscal.jl stage cv).
 # STAGES
 #   time_pt      (1 thread) → EXP_TIMING_DIR/lo_timing_pt_sift_*.jld2, EXP_TIMING_DIR the
-#                             keyed Timing/timing-<run key> directory of this config
+#                             keyed product Timing/timing/<key> of this config
 #                             (registry.jl; src/protocol_folds.jl `timing_cell_dir`)
 #   design_table (CPU)      → figures/table_design.tex
 # =============================================================================
@@ -27,18 +27,19 @@ include(srcdir("registry.jl"))
 # The configuration of record: the fixture and the protocol section.
 const CFG_PATH = projectdir("configs", "timing_table.toml")
 const CFG = fold_timing_cell!(load_run_config(CFG_PATH))
-const KEY = run_key(CFG; upstream = upstream_runs(CFG))
+const PRODUCT = timing_product(CFG)
+const KEY = PRODUCT.key
 const TIMING = CFG["timing"]
 timing_cell_dir(CFG) == EXP_TIMING_DIR || error("timing_table: the keyed directory disagrees with registry.jl EXP_TIMING_DIR")
 pool_path(CFG) == EXP_POOL_PT_E ||
     error("configs/timing_table.toml pool_dir is not the PT-E pool of record ($(EXP_POOL_PT_E))")
-const PT_OUT = joinpath(EXP_TIMING_DIR, "lo_timing_$(TIMING["tag"])_$(TIMING["scene"]).jld2")
+const PT_OUT = product_output(PRODUCT)
 
 STAGES = Stage[]
 push!(STAGES, Stage(:time_pt,
-        "PT per-call LO timing @ deployed optima (single-thread) → $(PT_OUT)",
-        () -> run_complete(EXP_TIMING_DIR; sidecar = basename(PT_OUT)),
-        () -> begin
+        "PT per-call LO timing @ deployed optima (single-thread, key $(KEY)) → $(PT_OUT)";
+        items = () -> [PRODUCT], product = identity,
+        run = p -> produce(p; driver = "time_lo_supp.jl", config_source = CFG_PATH, inputs = [EXP_MISCAL_SIDECAR, EXP_POOL_PT_E]) do _
             # The Table 1 roster of record (fig3_composed_miscal.jl stage cv);
             # the timing driver reads its IG +LO / MSAC +PoseLib / IG +Lift optima.
             require_input(EXP_MISCAL_SIDECAR; what = "deployed operating-points sidecar",
@@ -48,16 +49,14 @@ push!(STAGES, Stage(:time_pt,
                        "--tag=$(TIMING["tag"])", "--sb-protocol=$(TIMING["sb_protocol"])", "--pool=$(EXP_POOL_PT_E)",
                        "--outdir=$(EXP_TIMING_DIR)", "--scene=$(TIMING["scene"])", "--npairs=$(TIMING["npairs"])",
                        "--operating-points=$(EXP_MISCAL_SIDECAR)"; threads = 1)
-            write_run_records(EXP_TIMING_DIR, CFG; driver = "time_lo_supp.jl", config_source = CFG_PATH,
-                              key = KEY, inputs = [EXP_MISCAL_SIDECAR, EXP_POOL_PT_E])
+            return nothing
         end))
 # Main-paper Table 1 (2026-09-07): the optimizer taxonomy carries each arm's
 # PhotoTourism per-call time in its cell, generated from the same sidecar.
 const DESIGN_TABLE = joinpath(PAPER_FIGDIR, "table_design.tex")
 push!(STAGES, Stage(:design_table,
-        "Table 1: taxonomy grid with per-call µs (PhotoTourism) → $(DESIGN_TABLE)",
-        () -> fresher(DESIGN_TABLE, PT_OUT),
-        () -> begin
+        "Table 1: taxonomy grid with per-call µs (PhotoTourism) → $(DESIGN_TABLE)";
+        check = () -> begin
             require_input(PT_OUT; what = "PT timing sidecar", provenance = "stage time_pt of this experiment")
             run_driver("emit_design_table.jl", "--timing=$(PT_OUT)", "--out=$(DESIGN_TABLE)")
         end))

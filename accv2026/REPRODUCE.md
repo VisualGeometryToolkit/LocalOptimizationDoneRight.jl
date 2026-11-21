@@ -309,9 +309,9 @@ simply runs:
 
 | artifact | producing stage |
 |---|---|
-| PT-E `scorer_cv.jld2` → `refiner_cv.jld2` → `operating_points.jld2` (the sequential CV, 2026-10-04) in the KEYED dir `phototourism/sift/E/Miscalibration/sequential-cv-<key>/` of `configs/pt_e_miscal.toml` (`src/registry.jl` derives `EXP_MISCAL_DIR` by `miscal_sidecar_of("pt_e_miscal")`, the one rule of every cell — no stamp) | `fig3_composed_miscal.jl --stage=cv` |
-| basin `operating_points.jld2` (mode "basin") in `phototourism/sift/E/Basin/sequential-cv-<key>/` of `configs/pt_e_basin.toml` — its scorer READ from PT-E's (`scorer_of`) — then the ladder `BasinLadder/basin-ladder-<key>/ladder.jld2` (keyed by the basin cell's run and `configs/protocol.toml` `[basin_ladder]`, src/protocol_folds.jl `ladder_cell`; the sidecar's test side; perturbations from `stable_seed(seed, scene, pair, δ)`) | `fig2_basin.jl --stage=basin_cv`, `--stage=ladder_test` |
-| HEB-H `operating_points.jld2` in `heb/sift/H/Miscalibration/sequential-cv-<key>/` of `configs/heb_h_miscal.toml` | `supp_H_miscal.jl` (all stages) |
+| PT-E `scorer_cv.jld2` → `refiner_cv.jld2` → `operating_points.jld2` (the sequential CV, 2026-10-04) in the keyed product `phototourism/sift/E/Miscalibration/sequential-cv/<key>/` of `configs/pt_e_miscal.toml` (`src/registry.jl` derives `EXP_MISCAL_DIR` by `miscal_sidecar_of("pt_e_miscal")`, the one rule of every cell — no stamp) | `fig3_composed_miscal.jl --stage=cv` |
+| basin `operating_points.jld2` (mode "basin") in `phototourism/sift/E/Basin/sequential-cv/<key>/` of `configs/pt_e_basin.toml` — its scorer READ from PT-E's (`scorer_of`) — then the ladder `BasinLadder/basin-ladder/<key>/ladder.jld2` (keyed by the basin cell's run and `configs/protocol.toml` `[basin_ladder]`, src/protocol_folds.jl `ladder_cell`; the sidecar's test side; perturbations from `stable_seed(seed, scene, pair, δ)`) | `fig2_basin.jl --stage=basin_cv`, `--stage=ladder_test` |
+| HEB-H `operating_points.jld2` in `heb/sift/H/Miscalibration/sequential-cv/<key>/` of `configs/heb_h_miscal.toml` | `supp_H_miscal.jl` (all stages) |
 | ETH3D-F `operating_points.jld2` in the keyed dir of `configs/accv2026_eth_f_miscal.toml` (its pools regenerated at the current pool format first) | `supp_ETH_F_miscal.jl --stage=cv` |
 | the selection-only M-bundle `Miscalibration/sel-miscal-<key>/bundle.jld2` of `configs/pt_e_sel_miscal.toml` | `fig1_sel_miscal.jl --stage=produce` |
 | the polishing run `Polish/polish-<key>/polish_test.jld2` (nothing tuned; E_LO checked pair for pair against pt_e_miscal's sidecar) | `polish.jl` |
@@ -390,10 +390,10 @@ nothing moves before it.
   not a pool of record) and HEB-H-SIFT-4K_pf3. The ETH3D F pools are fetched and
   frozen, not produced, and stay.
 - **From where to where:** from `<data root>/accv2026/data/<pool>` (the
-  `[experiment] pool_dir` of record) to VisualGeometryToolkitEval's producer layout,
-  `<derived tier root>/<tier>/<kind>-<run key>` (`keyed_data_dir(cfg, tier, kind)`).
+  `[experiment] pool_dir` of record) to VisualGeometryToolkitEval's producer layout:
+  the pool cell's keyed product, made an input of record by `promote_run(product_dir(product), tier)`.
   Each consumer's `[inputs.pool]` then names that path and its tier.
-- **Why:** a producer writes through its tier's root (`keyed_data_dir`), and a
+- **Why:** a producer's output is promoted into its tier's root, and a
   consumer reads through the same root (`input_path`). The directory is keyed by
   the producer's config, so producer and consumer agree on every machine, and a
   changed pool config is a new directory, never an overwritten one.
@@ -606,10 +606,10 @@ Every cell's effective config (its TOML plus the protocols of record folded
 in by `src/protocol_folds.jl`, THE one fold recipe; which cv_protocol
 section a cell tunes on is declared in its TOML as `[protocol] cv_section`,
 which tuning entries as `[sequential_cv]`; each layered entry resolved to
-its complete table) is hashed into its
-run directory (`VisualGeometryToolkitEval.Experiments.run_key`; the `[render]`
-section is excluded). The runs a cell reads key it as Eval's upstream runs
-(`run_key(cfg; upstream = upstream_runs(cfg))`: a scorer cell, the operating
+its complete table) keys its keyed product
+(`VisualGeometryToolkitEval.Experiments.Product`, `src/protocol_folds.jl` `cell_product`; the
+`[render]` section is excluded, the code it runs is folded in). The products a cell reads key it
+as Eval's upstream products (`upstream_products(cfg)`: a scorer cell, the operating
 points, a timed e2e and SupeRANSAC cell), re-derived from the config names
 (`miscal_sidecar_of`, `operating_points_run`) — keys are derived, never copied.
 

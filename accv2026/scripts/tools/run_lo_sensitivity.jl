@@ -54,7 +54,6 @@ start_output_flush!()
 const ARGV     = ARGS
 const CFG_PATH = cli_option(ARGV, "config")
 const CFG      = fold_sensitivity_cell!(load_run_config(CFG_PATH))
-const KEY      = run_key(CFG; upstream = upstream_runs(CFG))
 const S        = CFG["sensitivity"]
 const NBATCH   = parse(Int, cli_option(ARGV, "batch", "600"))            # pairs staged on-device per chunk (bounds GPU/host)
 const POOL_DIR = pool_input(CFG)
@@ -149,8 +148,6 @@ end
 # The renderer is pure-CPU (re-bootstraps the saved M via the package's
 # `compute_method_rows` → BCa CIs) and writes `summary.jld2` + PGFPlots panels
 # next to the bundle. Pure post-processing — safe to run at the tail of the job.
-write_run_records(OUTDIR, CFG; driver = "run_lo_sensitivity.jl", config_source = CFG_PATH, key = KEY,
-                  inputs = [POOL_DIR])
 @info "auto-render → panels next to $BUNDLE"
 include(srcdir("plot_lo_sensitivity.jl"))
 Base.invokelatest(render_bundle, BUNDLE, PanelSpec(; legend_name = "lolegend"))

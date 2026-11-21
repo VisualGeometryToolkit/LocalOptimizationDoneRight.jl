@@ -41,7 +41,7 @@ const POOL = pool_input(CFG)
 const OUTDIR = CELL.outdir
 const COUNTS = CELL.counts
 
-function _counts()
+function _counts(_)
     scenes = test_scenes(CV)
     for s in scenes
         require_input(joinpath(POOL, "$s.jld2"); what = "HEB-H pool ($s)",
@@ -61,15 +61,14 @@ function _counts()
         @info "scene counted" s pairs = length(idx)
         pool = nothing; GC.gc()
     end
-    mkpath(OUTDIR)
     jldsave(COUNTS; n_cs, n_inl, scene = scene_of, pool_index, scenes,
             pool_dir = POOL, created = string(Dates.now()))
-    write_run_records(OUTDIR, COUNTS_CFG; driver = "heb_inlier_stats.jl", config_source = CFG_PATH, key = KEY,
-                      inputs = [POOL])
+    return nothing
 end
 
 STAGES = Stage[
-    Stage(:counts, "per-pair correspondences and GT inliers of $(SRC_NAME)'s test pairs (config $(CFG_NAME), key $(KEY)) -> $(COUNTS)",
-          () -> run_complete(OUTDIR; sidecar = basename(COUNTS)), _counts),
+    Stage(:counts, "per-pair correspondences and GT inliers of $(SRC_NAME)'s test pairs (config $(CFG_NAME), key $(KEY)) -> $(COUNTS)";
+          items = () -> [CELL.product], product = identity,
+          run = p -> produce(_counts, p; driver = "heb_inlier_stats.jl", config_source = CFG_PATH, inputs = [POOL])),
 ]
 run_stages("heb_inlier_stats", STAGES)

@@ -40,8 +40,9 @@ const PAPER_FIGDIR = projectdir("paper", "figures")
 # --- fig1 (selection-only miscalibration) -------------------------------------
 # The keyed directory of configs/pt_e_sel_miscal.toml folded with its tuning
 # spec and the ζ ladder (src/protocol_folds.jl `sensitivity_cell_dir`).
-const EXP_SEL_MISCAL_DIR    = sensitivity_cell_dir(fold_sensitivity_cell!(config_of_record("pt_e_sel_miscal")))
-const EXP_SEL_MISCAL_BUNDLE = joinpath(EXP_SEL_MISCAL_DIR, "bundle.jld2")
+const EXP_SEL_MISCAL_PRODUCT = sensitivity_product(fold_sensitivity_cell!(config_of_record("pt_e_sel_miscal")))
+const EXP_SEL_MISCAL_DIR    = product_dir(EXP_SEL_MISCAL_PRODUCT)
+const EXP_SEL_MISCAL_BUNDLE = product_output(EXP_SEL_MISCAL_PRODUCT)
 
 # --- fig2 (basin: the loss-width tuning + δ-perturbed ladder test) ------------
 # THE basin roster's operating points: the keyed sequential-CV cell of
@@ -51,8 +52,9 @@ const EXP_SEL_MISCAL_BUNDLE = joinpath(EXP_SEL_MISCAL_DIR, "bundle.jld2")
 # so a re-tune can never be read against a ladder run at the previous widths.
 const EXP_BASIN_SIDECAR = miscal_sidecar_of("pt_e_basin")
 const EXP_BASIN_DIR     = dirname(EXP_BASIN_SIDECAR)
-const EXP_LADDER_DIR    = ladder_cell_dir(ladder_cell("pt_e_basin"))
-const EXP_LADDER_BUNDLE = joinpath(EXP_LADDER_DIR, "ladder.jld2")
+const EXP_LADDER_PRODUCT = ladder_product(ladder_cell("pt_e_basin"))
+const EXP_LADDER_DIR    = product_dir(EXP_LADDER_PRODUCT)
+const EXP_LADDER_BUNDLE = product_output(EXP_LADDER_PRODUCT)
 # The ladder's success radius (configs/protocol.toml [basin_ladder]), for its renderer.
 const EXP_LADDER_SUCC   = string(protocol_value("basin_ladder", "success_deg"))
 

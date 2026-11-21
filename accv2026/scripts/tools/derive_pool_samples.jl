@@ -27,7 +27,7 @@
 using DrWatson; @quickactivate "ACCV2026"
 using VisualGeometryToolkitEval: cli_option, start_output_flush!
 using VisualGeometryToolkitEval.Pools: load_pool, derive_sample_starts, save_sample_starts, sample_starts
-using VisualGeometryToolkitEval.Experiments: load_run_config, run_key, keyed_cell_dir, write_run_records
+using VisualGeometryToolkitEval.Experiments: load_run_config, Product, product_dir, produce
 using VisualGeometryToolkitEval.Evaluation: problem_type   # :E/:F/:H → the RANSAC problem type
 using VisualGeometryToolkitEval.Stats: stable_seed
 using StableRNGs: StableRNG
@@ -56,11 +56,18 @@ function derive_pool_samples(cfg; config_source)
     m = minimal_sample_size(problem_type(Symbol(ex["problem"])))
     σ, seed = Float64(pool["gaussian_sigma"]), Int(pool["pool_seed"])
     in_dir = pool_tree(cfg)
-    key = run_key(cfg)
-    out = keyed_cell_dir(cfg, "PoolSamples", "samples")
-    mkpath(out)
     scenes = sort([f[1:end-5] for f in readdir(in_dir) if endswith(f, ".jld2") && !startswith(f, "_") &&
                    !endswith(f, ".residuals.jld2") && !endswith(f, "_snn.jld2")])
+    # the keyed product <results>/<dataset>/<matcher>/<problem>/PoolSamples/samples/<key>, the last scene's samples written last
+    product = Product(join((ex["dataset"], ex["matcher"], ex["problem"], "PoolSamples"), "/"), "samples", cfg;
+                      output = "$(last(scenes)).samples.jld2")
+    key = product.key
+    produce(out -> _derive!(out, in_dir, scenes, m, σ, seed, key, pool), product;
+            driver = "scripts/tools/derive_pool_samples.jl", config_source, inputs = [in_dir])
+    return product_dir(product)
+end
+
+function _derive!(out, in_dir, scenes, m, σ, seed, key, pool)
     for scene in scenes
         dst = joinpath(out, "$scene.samples.jld2")
         isfile(dst) && (@info "skip (exists)" scene; continue)
@@ -79,9 +86,7 @@ function derive_pool_samples(cfg; config_source)
         @info "derived" scene pairs = length(p.pairs) samples = sum(length, st) structural_certified = certified
         p = nothing; GC.gc()
     end
-    write_run_records(out, cfg; driver = "scripts/tools/derive_pool_samples.jl", config_source, key,
-                      inputs = [in_dir])
-    return out
+    return nothing
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

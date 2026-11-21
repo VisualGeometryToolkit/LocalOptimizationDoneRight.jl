@@ -64,26 +64,36 @@ to `<outdir>/_config.toml` and handed to the tool; the sidecar
 records are written. `inputs` are `(path, what, provenance)`.
 """
 function sequential_cv_stage(name::Symbol, cfg::AbstractDict, cfg_path::AbstractString; inputs = ())
-    outdir = sequential_cv_dir(cfg)
-    sidecar = joinpath(outdir, SEQUENTIAL_CV_SIDECAR)
+    product = sequential_cv_product(cfg)
     p = _cell_problem(cfg)
-    return Stage(name,
-        "sequential CV :$p (config $(basename(cfg_path)), key $(run_key(cfg; upstream = upstream_runs(cfg)))) -> $(sidecar)",
-        () -> run_complete(outdir; sidecar = SEQUENTIAL_CV_SIDECAR),
-        () -> begin
-            for (path, what, provenance) in inputs
-                require_input(path; what, provenance)
-            end
-            mkpath(outdir)
-            config = joinpath(outdir, "_config.toml")
-            open(io -> TOML.print(io, cfg; sorted = true), config, "w")
-            run_driver("run_sequential_cv.jl", "--config=$(config)", "--outdir=$(outdir)")
-            audit_operating_points(ROSTER, sidecar; problem = p)
-            write_run_records(outdir, cfg; driver = "run_sequential_cv.jl",
-                              config_source = cfg_path, key = run_key(cfg; upstream = upstream_runs(cfg)),
-                              inputs = [pool_path(cfg)])
-        end)
+    function cv(outdir)
+        for (path, what, provenance) in inputs
+            require_input(path; what, provenance)
+        end
+        config = joinpath(outdir, "_config.toml")
+        open(io -> TOML.print(io, cfg; sorted = true), config, "w")
+        run_driver("run_sequential_cv.jl", "--config=$(config)", "--outdir=$(outdir)")
+        audit_operating_points(ROSTER, joinpath(outdir, SEQUENTIAL_CV_SIDECAR); problem = p)
+        return nothing
+    end
+    return Stage(name, "sequential CV :$p (config $(basename(cfg_path)), key $(product.key)) -> $(product_output(product))";
+                 items = () -> [product], product = identity,
+                 run = q -> produce(cv, q; driver = "run_sequential_cv.jl", config_source = cfg_path, inputs = [pool_path(cfg)]))
 end
+
+"""
+    oracle_stage(tag, problem, pool, test, floors) -> Stage
+
+THE pool-best oracle bound (floor + mAA ceiling) of a cell's pools and `test` scenes (a
+comma-separated list) into its `floors` file (`oracle_floors_path` of its sequential-CV
+directory), by the one floors writer (compute_supp_oracle_floors.jl); computed when the
+floor of record for those pools and scenes is missing (`oracle_floor_done`).
+"""
+oracle_stage(tag, problem, pool, test, floors) =
+    Stage(:oracle, "$tag pool-best oracle bound (floor + mAA ceiling) -> $(floors)[$tag]";
+          check = () -> oracle_floor_done(floors, tag; source = oracle_floor_source(pool, problem, split(test, ","))) ||
+                        run_driver("compute_supp_oracle_floors.jl", "--tag=$(tag)", "--problem=$problem",
+                                   "--pool-dir=$(pool)", "--scenes=$(test)", "--floors=$(floors)"))
 
 """
     miscal_cell_stages(cfg_name; pool_what, pool_provenance) -> Vector{Stage}
@@ -111,13 +121,7 @@ function miscal_cell_stages(cfg_name::AbstractString;
     floor_done() = oracle_floor_done(floors, tag; source = oracle_floor_source(pool, p, test_sc))
     stages = Stage[sequential_cv_stage(cv_stage, cfg, cfg_path;
         inputs = ((joinpath(pool, "$(val_sc[1]).jld2"), pool_what, pool_provenance),))]
-    push!(stages, Stage(:oracle,
-            "$tag pool-best oracle bound (floor + mAA ceiling) -> $(floors)[$tag]",
-            floor_done,
-            () -> run_driver("compute_supp_oracle_floors.jl",
-                             "--tag=$(tag)", "--problem=$p",
-                             "--pool-dir=$(pool)",
-                             "--scenes=$(test)", "--floors=$(floors)")))
+    push!(stages, oracle_stage(tag, p, pool, test, floors))
     # The cell's row of the main-paper Fig 3 grid (configs/fig3_miscal_grid.toml):
     # the `[render.main]` table — `panel` and the one statistic of `rows` it draws —
     # drawn with the Table 1 roster gate (the renderer's MAIN_ARMS + EXTRA_ARMS
@@ -127,9 +131,8 @@ function miscal_cell_stages(cfg_name::AbstractString;
     VgtkCore.check_keys(m, ("panel", "rows"), "$cfg_path [render.main]")
     length(m["rows"]) == 1 || error("$cfg_name [render.main] rows: the grid row draws one statistic, got $(m["rows"])")
     out, row = joinpath(PAPER_FIGDIR, m["panel"]), String(only(m["rows"]))   # deployed straight into the paper (registry.jl)
-    push!(stages, Stage(:render_main, "$tag miscal panel, Table 1 roster, $(row) row (Fig 3 grid) -> $(out)",
-            () -> fresher(out, sidecar),
-            () -> begin
+    push!(stages, Stage(:render_main, "$tag miscal panel, Table 1 roster, $(row) row (Fig 3 grid) -> $(out)";
+            check = () -> begin
                 audit_operating_points(ROSTER, sidecar; problem = Symbol(p))
                 floor_done() ||
                     error("oracle floor $(tag): missing or computed on other pools/scenes — run --stage=oracle first")
@@ -187,7 +190,8 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString; smoke
     cfg = fold_budget_cell!(load_run_config(cfg_path))   # protocols + the operating points' run, keyed
     sidecar = budget_sidecar(cfg)
     sbp = only(values(cfg["sample_budget_protocol"]))
-    key = run_key(cfg; upstream = upstream_runs(cfg))
+    product = budget_product(cfg)
+    key = product.key
     ex = cfg["experiment"]
     pool = pool_input(cfg)
     p = _cell_problem(cfg)
@@ -196,9 +200,8 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString; smoke
     test_loaders() = let t = two_view_scene_loaders(sidecar_cross_validation(sidecar), pool).test
         smoke ? t[1:min(1, end)] : t
     end
-    scenes() = isfile(sidecar) ? first.(test_loaders()) : String[]
     # a smoke run is a code check, never a result: DrWatson's datadir("sims")
-    outdir = smoke ? datadir("sims", "budget-$(key)-smoke") : budget_cell_dir(cfg)
+    smokedir = datadir("sims", "budget-$(key)-smoke")
     rnd = cfg["render"]
     panel = joinpath(PAPER_FIGDIR, rnd["panel"])
     driver = "budget_cell_stages($(cfg_name))"
@@ -214,7 +217,7 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString; smoke
         error("$cfg_name [budget] selectors = $(cfg["budget"]["selectors"]): the budget engine seeds through the " *
               "Student-t + uniform marginal only — name [\"student_t_uniform\"]")
 
-    function run_budget()
+    function run_budget(outdir)
         require_input(sidecar; what = "$tag deployed operating-points sidecar",
                       provenance = "the $(cfg["operating_points"]) tuning cell's cv stage (gate-audited)")
         audit_operating_points(ROSTER, sidecar; problem = p)      # MANDATORY before consumption
@@ -236,7 +239,9 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString; smoke
         # The arm's kind (the roster's) is the axis its tuned native lives on.
         arm_cfg(s) = s.kind isa EfficiencyConstant ? cfgf(s.lo) : cfgf(s.lo; nat_ref = s.ref, nat_axis = s.kind)
         mkpath(outdir)
+        done_scenes = String[]
         for (sc, load_test) in test_loaders()
+            push!(done_scenes, sc)
             out_f = joinpath(outdir, "$sc.jld2")
             have = isfile(out_f) ? collect(String, JLD2.load(out_f, "arms")) : String[]
             missing_arms = setdiff(bases, have)
@@ -295,34 +300,37 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString; smoke
             @info "scene done" sc secs = round(Int, time() - t0)
             pairs = nothing; GC.gc()
         end
-        smoke || write_run_records(outdir, cfg; driver, config_source = cfg_path, key,
-                                   inputs = [pool, sidecar])
+        # the completion mark, written last: the scene files and the arms they hold
+        open(joinpath(outdir, BUDGET_MANIFEST), "w") do io
+            TOML.print(io, Dict("scenes" => done_scenes, "arms" => bases))
+        end
+        return Produced(; inputs = [pool, sidecar])
     end
-
-    done() = !smoke && run_complete(outdir; sidecar = basename(sidecar)) &&
-             all(isfile(joinpath(outdir, "$s.jld2")) for s in scenes())
+    outdir = smoke ? smokedir : product_dir(product)
     # THE budget renderer (scripts/tools/render_budget.jl, every two-view
     # budget cell's), launched with one interface: the scene directory, the
     # output panel, the cell config (its [render] there) and the panel kind.
     render_args(kind, out, legend; extra...) =
         ["--kind=$(kind)", "--sbdir=$(outdir)", "--out=$(out)", "--legend=$(legend)", "--config=$(cfg_path)",
          "--extra-arms=$(get(rnd, "extra_arms", ""))", ("--$(k)=$(v)" for (k, v) in extra)...]
-    fresh(out) = () -> done() && fresher(out, joinpath(outdir, "$(scenes()[end]).jld2"))
     render_stage(name, out, legend, rows) = Stage(name,
-            "faceted $tag budget panel ($rows) -> $(out)", fresh(out),
-            () -> run_driver("render_budget.jl",
+            "faceted $tag budget panel ($rows) -> $(out)";
+            check = () -> run_driver("render_budget.jl",
                              render_args("budget", out, legend;
                                          xticks = join(Int.(rnd["xticks"]), ","),
                                          deploy = rnd["deploy"] ? "1" : "", rows = rows)...))
     stages = Stage[]
-    push!(stages, Stage(:budget,
-            "$tag budget curves at deployed optima (config $(basename(cfg_path)), key $(key)) -> $(outdir)",
-            done, run_budget))
+    # a smoke run is a code check (DrWatson's datadir("sims")), never a product
+    push!(stages, smoke ?
+        Stage(:budget, "$tag budget smoke run -> $(smokedir)"; check = () -> (run_budget(smokedir); nothing)) :
+        Stage(:budget, "$tag budget curves at deployed optima (config $(basename(cfg_path)), key $(key)) -> $(outdir)";
+              items = () -> [product], product = identity,
+              run = q -> produce(run_budget, q; driver, config_source = cfg_path)))
     push!(stages, render_stage(:render, panel, rnd["legend"], get(rnd, "rows", "med,maa")))
     if haskey(rnd, "time")
         tpanel = replace(panel, ".tex" => "_time.tex")
-        push!(stages, Stage(:render_time, "mAA vs cumulative LO time -> $(tpanel)", fresh(tpanel),
-                () -> run_driver("render_budget.jl", render_args("time", tpanel, rnd["time"]["legend"])...)))
+        push!(stages, Stage(:render_time, "mAA vs cumulative LO time -> $(tpanel)";
+                check = () -> run_driver("render_budget.jl", render_args("time", tpanel, rnd["time"]["legend"])...)))
     end
     return stages
 end
@@ -377,9 +385,7 @@ function facet_grid_stages(cfg_name::AbstractString)
         run(`python3 $(composer) --rows=maa --out=$(out) --legend=$(legend) --xopts=$(xopts) $(yopt) $(xopt) --panels=$(spec)`)
         isfile(out) || error("$(name): composer wrote no $(out)")
     end
-    return [Stage(:compose, "3-by-3 $(name) grid, maa → $(out)",
-                  () -> isfile(out) && fresher(out, path, [panel(row) for row in rows]...),
-                  compose)]
+    return [Stage(:compose, "3-by-3 $(name) grid, maa → $(out)"; check = compose)]
 end
 
 """
@@ -425,8 +431,10 @@ function scoring_pool_stages(cfg_name::AbstractString;
         append!(inputs, (joinpath(data_root(), v) for v in values(src["recon_special"])))
     end
 
-    _done() = all(isfile(joinpath(outdir, "$(s).jld2")) for s in scenes) &&
-              run_complete(outdir; sidecar = "$(scenes[end]).jld2")
+    # A pool tree is an input of record under the data root (a produced tier, configs/data_artifacts.toml),
+    # never a product: it is complete when every scene's pool and the tree's run records are there (its
+    # consumers pin its content by [inputs.pool] sha256).
+    _done() = all(isfile(joinpath(outdir, "$(s).jld2")) for s in scenes) && isfile(joinpath(outdir, "_provenance.toml"))
 
     function _audit()
         tot = 0
@@ -446,9 +454,8 @@ function scoring_pool_stages(cfg_name::AbstractString;
     stages = Stage[]
     push!(stages, Stage(:pools,
             "$(exp["dataset"]) $(exp["problem"]) scoring pools, $(length(scenes)) scenes " *
-            "(config $(basename(cfg_path)), key $(key)) -> $(outdir)",
-            _done,
-            () -> begin
+            "(config $(basename(cfg_path)), key $(key)) -> $(outdir)";
+            check = () -> _done() || begin
                 for p in inputs
                     require_input(p; what, provenance)
                 end
@@ -458,8 +465,6 @@ function scoring_pool_stages(cfg_name::AbstractString;
                                   producer = true)   # a NEW pool tree under the data root
             end))
     push!(stages, Stage(:audit,
-            "pool contract: all $(length(scenes)) scenes readable at the current pool format -> log",
-            () -> false,
-            _audit))
+            "pool contract: all $(length(scenes)) scenes readable at the current pool format -> log"; check = _audit))
     return stages
 end

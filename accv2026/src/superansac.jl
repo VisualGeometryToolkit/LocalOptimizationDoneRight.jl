@@ -43,7 +43,7 @@ using VisualGeometryToolkitEval.Tuning: layer_tuning, tuning_spec, tuning_table,
 using VisualGeometryToolkitEval.Evaluation: coarse_fine_cv_batched, enforce_probe_interior, deployed_setting
 include(joinpath(@__DIR__, "config.jl"))           # the paper prelude (guarded)
 include(joinpath(@__DIR__, "common.jl"))           # run_driver's context: scripts/tools, this project
-include(joinpath(@__DIR__, "protocol_folds.jl"))   # upstream_runs, fold_sequential_cv!
+include(joinpath(@__DIR__, "protocol_folds.jl"))   # cell_product, fold_sequential_cv!
 
 # (the `using`s above stay outside the guard: a macro such as `@sprintf` must
 # be bound before the guarded block is parsed)
@@ -89,12 +89,15 @@ superansac_spec(cfg) = tuning_spec(cfg, SUPERANSAC_TUNING)
 superansac_cross_validation(cfg) = superansac_spec(cfg).scheme.cross_validation
 
 """
-    superansac_cell_dir(cfg) -> String
+    superansac_product(cfg) -> Product
 
-The keyed directory of a folded SupeRANSAC cell:
-`<results>/<dataset>/<matcher>/<problem>/SupeRANSAC/superansac-<run_key>`.
+The keyed product of a folded SupeRANSAC cell:
+`<results>/<dataset>/<matcher>/<problem>/SupeRANSAC/superansac/<key>`: its inputs, its loss-width
+tuning and one ζ-sweep file per test scene, the last scene's written last (its output).
 """
-superansac_cell_dir(cfg) = keyed_cell_dir(cfg, "SupeRANSAC", "superansac"; upstream = upstream_runs(cfg))
+superansac_product(cfg) = cell_product(cfg, "SupeRANSAC", "superansac";
+                                       output = basename(superansac_zeta_path("", last(test_scenes(superansac_cross_validation(cfg))))))
+superansac_cell_dir(cfg) = product_dir(superansac_product(cfg))
 
 "The directory of the STORED results the config names (`[stored] dir`, under the results root)."
 superansac_stored_dir(cfg) = joinpath(results_root(), String(cfg["stored"]["dir"]))

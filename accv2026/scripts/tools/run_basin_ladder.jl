@@ -1,4 +1,5 @@
 #!/usr/bin/env julia
+# paper-project: allow P1 a tool of scripts/fig2_basin.jl (stage ladder_test), which produces its output as the keyed ladder product (produce writes the run records)
 # =============================================================================
 # run_basin_ladder.jl — Exhibit 1: the basin/travel ladder on REAL data.
 #
@@ -69,7 +70,6 @@ const LADDER   = ladder_cell(CELL)
 # the basin cell named on the command line, read by Eval's loader, must be the config of record the ladder keys
 load_run_config(CFG_PATH)["experiment"] == LADDER["experiment"] ||
     error("run_basin_ladder: --config=$(CFG_PATH) is not configs/$(CELL).toml, the config of record of cell $(CELL)")
-const KEY      = run_key(LADDER; upstream = upstream_runs(LADDER))
 const BL       = LADDER["basin_ladder"]
 const POOL_DIR = pool_input(LADDER)
 const DELTAS   = round.(deg2rad.(Float64.(BL["deltas_deg"])); digits = 6)   # the δ ladder, in radians
@@ -199,8 +199,6 @@ function run_ladder()
                  succ_deg=SUCCDEG, seed=SEED, zeta=ZETA,
                  config="solo-cv", solo_sidecar=SOLOPATH,
                  scale_convention="basin-tuned optima (ABSOLUTE natives; s2_override-delivered loss widths)")
-    write_run_records(OUTDIR, LADDER; driver = "run_basin_ladder.jl", config_source = CFG_PATH, key = KEY,
-                      inputs = [SOLOPATH, POOL_DIR])
     @info "bundle → $bundle"
     keep = findall(refinable)
     @info @sprintf("refinability mask: %d/%d pairs kept (%.0f%%)",

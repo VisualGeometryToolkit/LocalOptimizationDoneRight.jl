@@ -2,7 +2,7 @@
 # provenance: a worker of src/e2e_timing.jl (scripts/e2e_timing.jl): its inputs are the
 # timing cell's drawn pairs, its settings the timing cell's and the e2e cell's configs.
 # paper-project: allow P1 a worker of src/e2e_timing.jl (scripts/e2e_timing.jl): it writes one repeat file into the timing cell's keyed directory, whose run records the cell writes
-# paper-project: allow P2 the cell keys the directory (timing-<run key>) and names each repeat; the worker writes only where --out says
+# paper-project: allow P2 the cell keys the directory (its keyed product, EndToEnd/timing/<key>) and names each repeat; the worker writes only where --out says
 # =============================================================================
 # scripts/tools/e2e_time_ours.jl — ONE timed repeat of our end-to-end pipeline
 # on the timing cell's drawn pairs, in a process the cell pins to one CPU

@@ -3,8 +3,8 @@
 # results root, never under the inputs: Table 1's timings (once written under
 # the data root), Fig 1's selection-only sweep (once the hand-bumped stamp
 # miscal-sel-allpairs-v5) and Fig 2's ladder (once a --stamp the driver
-# derived by hand). Each directory is `<kind>-<run_key>` of its folded config
-# (src/protocol_folds.jl), so a change of any keyed input moves it.
+# derived by hand). Each directory is the keyed product `<experiment>/<kind>/<key>` of its
+# folded config (src/protocol_folds.jl `cell_product`), so a change of any keyed input moves it.
 # =============================================================================
 using Test
 using DrWatson: projectdir
@@ -25,15 +25,18 @@ try
     d = timing_cell_dir(cfg)
     @test under(d, results_root())
     @test !under(d, data_root())
-    @test upstream_runs(cfg) == Dict("operating_points" => operating_points_run("pt_e_miscal"))   # a re-tune re-keys it
-    @test basename(d) == "timing-" * run_key(cfg; upstream = upstream_runs(cfg)) != "timing-" * run_key(cfg)
+    @test upstream_products(cfg) == Dict("operating_points" => operating_points_run("pt_e_miscal"))   # a re-tune re-keys it
+    p = timing_product(cfg)
+    @test d == product_dir(p) && basename(dirname(d)) == "timing" && basename(d) == p.key
+    nop = delete!(deepcopy(cfg), "operating_points")
+    @test timing_product(nop).key != p.key
 end
 
 @testset "Fig 1: keyed by its config, its tuning spec and the ζ ladder" begin
     cfg = fold_sensitivity_cell!(config_of_record("pt_e_sel_miscal"))
     d = sensitivity_cell_dir(cfg)
     @test under(d, results_root())
-    @test basename(d) == "sel-miscal-" * run_key(cfg)
+    @test basename(dirname(d)) == "sel-miscal" && basename(d) == sensitivity_product(cfg).key
     @test haskey(cfg, "tuning_spec_hash") && haskey(cfg, "miscal_protocol")
     other = config_of_record("pt_e_sel_miscal")
     other["sensitivity"]["selectors"] = ["msac"]
@@ -44,8 +47,8 @@ end
     lc = ladder_cell("pt_e_basin")
     d = ladder_cell_dir(lc)
     @test under(d, results_root())
-    @test upstream_runs(lc) == Dict("operating_points" => operating_points_run("pt_e_basin"))
-    @test basename(d) == "basin-ladder-" * run_key(lc; upstream = upstream_runs(lc))
+    @test upstream_products(lc) == Dict("operating_points" => operating_points_run("pt_e_basin"))
+    @test basename(dirname(d)) == "basin-ladder" && basename(d) == ladder_product(lc).key
 end
 
 @testset "a cell's pool is its [inputs.pool], opened through input_path" begin

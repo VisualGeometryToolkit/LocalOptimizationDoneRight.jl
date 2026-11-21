@@ -8,7 +8,7 @@
 # The run's keyed directory is `sensitivity_cell_dir` of this config folded with
 # its tuning spec and the ζ ladder of configs/miscal_protocol.toml
 # (src/protocol_folds.jl `fold_sensitivity_cell!`):
-#   <results>/phototourism/sift/E/Miscalibration/sel-miscal-<run key>
+#   <results>/phototourism/sift/E/Miscalibration/sel-miscal/<key>
 # It replaces the hand-bumped stamp `miscal-sel-allpairs-v5`.
 # =============================================================================
 

@@ -30,7 +30,7 @@ const PAPER_NUMBERS_TEX = "paper_numbers.tex"
 
 # ---- the HEB statistics cell (scripts/heb_inlier_stats.jl) ---------------------------
 """
-    heb_counts_cell(cfg) -> (; key, outdir, counts, cv, source)
+    heb_counts_cell(cfg) -> (; key, keyed, product, outdir, counts, cv, source)
 
 The keyed per-pair counts of a HEB statistics config (configs/heb_stats.toml):
 keyed by what they are a function of — the pools and the TEST side of the
@@ -45,9 +45,9 @@ function heb_counts_cell(cfg::AbstractDict)
     cv = tuning_spec(src, sequential_cv_scorer_entry(src["sequential_cv"], :ig)).scheme.cross_validation
     keyed = Dict{String,Any}("experiment" => cfg["experiment"],
         "test_side" => Dict{String,Any}("scenes" => test_scenes(cv), "sampling" => tuning_table(cv)["test"]))
-    key = run_key(keyed)
-    outdir = keyed_cell_dir(keyed, "DatasetStats", "heb-stats")
-    return (; key, keyed, outdir, counts = joinpath(outdir, "counts.jld2"), cv, source = src_name)
+    product = cell_product(keyed, "DatasetStats", "heb-stats"; output = "counts.jld2")
+    outdir = product_dir(product)
+    return (; key = product.key, keyed, product, outdir, counts = product_output(product), cv, source = src_name)
 end
 
 """

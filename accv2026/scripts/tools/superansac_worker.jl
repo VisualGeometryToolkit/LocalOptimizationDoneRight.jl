@@ -2,7 +2,7 @@
 # provenance: a worker of src/superansac.jl (scripts/superansac_e2e.jl); its
 # inputs are the cell's raw-pixel slices, its settings the cell's config.
 # paper-project: allow P1 a worker of src/superansac.jl (scripts/superansac_e2e.jl): it writes one part file into the SupeRANSAC cell's keyed directory, whose run records the cell writes
-# paper-project: allow P2 the cell keys the directory (superansac-<run key>) and names each part; the worker writes only where --out says
+# paper-project: allow P2 the cell keys the directory (its keyed product, SupeRANSAC/superansac/<key>) and names each part; the worker writes only where --out says
 # =============================================================================
 # scripts/tools/superansac_worker.jl — SupeRANSAC on one raw-pixel input
 # slice, in the SupeRANSAC environment (envs/superansac: PythonCall + a build of

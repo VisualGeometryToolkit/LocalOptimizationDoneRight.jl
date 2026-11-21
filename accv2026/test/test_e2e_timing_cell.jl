@@ -29,8 +29,9 @@ _t_cfg(n) = TOML.parsefile(joinpath(_T_ROOT, "configs", n * ".toml"))
     cfg = e2e_timing_cell("pt_e_e2e_timing")
     # it times THE e2e cell of record: that run and its SupeRANSAC run key it as upstream runs
     e2e, sr = e2e_timed_cell(cfg), e2e_timed_superansac(cfg)
-    @test upstream_runs(cfg) == Dict("e2e" => run_key(e2e; upstream = upstream_runs(e2e)),
-                                     "superansac" => run_key(sr; upstream = upstream_runs(sr)))
+    up = upstream_products(cfg)
+    @test sort(collect(keys(up))) == ["e2e", "superansac"]
+    @test up["e2e"].key == e2e_product(e2e).key && up["superansac"].key == superansac_product(sr).key
     bad = deepcopy(raw); bad["timing"]["repeats"] = 3
     @test_throws ErrorException fold_e2e_timing_cell!(bad)
     bad = deepcopy(raw); bad["timing"]["pinning"]["julia_threads"] = 2

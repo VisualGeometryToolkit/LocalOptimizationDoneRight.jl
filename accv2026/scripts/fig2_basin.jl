@@ -41,19 +41,21 @@ const PT_E_BASIN = fold_sequential_cv!(load_run_config(PT_E_BASIN_PATH))
 sequential_cv_dir(PT_E_BASIN) == EXP_BASIN_DIR ||
     error("fig2: pt_e_basin's sequential-CV directory disagrees with registry.jl EXP_BASIN_DIR")
 push!(STAGES, sequential_cv_stage(:basin_cv, PT_E_BASIN, PT_E_BASIN_PATH))
+function ladder(_)
+    require_input(EXP_BASIN_SIDECAR; what = "basin operating points (the Table 1 arms)",
+                  provenance = "stage basin_cv of this experiment")
+    audit_operating_points(ROSTER, EXP_BASIN_SIDECAR)
+    run_driver("run_basin_ladder.jl", "--config=$(PT_E_BASIN_PATH)")
+    return nothing
+end
 push!(STAGES, Stage(:ladder_test,
-        "δ-perturbed ladder on the 11 test scenes at the CV'd widths → $(EXP_LADDER_BUNDLE)",
-        () -> run_complete(EXP_LADDER_DIR; sidecar = basename(EXP_LADDER_BUNDLE)),
-        () -> begin
-            require_input(EXP_BASIN_SIDECAR; what = "basin operating points (the Table 1 arms)",
-                          provenance = "stage basin_cv of this experiment")
-            audit_operating_points(ROSTER, EXP_BASIN_SIDECAR)
-            run_driver("run_basin_ladder.jl", "--config=$(PT_E_BASIN_PATH)")
-        end))
+        "δ-perturbed ladder on the 11 test scenes at the CV'd widths → $(EXP_LADDER_BUNDLE)";
+        items = () -> [EXP_LADDER_PRODUCT], product = identity,
+        run = p -> produce(ladder, p; driver = "run_basin_ladder.jl", config_source = PT_E_BASIN_PATH,
+                           inputs = [EXP_BASIN_SIDECAR, EXP_POOL_PT_E])))
 push!(STAGES, Stage(:render,
-        "faceted basin matrix → $(PANEL)",
-        () -> fresher(PANEL, EXP_LADDER_BUNDLE),
-        () -> run_driver("render_basin_faceted.jl", "--bundle=$(EXP_LADDER_BUNDLE)",
+        "faceted basin matrix → $(PANEL)";
+        check = () -> run_driver("render_basin_faceted.jl", "--bundle=$(EXP_LADDER_BUNDLE)",
                                     "--out=$(PANEL)",
                                     "--succ=$(EXP_LADDER_SUCC)",
                                     "--deploy=1",

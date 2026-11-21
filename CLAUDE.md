@@ -73,13 +73,15 @@ the accv2026 project).
   the LINK paths, because every keyed path of this paper is spelled under them.
   Paths come from `projectdir`/`scriptsdir`/`datadir`, never from `@__DIR__`
   or a machine path. `paper/` is not yet DrWatson's `papers/` (deferred).
-- Keys: a run directory is `<kind>-<run_key>` of the folded effective config
-  (`run_key`: SHA-256 of the sorted TOML, `[render]` excluded). This is the
-  one justified extension of DrWatson's `savename`, which drops nested values.
-- Records: `write_run_records` writes `_config.toml` + `_provenance.toml`
-  (DrWatson's tagged dict: `gitcommit`, `gitpatch`, inputs relative to their
-  roots). `run_complete` skips a keyed run and warns on commit drift. Never use
-  `produce_or_load` for an artifact of record: it swallows save errors.
+- Keys: every result of record is a keyed product (Eval's `Product`,
+  `src/protocol_folds.jl` `cell_product`): `<results>/<dataset>/<matcher>/<problem>/<experiment>/<kind>/<key>`,
+  keyed by the folded effective config (`[render]` excluded), the products it
+  reads (`upstream_products`) and the code it runs.
+- Records: `produce` writes the product's output, then `_config.toml` +
+  `_provenance.toml` (DrWatson's tagged dict: `gitcommit`, inputs relative to
+  their roots, the code trees, the outputs' hash), through DrWatson's
+  `produce_or_load`; a product is reused while `produced`. A run of record
+  refuses uncommitted code.
 - Policy, enforced by the paper-project check (`test/test_paper_project.jl`,
   which `test/runtests.jl` includes; no deferred allowance):
   - D1: no machine paths in code or launchers (the runner's graph

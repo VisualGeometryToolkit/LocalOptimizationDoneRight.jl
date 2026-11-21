@@ -20,8 +20,9 @@ using TOML
 using VisualGeometryToolkitCore: EfficiencyConstant, OutlierHalfwidth, LossWidth, width_axis_name, check_keys
 using VisualGeometryToolkitEval.Tuning: layer_tuning, layered_tuning_entry, tuning_spec, TUNING_TAGS, CoarseFine, tuning_hash
 using VisualGeometryToolkitEval.Experiments:
-    load_run_config, run_key, experiment_dir,
-    config_of_record, keyed_cell_dir,   # configs/<name>.toml as a run config; <experiment_dir>/<experiment>/<kind>-<run_key>
+    load_run_config, run_key,
+    config_of_record,                   # configs/<name>.toml as a run config
+    Product, product_dir, product_output,   # a cell's keyed product: <results>/<dataset>/<matcher>/<problem>/<experiment>/<kind>/<key>
     tier_path, input_path               # a path under an input's tier root; an input opened, checked to be there
 include(joinpath(@__DIR__, "protocol.jl"))   # configs/protocol.toml: the arm protocol folded below
 
@@ -109,6 +110,21 @@ both ends of every derived key.
 fold_arm_protocol!(cfg) = (cfg["arm_protocol"] = deepcopy(PROTOCOL["arms"]); cfg)
 
 """
+    cell_product(cfg, experiment, kind; output) -> Product
+
+THE keyed product of a folded cell (VisualGeometryToolkitEval's `Product`): its directory is
+`<results>/<dataset>/<matcher>/<problem>/<experiment>/<kind>/<key>` (`product_dir`), keyed by
+the folded config, the products it reads ([`upstream_products`](@ref)) and the code it runs;
+`output` is the file the cell writes last (its completion mark with the records). Every
+`*_product` below is this rule applied to one kind of cell, at both ends of every derived key.
+"""
+function cell_product(cfg::AbstractDict, experiment::AbstractString, kind::AbstractString; output::AbstractString)
+    e = cfg["experiment"]
+    return Product(join((e["dataset"], e["matcher"], e["problem"], experiment), "/"), kind, cfg;
+                   output, upstream = upstream_products(cfg))
+end
+
+"""
     miscal_sidecar_of(config_name) -> path
 
 Re-derive the named cell's operating-points sidecar EXACTLY as its script
@@ -118,7 +134,7 @@ sidecar of record (fig3's PT-E: registry.jl EXP_MISCAL_SIDECAR =
 `miscal_sidecar_of("pt_e_miscal")`; fig2's basin: `miscal_sidecar_of("pt_e_basin")`).
 """
 miscal_sidecar_of(config_name::AbstractString) =
-    joinpath(sequential_cv_dir(fold_sequential_cv!(config_of_record(config_name))), SEQUENTIAL_CV_SIDECAR)
+    product_output(sequential_cv_product(fold_sequential_cv!(config_of_record(config_name))))
 
 # --- the sequential CV (notes/sequential_cv.md) ----------------------------------
 
@@ -168,7 +184,7 @@ function fold_sequential_cv!(cfg)
     # ONE scorer per (dataset, model class): `scorer_of` names the cell whose
     # scorer stage this cell READS instead of re-tuning it — the same pools,
     # problem, cross-validation and scorer entries, refused otherwise. That
-    # cell's run keys this one as an UPSTREAM run (`upstream_runs`,
+    # cell's run keys this one as an UPSTREAM run (`upstream_products`,
     # Eval's `run_key(; upstream)`), so a re-tuned scorer re-keys it.
     if haskey(sq, "scorer_of")
         name = String(sq["scorer_of"])
@@ -196,7 +212,7 @@ end
     operating_points_run(config_name) -> String
 
 The run of the operating points a CONSUMER folds into its key (budget, e2e and
-polish cells): the named sequential-CV cell's run key WITHOUT its opt-in
+polish cells): the key of the named sequential-CV cell's product WITHOUT its opt-in
 variant declarations (`objective_matched`, `zero_clamp`). A declared variant
 moves no other arm's operating point or evaluation — an objective-matched one
 is evaluation-only (never tuned); a zero-clamp one is tuned on its own, at the
@@ -208,7 +224,7 @@ function operating_points_run(config_name::AbstractString)
     cfg = fold_sequential_cv!(config_of_record(config_name))
     delete!(cfg["sequential_cv"], "objective_matched")
     delete!(cfg["sequential_cv"], "zero_clamp")
-    return run_key(cfg; upstream = upstream_runs(cfg))
+    return sequential_cv_product(cfg).key
 end
 
 """
@@ -236,13 +252,18 @@ function fold_budget_cell!(cfg)
     return fold_arm_protocol!(cfg)
 end
 
-"""
-    budget_cell_dir(cfg) -> String
+"The completion mark of a budget cell: the scene files and arms it holds, written last."
+const BUDGET_MANIFEST = "scenes.toml"
 
-The keyed directory of a folded budget cell:
-`<results>/<dataset>/<matcher>/<problem>/SampleBudget/budget-<run_key>`.
 """
-budget_cell_dir(cfg) = keyed_cell_dir(cfg, "SampleBudget", "budget"; upstream = upstream_runs(cfg))
+    budget_product(cfg) -> Product
+
+The keyed product of a folded budget cell:
+`<results>/<dataset>/<matcher>/<problem>/SampleBudget/budget/<key>`, one `<scene>.jld2` per
+test scene and [`BUDGET_MANIFEST`](@ref) written last.
+"""
+budget_product(cfg) = cell_product(cfg, "SampleBudget", "budget"; output = BUDGET_MANIFEST)
+budget_cell_dir(cfg) = product_dir(budget_product(cfg))
 
 "The operating-points sidecar a folded budget cell evaluates: its explicit path, or its miscal cell's."
 budget_sidecar(cfg) = haskey(cfg["operating_points"], "sidecar") ? String(cfg["operating_points"]["sidecar"]) :
@@ -280,12 +301,14 @@ function fold_e2e_cell!(cfg)
 end
 
 """
-    e2e_cell_dir(cfg) -> String
+    e2e_product(cfg) -> Product
 
-The keyed directory of a folded end-to-end cell:
-`<results>/<dataset>/<matcher>/<problem>/EndToEnd/e2e-<run_key>`.
+The keyed product of a folded end-to-end cell:
+`<results>/<dataset>/<matcher>/<problem>/EndToEnd/e2e/<key>`, its live runs (`live.jld2`) and
+their scene-averaged summary (`summary.tsv`, written last).
 """
-e2e_cell_dir(cfg) = keyed_cell_dir(cfg, "EndToEnd", "e2e"; upstream = upstream_runs(cfg))
+e2e_product(cfg) = cell_product(cfg, "EndToEnd", "e2e"; output = "summary.tsv")
+e2e_cell_dir(cfg) = product_dir(e2e_product(cfg))
 
 """
     sequential_cv_scorer_path(cfg) -> String
@@ -315,49 +338,47 @@ function sequential_cv_scorer_entry(sq::AbstractDict, selector::Symbol)
 end
 
 """
-    sequential_cv_dir(cfg) -> String
+    sequential_cv_product(cfg) -> Product
 
-The keyed directory of a folded sequential-CV cell: `<results>/<dataset>/<matcher>/<problem>/
-<Miscalibration | Basin>/sequential-cv-<run_key>` — `Basin` for the
-`roster = "basin"` cells. Every stage's artifact lives here, so a change to
-any entry, the cv section, the ζ ladder or the arm protocol re-keys all three
-stages together.
+The keyed product of a folded sequential-CV cell: `<results>/<dataset>/<matcher>/<problem>/
+<Miscalibration | Basin>/sequential-cv/<key>` — `Basin` for the `roster = "basin"` cells — whose
+output is the operating-points sidecar. Every stage's artifact lives in its directory
+(`sequential_cv_dir`), so a change to any entry, the cv section, the ζ ladder or the arm protocol
+re-keys all three stages together.
 """
-sequential_cv_dir(cfg) =
-    keyed_cell_dir(cfg, get(cfg["sequential_cv"], "roster", "composed") == "basin" ? "Basin" : "Miscalibration",
-                   "sequential-cv"; upstream = upstream_runs(cfg))
+sequential_cv_product(cfg) =
+    cell_product(cfg, get(cfg["sequential_cv"], "roster", "composed") == "basin" ? "Basin" : "Miscalibration",
+                 "sequential-cv"; output = SEQUENTIAL_CV_SIDECAR)
+sequential_cv_dir(cfg) = product_dir(sequential_cv_product(cfg))
 
 """
-    upstream_runs(cfg) -> Union{Nothing, Dict{String,String}}
+    upstream_products(cfg) -> Union{Nothing, Dict{String,Any}}
 
-The runs a folded cell READS, by name, as Eval's `run_key(cfg; upstream)` keys
-them — so a re-tune upstream re-keys every cell that reads it, and no run key is
+The products a folded cell READS, by name, as Eval's `Product(…; upstream)` keys
+them — so a re-tune upstream re-keys every cell that reads it, and no key is
 held as a config value:
 
-- `scorer_of`: a `[sequential_cv] scorer_of` cell's scorer cell (its run key);
+- `scorer_of`: a `[sequential_cv] scorer_of` cell's scorer cell (its product: its key and,
+  once produced, its output's hash);
 - `operating_points`: the operating points a consumer evaluates (`[operating_points]
-  miscal_config`: that cell's run without its opt-in variants, [`operating_points_run`](@ref);
+  miscal_config`: that cell's key without its opt-in variants, [`operating_points_run`](@ref);
   an explicit `sidecar`: its keyed directory's name);
 - `e2e`, `superansac`: a timing cell's timed e2e cell and that cell's SupeRANSAC
-  cell (their run keys; src/e2e_timing.jl).
+  cell (their products; src/e2e_timing.jl).
 
-`nothing` for a cell that reads none. Every keyed directory and run record of
-this project keys its cell as `run_key(cfg; upstream = upstream_runs(cfg))`.
+`nothing` for a cell that reads none.
 """
-function upstream_runs(cfg)
-    up = Dict{String,String}()
+function upstream_products(cfg)
+    up = Dict{String,Any}()
     sq = get(cfg, "sequential_cv", Dict{String,Any}())
-    if haskey(sq, "scorer_of")
-        src = fold_sequential_cv!(config_of_record(String(sq["scorer_of"])))
-        up["scorer_of"] = run_key(src; upstream = upstream_runs(src))
-    end
+    haskey(sq, "scorer_of") &&
+        (up["scorer_of"] = sequential_cv_product(fold_sequential_cv!(config_of_record(String(sq["scorer_of"])))))
     op = get(cfg, "operating_points", nothing)
     op === nothing || (up["operating_points"] = haskey(op, "sidecar") ? basename(dirname(String(op["sidecar"]))) :
                                                 operating_points_run(String(op["miscal_config"])))
     if haskey(get(cfg, "timing", Dict{String,Any}()), "e2e_config")
-        e2e, sr = e2e_timed_cell(cfg), e2e_timed_superansac(cfg)
-        up["e2e"] = run_key(e2e; upstream = upstream_runs(e2e))
-        up["superansac"] = run_key(sr; upstream = upstream_runs(sr))
+        up["e2e"] = e2e_product(e2e_timed_cell(cfg))
+        up["superansac"] = superansac_product(e2e_timed_superansac(cfg))
     end
     return isempty(up) ? nothing : up
 end
@@ -382,16 +403,18 @@ function fold_sensitivity_cell!(cfg)
 end
 
 """
-    sensitivity_cell_dir(cfg) -> String
+    sensitivity_product(cfg) -> Product
 
-The keyed directory of a folded sensitivity cell:
-`<results>/<dataset>/<matcher>/<problem>/<Miscalibration | DeltaSweep | LOSensitivity>/sel-<mode>-<run_key>`.
+The keyed product of a folded sensitivity cell:
+`<results>/<dataset>/<matcher>/<problem>/<Miscalibration | DeltaSweep | LOSensitivity>/sel-<mode>/<key>`,
+its output `bundle.jld2`.
 """
-function sensitivity_cell_dir(cfg)
+function sensitivity_product(cfg)
     mode = String(cfg["sensitivity"]["mode"])
     experiment = mode == "miscal" ? "Miscalibration" : mode == "delta" ? "DeltaSweep" : "LOSensitivity"
-    return keyed_cell_dir(cfg, experiment, "sel-" * replace(mode, "_" => "-"); upstream = upstream_runs(cfg))
+    return cell_product(cfg, experiment, "sel-" * replace(mode, "_" => "-"); output = "bundle.jld2")
 end
+sensitivity_cell_dir(cfg) = product_dir(sensitivity_product(cfg))
 
 """
     ladder_cell(config_name) -> Dict
@@ -409,11 +432,13 @@ ladder_cell(config_name::AbstractString) = Dict{String,Any}(
     "basin_ladder" => protocol_table("basin_ladder"))
 
 """
-    ladder_cell_dir(cfg) -> String
+    ladder_product(cfg) -> Product
 
-The keyed directory of a ladder cell: `<results>/<dataset>/<matcher>/<problem>/BasinLadder/basin-ladder-<run_key>`.
+The keyed product of a ladder cell: `<results>/<dataset>/<matcher>/<problem>/BasinLadder/basin-ladder/<key>`,
+its output `ladder.jld2`.
 """
-ladder_cell_dir(cfg) = keyed_cell_dir(cfg, "BasinLadder", "basin-ladder"; upstream = upstream_runs(cfg))
+ladder_product(cfg) = cell_product(cfg, "BasinLadder", "basin-ladder"; output = "ladder.jld2")
+ladder_cell_dir(cfg) = product_dir(ladder_product(cfg))
 
 # ---- the scoring pool a cell reads ----------------------------------------------------
 
@@ -446,11 +471,13 @@ pool's identity in a record (an oracle floor's source), the same path
 pool_path(cfg) = (t = _pool_spec(cfg); tier_path(String(get(t, "tier", "")), t["path"]))
 
 """
-    polish_cell_dir(cfg) -> String
+    polish_product(cfg) -> Product
 
-The keyed directory of the folded polishing cell: `<results>/<dataset>/<matcher>/<problem>/Polish/polish-<run_key>`.
+The keyed product of the folded polishing cell: `<results>/<dataset>/<matcher>/<problem>/Polish/polish/<key>`:
+every polish on the test side (`polish_test.jld2`) and its before/after summary (`summary.tsv`, written last).
 """
-polish_cell_dir(cfg) = keyed_cell_dir(cfg, "Polish", "polish"; upstream = upstream_runs(cfg))
+polish_product(cfg) = cell_product(cfg, "Polish", "polish"; output = "summary.tsv")
+polish_cell_dir(cfg) = product_dir(polish_product(cfg))
 
 """
     fold_timing_cell!(cfg) -> cfg
@@ -470,12 +497,13 @@ function fold_timing_cell!(cfg)
 end
 
 """
-    timing_cell_dir(cfg) -> String
+    timing_product(cfg) -> Product
 
-The keyed directory of the folded timing cell:
-`<results>/<dataset>/<matcher>/<problem>/Timing/timing-<run_key>`.
+The keyed product of the folded timing cell: `<results>/<dataset>/<matcher>/<problem>/Timing/timing/<key>`,
+its output the timings file `lo_timing_<tag>_<scene>.jld2` of its `[timing]`.
 """
-timing_cell_dir(cfg) = keyed_cell_dir(cfg, "Timing", "timing"; upstream = upstream_runs(cfg))
+timing_product(cfg) = (t = cfg["timing"]; cell_product(cfg, "Timing", "timing"; output = "lo_timing_$(t["tag"])_$(t["scene"]).jld2"))
+timing_cell_dir(cfg) = product_dir(timing_product(cfg))
 
 const ACCV2026_PROTOCOL_FOLDS_LOADED = true
 end # include guard

@@ -9,7 +9,7 @@ author's host two SYMLINKS:
                NOTHING writes here except an explicit producer/promote.
     exp_pro -> the ADD-ONLY results root (e.g.
                /path/to/results/accv2026). Keyed run directories
-               (sequential-cv-<key>/ with _config.toml/_provenance.toml)
+               (sequential-cv/<key>/ with _config.toml/_provenance.toml)
                are created here and never rewritten.
 
 Resolution ladder (VisualGeometryToolkitEval.Experiments, experiments/data.jl;
