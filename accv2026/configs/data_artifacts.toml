@@ -26,6 +26,8 @@
 #                 those scenes: each light file, its residuals and the tree's
 #                 run records
 #   stored        the stored results directory a config names ([stored] dir)
+#   produced      a derived input its producer stage regenerates (never bound,
+#                 never fetched): the PT-E and HEB-H pools below
 #
 # `record` groups artifacts into Zenodo records (each record at most 50 GB
 # and 100 files: Zenodo's default quota). The data are shared by two papers
