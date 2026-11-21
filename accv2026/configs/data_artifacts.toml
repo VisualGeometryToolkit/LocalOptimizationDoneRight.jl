@@ -147,3 +147,27 @@ record = "eth3d"
 required = true
 what = "the ETH3D-F scoring pools (pool format 4: light records + residuals) and their run records"
 provenance = "scripts/scoring_pools.jl --config=eth_f_pools (2026-10-04, migrated to pool format 4 on 2026-10-05)"
+
+# The scoring pools of PhotoTourism and HEB are DERIVED inputs of record, never
+# published (PT-E-SIFT-4K_pf3 ≈ 1.6 TB, HEB-H-SIFT-4K_pf3 ≈ 110 GB): their pool producer stages regenerate
+# them bit for bit from the published raw tiers above (write_scene_pool:
+# per-pair StableRNG streams, independent of thread count and Julia version;
+# fresh-machine test 2026-10-07, REPRODUCE.md "On a new machine"). A produced
+# entry covers the configs' [inputs.pool] by path, so those inputs keep their
+# tier "derived" and every run key is unchanged (VisualGeometryToolkitEval
+# DataArtifacts, kind "produced"; never bound in Artifacts.toml, never fetched).
+[artifacts.pt_e_pools]
+kind = "produced"
+producer = "pt_e_pools"
+covers = ["accv2026/data/PT-E-SIFT-4K_pf3"]
+tier = "derived"
+what = "the PhotoTourism E scoring pools (pool format 3) the PT-E cells read"
+provenance = "scripts/pt_e_pools.jl on configs/pt_e_pools.toml, from pt_raw_validation and pt_raw_test"
+
+[artifacts.heb_h_pools]
+kind = "produced"
+producer = "heb_h_pools"
+covers = ["accv2026/data/HEB-H-SIFT-4K_pf3"]
+tier = "derived"
+what = "the HEB H scoring pools (pool format 3) the HEB cells read"
+provenance = "scripts/heb_h_pools.jl on configs/heb_h_pools.toml, from heb_raw"

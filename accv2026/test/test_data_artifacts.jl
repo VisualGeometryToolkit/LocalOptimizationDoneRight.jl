@@ -15,8 +15,10 @@ include(joinpath(@__DIR__, "..", "src", "data_artifacts.jl"))
     v = catalog_violations(cat)
     @test isempty(v) || (@info "catalog violations" v; false)
     @test all(r -> r["license"] in ("CC-BY-4.0", "CC-BY-NC-SA-4.0"), values(cat.records))
-    # the kinds of THIS paper (no `tree`): every file list derives from a config of record
-    @test all(a -> a["kind"] in ("pool_sources", "pools", "stored"), values(cat.artifacts))
+    # the kinds of THIS paper (no `tree`): every file list derives from a config of record, and
+    # the two unpublished pools are produced by their stages (never bound)
+    @test all(a -> a["kind"] in ("pool_sources", "pools", "stored", "produced"), values(cat.artifacts))
+    @test Set(n for (n, a) in cat.artifacts if a["kind"] == "produced") == Set(["pt_e_pools", "heb_h_pools"])
     # dataset-centric names (the data are shared by two papers): no paper prefix
     @test !any(n -> startswith(n, "accv2026_"), keys(cat.artifacts))
 end
@@ -34,21 +36,9 @@ end
 # derived results are DrWatson-keyed run directories under results_root().
 
 const _ROOT = normpath(joinpath(@__DIR__, ".."))
-_code_files() = [joinpath(r, f) for d in ("src", "scripts", "configs") for (r, _, fs) in walkdir(joinpath(_ROOT, d))
-                 for f in fs if (endswith(f, ".jl") || endswith(f, ".toml"))]
-_code_lines(f) = [(i, l) for (i, l) in enumerate(eachline(f)) if !startswith(lstrip(l), "#")]
 
-@testset "data policy: no artifact\"…\" lookups — inputs resolve through data_root()" begin
-    hits = [(relpath(f, _ROOT), i) for f in _code_files() for (i, l) in _code_lines(f) if occursin(r"(?<![A-Za-z_])artifact\"\w", l)]
-    @test isempty(hits) || (@info "artifact\"…\" in code (resolve through data_root() instead)" hits; false)
-end
-
-@testset "data policy: no hard-coded absolute data paths in src/, scripts/, configs/" begin
-    pat = r"[\"'=]\s*/(raid|home|mnt|scratch|data|nfs)/"
-    hits = [(relpath(f, _ROOT), i, strip(l)) for f in _code_files() for (i, l) in _code_lines(f)
-            if occursin(pat, l) && !occursin(r"^\s*#", l)]
-    @test isempty(hits) || (@info "absolute data paths" hits; false)
-end
+# (No `artifact"…"` lookups and no machine paths in code, configs, tests or docs: the
+# paper-project check's data policy, rules D4 and D1, test_paper_project.jl.)
 
 @testset "data policy: input paths are relative to data_root() and never inside the results tree" begin
     cfgdir = joinpath(_ROOT, "configs")
@@ -77,5 +67,5 @@ end
     # SupeRANSAC baseline (configs/pt_e_superansac.toml [stored] dir is relative to the
     # results root, where the author's copy sits) — to move with the data-policy audit.
     cat = project_catalog()
-    @test Set(n for (n, a) in cat.artifacts if a["mount"] == "results") == Set(["pt_e_superansac_stored"])
+    @test Set(n for (n, a) in cat.artifacts if get(a, "mount", "") == "results") == Set(["pt_e_superansac_stored"])
 end

@@ -70,7 +70,9 @@ Each record's description lists the upstream sources to cite alongside it.
 | `pt_e_superansac_stored` (required) | the stored SupeRANSAC results of Tab. 3 | results | `scripts/e2e_ransac.jl` when `scripts/superansac_e2e.jl` has not run |
 | `eth3d_f_pools_1k` (required) | the ETH3D-F pools of record, frozen; bound as one artifact per scene plus `eth3d_f_pools_1k_meta` (the run records), a scene over 1.6 GB (`facade`) as sub-parts whose chunks the fetch reassembles; fetched together | data | the ETH3D cells (`scoring_pools.jl --config=eth_f_pools` then reports them done) |
 
-The scoring POOLS of PhotoTourism and HEB are not published: they are a pure
+The scoring POOLS of PhotoTourism and HEB are not published (the catalog lists them as
+`kind = "produced"` entries, `pt_e_pools` and `heb_h_pools`, naming their producer stages;
+`scripts/fetch_data.jl` reports them and fetches nothing for them): they are a pure
 function of the raw inputs (`write_scene_pool`: per-pair StableRNG streams,
 independent of thread count and Julia version; the fresh-machine test of
 2026-10-07 regenerated all 10 HEB pools `pool_key`-identical to the author's,
