@@ -1,0 +1,22 @@
+# =============================================================================
+# eth_f_pools_v6 — the ETH3D F scoring pools of record carried to the current pool format
+# (VisualGeometryToolkitEval pool format 6, which renamed the correspondences'
+# pair key) into a NEW immutable tree, by scripts/migrated_pools.jl
+# (src/cell_stages.jl `pool_migration_stages`: Eval's `migrate_pools`, each
+# light pool verified bit for bit; the residuals linked unchanged, every
+# pool_key kept). The source tree, [inputs.pool], is never written:
+# the published tier eth3d_f_pools_1k (scripts/fetch_data.jl).
+# =============================================================================
+
+[experiment]
+dataset = "eth3d"
+matcher = "splg"
+problem = "F"
+pool_dir = "datasets/eth3d/derived/splg/scoring_data_F_pf6"   # OUTPUT tree, relative to data_root()
+
+[inputs.pool]
+tier = "eth3d_f_pools_1k"
+path = "datasets/eth3d/derived/splg/scoring_data_F_pf3"
+sha256 = "0438172b08d3009ef8b4b9c163d946308069ffc49e6e784248d5e2ff8f541936"
+sha256_exclude = ["_v3/**"]   # the archived copy, not a pool of record
+provenance = "the frozen ETH3D F scoring pools of record at pool format 4, as published (eth3d_f_pools_1k, Zenodo 23240469)"

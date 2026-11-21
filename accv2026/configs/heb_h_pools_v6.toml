@@ -1,0 +1,22 @@
+# =============================================================================
+# heb_h_pools_v6 — the HEB H scoring pools of record carried to the current pool format
+# (VisualGeometryToolkitEval pool format 6, which renamed the correspondences'
+# pair key) into a NEW immutable tree, by scripts/migrated_pools.jl
+# (src/cell_stages.jl `pool_migration_stages`: Eval's `migrate_pools`, each
+# light pool verified bit for bit; the residuals linked unchanged, every
+# pool_key kept). The source tree, [inputs.pool], is never written:
+# produced by the stage heb_h_pools (configs/heb_h_pools.toml).
+# =============================================================================
+
+[experiment]
+dataset = "heb"
+matcher = "sift"
+problem = "H"
+pool_dir = "accv2026/data/HEB-H-SIFT-4K_pf6"   # OUTPUT tree, relative to data_root()
+
+[inputs.pool]
+tier = "derived"
+path = "accv2026/data/HEB-H-SIFT-4K_pf3"
+sha256 = "bc9e2ce17ae2d786596c970c3f41973acdd4d47d00c6dbaf1869a056cf00b5b6"
+sha256_exclude = ["_v3/**"]   # the archived copy, not a pool of record
+provenance = "the HEB H scoring pools of record at pool format 4 (scripts/heb_h_pools.jl, configs/heb_h_pools.toml)"

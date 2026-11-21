@@ -1,0 +1,22 @@
+# =============================================================================
+# pt_e_pools_v6 — the PhotoTourism E scoring pools of record carried to the current pool format
+# (VisualGeometryToolkitEval pool format 6, which renamed the correspondences'
+# pair key) into a NEW immutable tree, by scripts/migrated_pools.jl
+# (src/cell_stages.jl `pool_migration_stages`: Eval's `migrate_pools`, each
+# light pool verified bit for bit; the residuals linked unchanged, every
+# pool_key kept). The source tree, [inputs.pool], is never written:
+# produced by the stage pt_e_pools (configs/pt_e_pools.toml).
+# =============================================================================
+
+[experiment]
+dataset = "phototourism"
+matcher = "sift"
+problem = "E"
+pool_dir = "accv2026/data/PT-E-SIFT-4K_pf6"   # OUTPUT tree, relative to data_root()
+
+[inputs.pool]
+tier = "derived"
+path = "accv2026/data/PT-E-SIFT-4K_pf3"
+sha256 = "d563419d547f16b2cb83a7ab1883c5567d470433f4409f0c09b0d17eb98dc690"
+sha256_exclude = ["_v3/**"]   # the archived copy, not a pool of record
+provenance = "the PhotoTourism E scoring pools of record at pool format 4 (scripts/pt_e_pools.jl, configs/pt_e_pools.toml)"

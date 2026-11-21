@@ -65,9 +65,33 @@ mem_per_cpu = "8000M"
 
 # ---- the tunings and their rows (Fig. 2 and its cells) -------------------------------
 [[stage]]
+name = "pt_e_pools_v6"
+what = "the PT-E pools of record carried to pool format 6 (a new tree, PT-E-SIFT-4K_pf6; residuals linked)"
+after = ["pt_e_pools"]
+command = ["julia", "--project=accv2026", "accv2026/scripts/migrated_pools.jl", "--config=pt_e_pools_v6"]
+driver = "accv2026/scripts/migrated_pools.jl"
+config = "accv2026/configs/pt_e_pools_v6.toml"
+
+[[stage]]
+name = "heb_h_pools_v6"
+what = "the HEB-H pools of record carried to pool format 6 (a new tree, HEB-H-SIFT-4K_pf6; residuals linked)"
+after = ["heb_h_pools"]
+command = ["julia", "--project=accv2026", "accv2026/scripts/migrated_pools.jl", "--config=heb_h_pools_v6"]
+driver = "accv2026/scripts/migrated_pools.jl"
+config = "accv2026/configs/heb_h_pools_v6.toml"
+
+[[stage]]
+name = "eth_f_pools_v6"
+what = "the published ETH3D-F pools (format 4) carried to pool format 6 (a new tree, scoring_data_F_pf6; residuals linked)"
+after = ["setup"]
+command = ["julia", "--project=accv2026", "accv2026/scripts/migrated_pools.jl", "--config=eth_f_pools_v6"]
+driver = "accv2026/scripts/migrated_pools.jl"
+config = "accv2026/configs/eth_f_pools_v6.toml"
+
+[[stage]]
 name = "fig3_composed_miscal"
 what = "the PT-E full-roster sequential CV (THE deployed operating points every PT-E cell reads), its oracle bound and the PhotoTourism row of Fig. 2"
-after = ["pt_e_pools"]
+after = ["pt_e_pools_v6"]
 command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/fig3_composed_miscal.jl"]
 driver = "accv2026/scripts/fig3_composed_miscal.jl"
 config = "accv2026/configs/pt_e_miscal.toml"
@@ -76,7 +100,7 @@ gpu = true
 [[stage]]
 name = "supp_ETH_F_miscal"
 what = "the ETH3D F sequential CV, its oracle bound and the ETH3D row of Fig. 2"
-after = ["setup"]
+after = ["eth_f_pools_v6"]
 command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/supp_ETH_F_miscal.jl"]
 driver = "accv2026/scripts/supp_ETH_F_miscal.jl"
 config = "accv2026/configs/accv2026_eth_f_miscal.toml"
@@ -85,7 +109,7 @@ gpu = true
 [[stage]]
 name = "supp_H_miscal"
 what = "the HEB H sequential CV (inverse-gamma prior), its oracle bound and the HEB row of Fig. 2"
-after = ["heb_h_pools"]
+after = ["heb_h_pools_v6"]
 command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/supp_H_miscal.jl"]
 driver = "accv2026/scripts/supp_H_miscal.jl"
 config = "accv2026/configs/heb_h_miscal.toml"
@@ -102,7 +126,7 @@ config = "accv2026/configs/fig3_miscal_grid.toml"
 [[stage]]
 name = "fig2_basin"
 what = "Fig. 1: the basin cell's sequential CV, the δ-perturbed ladder and its panel"
-after = ["pt_e_pools"]
+after = ["pt_e_pools_v6"]
 command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/fig2_basin.jl"]
 driver = "accv2026/scripts/fig2_basin.jl"
 config = "accv2026/configs/pt_e_basin.toml"
@@ -111,7 +135,7 @@ gpu = true
 [[stage]]
 name = "fig1_sel_miscal"
 what = "the supplement's scoring-only miscalibration sweep and its two panels"
-after = ["pt_e_pools"]
+after = ["pt_e_pools_v6"]
 command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/fig1_sel_miscal.jl"]
 driver = "accv2026/scripts/fig1_sel_miscal.jl"
 config = "accv2026/configs/pt_e_sel_miscal.toml"
@@ -162,7 +186,7 @@ config = "accv2026/configs/fig4_budget_grid.toml"
 [[stage]]
 name = "superansac_e2e"
 what = "SupeRANSAC's rows of Tab. 3 (its loss-width CV and evaluation; an OUTSIDE dependency, envs/superansac): without it the table reads the stored rows"
-after = ["pt_e_pools"]
+after = ["pt_e_pools_v6"]
 command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/superansac_e2e.jl", "--config=pt_e_superansac"]
 driver = "accv2026/scripts/superansac_e2e.jl"
 config = "accv2026/configs/pt_e_superansac.toml"
@@ -205,7 +229,7 @@ gpu = true
 [[stage]]
 name = "heb_inlier_stats"
 what = "the per-pair correspondence and GT-inlier counts behind the HEB dataset statistics of Sec. 4"
-after = ["heb_h_pools"]
+after = ["heb_h_pools_v6"]
 command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/heb_inlier_stats.jl"]
 driver = "accv2026/scripts/heb_inlier_stats.jl"
 config = "accv2026/configs/heb_stats.toml"
