@@ -99,6 +99,25 @@ superansac_product(cfg) = cell_product(cfg, "SupeRANSAC", "superansac";
                                        output = basename(superansac_zeta_path("", last(test_scenes(superansac_cross_validation(cfg))))))
 superansac_cell_dir(cfg) = product_dir(superansac_product(cfg))
 
+"""
+    e2e_summary_product(cfg) -> Product
+
+The scene-averaged summary of a folded end-to-end cell (`summary.tsv`):
+`<results>/<dataset>/<matcher>/<problem>/EndToEnd/e2e-summary/<key>`, keyed by its live runs
+([`e2e_product`](@ref), an upstream product) and, for a cell with `[e2e] superansac`, the content
+of the SupeRANSAC result files its rows are read from ([`superansac_results`](@ref): that cell's
+run, else its stored results) — SupeRANSAC produced again, or first produced, re-keys the summary.
+"""
+function e2e_summary_product(cfg)
+    e = cfg["experiment"]
+    n = get(cfg["e2e"], "superansac", nothing)
+    files = n === nothing ? nothing : (sr = superansac_cell(String(n));
+                                       superansac_results(sr, test_scenes(superansac_cross_validation(sr))).files)
+    return Product(join((e["dataset"], e["matcher"], e["problem"], "EndToEnd"), "/"), "e2e-summary",
+                   Dict{String,Any}("e2e" => cfg["e2e"]); output = "summary.tsv",
+                   upstream = Dict("live" => e2e_product(cfg)), files)
+end
+
 "The directory of the STORED results the config names (`[stored] dir`, under the results root)."
 superansac_stored_dir(cfg) = joinpath(results_root(), String(cfg["stored"]["dir"]))
 

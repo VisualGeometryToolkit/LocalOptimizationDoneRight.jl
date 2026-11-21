@@ -15,12 +15,12 @@
 # ([stored] dir).
 #
 # STAGES
-#   inputs (CPU)          — raw-pixel slices of the validation and test units
-#                           → <dir>/inputs/
-#   cv     (CPU, workers) — the loss-width CV ([tuning.superansac_loss_width])
-#                           → <dir>/loss_width_cv.jld2
-#   eval   (CPU, workers) — every test pair × ζ → <dir>/zeta_<scene>.jld2
-#   <dir> = <results>/phototourism/sift/E/SupeRANSAC/superansac-<key>. The
+#   eval   (CPU, workers) — the keyed product <dir>, in three steps (each resumed from what an
+#                           interrupted run left): raw-pixel slices of the validation and test
+#                           units → <dir>/inputs/; the loss-width CV
+#                           ([tuning.superansac_loss_width]) → <dir>/loss_width_cv.jld2; every
+#                           test pair × ζ → <dir>/zeta_<scene>.jld2 (the last scene's: its output)
+#   <dir> = <results>/phototourism/sift/E/SupeRANSAC/superansac/<key>. The
 #   workers are single-threaded processes, one per julia thread of this one
 #   (`julia -t N`, the Slurm wrapper's allocation).
 #
@@ -49,11 +49,12 @@ end
 _inputs_done() = all(isfile(superansac_inputs_path(OUTDIR, s, side))
                      for (side, ss) in (("validation", validation_scenes(CV)), ("test", test_scenes(CV))) for s in ss)
 # The cell's product: its raw-pixel inputs, its loss-width CV and the ζ evaluation, each step
-# resumed from what an interrupted run left in the product's directory; the last test scene's
-# ζ-sweep file is written last.
+# resumed from what an interrupted run left in the product's directory (every step again with
+# --force); the last test scene's ζ-sweep file is written last.
+const FORCE = "--force" in ARGS
 function _cell(dir)
-    _inputs_done() || superansac_inputs!(CFG, dir)
-    isfile(superansac_cv_path(dir)) || superansac_loss_width_cv!(CFG, dir)
+    (FORCE || !_inputs_done()) && superansac_inputs!(CFG, dir)
+    (FORCE || !isfile(superansac_cv_path(dir))) && superansac_loss_width_cv!(CFG, dir)
     superansac_evaluation!(CFG, dir)
     return nothing
 end

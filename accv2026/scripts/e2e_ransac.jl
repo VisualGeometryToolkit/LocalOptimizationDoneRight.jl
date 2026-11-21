@@ -14,9 +14,10 @@
 # STORED results ([stored] dir, the published rows) otherwise, and says which.
 #
 # STAGES
-#   live     (CPU, threads) — arms × ζ on the test pairs → e2e-<key>/live.jld2
+#   live     (CPU, threads) — arms × ζ on the test pairs → EndToEnd/e2e/<key>/live.jld2
 #   summary  (CPU) — arm × ζ, scene-averaged (median°, mAA@10°, mAA@5°,
-#                    trials, wall ms), + SupeRANSAC → e2e-<key>/summary.tsv
+#                    trials, wall ms), + SupeRANSAC → EndToEnd/e2e-summary/<key>/summary.tsv
+#                    (keyed by the live runs and SupeRANSAC's result files)
 #   table    (CPU) — with [render] panel: the ours-vs-SupeRANSAC table
 #            (pt_e_e2e_table) reproduce: writes paper/figures/table_e2e.tex
 #            Its time row is the TIMING cell's when [render] time names one
@@ -58,7 +59,8 @@ const SCENES  = isempty(SMOKE) ? test_scenes(CV) : test_scenes(CV)[1:1]
 _units(s, n) = only(values(sample_units(CV.test, Dict(s => collect(1:n)))))
 units_of(s, n) = isempty(SMOKE) ? _units(s, n) : first(_units(s, n), 20)
 const LIVE    = joinpath(OUTDIR, "live.jld2")
-const SUMMARY = joinpath(OUTDIR, "summary.tsv")
+# the summary: its own product (src/superansac.jl e2e_summary_product), built when its stage runs
+_summary_path() = isempty(SMOKE) ? product_output(e2e_summary_product(CFG)) : joinpath(SMOKE, "summary.tsv")
 # Our loop's termination: `[e2e] ransac` {min_trials, max_trials, success_prob}
 # (absent: the production defaults).
 const RCFG = e2e_ransac_config(CFG)
@@ -83,7 +85,7 @@ function _live()
             created = string(Dates.now()))
 end
 
-function _summary()
+function _summary(out = _summary_path())
     d = JLD2.load(LIVE)
     pp = d["per_pair"]
     comments = ["$(CFG_NAME) — end-to-end RANSAC, arm × ζ, scene-averaged over the $(length(SCENES)) test scenes " *
@@ -99,19 +101,22 @@ function _summary()
             push!(rows, e2e_summary_row("SupeRANSAC", ζ, [sr[s][z] for s in SCENES]; wall = r -> r.wall))
         end
     end
-    write_tsv(SUMMARY, E2E_SUMMARY_HEADER, rows; comments)
-    print(read(SUMMARY, String))
+    write_tsv(out, E2E_SUMMARY_HEADER, rows; comments)
+    print(read(out, String))
 end
 
-# The cell's product: the live runs and their scene-averaged summary (with SupeRANSAC's rows from
-# whichever of its sources holds every scene, named in the summary), the summary written last.
-STAGES = Stage[isempty(SMOKE) ?
-    Stage(:live, "$(join(ARMS, " vs ")) × ζ $(ZETAS) on every test pair, the arm × ζ scene-averaged summary" *
-                 (SR === nothing ? "" : " + SupeRANSAC") * " (config $(CFG_NAME), key $(KEY)) → $(SUMMARY)";
+# Two products: the live runs, and their scene-averaged summary with SupeRANSAC's rows (from
+# whichever of its sources holds every scene, named in the summary), keyed by the live runs and
+# SupeRANSAC's result files. A smoke run is a check into datadir("sims").
+STAGES = isempty(SMOKE) ? Stage[
+    Stage(:live, "$(join(ARMS, " vs ")) × ζ $(ZETAS) on every test pair (config $(CFG_NAME), key $(KEY)) → $(LIVE)";
           items = () -> [PRODUCT], product = identity,
-          run = p -> produce(_ -> (_live(); _summary(); nothing), p; driver = "e2e_ransac.jl", config_source = CFG_PATH,
-                             inputs = [SIDECAR, POOL])) :
-    Stage(:live, "smoke run → $(SUMMARY)"; check = () -> (_live(); _summary()))]
+          run = p -> produce(_ -> (_live(); nothing), p; driver = "e2e_ransac.jl", config_source = CFG_PATH, inputs = [SIDECAR, POOL])),
+    Stage(:summary, "arm × ζ scene-averaged summary" * (SR === nothing ? "" : " + SupeRANSAC") * " (config $(CFG_NAME))";
+          items = () -> [e2e_summary_product(CFG)], product = identity,
+          run = p -> produce(dir -> (_summary(joinpath(dir, "summary.tsv")); nothing), p; driver = "e2e_ransac.jl",
+                             config_source = CFG_PATH, inputs = [LIVE])),
+] : Stage[Stage(:live, "smoke run → $(SMOKE)"; check = () -> (_live(); _summary()))]
 # THE main-paper table (`[render] panel`, deployed when `deploy`): ours vs
 # SupeRANSAC × ζ, median error / mAA@10 / median wall time, the best system
 # per column in bold (src/e2e_cells.jl `e2e_table_tex`). The FIRST arm is
@@ -128,9 +133,11 @@ if haskey(CFG, "render") && haskey(CFG["render"], "panel")
     end
     TIMING_CFG === nothing || upstream_products(TIMING_CFG[2])["e2e"].key == KEY ||
         error("$CFG_NAME: [render] time = $(TIMING_CFG[1]) times another e2e run than this one ($KEY)")
-    const TIMING_TSV = TIMING_CFG === nothing ? SUMMARY : timing_summary_path(e2e_timing_dir(TIMING_CFG[2]))
     function _table()
-        recs, trecs = read_tsv(SUMMARY), read_tsv(TIMING_TSV)
+        # derived when the table is written: the timing cell's key folds the e2e product's produced output
+        timing = TIMING_CFG === nothing ? nothing : e2e_timing_product(TIMING_CFG[2])
+        summary = _summary_path()
+        recs, trecs = read_tsv(summary), read_tsv(timing === nothing ? summary : product_output(timing))
         row(rs, arm, ζ, k) = parse(Float64, only(r for r in rs if r["arm"] == arm && parse(Float64, r["zeta"]) == ζ)[k])
         val(arm, ζ, k) = row(k == "med_wall_ms" ? trecs : recs, arm, ζ, k)
         # (arm, label lines): a label's k-th line heads the arm's k-th stat row,
@@ -138,8 +145,7 @@ if haskey(CFG, "render") && haskey(CFG["render"], "panel")
         arms = [(first(ARMS), [raw"\stuU{}+" * label_tex(first(ARMS)), "(Ours)"]),
                 [(a, [raw"\stuU{}+" * label_tex(a)]) for a in ARMS[2:end]]...,
                 ("SupeRANSAC", [raw"SupeRANSAC~\cite{BarathSupeRANSAC2025}"])]
-        src = TIMING_CFG === nothing ? "summary.tsv" :
-              "summary.tsv, the time row from $(TIMING_CFG[1]) (key $(e2e_timing_product(TIMING_CFG[2]).key), timing.tsv)"
+        src = timing === nothing ? "summary.tsv" : "summary.tsv, the time row from $(TIMING_CFG[1]) (key $(timing.key), timing.tsv)"
         write(TABLE, e2e_table_tex(val, arms, ZETAS; header =
             "% Auto-generated by scripts/e2e_ransac.jl stage table (config $(CFG_NAME), key $(KEY)) from $(src); do not hand-edit."))
         @info "e2e table written" TABLE

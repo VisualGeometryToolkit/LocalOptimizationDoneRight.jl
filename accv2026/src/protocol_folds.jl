@@ -20,7 +20,7 @@ using TOML
 using VisualGeometryToolkitCore: EfficiencyConstant, OutlierHalfwidth, LossWidth, width_axis_name, check_keys
 using VisualGeometryToolkitEval.Tuning: layer_tuning, layered_tuning_entry, tuning_spec, TUNING_TAGS, CoarseFine, tuning_hash
 using VisualGeometryToolkitEval.Experiments:
-    load_run_config, run_key,
+    load_run_config, run_key, read_provenance,
     config_of_record,                   # configs/<name>.toml as a run config
     Product, product_dir, product_output,   # a cell's keyed product: <results>/<dataset>/<matcher>/<problem>/<experiment>/<kind>/<key>
     tier_path, input_path               # a path under an input's tier root; an input opened, checked to be there
@@ -36,11 +36,11 @@ const EXP_ANCHOR_SCALE_INTERFACE = String(TOML.parsefile(_MP_PATH)["anchoring_ab
 """
     anchoring_ablation_path(dir) -> String
 
-The consensus-anchoring ablation's ζ evaluation inside the keyed sequential-CV
+The consensus-anchoring ablation's ζ evaluation inside the keyed product
 directory `dir`: `<dir>/anchoring_ablation-<EXP_ANCHOR_SCALE_INTERFACE>/zeta_evaluation.jld2`,
 named by the scale interface it evaluates (a change of it is a new artifact). The
-one path rule: the writer (run_sequential_cv.jl `--stage=anchoring`) and the
-reader (registry.jl `EXP_ANCHOR_WITHOUT`) both call it.
+one path rule: the writer (run_sequential_cv.jl `--stage=anchoring --anchoring-out`) and
+the reader ([`anchoring_product`](@ref), registry.jl `EXP_ANCHOR_WITHOUT`) both call it.
 """
 anchoring_ablation_path(dir::AbstractString) =
     joinpath(dir, "anchoring_ablation-" * EXP_ANCHOR_SCALE_INTERFACE, "zeta_evaluation.jld2")
@@ -222,9 +222,21 @@ that does declares it itself, which re-keys it.
 """
 function operating_points_run(config_name::AbstractString)
     cfg = fold_sequential_cv!(config_of_record(config_name))
+    produced_output = _produced_output_sha256(sequential_cv_product(cfg))
     delete!(cfg["sequential_cv"], "objective_matched")
     delete!(cfg["sequential_cv"], "zero_clamp")
-    return sequential_cv_product(cfg).key
+    key = sequential_cv_product(cfg).key
+    # once the cell is produced, the hash of its outputs as recorded (Eval's rule for an upstream
+    # product): operating points produced again with other outputs re-key every consumer
+    return isempty(produced_output) ? key : key * "+output:" * produced_output
+end
+
+# The content hash a produced product recorded of its outputs ("" before it is produced).
+_produced_output_sha256(p::Product) = try
+    prov = read_provenance(product_dir(p))
+    get(prov, "run_key", "") == p.key ? string(get(prov, "output_sha256", "")) : ""
+catch
+    ""
 end
 
 """
@@ -254,6 +266,22 @@ end
 
 "The completion mark of a budget cell: the scene files and arms it holds, written last."
 const BUDGET_MANIFEST = "scenes.toml"
+
+"""
+    anchoring_product(cfg) -> Product
+
+The keyed product of the consensus-anchoring ablation of a folded sequential-CV cell `cfg`
+(fig3's): `<results>/<dataset>/<matcher>/<problem>/Miscalibration/anchoring/<key>`, keyed by
+the scale interface it evaluates and that cell's product (its operating points, as an upstream
+product: re-tuned operating points re-key the ablation), its output the ablation's ζ evaluation
+([`anchoring_ablation_path`](@ref)).
+"""
+function anchoring_product(cfg)
+    e = cfg["experiment"]
+    return Product(join((e["dataset"], e["matcher"], e["problem"], "Miscalibration"), "/"), "anchoring",
+                   Dict{String,Any}("anchoring_ablation" => Dict{String,Any}("scale_interface" => EXP_ANCHOR_SCALE_INTERFACE));
+                   output = anchoring_ablation_path(""), upstream = Dict("operating_points" => sequential_cv_product(cfg)))
+end
 
 """
     budget_product(cfg) -> Product
@@ -304,10 +332,11 @@ end
     e2e_product(cfg) -> Product
 
 The keyed product of a folded end-to-end cell:
-`<results>/<dataset>/<matcher>/<problem>/EndToEnd/e2e/<key>`, its live runs (`live.jld2`) and
-their scene-averaged summary (`summary.tsv`, written last).
+`<results>/<dataset>/<matcher>/<problem>/EndToEnd/e2e/<key>`, its live runs (`live.jld2`); their
+scene-averaged summary beside SupeRANSAC's rows is its own product (src/superansac.jl
+`e2e_summary_product`).
 """
-e2e_product(cfg) = cell_product(cfg, "EndToEnd", "e2e"; output = "summary.tsv")
+e2e_product(cfg) = cell_product(cfg, "EndToEnd", "e2e"; output = "live.jld2")
 e2e_cell_dir(cfg) = product_dir(e2e_product(cfg))
 
 """
@@ -361,7 +390,8 @@ held as a config value:
 - `scorer_of`: a `[sequential_cv] scorer_of` cell's scorer cell (its product: its key and,
   once produced, its output's hash);
 - `operating_points`: the operating points a consumer evaluates (`[operating_points]
-  miscal_config`: that cell's key without its opt-in variants, [`operating_points_run`](@ref);
+  miscal_config`: that cell's key without its opt-in variants and its produced output's hash,
+  [`operating_points_run`](@ref);
   an explicit `sidecar`: its keyed directory's name);
 - `e2e`, `superansac`: a timing cell's timed e2e cell and that cell's SupeRANSAC
   cell (their products; src/e2e_timing.jl).

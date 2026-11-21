@@ -209,7 +209,7 @@ draw is its own sample) and certifies them against the pool's `total_samples`
 stamp. ETH3D-F and HEB-H certify; PT-E-SIFT-4K_pf3 does not (276 of 46,200 pairs
 hold an E solve whose duplicated root reads like a repeated draw), so this tool
 replays the generator's seeded streams and writes the exact starts as derived
-data under `<results>/phototourism/sift/E/PoolSamples/samples-<key>/` (give a
+data under `<results>/phototourism/sift/E/PoolSamples/samples/<key>/` (give a
 scene's file as `sample_starts(pool; derived = …)`). The paper's budget cells
 count MODELS (`configs/sample_budget_protocol.toml`), so they read no sample
 starts; a `:samples` budget and RANSACScoringDoneRight's scoring-only budget
@@ -313,10 +313,10 @@ simply runs:
 | basin `operating_points.jld2` (mode "basin") in `phototourism/sift/E/Basin/sequential-cv/<key>/` of `configs/pt_e_basin.toml` — its scorer READ from PT-E's (`scorer_of`) — then the ladder `BasinLadder/basin-ladder/<key>/ladder.jld2` (keyed by the basin cell's run and `configs/protocol.toml` `[basin_ladder]`, src/protocol_folds.jl `ladder_cell`; the sidecar's test side; perturbations from `stable_seed(seed, scene, pair, δ)`) | `fig2_basin.jl --stage=basin_cv`, `--stage=ladder_test` |
 | HEB-H `operating_points.jld2` in `heb/sift/H/Miscalibration/sequential-cv/<key>/` of `configs/heb_h_miscal.toml` | `supp_H_miscal.jl` (all stages) |
 | ETH3D-F `operating_points.jld2` in the keyed dir of `configs/accv2026_eth_f_miscal.toml` (its pools regenerated at the current pool format first) | `supp_ETH_F_miscal.jl --stage=cv` |
-| the selection-only M-bundle `Miscalibration/sel-miscal-<key>/bundle.jld2` of `configs/pt_e_sel_miscal.toml` | `fig1_sel_miscal.jl --stage=produce` |
-| the polishing run `Polish/polish-<key>/polish_test.jld2` (nothing tuned; E_LO checked pair for pair against pt_e_miscal's sidecar) | `polish.jl` |
-| the partition-anchoring ablation evaluation `anchoring_ablation-fixed/zeta_evaluation.jld2` inside fig3's keyed dir (NEW: the anchoring figure's WITHOUT side is now regenerated — see below) | `fig_anchoring.jl --stage=evaluation` (GPU), then `--stage=render` — AFTER `fig3_composed_miscal.jl --stage=cv` |
-| everything consuming the above: the keyed `budget-<key>` cells, the oracle floors (the floors' `sources` check refuses a floor computed on other pools or test scenes), the timing runs, the keyed end-to-end cell `e2e-<key>` and the SupeRANSAC cell `superansac-<key>` (its inputs, `loss_width_cv.jld2`, `zeta_<scene>.jld2`) | `fig4_budget.jl`, `supp_*_budget.jl`, `supp_*_miscal.jl --stage=oracle`, `timing_table.jl`, `e2e_ransac.jl --config=pt_e_e2e_table`, `superansac_e2e.jl` (all stages) |
+| the selection-only M-bundle `Miscalibration/sel-miscal/<key>/bundle.jld2` of `configs/pt_e_sel_miscal.toml` | `fig1_sel_miscal.jl --stage=produce` |
+| the polishing run `Polish/polish/<key>/polish_test.jld2` (nothing tuned; E_LO checked pair for pair against pt_e_miscal's sidecar) | `polish.jl` |
+| the partition-anchoring ablation evaluation `Miscalibration/anchoring/<key>/anchoring_ablation-fixed/zeta_evaluation.jld2`, keyed by fig3's sequential-CV product (NEW: the anchoring figure's WITHOUT side is now regenerated — see below) | `fig_anchoring.jl --stage=evaluation` (GPU), then `--stage=render` — AFTER `fig3_composed_miscal.jl --stage=cv` |
+| everything consuming the above: the keyed `SampleBudget/budget/<key>` cells, the oracle floors (the floors' `sources` check refuses a floor computed on other pools or test scenes), the timing runs, the keyed end-to-end cell `EndToEnd/e2e/<key>` (and its `e2e-summary/<key>`) and the SupeRANSAC cell `SupeRANSAC/superansac/<key>` (its inputs, `loss_width_cv.jld2`, `zeta_<scene>.jld2`) | `fig4_budget.jl`, `supp_*_budget.jl`, `supp_*_miscal.jl --stage=oracle`, `timing_table.jl`, `e2e_ransac.jl --config=pt_e_e2e_table`, `superansac_e2e.jl` (all stages) |
 
 The ζ EVALUATION ladder stays `configs/miscal_protocol.toml`; the coverage
 windows of the tuning entries that read it out carry the ladder's reach
@@ -451,7 +451,7 @@ in its config of record:
 - the pairs: `[timing] sample`, VisualGeometryToolkitEval's unit sampling (the
   vocabulary of the cross-validations' sides) over the e2e cell's test units —
   stratified by scene, 2 % of each of the 11 test scenes (44 pairs, 484 in
-  all), drawn pair ids in `timing-<key>/sample.toml`;
+  all), drawn pair ids in `EndToEnd/timing/<key>/sample.toml`;
 - the process: one fresh Julia process per repeat, `numactl --physcpubind=<cpu>
   --membind=<numa_node> julia -t 1 --gcthreads=1` with BLAS/OpenMP at one
   thread (`[timing.pinning]`); the worker refuses any other affinity;

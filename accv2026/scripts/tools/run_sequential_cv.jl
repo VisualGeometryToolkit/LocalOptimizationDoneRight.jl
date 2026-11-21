@@ -567,7 +567,8 @@ function run_anchoring()
     VgtkCore.SCALE_INTERFACE_TAGS[iface] === VgtkCore.FixedScale ||
         error("miscal_protocol.toml [anchoring_ablation] scale_interface = $(repr(iface)): " *
               "the sequential CV implements the \"fixed_scale\" interface only")
-    out = anchoring_ablation_path(OUTDIR)
+    # the ablation's own keyed product directory (scripts/fig_anchoring.jl), else this cell's
+    out = anchoring_ablation_path(cli_option(ARGS, "anchoring-out", OUTDIR))
     isfile(out) && (@info "anchoring: artifact exists — skipping (delete to re-run)" out; return)
     isfile(SIDECAR_F) || error("no sidecar at $SIDECAR_F — run the evaluate stage first")
     tk = load_tuning_artifact(SIDECAR_F)

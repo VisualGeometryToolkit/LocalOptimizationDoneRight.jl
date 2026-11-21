@@ -5,13 +5,13 @@
 # (configs/polish_pt_e.toml; the tool is scripts/tools/run_polish.jl.)
 #
 # STAGES
-#   test     (CPU) — every polish of every source's LO output on the test side
-#                    → polish_test.jld2 (nothing is tuned: L2 on the scorer's
-#                    inliers has no parameter; an optional TLS polish runs at
-#                    the deployed TLS-IRLS arm's own CV'd width)
-#                    (E_LO checked pair for pair against the sidecar's ζ = 1 errors)
-#   summary  (CPU) — per (source, polisher): mAA@10 / median before and after,
-#                    improved / degraded rates, displacement quantiles → summary.tsv
+#   test     (CPU) — the keyed product Polish/polish/<key>: every polish of every source's
+#                    LO output on the test side → polish_test.jld2 (nothing is tuned: L2 on
+#                    the scorer's inliers has no parameter; an optional TLS polish runs at
+#                    the deployed TLS-IRLS arm's own CV'd width; E_LO checked pair for pair
+#                    against the sidecar's ζ = 1 errors), then per (source, polisher):
+#                    mAA@10 / median before and after, improved / degraded rates,
+#                    displacement quantiles → summary.tsv (its output)
 #   render   (CPU) — the ECDF of the per-pair error CHANGE e_polished − e_LO
 #                    (negative = the polish helped), one curve per source
 #                    → paper/figures ([render] panel_diff)
@@ -62,7 +62,9 @@ STAGES = Stage[
     Stage(:test, "every polish of every source's LO output on the test side and its before/after accuracy and displacement " *
                  "(config $(CFG_NAME), key $(KEY)) -> $(SUMF)";
           items = () -> [PRODUCT], product = identity,
-          run = p -> produce(_ -> (isfile(TESTF) || _tool(); _summary(); nothing), p; driver = "run_polish.jl", config_source = CFG_PATH,
+          # the polish is resumed from an interrupted run's complete polish_test.jld2, unless --force
+          run = p -> produce(_ -> (("--force" in ARGS || !isfile(TESTF)) && _tool(); _summary(); nothing), p;
+                             driver = "run_polish.jl", config_source = CFG_PATH,
                              inputs = [miscal_sidecar_of(String(CFG["operating_points"]["miscal_config"]))])),
     Stage(:render, "ECDF of the per-pair error change -> $(PANEL_DIFF)"; check = _render),
 ]

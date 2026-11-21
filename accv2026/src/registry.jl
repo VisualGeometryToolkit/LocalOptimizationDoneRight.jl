@@ -98,11 +98,12 @@ const EXP_MISCAL_DIR     = dirname(EXP_MISCAL_SIDECAR)
 # ONE tuning, two evaluations of its operating points: WITH = fig3's own ζ evaluation
 # (partition-anchored); WITHOUT = the ablation evaluation under the scale
 # interface of configs/miscal_protocol.toml [anchoring_ablation]
-# (`EXP_ANCHOR_SCALE_INTERFACE`, src/protocol_folds.jl), inside fig3's
-# keyed run directory (a new fig3 key is a new ablation) and named by that
-# interface (a change of it is a new artifact).
+# (`EXP_ANCHOR_SCALE_INTERFACE`, src/protocol_folds.jl), its own keyed product
+# with fig3's sequential-CV product as its upstream (re-tuned operating points
+# are a new ablation) and named by that interface (a change of it is a new artifact).
 const EXP_ANCHOR_WITH        = EXP_MISCAL_SIDECAR
-const EXP_ANCHOR_WITHOUT     = anchoring_ablation_path(EXP_MISCAL_DIR)
+const EXP_ANCHOR_PRODUCT     = anchoring_product(fold_sequential_cv!(config_of_record("pt_e_miscal")))
+const EXP_ANCHOR_WITHOUT     = product_output(EXP_ANCHOR_PRODUCT)
 
 # --- timing --------------------------------------------------------------------
 # Table 1's per-call LO timings: a RESULT, in the keyed directory of

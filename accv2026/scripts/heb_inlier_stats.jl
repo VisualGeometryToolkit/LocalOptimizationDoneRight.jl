@@ -15,7 +15,7 @@
 #
 # STAGES
 #   counts  (CPU) — per-pair (correspondences, GT inliers) of every test pair
-#                   → <results>/heb/sift/H/DatasetStats/heb-stats-<key>/counts.jld2
+#                   → <results>/heb/sift/H/DatasetStats/heb-stats/<key>/counts.jld2
 #
 #   julia --project=. scripts/heb_inlier_stats.jl [--plan] [--stage=NAME] [--force]
 # =============================================================================

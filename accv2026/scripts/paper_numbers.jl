@@ -7,7 +7,7 @@
 #
 # STAGES
 #   numbers (CPU) — every macro's value, with the result each was read from
-#                   → <results>/PaperNumbers/numbers-<key>/numbers.toml
+#                   → <results>/PaperNumbers/numbers/<key>/numbers.toml
 #                   (keyed by the config AND the keyed runs it reads, so a
 #                   re-keyed cell re-keys the numbers)
 #   emit    (CPU) — the values as VisualGeometryToolkitEval number macros (write_numbers),

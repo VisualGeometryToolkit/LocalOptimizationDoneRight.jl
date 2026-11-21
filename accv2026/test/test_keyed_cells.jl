@@ -28,8 +28,8 @@ try
     @test upstream_products(cfg) == Dict("operating_points" => operating_points_run("pt_e_miscal"))   # a re-tune re-keys it
     p = timing_product(cfg)
     @test d == product_dir(p) && basename(dirname(d)) == "timing" && basename(d) == p.key
-    nop = delete!(deepcopy(cfg), "operating_points")
-    @test timing_product(nop).key != p.key
+    alone = Product(p.experiment, p.name, cfg; output = p.output)   # the same record, no upstream folded in
+    @test alone.key != p.key
 end
 
 @testset "Fig 1: keyed by its config, its tuning spec and the ζ ladder" begin

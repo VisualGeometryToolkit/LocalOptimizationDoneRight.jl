@@ -77,7 +77,7 @@ function sequential_cv_stage(name::Symbol, cfg::AbstractDict, cfg_path::Abstract
         return nothing
     end
     return Stage(name, "sequential CV :$p (config $(basename(cfg_path)), key $(product.key)) -> $(product_output(product))";
-                 items = () -> [product], product = identity,
+                 items = () -> [sequential_cv_product(cfg)], product = identity,   # listed when the stage runs
                  run = q -> produce(cv, q; driver = "run_sequential_cv.jl", config_source = cfg_path, inputs = [pool_path(cfg)]))
 end
 
@@ -324,7 +324,7 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString; smoke
     push!(stages, smoke ?
         Stage(:budget, "$tag budget smoke run -> $(smokedir)"; check = () -> (run_budget(smokedir); nothing)) :
         Stage(:budget, "$tag budget curves at deployed optima (config $(basename(cfg_path)), key $(key)) -> $(outdir)";
-              items = () -> [product], product = identity,
+              items = () -> [budget_product(cfg)], product = identity,   # listed when the stage runs
               run = q -> produce(run_budget, q; driver, config_source = cfg_path)))
     push!(stages, render_stage(:render, panel, rnd["legend"], get(rnd, "rows", "med,maa")))
     if haskey(rnd, "time")
@@ -432,9 +432,11 @@ function scoring_pool_stages(cfg_name::AbstractString;
     end
 
     # A pool tree is an input of record under the data root (a produced tier, configs/data_artifacts.toml),
-    # never a product: it is complete when every scene's pool and the tree's run records are there (its
-    # consumers pin its content by [inputs.pool] sha256).
-    _done() = all(isfile(joinpath(outdir, "$(s).jld2")) for s in scenes) && isfile(joinpath(outdir, "_provenance.toml"))
+    # never a product: it is complete when every scene's pool and the tree's run records are there, and a
+    # run of record never stands on a scratch run's tree (its consumers pin its content by [inputs.pool] sha256).
+    _done() = all(isfile(joinpath(outdir, "$(s).jld2")) for s in scenes) &&
+              (prov = try read_provenance(outdir) catch; nothing end; prov !== nothing &&
+               (scratch_run() || get(prov, "scratch", false) !== true))
 
     function _audit()
         tot = 0

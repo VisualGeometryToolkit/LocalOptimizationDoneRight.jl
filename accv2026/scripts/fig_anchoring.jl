@@ -39,20 +39,20 @@ _require_with() = (require_input(EXP_ANCHOR_WITH; what = "WITH-anchoring sidecar
 STAGES = Stage[]
 # The WITHOUT evaluation: fig3's tuned points under the ablation's scale
 # interface, through the sequential-CV tool's anchoring stage (its operating
-# points, ζ ladder and s0 are fig3's sidecar's, checked there). It lives in fig3's keyed product
-# directory, so a new fig3 product is a new ablation; computed when it is not there.
+# points, ζ ladder and s0 are fig3's sidecar's, checked there), its own keyed product whose
+# upstream is fig3's sequential-CV product.
 push!(STAGES, Stage(:evaluation,
         "WITHOUT: fig3's operating points at scale interface \"$(EXP_ANCHOR_SCALE_INTERFACE)\" → $(EXP_ANCHOR_WITHOUT)";
-        check = () -> isfile(EXP_ANCHOR_WITHOUT) || begin
+        items = () -> [anchoring_product(fold_sequential_cv!(config_of_record("pt_e_miscal")))], product = identity,
+        run = p -> produce(p; driver = "run_sequential_cv.jl", config_source = projectdir("configs", "pt_e_miscal.toml"),
+                           inputs = [EXP_ANCHOR_WITH, EXP_POOL_PT_E]) do dir
             _require_with()
-            # The sequential CV's anchoring stage, on fig3's own keyed cell: its
-            # effective config (written by the cv stage) and its directory, which
-            # it writes EXP_ANCHOR_WITHOUT under — the scale interface and the ζ
-            # ladder come from the same TOMLs registry.jl derives the path from.
+            # The sequential CV's anchoring stage on fig3's own keyed cell (its effective
+            # config and its sidecar), written into this product's directory — the scale
+            # interface and the ζ ladder come from the same TOMLs registry.jl derives the path from.
             run_driver("run_sequential_cv.jl", "--config=$(joinpath(EXP_MISCAL_DIR, "_config.toml"))",
-                       "--outdir=$(EXP_MISCAL_DIR)", "--stage=anchoring")
-            isfile(EXP_ANCHOR_WITHOUT) ||
-                error("fig_anchoring: the anchoring stage did not write $(EXP_ANCHOR_WITHOUT)")
+                       "--outdir=$(EXP_MISCAL_DIR)", "--stage=anchoring", "--anchoring-out=$(dir)")
+            return nothing
         end))
 push!(STAGES, Stage(:render,
         "paired with/without-anchoring ζ panel → $(PANEL)";

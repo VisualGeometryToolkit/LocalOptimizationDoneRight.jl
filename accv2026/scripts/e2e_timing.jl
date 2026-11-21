@@ -12,14 +12,15 @@
 # cell's timing.tsv for its time row ([render] time).
 #
 # STAGES
-#   inputs   (CPU) — the drawn pairs (sample.toml), ours' pool records and
-#                    SupeRANSAC's raw-pixel slices of them → timing-<key>/inputs/
-#   repeats  (CPU, ONE pinned core) — repeats × {ours, SupeRANSAC} → <system>_r<r>.jld2
-#   summary  (CPU) — the time row and its run-to-run spread → timing.tsv,
-#                    the machine around every repeat → timing_repeats.toml
+#   timing   (CPU, ONE pinned core) — the keyed product EndToEnd/timing/<key>, in three steps
+#                    (each resumed from what an interrupted run left): the drawn pairs
+#                    (sample.toml), ours' pool records and SupeRANSAC's raw-pixel slices of
+#                    them → inputs/; repeats × {ours, SupeRANSAC} → <system>_r<r>.jld2; the time
+#                    row and its run-to-run spread → timing.tsv (its output), the machine
+#                    around every repeat → timing_repeats.toml
 #
 #   julia --project=. scripts/e2e_timing.jl --config=pt_e_e2e_timing
-#   (the repeats stage needs SupeRANSAC: scripts/superansac_e2e.jl --check; run it
+#   (the repeats need SupeRANSAC: scripts/superansac_e2e.jl --check; run it
 #    on a quiet machine — timing_repeats.toml records the load around every repeat)
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
@@ -76,10 +77,11 @@ function _summary()
 end
 
 # The cell's product: the drawn pairs and their inputs, the pinned repeats (each resumed from what an
-# interrupted run left) and the time row with its spread, written last.
+# interrupted run left; every step again with --force) and the time row with its spread, written last.
+const FORCE = "--force" in ARGS
 function _cell(_)
-    _inputs_done() || timing_inputs!(CFG, OUTDIR)
-    _repeats_done() || _repeats()
+    (FORCE || !_inputs_done()) && timing_inputs!(CFG, OUTDIR)
+    (FORCE || !_repeats_done()) && _repeats()
     _summary()
     return nothing
 end
