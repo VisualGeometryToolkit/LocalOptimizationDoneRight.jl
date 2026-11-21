@@ -29,7 +29,7 @@ include(srcdir("paper_numbers.jl"))   # heb_counts_cell
 const CFG_NAME = "heb_stats"
 const CFG_PATH = projectdir("configs", CFG_NAME * ".toml")
 const CFG = load_run_config(CFG_PATH)
-VgtkCore.check_keys(CFG, ("experiment", "source"), CFG_PATH)
+VgtkCore.check_keys(CFG, ("experiment", "source", "inputs"), CFG_PATH)   # [inputs]: the pool of record, pinned
 # The source cell's cross-validation and the counts' key (src/paper_numbers.jl
 # heb_counts_cell: keyed by the pools and the test side, its scenes and sampling).
 const CELL = heb_counts_cell(CFG)
