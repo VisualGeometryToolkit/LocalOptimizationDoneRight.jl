@@ -1,5 +1,29 @@
 # LocalOptimizationDoneRight changelog
 
+## 0.7.3: on VisualGeometryToolkitCore 0.13; accv2026 on Eval 0.10's storage design and keyed products
+
+A patch: the package's code is unchanged. The package, test and accv2026 (with accv2026/envs/superansac) move to
+VisualGeometryToolkitCore 0.13, which removes the spherical spline and the dilogarithm (unused here) and installs artifacts
+into the artifact store; accv2026 moves to VisualGeometryToolkitEval 0.10, whose paper-project check enforces the storage
+design. No API change.
+
+accv2026 (the paper project, not part of the registered package):
+- Its drivers run again: every result of record is a keyed product (Eval's `Product`, `src/protocol_folds.jl`
+  `cell_product`), `<results>/<dataset>/<matcher>/<problem>/<experiment>/<kind>/<key>`, keyed by the folded config, the
+  products it reads and the code it runs, and produced through `produce`; renders, grids, oracle bounds and pool trees are
+  check stages. This closes 0.7.1's known break (the drivers called Eval 0.8's retired `keyed_cell_dir`, `run_complete`,
+  `fresher`, `keyed_data_dir`). Every result moves to a new key and layout; the runs of record are regenerated and their
+  paper numbers, figures and tables checked against the published ones before they are promoted (the old runs kept).
+- `scripts/fetch_data.jl` installs the published tiers into the artifact store (`VGTK_ARTIFACT_STORE`, or the site
+  profile's `[storage] artifact_store`, selected by `VGTK_SITE`; never a cluster's Julia depot) and links them into the
+  artifact view. data/README.md, REPRODUCE.md and CLAUDE.md name the store and the site profiles' roots.
+- The PhotoTourism E and HEB H scoring pools, never published, are catalogued as `kind = "produced"` entries
+  (`pt_e_pools`, `heb_h_pools`) naming their producer stages. They cover the twelve configs' `[inputs.pool]` by path:
+  no config changes.
+- `test/test_public_paths.jl` runs Eval's `data_policy_violations` over the package (its own regex copy is gone), and
+  `test/test_data_artifacts.jl` drops its copies of the D1 and D4 scans and of the catalog check (A1), which the
+  paper-project check owns. A failing item no longer skips the conventions check.
+
 ## 0.7.2: on VisualGeometryToolkitCore 0.12
 
 A patch: compat only. The package, test and accv2026 move to VisualGeometryToolkitCore 0.12, whose radiometric types (vignetting
