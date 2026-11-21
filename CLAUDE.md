@@ -69,8 +69,7 @@ the accv2026 project).
   profile's `data_root` (`VGTK_SITE`); `results_root()` = `VGTK_RESULTS_ROOT` →
   `data/exp_pro` → the site profile's `results_root`. Machine paths live only
   in VisualGeometryToolkitEval's site profiles; the published inputs' bytes in
-  the artifact store (`VGTK_ARTIFACT_STORE` or the site's `artifact_store`,
-  never a cluster's depot; `scripts/fetch_data.jl`). Both are returned as
+  the artifact store (`accv2026/data/README.md`). Both are returned as
   the LINK paths, because every keyed path of this paper is spelled under them.
   Paths come from `projectdir`/`scriptsdir`/`datadir`, never from `@__DIR__`
   or a machine path. `paper/` is not yet DrWatson's `papers/` (deferred).

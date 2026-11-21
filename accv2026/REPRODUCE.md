@@ -104,10 +104,8 @@ Packaging (author side): `scripts/tools/make_zenodo_artifacts.jl` derives each
 artifact's files from the catalog and builds it with Pkg.Artifacts
 (`create_artifact` → `archive_artifact` → `bind_artifact!`, lazy, the Zenodo
 URLs of the catalog's record ids); `scripts/fetch_data.jl` is the consumer side
-(VisualGeometryToolkitEval DataArtifacts `fetch_data!`: VisualGeometryToolkitCore's
-`install_artifact` into the artifact store — `VGTK_ARTIFACT_STORE` or the site
-profile's `[storage] artifact_store`, never a cluster's depot — then the per-file
-links of the view).
+(VisualGeometryToolkitEval DataArtifacts `fetch_data!`: the artifact store of
+`data/README.md`, then the per-file links of the view).
 
 ## Experiment → figure index
 
