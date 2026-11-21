@@ -616,7 +616,7 @@ its complete table) keys its keyed product
 `[render]` section is excluded, the code it runs is folded in). The products a cell reads key it
 as Eval's upstream products (`upstream_products(cfg)`: a scorer cell, the operating
 points, a timed e2e and SupeRANSAC cell), re-derived from the config names
-(`miscal_sidecar_of`, `operating_points_run`) — keys are derived, never copied.
+(`miscal_sidecar_of`, `operating_points_product`) — keys are derived, never copied.
 
 Pools are the native trees (PT-E-SIFT-4K_pf3, HEB-H-SIFT-4K_pf3,
 `scoring_data_F_pf3` of eth3d/splg); a tree that no longer deserializes natively is converted ONCE,

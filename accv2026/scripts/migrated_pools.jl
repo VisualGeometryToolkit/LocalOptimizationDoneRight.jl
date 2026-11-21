@@ -22,4 +22,4 @@ import VisualGeometryToolkitEval
 include(joinpath(pkgdir(VisualGeometryToolkitEval), "scripts", "migrate_pools.jl"))   # Eval's migrate_pools (its CLI runs only as a program)
 const CFG_NAME = cli_option(ARGS, "config", "")
 isempty(CFG_NAME) && error("migrated_pools.jl: --config=<name> is required (configs/<name>.toml)")
-run_stages(CFG_NAME, pool_migration_stages(CFG_NAME))
+run_stages(CFG_NAME, pool_migration_stages(CFG_NAME; migrate = migrate_pools, pool_format = _pool_format))

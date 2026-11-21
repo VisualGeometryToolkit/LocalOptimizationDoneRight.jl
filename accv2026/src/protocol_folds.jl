@@ -20,7 +20,7 @@ using TOML
 using VisualGeometryToolkitCore: EfficiencyConstant, OutlierHalfwidth, LossWidth, width_axis_name, check_keys
 using VisualGeometryToolkitEval.Tuning: layer_tuning, layered_tuning_entry, tuning_spec, TUNING_TAGS, CoarseFine, tuning_hash
 using VisualGeometryToolkitEval.Experiments:
-    load_run_config, run_key, read_provenance,
+    load_run_config, run_key,
     config_of_record,                   # configs/<name>.toml as a run config
     Product, product_dir, product_output,   # a cell's keyed product: <results>/<dataset>/<matcher>/<problem>/<experiment>/<kind>/<key>
     tier_path, input_path               # a path under an input's tier root; an input opened, checked to be there
@@ -209,35 +209,15 @@ function fold_sequential_cv!(cfg)
 end
 
 """
-    operating_points_run(config_name) -> String
+    operating_points_product(config_name) -> Product
 
-The run of the operating points a CONSUMER folds into its key (budget, e2e and
-polish cells): the key of the named sequential-CV cell's product WITHOUT its opt-in
-variant declarations (`objective_matched`, `zero_clamp`). A declared variant
-moves no other arm's operating point or evaluation — an objective-matched one
-is evaluation-only (never tuned); a zero-clamp one is tuned on its own, at the
-selector's a* the scorer stage fixed before any refiner (the sequential CV
-splices either in) — so a consumer that does not run it keeps its key; one
-that does declares it itself, which re-keys it.
+The operating points a CONSUMER reads (budget, e2e, polish, timing and ladder cells): the named
+sequential-CV cell's product, given to the consumer's key as an UPSTREAM product (Eval's rule:
+its key and, once produced, its outputs' hash, which `produced` checks again) — so a re-tune, or
+the cell produced again with other outputs, re-keys every consumer. Its opt-in variant
+declarations (`objective_matched`, `zero_clamp`) are part of the cell and so of the key.
 """
-function operating_points_run(config_name::AbstractString)
-    cfg = fold_sequential_cv!(config_of_record(config_name))
-    produced_output = _produced_output_sha256(sequential_cv_product(cfg))
-    delete!(cfg["sequential_cv"], "objective_matched")
-    delete!(cfg["sequential_cv"], "zero_clamp")
-    key = sequential_cv_product(cfg).key
-    # once the cell is produced, the hash of its outputs as recorded (Eval's rule for an upstream
-    # product): operating points produced again with other outputs re-key every consumer
-    return isempty(produced_output) ? key : key * "+output:" * produced_output
-end
-
-# The content hash a produced product recorded of its outputs ("" before it is produced).
-_produced_output_sha256(p::Product) = try
-    prov = read_provenance(product_dir(p))
-    get(prov, "run_key", "") == p.key ? string(get(prov, "output_sha256", "")) : ""
-catch
-    ""
-end
+operating_points_product(config_name::AbstractString) = sequential_cv_product(fold_sequential_cv!(config_of_record(config_name)))
 
 """
     fold_budget_cell!(cfg) -> cfg
@@ -390,8 +370,7 @@ held as a config value:
 - `scorer_of`: a `[sequential_cv] scorer_of` cell's scorer cell (its product: its key and,
   once produced, its output's hash);
 - `operating_points`: the operating points a consumer evaluates (`[operating_points]
-  miscal_config`: that cell's key without its opt-in variants and its produced output's hash,
-  [`operating_points_run`](@ref);
+  miscal_config`: that cell's product, [`operating_points_product`](@ref);
   an explicit `sidecar`: its keyed directory's name);
 - `e2e`, `superansac`: a timing cell's timed e2e cell and that cell's SupeRANSAC
   cell (their products; src/e2e_timing.jl).
@@ -405,7 +384,7 @@ function upstream_products(cfg)
         (up["scorer_of"] = sequential_cv_product(fold_sequential_cv!(config_of_record(String(sq["scorer_of"])))))
     op = get(cfg, "operating_points", nothing)
     op === nothing || (up["operating_points"] = haskey(op, "sidecar") ? basename(dirname(String(op["sidecar"]))) :
-                                                operating_points_run(String(op["miscal_config"])))
+                                                operating_points_product(String(op["miscal_config"])))
     if haskey(get(cfg, "timing", Dict{String,Any}()), "e2e_config")
         up["e2e"] = e2e_product(e2e_timed_cell(cfg))
         up["superansac"] = superansac_product(e2e_timed_superansac(cfg))

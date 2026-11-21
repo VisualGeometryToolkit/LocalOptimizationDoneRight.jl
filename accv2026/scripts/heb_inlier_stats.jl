@@ -35,7 +35,6 @@ VgtkCore.check_keys(CFG, ("experiment", "source", "inputs"), CFG_PATH)   # [inpu
 const CELL = heb_counts_cell(CFG)
 const SRC_NAME = CELL.source
 const CV = CELL.cv
-const COUNTS_CFG = CELL.keyed
 const KEY = CELL.key
 const POOL = pool_input(CFG)
 const OUTDIR = CELL.outdir

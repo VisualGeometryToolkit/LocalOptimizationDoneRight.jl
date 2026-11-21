@@ -25,7 +25,8 @@ try
     d = timing_cell_dir(cfg)
     @test under(d, results_root())
     @test !under(d, data_root())
-    @test upstream_products(cfg) == Dict("operating_points" => operating_points_run("pt_e_miscal"))   # a re-tune re-keys it
+    up = upstream_products(cfg)   # a re-tune re-keys it
+    @test collect(keys(up)) == ["operating_points"] && up["operating_points"].key == operating_points_product("pt_e_miscal").key
     p = timing_product(cfg)
     @test d == product_dir(p) && basename(dirname(d)) == "timing" && basename(d) == p.key
     alone = Product(p.experiment, p.name, cfg; output = p.output)   # the same record, no upstream folded in
@@ -47,7 +48,7 @@ end
     lc = ladder_cell("pt_e_basin")
     d = ladder_cell_dir(lc)
     @test under(d, results_root())
-    @test upstream_products(lc) == Dict("operating_points" => operating_points_run("pt_e_basin"))
+    @test upstream_products(lc)["operating_points"].key == operating_points_product("pt_e_basin").key
     @test basename(dirname(d)) == "basin-ladder" && basename(d) == ladder_product(lc).key
 end
 

@@ -31,6 +31,7 @@ import VisualGeometryToolkitCore as VgtkCore
 using VisualGeometryToolkitCore: JeffreysPrior, FlatLabelPrior   # the Student-t scorer's priors
 using DrWatson
 using JLD2, TOML
+using VisualGeometryToolkitEval: scratch_record   # a tree that holds a scratch run's records
 import VisualGeometryToolkitCore   # check_keys: the figure configs' key check
 include(srcdir("config.jl"))
 include(srcdir("common.jl"))
@@ -239,9 +240,7 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString; smoke
         # The arm's kind (the roster's) is the axis its tuned native lives on.
         arm_cfg(s) = s.kind isa EfficiencyConstant ? cfgf(s.lo) : cfgf(s.lo; nat_ref = s.ref, nat_axis = s.kind)
         mkpath(outdir)
-        done_scenes = String[]
         for (sc, load_test) in test_loaders()
-            push!(done_scenes, sc)
             out_f = joinpath(outdir, "$sc.jld2")
             have = isfile(out_f) ? collect(String, JLD2.load(out_f, "arms")) : String[]
             missing_arms = setdiff(bases, have)
@@ -302,7 +301,7 @@ function budget_cell_stages(tag::AbstractString, cfg_name::AbstractString; smoke
         end
         # the completion mark, written last: the scene files and the arms they hold
         open(joinpath(outdir, BUDGET_MANIFEST), "w") do io
-            TOML.print(io, Dict("scenes" => done_scenes, "arms" => bases))
+            TOML.print(io, Dict("scenes" => first.(test_loaders()), "arms" => bases))
         end
         return Produced(; inputs = [pool, sidecar])
     end
@@ -435,8 +434,7 @@ function scoring_pool_stages(cfg_name::AbstractString;
     # never a product: it is complete when every scene's pool and the tree's run records are there, and a
     # run of record never stands on a scratch run's tree (its consumers pin its content by [inputs.pool] sha256).
     _done() = all(isfile(joinpath(outdir, "$(s).jld2")) for s in scenes) &&
-              (prov = try read_provenance(outdir) catch; nothing end; prov !== nothing &&
-               (scratch_run() || get(prov, "scratch", false) !== true))
+              isfile(joinpath(outdir, "_provenance.toml")) && (scratch_run() || !scratch_record(outdir))
 
     function _audit()
         tot = 0
@@ -473,14 +471,15 @@ end
 
 
 """
-    pool_migration_stages(cfg_name) -> Vector{Stage}
+    pool_migration_stages(cfg_name; migrate, pool_format) -> Vector{Stage}
 
 The POOL MIGRATION cell of `configs/<cfg_name>.toml`: the pool tree of record its
 `[inputs.pool]` names, carried to the current pool format into the NEW tree
 `[experiment] pool_dir` (both relative to their tier roots). Every file of the source tree
 but its run records and its subdirectories (an archived copy) is hard-linked into the new tree, and
-VisualGeometryToolkitEval's `migrate_pools` (scripts/migrate_pools.jl, one `Pools.migrate_pool`
-per light pool: verified bit for bit, then renamed over the link) rewrites each light pool in
+VisualGeometryToolkitEval's `migrate_pools` (`migrate`; scripts/migrate_pools.jl, one `Pools.migrate_pool`
+per light pool: verified bit for bit, then renamed over the link; `pool_format` its light-pool
+test, which names the scenes) rewrites each light pool in
 the new tree; the residuals stay linked (`pool_key` binds them, unchanged). The source tree is
 never written. The new tree's run records (`producer = true`) are written last.
 
@@ -489,7 +488,7 @@ never written. The new tree's run records (`producer = true`) are written last.
                     scratch run's tree: it migrates and checks it again, and records it)
     audit   (CPU) — every scene readable at the current pool format (a real read)
 """
-function pool_migration_stages(cfg_name::AbstractString)
+function pool_migration_stages(cfg_name::AbstractString; migrate, pool_format)
     cfg_path = projectdir("configs", cfg_name * ".toml")
     cfg = load_run_config(cfg_path)
     key = run_key(cfg)
@@ -497,21 +496,21 @@ function pool_migration_stages(cfg_name::AbstractString)
     from = cfg["inputs"]["pool"]["path"]
     _records(f) = f in ("_config.toml", "_provenance.toml", "_dirty.patch", "_MIGRATED.toml")
     # The scenes: the source's light pools (Eval's `_pool_format`, scripts/migrate_pools.jl), read when a stage runs.
-    _scenes(dir) = sort([f[1:end-5] for f in readdir(dir) if endswith(f, ".jld2") && !_records(f) &&
-                         Base.invokelatest(_pool_format, joinpath(dir, f)) !== nothing])
+    _scenes(dir) = sort([f[1:end-5] for f in readdir(dir) if endswith(f, ".jld2") &&
+                         Base.invokelatest(pool_format, joinpath(dir, f)) !== nothing])
     _record() = try read_provenance(dst) catch; nothing end
     function _done()
         prov = _record()
         prov === nothing && return false
         get(prov, "run_key", "") == key || return false                  # migrated from this config's source pin
-        get(prov, "scratch", false) === true && !scratch_run() && return false
+        scratch_run() || !scratch_record(dst) || return false
         src = input_path(cfg, "pool")
         return all(isfile(joinpath(dst, "$(s).jld2")) for s in _scenes(src))
     end
     function _migrate()
         src = input_path(cfg, "pool")           # the tree of record it migrates, checked against its digest
         prov = _record()
-        if prov !== nothing && get(prov, "scratch", false) === true && !scratch_run()
+        if prov !== nothing && !scratch_run() && scratch_record(dst)
             # a scratch run's records on a tree of record: the tree is migrated (and checked) again below
             @warn "$(dst): a scratch run's records, replaced by this run of record's"
             foreach(f -> rm(joinpath(dst, f); force = true), ("_config.toml", "_provenance.toml"))
@@ -531,7 +530,7 @@ function pool_migration_stages(cfg_name::AbstractString)
                 cp(a, b)
             end
         end
-        n = Base.invokelatest(migrate_pools, dst; apply = true)
+        n = Base.invokelatest(migrate, dst; apply = true)
         n.failed == 0 || error("$(cfg_name): $(n.failed) pool(s) failed to migrate (the log above)")
         write_run_records(dst, cfg; driver = "migrated_pools.jl", config_source = cfg_path, key,
                           inputs = [src], producer = true)   # a NEW pool tree under the data root

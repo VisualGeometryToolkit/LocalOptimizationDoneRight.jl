@@ -43,7 +43,7 @@ STAGES = Stage[]
 # upstream is fig3's sequential-CV product.
 push!(STAGES, Stage(:evaluation,
         "WITHOUT: fig3's operating points at scale interface \"$(EXP_ANCHOR_SCALE_INTERFACE)\" → $(EXP_ANCHOR_WITHOUT)";
-        items = () -> [anchoring_product(fold_sequential_cv!(config_of_record("pt_e_miscal")))], product = identity,
+        items = () -> [EXP_ANCHOR_PRODUCT], product = identity,
         run = p -> produce(p; driver = "run_sequential_cv.jl", config_source = projectdir("configs", "pt_e_miscal.toml"),
                            inputs = [EXP_ANCHOR_WITH, EXP_POOL_PT_E]) do dir
             _require_with()
