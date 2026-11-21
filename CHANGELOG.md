@@ -1,5 +1,10 @@
 # LocalOptimizationDoneRight changelog
 
+## 0.7.2: on VisualGeometryToolkitCore 0.12
+
+A patch: compat only. The package, test and accv2026 move to VisualGeometryToolkitCore 0.12, whose radiometric types (vignetting
+fields, the environment light) moved to VisualRadiometryToolkitCore; this package uses none of them. No API change.
+
 ## 0.7.1: on VisualGeometryToolkitCore 0.11
 
 A patch: compat only. The package, test and accv2026 move to the registry latest of the stack: VisualGeometryToolkitCore

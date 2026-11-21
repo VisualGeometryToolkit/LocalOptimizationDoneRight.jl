@@ -1,5 +1,6 @@
-docs-pass: a14df07
+docs-pass: 48818ef
 landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.1 once main's Docs job deploys it)
+(a compat-only patch on VisualGeometryToolkitCore 0.12: no page, docstring, README line or example names a stack version or a moved name — checked by search; the docs build is part of the release gate)
 
 # 0.7.1 docs review, at a14df07
 
