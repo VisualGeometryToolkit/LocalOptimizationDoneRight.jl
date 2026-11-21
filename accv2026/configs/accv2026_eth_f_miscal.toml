@@ -21,7 +21,7 @@ problem = "F"
 # RELATIVE to data_root() (data/README.md) — machine-portable identity.
 # 2026-09-08: the NATIVE pool tree (scoring_data_{E,F}; the *_vgc07 copies are a
 # stale layout and a different pool generation — the runs on them are superseded).
-pool_dir = "datasets/eth3d/derived/splg/scoring_data_F_pf3"   # pool format 3 (configs/eth_f_pools.toml)
+pool_dir = "datasets/eth3d/derived/splg/scoring_data_F_pf6"   # pool format 6 (configs/eth_f_pools_v6.toml)
 oracle_tag = "ETH_F"
 
 # Protocols of record folded into the run key (src/protocol_folds.jl): the
@@ -68,14 +68,13 @@ rows = ["maa"]
 
 # ---- the inputs of record (VisualGeometryToolkitEval Reproduce: `missing_inputs` checks each
 # path under the data root before a launch, and its content before a run). Each `sha256` is
-# VisualGeometryToolkitEval's tree_sha256 of the directory, computed read-only on the author's
-# data root on 2026-11-12 (accv2026 6bfe1bc). A pool tree's `_v3/` directory is an
-# archived earlier copy kept beside the pool (2026-10-02..06; the pool readers open
-# `<scene>.jld2` by name and never read it): not part of the pool of record, so
-# `sha256_exclude` leaves it out.
+# VisualGeometryToolkitEval's tree_sha256 of the directory. The pool trees are the format-6
+# ones (scripts/migrated_pools.jl), their digests computed read-only on the data root on
+# 2026-11-21; a tree's run records (`_config.toml`, `_provenance.toml`) are left out of
+# its digest (`sha256_exclude`): its run of record rewrites them, never a pool.
 [inputs.pool]
-tier = "eth3d_f_pools_1k"
-path = "datasets/eth3d/derived/splg/scoring_data_F_pf3"
-sha256 = "0438172b08d3009ef8b4b9c163d946308069ffc49e6e784248d5e2ff8f541936"
-sha256_exclude = ["_v3/**"]   # the archived copy, not a pool of record
-provenance = "the frozen ETH3D F scoring pools of record (scripts/scoring_pools.jl --config=eth_f_pools, 2026-10-04; pool format 4), published as the eth3d_f_pools_1k parts"
+tier = "derived"
+path = "datasets/eth3d/derived/splg/scoring_data_F_pf6"
+sha256 = "c9fc6d79820ccf4b7283d324613a3833a4a760bba3cbe952c64b86085aa66259"
+sha256_exclude = ["_config.toml", "_provenance.toml"]   # the tree's run records (rewritten by its run of record), not its pools
+provenance = "the pools of record at pool format 6: scoring_data_F_pf3 migrated by the stage eth_f_pools_v6 (scripts/migrated_pools.jl)"
