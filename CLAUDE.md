@@ -65,8 +65,12 @@ itself in `src/common.jl` (`set_project_root!(projectdir())`, asserted to be
 the accv2026 project).
 
 - Roots: `data_root()` = `VGTK_DATA_ROOT` → `data/exp_raw` (DrWatson
-  `datadir("exp_raw")`: a per-machine link, or the artifact view);
-  `results_root()` = `VGTK_RESULTS_ROOT` → `data/exp_pro`. Both are returned as
+  `datadir("exp_raw")`: a per-machine link, or the artifact view) → the site
+  profile's `data_root` (`VGTK_SITE`); `results_root()` = `VGTK_RESULTS_ROOT` →
+  `data/exp_pro` → the site profile's `results_root`. Machine paths live only
+  in VisualGeometryToolkitEval's site profiles; the published inputs' bytes in
+  the artifact store (`VGTK_ARTIFACT_STORE` or the site's `artifact_store`,
+  never a cluster's depot; `scripts/fetch_data.jl`). Both are returned as
   the LINK paths, because every keyed path of this paper is spelled under them.
   Paths come from `projectdir`/`scriptsdir`/`datadir`, never from `@__DIR__`
   or a machine path. `paper/` is not yet DrWatson's `papers/` (deferred).

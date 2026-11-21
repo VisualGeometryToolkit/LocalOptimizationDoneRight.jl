@@ -14,8 +14,13 @@ author's host two SYMLINKS:
 
 Resolution ladder (VisualGeometryToolkitEval.Experiments, experiments/data.jl;
 bound to this project by src/common.jl's set_project_root!(projectdir())):
-  data_root():    ENV["VGTK_DATA_ROOT"]    -> data/exp_raw -> error
-  results_root(): ENV["VGTK_RESULTS_ROOT"] -> data/exp_pro -> error
+  data_root():    ENV["VGTK_DATA_ROOT"]    -> data/exp_raw -> the site profile's
+                  [storage] data_root (VGTK_SITE) -> the artifact view
+  results_root(): ENV["VGTK_RESULTS_ROOT"] -> data/exp_pro -> the site profile's
+                  [storage] results_root
+A machine's paths live only in VisualGeometryToolkitEval's site profiles
+(configs/sites/<site>.toml, selected by VGTK_SITE); nothing in this project
+names one.
 Both are returned as the link paths (every keyed path is spelled under them).
 Writers refuse a path under data_root() unless declared a producer (the pool
 cells); smoke runs go to data/sims (DrWatson datadir("sims"), gitignored).
@@ -37,7 +42,12 @@ with neither binding:
     julia --project=. scripts/fetch_data.jl --all    # every catalogued artifact
     julia --project=. scripts/fetch_data.jl --list   # the catalog, nothing fetched
 
-downloads them once into the Julia depot and makes
+installs them once into the artifact store — VisualGeometryToolkitCore's
+`artifact_store`: `VGTK_ARTIFACT_STORE`, else the `[storage] artifact_store` of
+the VisualGeometryToolkitEval site profile `VGTK_SITE` names (on the vcai
+cluster its NFS project space), else Core's preference, else the Julia depot,
+which a cluster refuses; a depot that already holds the trees moves them with
+`VisualGeometryToolkitCore.migrate_artifacts` — and makes
 
     exp_raw/  a DIRECTORY, the artifact view (marked `.artifact_view`): per-file
               symlinks into the installed artifact trees, at the paths the
@@ -48,7 +58,7 @@ downloads them once into the Julia depot and makes
 
 An existing binding always wins and is never written to: VGTK_DATA_ROOT /
 VGTK_RESULTS_ROOT, or an author's exp_raw/exp_pro symlink. To rebuild a view,
-delete data/exp_raw and fetch again (the depot copy is reused).
+delete data/exp_raw and fetch again (the store's copy is reused).
 `ACCV2026_ARTIFACTS_TOML=<file>` points the fetch at another copy of the
 bindings (the same hashes, other URLs — e.g. local file:// tarballs in a test).
 The author side is `scripts/tools/make_zenodo_artifacts.jl` (REPRODUCE.md).

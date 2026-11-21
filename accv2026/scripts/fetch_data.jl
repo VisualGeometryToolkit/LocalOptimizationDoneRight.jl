@@ -10,8 +10,11 @@
 #   julia --project=. scripts/fetch_data.jl --only=heb_raw,pt_e_superansac_stored
 #   julia --project=. scripts/fetch_data.jl --list       # the catalog, nothing fetched
 #
-# Each artifact is downloaded once into the Julia depot (sha256 and tree hash
-# verified) and linked file by file into its mount root: data artifacts into
+# Each artifact is installed once into the artifact store (VisualGeometryToolkitCore's
+# `artifact_store`: VGTK_ARTIFACT_STORE, else the `[storage] artifact_store` of the
+# site profile VGTK_SITE names, else Core's preference, else the Julia depot — which
+# a cluster refuses), sha256 and tree hash verified, and linked file by file into
+# its mount root: data artifacts into
 # data/exp_raw (made an artifact view when no data root is bound), results
 # artifacts into results_root() (data/exp_pro is created when no results root
 # is bound). An existing binding wins — VGTK_DATA_ROOT / VGTK_RESULTS_ROOT or
