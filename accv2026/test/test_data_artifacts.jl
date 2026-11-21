@@ -1,12 +1,12 @@
-# test_data_artifacts.jl — the published input data (configs/data_artifacts.toml,
-# Artifacts.toml; VisualGeometryToolkitEval DataArtifacts): every catalog entry is complete and
-# bound lazily to a Zenodo URL (its record's id, a placeholder only for a record
-# without one; never a local path), and the pool producers' scene resolver reads
-# the registered splits.
+# test_data_artifacts.jl — this paper's own rules on its published input data
+# (configs/data_artifacts.toml; VisualGeometryToolkitEval DataArtifacts): the catalog binds the
+# committed Artifacts.toml, its licences and kinds, and the pool producers' scene
+# resolver reads the registered splits. Catalog ⇔ bindings is the paper-project
+# check's A1 (test_paper_project.jl).
 using Test, TOML
 include(joinpath(@__DIR__, "..", "src", "data_artifacts.jl"))
 
-@testset "data artifacts: catalog ⇔ Artifacts.toml" begin
+@testset "data artifacts: the catalog of this paper" begin
     # Checked against the COMMITTED bindings, whatever ACCV2026_ARTIFACTS_TOML says.
     cat = withenv(project_catalog, "ACCV2026_ARTIFACTS_TOML" => nothing)
     @test cat.artifacts_toml == normpath(joinpath(@__DIR__, "..", "Artifacts.toml"))

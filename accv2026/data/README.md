@@ -14,8 +14,9 @@ author's host two SYMLINKS:
 
 Resolution ladder (VisualGeometryToolkitEval.Experiments, experiments/data.jl;
 bound to this project by src/common.jl's set_project_root!(projectdir())):
-  data_root():    ENV["VGTK_DATA_ROOT"]    -> data/exp_raw -> the site profile's
-                  [storage] data_root (VGTK_SITE) -> the artifact view
+  data_root():    ENV["VGTK_DATA_ROOT"]    -> data/exp_raw (a link, or the artifact
+                  view fetch_data.jl makes) -> the site profile's [storage]
+                  data_root (VGTK_SITE) -> error
   results_root(): ENV["VGTK_RESULTS_ROOT"] -> data/exp_pro -> the site profile's
                   [storage] results_root
 A machine's paths live only in VisualGeometryToolkitEval's site profiles

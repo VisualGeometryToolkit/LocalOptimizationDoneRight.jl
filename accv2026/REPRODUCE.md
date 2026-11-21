@@ -21,7 +21,7 @@ runner (`configs/reproduce.toml` is the stage graph),
 SupeRANSAC's), `data/` the `exp_raw`/`exp_pro` symlinks, `paper/` the
 manuscript.
 
-## Data policy (enforced by test/test_data_artifacts.jl)
+## Data policy (enforced by test/test_paper_project.jl)
 
 - **Inputs are immutable.** Everything a driver reads but no stage of this
   project produces — the raw PhotoTourism/HEB/ETH3D inputs, the scoring pools

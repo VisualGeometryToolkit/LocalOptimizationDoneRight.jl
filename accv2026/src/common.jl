@@ -15,7 +15,7 @@
 # =============================================================================
 if !@isdefined(ACCV2026_EXPERIMENTS_COMMON_LOADED)
 
-using VisualGeometryToolkitEval.Experiments: set_driver_context!, set_project_root!
+using VisualGeometryToolkitEval.Experiments: set_driver_context!, set_project_root!, data_root
 using DrWatson: projectdir, scriptsdir
 using TOML
 
@@ -49,10 +49,13 @@ set_project_root!(EXP_PROJECT_ROOT)
 
 # A machine with no data binding gets the published data as artifacts
 # (configs/data_artifacts.toml; scripts/fetch_data.jl makes data/exp_raw the
-# artifact view). Said once here, before a driver's data_root() errors.
-if !haskey(ENV, "VGTK_DATA_ROOT") && !ispath(joinpath(EXP_PROJECT_ROOT, "data", "exp_raw"))
-    @warn "no data root bound (VGTK_DATA_ROOT unset, no data/exp_raw): fetch the published data with " *
-          "`julia --project=. scripts/fetch_data.jl` (REPRODUCE.md, \"On a new machine\")" maxlog = 1
+# artifact view). Said once here, before a driver's data_root() errors; the
+# resolver is Eval's (VGTK_DATA_ROOT, data/exp_raw, the site profile's data_root).
+try
+    data_root()
+catch
+    @warn "no data root bound (VGTK_DATA_ROOT unset, no data/exp_raw, no site profile's data_root): fetch the published " *
+          "data with `julia --project=. scripts/fetch_data.jl` (REPRODUCE.md, \"On a new machine\")" maxlog = 1
 end
 
 # ---- oracle floors -----------------------------------------------------------

@@ -15,8 +15,11 @@ using VisualGeometryToolkitEval.Reproduce: reproduce_script
 
 @testset "paper project" begin
 @testset "paper-project conventions" begin
-    v = paper_project_violations(normpath(joinpath(@__DIR__, ".."));
-                                 papers = ["paper/main.tex", "paper/supplement.tex"])
+    # Against the COMMITTED bindings, whatever ACCV2026_ARTIFACTS_TOML says (the fresh-machine
+    # test's file:// copy has other URLs, which A1 would report).
+    v = withenv("ACCV2026_ARTIFACTS_TOML" => nothing) do
+        paper_project_violations(normpath(joinpath(@__DIR__, "..")); papers = ["paper/main.tex", "paper/supplement.tex"])
+    end
     foreach(x -> @info("paper-project violation", x), v)
     @test isempty(v)
 end
