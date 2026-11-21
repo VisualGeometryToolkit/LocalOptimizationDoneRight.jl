@@ -91,7 +91,10 @@ the accv2026 project).
     the rest.
   - D3: output directories are keyed. No wall-clock stamps, hand-bumped `-vN`
     literals, `-smoke` siblings (smoke runs go to `datadir("sims")`) or
-    unkeyed shared files.
+    unkeyed shared files. A pool tree under the data root is an input of record,
+    not an output: it is named by its pool format (`_pf<N>`, its reader's
+    format of record), pinned by its `sha256` in every consumer's
+    `[inputs.pool]`, and never rewritten (a new format is a new tree).
 - Never write into the results tree of a running regeneration: point a
   worktree's `data/exp_pro` (or `VGTK_RESULTS_ROOT`) at a scratch directory
   before running its tests or drivers.

@@ -484,41 +484,66 @@ per light pool: verified bit for bit, then renamed over the link) rewrites each 
 the new tree; the residuals stay linked (`pool_key` binds them, unchanged). The source tree is
 never written. The new tree's run records (`producer = true`) are written last.
 
-    migrate (CPU) — the new tree; done when every light pool of the source is there at the
-                    current format with the tree's records (a run of record never stands on a
-                    scratch run's tree)
+    migrate (CPU) — the new tree; done when its records name this config's key and every
+                    light pool of the source is there (a run of record never stands on a
+                    scratch run's tree: it migrates and checks it again, and records it)
     audit   (CPU) — every scene readable at the current pool format (a real read)
 """
 function pool_migration_stages(cfg_name::AbstractString)
     cfg_path = projectdir("configs", cfg_name * ".toml")
     cfg = load_run_config(cfg_path)
-    src = input_path(cfg, "pool")               # the tree of record it migrates, checked against its digest
-    dst = joinpath(data_root(), cfg["experiment"]["pool_dir"])
+    key = run_key(cfg)
+    dst = pool_tree(cfg)                        # the NEW tree, [experiment] pool_dir under data_root()
+    from = cfg["inputs"]["pool"]["path"]
     _records(f) = f in ("_config.toml", "_provenance.toml", "_dirty.patch", "_MIGRATED.toml")
-    scenes = sort([f[1:end-5] for f in readdir(src) if endswith(f, ".jld2") && !endswith(f, ".residuals.jld2") && !_records(f)])
+    # The scenes: the source's light pools (Eval's `_pool_format`, scripts/migrate_pools.jl), read when a stage runs.
+    _scenes(dir) = sort([f[1:end-5] for f in readdir(dir) if endswith(f, ".jld2") && !_records(f) &&
+                         Base.invokelatest(_pool_format, joinpath(dir, f)) !== nothing])
+    _record() = try read_provenance(dst) catch; nothing end
     function _done()
-        all(isfile(joinpath(dst, "$(s).jld2")) for s in scenes) || return false
-        prov = try read_provenance(dst) catch; return false end
-        return scratch_run() || get(prov, "scratch", false) !== true
+        prov = _record()
+        prov === nothing && return false
+        get(prov, "run_key", "") == key || return false                  # migrated from this config's source pin
+        get(prov, "scratch", false) === true && !scratch_run() && return false
+        src = input_path(cfg, "pool")
+        return all(isfile(joinpath(dst, "$(s).jld2")) for s in _scenes(src))
     end
     function _migrate()
+        src = input_path(cfg, "pool")           # the tree of record it migrates, checked against its digest
+        prov = _record()
+        if prov !== nothing && get(prov, "scratch", false) === true && !scratch_run()
+            # a scratch run's records on a tree of record: the tree is migrated (and checked) again below
+            @warn "$(dst): a scratch run's records, replaced by this run of record's"
+            foreach(f -> rm(joinpath(dst, f); force = true), ("_config.toml", "_provenance.toml"))
+        end
         mkpath(dst)
+        # an interrupted migration's staging directories (they may hold a residuals copy) go first
+        foreach(d -> rm(d; recursive = true), filter(isdir, readdir(dst; join = true)))
         for f in readdir(src)
             (_records(f) || isdir(joinpath(src, f))) && continue   # a subdirectory (an archived copy) is no pool of the tree
-            ispath(joinpath(dst, f)) || hardlink(joinpath(src, f), joinpath(dst, f))
+            a, b = realpath(joinpath(src, f)), joinpath(dst, f)      # the file itself, through an artifact view's link
+            ispath(b) && continue
+            try
+                hardlink(a, b)
+            catch err
+                err isa Base.IOError || rethrow()
+                @warn "$(f): no hard link into $(dst) ($(sprint(showerror, err))); copied" maxlog = 1
+                cp(a, b)
+            end
         end
         n = Base.invokelatest(migrate_pools, dst; apply = true)
         n.failed == 0 || error("$(cfg_name): $(n.failed) pool(s) failed to migrate (the log above)")
-        write_run_records(dst, cfg; driver = "migrated_pools.jl", config_source = cfg_path, key = run_key(cfg),
+        write_run_records(dst, cfg; driver = "migrated_pools.jl", config_source = cfg_path, key,
                           inputs = [src], producer = true)   # a NEW pool tree under the data root
     end
     function _audit()
+        scenes = _scenes(dst)
         for s in scenes
             length(load_pool(joinpath(dst, "$(s).jld2")).pairs) > 0 || error("AUDIT $(s): pool carries no pairs")
         end
         @info "AUDIT OK" cell = cfg_name scenes = length(scenes) out_dir = dst
     end
-    return [Stage(:migrate, "$(src) → $(dst) at the current pool format, $(length(scenes)) scenes (config $(basename(cfg_path)))";
+    return [Stage(:migrate, "$(from) → $(dst) at the current pool format (config $(basename(cfg_path)), key $(key))";
                   check = () -> _done() || _migrate()),
-            Stage(:audit, "pool contract: all $(length(scenes)) scenes readable at the current pool format -> log"; check = _audit)]
+            Stage(:audit, "pool contract: every scene readable at the current pool format -> log"; check = _audit)]
 end

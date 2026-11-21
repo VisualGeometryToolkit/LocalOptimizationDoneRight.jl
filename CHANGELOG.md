@@ -17,9 +17,16 @@ accv2026 (the paper project, not part of the registered package):
 - `scripts/fetch_data.jl` installs the published tiers into the artifact store (`VGTK_ARTIFACT_STORE`, or the site
   profile's `[storage] artifact_store`, selected by `VGTK_SITE`; never a cluster's Julia depot) and links them into the
   artifact view. data/README.md, REPRODUCE.md and CLAUDE.md name the store and the site profiles' roots.
-- The PhotoTourism E and HEB H scoring pools, never published, are catalogued as `kind = "produced"` entries
-  (`pt_e_pools`, `heb_h_pools`) naming their producer stages. They cover the twelve configs' `[inputs.pool]` by path:
-  no config changes.
+- The pools of record move to pool format 6 (Eval 0.10 reads no other): the stages `pt_e_pools_v6`,
+  `heb_h_pools_v6` and `eth_f_pools_v6` (`scripts/migrated_pools.jl`, configs `*_pools_v6.toml`) carry
+  PT-E-SIFT-4K_pf3, HEB-H-SIFT-4K_pf3 and the published ETH3D scoring_data_F_pf3 into new trees (`*_pf6`) with
+  Eval's `migrate_pools` (each light pool verified bit for bit; the residuals linked, every pool key unchanged; the
+  format-4 trees never written). Every cell's `[inputs.pool]` and `pool_dir` name the format-6 tree and its digest.
+- The pools that are never published are catalogued as `kind = "produced"` entries naming their producer stages:
+  `pt_e_pools`, `heb_h_pools` and the three format-6 trees `pt_e_pools_v6`, `heb_h_pools_v6`, `eth3d_f_pools_v6`.
+  The published eth3d_f_pools_1k stays format 4 (Zenodo 23240469); a fresh machine migrates it after the fetch.
+- accv2026 depends on RANSACScoringDoneRight 0.8.3 (its Core 0.13 release) and on VisualGeometryToolkitIO 0.11.2
+  (the migration's staged writer).
 - `test/test_public_paths.jl` runs Eval's `data_policy_violations` over the package (its own regex copy is gone), and
   `test/test_data_artifacts.jl` drops its copies of the D1 and D4 scans and of the catalog check (A1), which the
   paper-project check owns. A failing item no longer skips the conventions check.
