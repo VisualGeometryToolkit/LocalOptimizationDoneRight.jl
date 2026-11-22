@@ -140,14 +140,14 @@ asset fails it. The narrative tables below say what each experiment is.
 |---|---|---|---|---|---|---|
 | — (colour definitions) | `paper/figures/fig_colors.tex` | static | — | — | — | hand-maintained colour table (`paper/figures/README.md`); the renderers read it and never write it |
 | — (every number macro: `\OursCal`, `\Basin*`, `\Bud*`, `\Anchor*`, `\Pol*`, `\EtoE*`, `\Sel*`, `\HEB*`, the dataset counts, …) | `paper/figures/paper_numbers.tex` | generated | `scripts/paper_numbers.jl` | `configs/paper_numbers.toml` | the results of record of every cell below (each re-derived from its config), the HEB counts of `scripts/heb_inlier_stats.jl` | stages `numbers`, `emit` (run LAST); `test/test_paper_numbers.jl` refuses a hand-typed data number in the prose |
-| `tab:design` | `paper/figures/table_design.tex` | generated | `scripts/timing_table.jl` | `configs/timing_table.toml` | PT-E-SIFT-4K_pf3 (british_museum), the pt_e_miscal operating points | stages `time_pt` (single thread, quiet node) and `design_table` |
-| `fig:basin-ladder` | `paper/figures/panel_basin_matched.tex` | generated | `scripts/fig2_basin.jl` | `configs/pt_e_basin.toml` | PT-E-SIFT-4K_pf3 test side | basin CV, ladder (`configs/protocol.toml` `[basin_ladder]`), render |
+| `tab:design` | `paper/figures/table_design.tex` | generated | `scripts/timing_table.jl` | `configs/timing_table.toml` | PT-E-SIFT-4K_pf6 (british_museum), the pt_e_miscal operating points | stages `time_pt` (single thread, quiet node) and `design_table` |
+| `fig:basin-ladder` | `paper/figures/panel_basin_matched.tex` | generated | `scripts/fig2_basin.jl` | `configs/pt_e_basin.toml` | PT-E-SIFT-4K_pf6 test side | basin CV, ladder (`configs/protocol.toml` `[basin_ladder]`), render |
 | `fig:miscal` | `paper/figures/panel_miscal_grid.tex` | generated | `scripts/fig3_miscal_grid.jl` | `configs/fig3_miscal_grid.toml` | the rows of `scripts/fig3_composed_miscal.jl`, `scripts/supp_ETH_F_miscal.jl`, `scripts/supp_H_miscal.jl` | stage `compose` |
 | `fig:sample-budget` | `paper/figures/panel_sample_budget_grid.tex` | generated | `scripts/fig4_budget_grid.jl` | `configs/fig4_budget_grid.toml` | the rows of `scripts/fig4_budget.jl`, `scripts/supp_ETH_F_budget.jl`, `scripts/supp_H_budget.jl` | stage `compose` |
-| `fig:polish` | `paper/figures/panel_polish_diff.tex` | generated | `scripts/polish.jl` | `configs/polish_pt_e.toml` | PT-E-SIFT-4K_pf3 test side, the pt_e_miscal operating points | stages `test`, `summary`, `render` |
-| `tab:e2e` | `paper/figures/table_e2e.tex` | generated | `scripts/e2e_ransac.jl` | `configs/pt_e_e2e_table.toml` | PT-E-SIFT-4K_pf3 test pairs; SupeRANSAC's rows from `scripts/superansac_e2e.jl` (`configs/pt_e_superansac.toml`) or its stored results; the time row from `scripts/e2e_timing.jl` (`configs/pt_e_e2e_timing.toml`, `[render] time`) | stages `live`, `summary`, `table` |
-| `fig:supp-sel-miscal` | `paper/figures/panel_sel_miscal.tex`, `paper/figures/panel_sel_miscal_maa.tex` | generated | `scripts/fig1_sel_miscal.jl` | `configs/pt_e_sel_miscal.toml` | PT-E-SIFT-4K_pf3, all pairs | stages `produce`, `render` |
-| `fig:supp-anchoring` | `paper/figures/panel_anchoring_paired.tex` | generated | `scripts/fig_anchoring.jl` | `configs/pt_e_miscal.toml` | PT-E-SIFT-4K_pf3 test side | `configs/miscal_protocol.toml` `[anchoring_ablation]` |
+| `fig:polish` | `paper/figures/panel_polish_diff.tex` | generated | `scripts/polish.jl` | `configs/polish_pt_e.toml` | PT-E-SIFT-4K_pf6 test side, the pt_e_miscal operating points | stages `test`, `summary`, `render` |
+| `tab:e2e` | `paper/figures/table_e2e.tex` | generated | `scripts/e2e_ransac.jl` | `configs/pt_e_e2e_table.toml` | PT-E-SIFT-4K_pf6 test pairs; SupeRANSAC's rows from `scripts/superansac_e2e.jl` (`configs/pt_e_superansac.toml`) or its stored results; the time row from `scripts/e2e_timing.jl` (`configs/pt_e_e2e_timing.toml`, `[render] time`) | stages `live`, `summary`, `table` |
+| `fig:supp-sel-miscal` | `paper/figures/panel_sel_miscal.tex`, `paper/figures/panel_sel_miscal_maa.tex` | generated | `scripts/fig1_sel_miscal.jl` | `configs/pt_e_sel_miscal.toml` | PT-E-SIFT-4K_pf6, all pairs | stages `produce`, `render` |
+| `fig:supp-anchoring` | `paper/figures/panel_anchoring_paired.tex` | generated | `scripts/fig_anchoring.jl` | `configs/pt_e_miscal.toml` | PT-E-SIFT-4K_pf6 test side | `configs/miscal_protocol.toml` `[anchoring_ablation]` |
 | `fig:supp-budget-time` | `paper/figures/panel_sample_budget_faceted_time.tex` | generated | `scripts/fig4_budget.jl` | `configs/pt_e_budget.toml` | the pt_e_budget curves and the `scripts/timing_table.jl` per-call times | stage `render_time` |
 
 ### Main paper
@@ -186,8 +186,9 @@ directly or as the runner's stages `pt_e_pools` / `heb_h_pools`. NOTHING is stat
 
 | experiment file | config of record | tree |
 |---|---|---|
-| `scripts/pt_e_pools.jl` | `configs/pt_e_pools.toml` | PT-E-SIFT-4K_pf3 (the pool every main-paper cell reads) |
-| `scripts/heb_h_pools.jl` | `configs/heb_h_pools.toml` | HEB-H-SIFT-4K_pf3 (the budget protocol's test pools) |
+| `scripts/pt_e_pools.jl` | `configs/pt_e_pools.toml` | PT-E-SIFT-4K_pf3 (pool format 4; every main-paper cell reads its format-6 migration PT-E-SIFT-4K_pf6) |
+| `scripts/heb_h_pools.jl` | `configs/heb_h_pools.toml` | HEB-H-SIFT-4K_pf3 (pool format 4; the budget protocol's test pools are its format-6 migration HEB-H-SIFT-4K_pf6) |
+| `scripts/migrated_pools.jl` | `configs/{pt_e,heb_h,eth_f}_pools_v6.toml` | the `*_pf6` trees: each format-4 tree hard-linked into a NEW tree and migrated to pool format 6 (Eval's `migrate_pools`); the source tree is never written |
 | `scripts/scoring_pools.jl` | `--config=<name>`, any two-view pool config (`configs/*_pools.toml`) | the config's `pool_dir` |
 
 ```
@@ -211,7 +212,7 @@ TOML (its `[pool]` table, the 4000-sample targets included).
 --config=<pool config>`). A pool stores no per-model sample id; VisualGeometryToolkitEval
 `Pools.sample_starts(pool)` recovers the boundaries from the record (a repeated
 draw is its own sample) and certifies them against the pool's `total_samples`
-stamp. ETH3D-F and HEB-H certify; PT-E-SIFT-4K_pf3 does not (276 of 46,200 pairs
+stamp. ETH3D-F and HEB-H certify; PT-E-SIFT-4K does not (276 of 46,200 pairs
 hold an E solve whose duplicated root reads like a repeated draw), so this tool
 replays the generator's seeded streams and writes the exact starts as derived
 data under `<results>/phototourism/sift/E/PoolSamples/samples/<key>/` (give a
@@ -234,18 +235,20 @@ does not contain>` — and is NOT migratable: regenerate it. A format-4 or -5 po
 (a tree: VisualGeometryToolkitEval's pool-migration script in its `scripts/`, `DIR --apply`) carries it over to format 6 (it
 validates and compares before writing); there is no format-4 or -5 reader.
 
-**The pools on disk are format 4.** The existing `_pf3` trees (PT-E-SIFT-4K_pf3,
-HEB-H-SIFT-4K_pf3, the ETH3D-F `scoring_data_F_pf3`) and the ETH3D-F pools
-published on Zenodo (record 23240469) are format 4. No driver of the
-wave-10 stack (VisualGeometryToolkitEval 0.8) reads them: migrate each tree with
-`migrate_pool` into a NEW tree (or regenerate it through its producer), and
-re-publish the Zenodo artifact and update `configs/data_artifacts.toml`, before
-any driver runs.
-Regenerate each tree through
-its POOL PRODUCER cell into a NEW out-dir, then point the consuming configs at
-it. The main-paper trees are `scripts/pt_e_pools.jl` (PT-E-SIFT-4K_pf3) and
-`scripts/heb_h_pools.jl` (HEB-H-SIFT-4K_pf3); the ETH3D-F tree is
-`scripts/scoring_pools.jl --config=eth_f_pools`.
+**The pools of record are format 4; the cells read their format-6 migrations.** The `_pf3`
+trees (PT-E-SIFT-4K_pf3, HEB-H-SIFT-4K_pf3, the ETH3D-F `scoring_data_F_pf3`) and the
+ETH3D-F pools published on Zenodo (record 23240469, artifact `eth3d_f_pools_1k`) are
+pool format 4, which no reader of the current stack opens. The stages `pt_e_pools_v6`,
+`heb_h_pools_v6` and `eth_f_pools_v6` (`scripts/migrated_pools.jl`,
+`configs/*_pools_v6.toml`) carry each tree into a NEW tree `*_pf6`: every file of the
+source is hard-linked (copied across file systems), each light pool is migrated by
+VisualGeometryToolkitEval's `migrate_pools` (verified bit for bit, then renamed over the
+link), the residuals stay linked, and the source tree is never written. Every consumer
+config's `[inputs.pool]` names the `*_pf6` tree and its digest (records excluded). The
+published ETH3D-F artifact stays format 4: fetch it, then run `eth_f_pools_v6`.
+Regenerating a tree through its POOL PRODUCER cell (`scripts/pt_e_pools.jl`,
+`scripts/heb_h_pools.jl`, `scripts/scoring_pools.jl --config=eth_f_pools`) writes format 4
+under the producer's out-dir, which its `*_v6` stage then migrates.
 
 A REGENERATED HEB TREE NEEDS NO `_extrinsic` STEP. The current generator stamps
 `gt_convention = "extrinsic"` on every pool and `Loaders.migrate_heb_pool`
@@ -376,11 +379,14 @@ declared in the config).
 |---|---|---|---|
 | `accv2026/data/HEB-H-SIFT-4K_pf3` | 22 | 114.8 GB | `bc9e2ce17ae2d786…` |
 | `accv2026/data/PT-E-SIFT-4K_pf3` | 45 | 1649.2 GB | `d563419d547f16b2…` |
+| `accv2026/data/HEB-H-SIFT-4K_pf6` (2026-11-21; records excluded) | | | `fafbd6478af9922f…` |
+| `accv2026/data/PT-E-SIFT-4K_pf6` (2026-11-21; records excluded) | | | `6d8c26cad4614a9f…` |
 | `accv2026/data/heb_raw` | 10 | 33.1 GB | `d835eceb45aca04f…` |
 | `accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/train` | 84 | 80.8 GB | `629d32dd5cbe5e8a…` |
 | `accv2026/data/ransac_tutorial/RANSAC-Tutorial-Data/val` | 14 | 0.7 GB | `0d8390bcceeeff86…` |
 | `datasets/eth3d/derived/splg/`: the published correspondence tree (`[inputs.eth3d_correspondences]`, configs/eth_f_pools.toml) | 3095 | 0.2 GB | `3377f13f941e3762…` |
 | `datasets/eth3d/derived/splg/scoring_data_F_pf3` | 29 | 18.4 GB | `0438172b08d3009e…` |
+| `datasets/eth3d/derived/splg/scoring_data_F_pf6` (2026-11-21; records excluded) | | | `c9fc6d79820ccf4b…` |
 | `datasets/phototourism/raw_test/RANSAC-Tutorial-Data-Test` | 1096 | 4.1 GB | `97706acab2e9653b…` |
 | `datasets/phototourism/raw_test/imw2020_testdata/_track_verified_recons` | 21 | 0.5 GB | `0d5022a42d9d7ac4…` |
 | `datasets/phototourism/raw_train/_track_verified_recons` | 36 | 4.6 GB | `7ff39334979d0126…` |
@@ -618,8 +624,8 @@ as Eval's upstream products (`upstream_products(cfg)`: a scorer cell, the operat
 points, a timed e2e and SupeRANSAC cell), re-derived from the config names
 (`miscal_sidecar_of`, `operating_points_product`) — keys are derived, never copied.
 
-Pools are the native trees (PT-E-SIFT-4K_pf3, HEB-H-SIFT-4K_pf3,
-`scoring_data_F_pf3` of eth3d/splg); a tree that no longer deserializes natively is converted ONCE,
+Pools are the format-6 trees (PT-E-SIFT-4K_pf6, HEB-H-SIFT-4K_pf6,
+`scoring_data_F_pf6` of eth3d/splg, the `*_pools_v6` stages' migrations of the `_pf3` trees); a tree that no longer deserializes natively is converted ONCE,
 never read through a compatibility layer. Pool
 trees are immutable inputs: regeneration writes NEW dirs; a stale tree is
 retired, not overwritten.
