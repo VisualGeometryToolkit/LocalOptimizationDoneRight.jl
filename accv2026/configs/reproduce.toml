@@ -126,7 +126,7 @@ config = "accv2026/configs/fig3_miscal_grid.toml"
 [[stage]]
 name = "fig2_basin"
 what = "Fig. 1: the basin cell's sequential CV, the δ-perturbed ladder and its panel"
-after = ["pt_e_pools_v6"]
+after = ["fig3_composed_miscal"]   # its scorer is the miscal cell's (pt_e_basin.toml: scorer_of)
 command = ["julia", "-t", "auto", "--project=accv2026", "accv2026/scripts/fig2_basin.jl"]
 driver = "accv2026/scripts/fig2_basin.jl"
 config = "accv2026/configs/pt_e_basin.toml"
