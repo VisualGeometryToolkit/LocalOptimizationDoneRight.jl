@@ -3,7 +3,7 @@
 # =============================================================================
 # scripts/supp_H_miscal.jl — SUPPLEMENT model-class transfer, HEB-H cell:
 # composed score+LO miscalibration (ζ sweep) with the HOMOGRAPHY on the ETH
-# HEB scenes (HEB-H-SIFT-4K_pf3 pools; codimension-2 Sampson residuals) — the
+# HEB scenes (HEB-H-SIFT-4K_pf6 pools; codimension-2 Sampson residuals) — the
 # planar/projective end of the model-class transfer claim.
 #
 # ROSTER: composed_specs(:H) — the loss MECHANISM MATRIX (3 losses ×
@@ -36,7 +36,7 @@
 #         the H roster is loss-mechanism-only, so all three loss-family facets
 #         populate).
 #
-# NO pools stage: the HEB-H-SIFT-4K_pf3 pools are scripts/heb_h_pools.jl's —
+# NO pools stage: the HEB-H-SIFT-4K_pf6 pools are scripts/heb_h_pools.jl's —
 # declared as a require_input instead.
 # =============================================================================
 using DrWatson; @quickactivate "ACCV2026"
@@ -49,6 +49,6 @@ include(srcdir("cell_stages.jl"))   # config + common + registry; the shared tun
 # row every miscal cell gets. This file used to be a
 # hand-rolled copy of that builder.
 run_stages("supp_H_miscal", miscal_cell_stages("heb_h_miscal";
-    pool_what = "HEB-H-SIFT-4K_pf3 scoring pool",
+    pool_what = "HEB-H-SIFT-4K_pf6 scoring pool",
     pool_provenance = "scripts/heb_h_pools.jl (configs/heb_h_pools.toml, both sides of the heb split)",
     cv_stage = :h_cv))

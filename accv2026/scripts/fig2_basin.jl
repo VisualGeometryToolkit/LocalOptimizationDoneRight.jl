@@ -15,7 +15,7 @@
 # multiple anywhere: a common multiple does not translate across losses.
 #
 # DATA INPUTS
-#   pool  : <data root>/accv2026/data/PT-E-SIFT-4K_pf3/<scene>.jld2 (public IMC-PT via
+#   pool  : <data root>/accv2026/data/PT-E-SIFT-4K_pf6/<scene>.jld2 (public IMC-PT via
 #           scripts/tools/generate_scoring_pools.jl — see REPRODUCE.md)
 # STAGES
 #   basin_cv    (GPU, longest tuning of the campaign)  → EXP_BASIN_SIDECAR
@@ -26,8 +26,8 @@ using DrWatson; @quickactivate "ACCV2026"
 using JLD2
 include(srcdir("cell_stages.jl"))   # config + common + registry; the shared tuning stages
 
-require_input(EXP_POOL_PT_E; what = "PT-E-SIFT-4K_pf3 scoring pool",
-              provenance = "scripts/tools/generate_scoring_pools.jl --config=pt_e_pools (public IMC-PT; REPRODUCE.md)")
+require_input(EXP_POOL_PT_E; what = "PT-E-SIFT-4K_pf6 scoring pool (pool format 6)",
+              provenance = "the stage pt_e_pools_v6 (scripts/migrated_pools.jl) of the stage pt_e_pools' tree (public IMC-PT; REPRODUCE.md)")
 
 const PANEL = joinpath(PAPER_FIGDIR, "panel_basin_matched.tex")
 
@@ -41,6 +41,10 @@ const PT_E_BASIN = fold_sequential_cv!(load_run_config(PT_E_BASIN_PATH))
 sequential_cv_dir(PT_E_BASIN) == EXP_BASIN_DIR ||
     error("fig2: pt_e_basin's sequential-CV directory disagrees with registry.jl EXP_BASIN_DIR")
 push!(STAGES, sequential_cv_stage(:basin_cv, PT_E_BASIN, PT_E_BASIN_PATH))
+# The ladder's product, keyed when a stage runs: its key folds the basin CV's recorded output
+# (upstream), which the stage basin_cv of THIS process writes first. registry.jl's EXP_LADDER_PRODUCT
+# is keyed when the module loads, before that output exists on a fresh run.
+ladder_of_record() = ladder_product(ladder_cell("pt_e_basin"))
 function ladder(_)
     require_input(EXP_BASIN_SIDECAR; what = "basin operating points (the Table 1 arms)",
                   provenance = "stage basin_cv of this experiment")
@@ -49,13 +53,13 @@ function ladder(_)
     return nothing
 end
 push!(STAGES, Stage(:ladder_test,
-        "δ-perturbed ladder on the 11 test scenes at the CV'd widths → $(EXP_LADDER_BUNDLE)";
-        items = () -> [EXP_LADDER_PRODUCT], product = identity,
+        "δ-perturbed ladder on the 11 test scenes at the CV'd widths → $(EXP_LADDER_DIR |> dirname)/<key>/ladder.jld2";
+        items = () -> [ladder_of_record()], product = identity,
         run = p -> produce(ladder, p; driver = "run_basin_ladder.jl", config_source = PT_E_BASIN_PATH,
                            inputs = [EXP_BASIN_SIDECAR, EXP_POOL_PT_E])))
 push!(STAGES, Stage(:render,
         "faceted basin matrix → $(PANEL)";
-        check = () -> run_driver("render_basin_faceted.jl", "--bundle=$(EXP_LADDER_BUNDLE)",
+        check = () -> run_driver("render_basin_faceted.jl", "--bundle=$(product_output(ladder_of_record()))",
                                     "--out=$(PANEL)",
                                     "--succ=$(EXP_LADDER_SUCC)",
                                     "--deploy=1",

@@ -21,7 +21,7 @@
 # DATA INPUTS
 #   with    : EXP_ANCHOR_WITH (fig3_composed_miscal.jl stage cv; audited)
 #   without : EXP_ANCHOR_WITHOUT (stage evaluation of this experiment)
-#   pool    : PT-E-SIFT-4K_pf3 (fig3's; the evaluation re-streams its test scenes)
+#   pool    : PT-E-SIFT-4K_pf6 (fig3's; the evaluation re-streams its test scenes)
 # STAGES
 #   evaluation (GPU) → EXP_ANCHOR_WITHOUT (run_sequential_cv.jl --stage=anchoring)
 #   render  (CPU) → figures/panel_anchoring_paired.tex

@@ -16,7 +16,7 @@
 # current guarded engine (same protocol shape as production launch block A).
 #
 # CONFIG OF RECORD
-#   configs/pt_e_sel_miscal.toml (the pool PT-E-SIFT-4K_pf3, the selectors, the tuning entry)
+#   configs/pt_e_sel_miscal.toml (the pool PT-E-SIFT-4K_pf6, the selectors, the tuning entry)
 # STAGES
 #   produce (GPU) → EXP_SEL_MISCAL_BUNDLE
 #   render  (CPU) → figures/panel_sel_miscal{,_maa}.tex (via figures_registry

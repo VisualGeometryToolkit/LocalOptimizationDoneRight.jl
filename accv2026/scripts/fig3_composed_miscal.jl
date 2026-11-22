@@ -18,7 +18,7 @@
 # consume it through the gate-enforced readers.
 #
 # DATA INPUTS
-#   pool : PT-E-SIFT-4K_pf3 (see REPRODUCE.md)
+#   pool : PT-E-SIFT-4K_pf6 (see REPRODUCE.md)
 # STAGES
 #   cv     (GPU) → EXP_MISCAL_SIDECAR (+ interior-argmin audit)
 #   oracle (CPU) → oracle_floors.jld2[PT_E]
@@ -29,7 +29,7 @@ using DrWatson; @quickactivate "ACCV2026"
 using JLD2, TOML
 include(srcdir("cell_stages.jl"))   # config + common + registry; the shared tuning stages
 
-require_input(EXP_POOL_PT_E; what = "PT-E-SIFT-4K_pf3 scoring pool",
+require_input(EXP_POOL_PT_E; what = "PT-E-SIFT-4K_pf6 scoring pool",
               provenance = "scripts/tools/generate_scoring_pools.jl --config=pt_e_pools (REPRODUCE.md)")
 
 const PANEL = joinpath(PAPER_FIGDIR, "panel_lo_miscal.tex")

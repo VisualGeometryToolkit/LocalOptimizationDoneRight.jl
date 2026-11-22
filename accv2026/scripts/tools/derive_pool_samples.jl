@@ -9,7 +9,7 @@
 # `Pools.sample_starts(pool)` recovers the boundaries from the record and
 # certifies them against the pool's `total_samples` stamp. Where that
 # certificate fails (an E solve that returned a duplicated root: 276 of the
-# 46,200 PT-E-SIFT-4K_pf3 pairs), only the draw stream decides, and this tool
+# 46,200 PT-E-SIFT-4K_pf6 pairs), only the draw stream decides, and this tool
 # replays it: per pair the StableRNG stream `stable_seed(pool_seed, i)` of
 # `write_scene_pool`, drawn by the Gaussian-SNN sampler of `[pool]` in the form
 # that GENERATED the tree (VisualGeometryToolkitEstimation 0.23: keys U^(1/w) over the
