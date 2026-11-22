@@ -1,3 +1,23 @@
+docs-pass: 087dfaf
+landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.3 once main's Docs job deploys it)
+
+# 0.7.3 docs pass (julia-docs-pass), at 087dfaf
+
+On 0.7.2 (f79a24f): the package's only changes are its compat (VisualGeometryToolkitCore 0.13 in the root, test and
+envs/superansac members) and one guide page; the rest is the paper project accv2026 (Core 0.13 / Eval 0.10.1 adoption,
+the data policy, Eval's keyed products, the format-6 pool migrations, the run of record).
+[x] API diff since v0.7.2: none (`git diff v0.7.2 -- src ext`: empty).
+[x] Docstrings, README, docs/src: no stack version and no retired Eval name (keyed_cell_dir, run_complete,
+    experiment_dir, `sequential-cv-<key>` layouts) named (grep). docs/src/guide/reproducing.md updated for Eval's keyed
+    products (`<kind>/<key>` layout; the key folds the products read and the code run).
+[x] accv2026/REPRODUCE.md: the cells read the format-6 pool trees (*_pf6, the *_pools_v6 stages); the stale
+    "pools on disk are format 4" instruction replaced; the pf6 digests listed.
+[x] general_preflight.sh: every General item passes on the package but the three a release commit clears (HEAD not the
+    pushed main tip, CI on HEAD not run, TagBot's last run skipped: rechecked on main after the merge).
+[x] The suite's docs and README items and the strict docs build (docs/make.jl): in the release gate.
+
+---
+
 docs-pass: 48818ef
 landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.1 once main's Docs job deploys it)
 (a compat-only patch on VisualGeometryToolkitCore 0.12: no page, docstring, README line or example names a stack version or a moved name — checked by search; the docs build is part of the release gate)
