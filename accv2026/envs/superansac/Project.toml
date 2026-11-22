@@ -1,13 +1,3 @@
-# =============================================================================
-# envs/superansac — the SupeRANSAC environment (configs/pt_e_superansac.toml
-# [environment]; src/superansac.jl). SupeRANSAC is an OUTSIDE dependency: its
-# Python binding pysuperansac is built from source into this environment's
-# conda environment (CondaPkg.toml), never into the project's. Only
-# scripts/tools/superansac_worker.jl runs here; `scripts/superansac_e2e.jl
-# --check` says whether it is importable, and src/superansac.jl
-# `require_superansac` prints the installation steps when it is not.
-# =============================================================================
-
 [deps]
 CondaPkg = "992eb4ea-22a4-4c89-a5bb-47a3300528ab"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -28,5 +18,5 @@ PythonCall = "0.9.36"
 StaticArrays = "1.9"
 Statistics = "1.11"
 TOML = "1"
-VisualGeometryToolkitCore = "0.12"
+VisualGeometryToolkitCore = "0.12, 0.13"
 julia = "1.13"
