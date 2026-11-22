@@ -221,7 +221,7 @@ stat = "maa"
 zeta = 1.0
 arms = ["@main", "IG  +BCD"]
 exclude = ["IG  +GNC-W", "IG  +GNC-TLS", "IG  +GNC-GM"]
-format = { digits = 2 }
+format = { digits = 3 }       # three: the spread of record (0.0119) must read as a bound it stays within (0.012, not 0.01)
 
 # ---- the basin ladder (Fig. 1; mAA@10° on the refinable seeds) ------------------------
 [[macro]]
