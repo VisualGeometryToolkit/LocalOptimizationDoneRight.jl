@@ -1,7 +1,11 @@
-docs-pass: 087dfaf
+docs-pass: 985430c
 landing: LocalOptimizationDoneRight/localoptimizationdoneright.github.io (no hand edit: the site is the Docs workflow's build of docs/src; it shows 0.7.3 once main's Docs job deploys it)
 
 # 0.7.3 docs pass (julia-docs-pass), at 087dfaf
+
+Re-recorded at 985430c: since 087dfaf only accv2026 (its run of record's assets, RECORD_CHANGES.md, the paper text),
+the CHANGELOG and the compat floors (Core 0.13.3, Estimation 0.12.2, PoseLib 0.3.3) changed; `git diff 087dfaf 985430c
+-- src ext docs README.md` is empty, so the pass below stands.
 
 On 0.7.2 (f79a24f): the package's only changes are its compat (VisualGeometryToolkitCore 0.13 in the root, test and
 envs/superansac members) and one guide page; the rest is the paper project accv2026 (Core 0.13 / Eval 0.10.1 adoption,
