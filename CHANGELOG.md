@@ -4,7 +4,7 @@
 
 A patch: the package's code is unchanged. The package, test and accv2026 (with accv2026/envs/superansac) move to
 VisualGeometryToolkitCore 0.13, which removes the spherical spline and the dilogarithm (unused here) and installs artifacts
-into the artifact store; accv2026 moves to VisualGeometryToolkitEval 0.10, whose paper-project check enforces the storage
+into the artifact store; accv2026 moves to VisualGeometryToolkitEval 0.10.1, whose paper-project check enforces the storage
 design. No API change.
 
 accv2026 (the paper project, not part of the registered package):
@@ -30,6 +30,37 @@ accv2026 (the paper project, not part of the registered package):
 - `test/test_public_paths.jl` runs Eval's `data_policy_violations` over the package (its own regex copy is gone), and
   `test/test_data_artifacts.jl` drops its copies of the D1 and D4 scans and of the catalog check (A1), which the
   paper-project check owns. A failing item no longer skips the conventions check.
+
+- The run of record (2026-11-21..24), on the release tree resolved from General (Core 0.13.0, Eval 0.10.1,
+  Estimation 0.12.2, IO 0.11.2, PoseLib 0.3.3, RANSACScoringDoneRight 0.8.3; Julia 1.13.4): every cell regenerated
+  and every paper asset rewritten. The owner's policy (2026-11-21): a rerun may differ within documented tolerances,
+  every moved number is listed. `accv2026/RECORD_CHANGES.md` lists every moved number old → new, file by file;
+  the summary:
+  - Accuracy: PhotoTourism and ETH3D-F move at the 4th decimal (mAA ≤ 0.003); HEB-H by up to 0.017 mAA in the
+    iterative-LO arms (IG +Lift, IG +GNC-W), accepted by the owner (2026-11-22). No ranking of the paper's method
+    changes. Tab. 3 (ours): error 2.59 → 2.58 (ζ = 16), 6.20 → 6.18 (ζ = 128); the rest identical.
+  - Timings (Tab. 1, Fig. 4's time axis, Tab. 3's time row), re-timed with the published protocol (a node held
+    exclusively, CPU 38 pinned, its SMT sibling idle) on the same CPU model (Intel Xeon Platinum 8570). The moves come
+    from the software environment, Julia 1.12.6 → 1.13.4 and the newer stack, not the machine.
+    Tab. 1, ms per LO call: Welsch IRLS 0.43 → 0.33, HQ 1.13 → 1.03, GNC 0.83 → 0.79; Geman–McClure 0.38 → 0.29,
+    0.73 → 0.70, 0.63 → 0.61; TLS 0.53 → 0.48, 0.73 → 0.68, 0.68 → 0.62, -LZ 0.93 → 0.87, -LO+ 0.31 → 0.27;
+    Stu-tU-BCD 0.86 → 0.56. Tab. 3's time row [ms]: ours 291/50/34/23/15 → 308/51/35/23/15, SupeRANSAC
+    86/111/168/265/381 → 86/111/166/261/374 (SupeRANSAC built from danini/superansac 27de486).
+  - paper_numbers.tex (86 macros, 79 identical): EtoEOursDeflMs 291 → 308, EtoEOursMs 50 → 51, EtoEOursInflMed
+    6.20 → 6.18, HEBCalSpread 0.01 → 0.012 (now typeset to three digits), SelSimfitMedCal 2.36 → 2.35,
+    SelSimfitMedInfl 34 → 33, SelSimfitMAAInfl 0.134 → 0.142. The file is written by Eval's `write_numbers` (one
+    provenance line per macro).
+  - The selection-only sweep (supplement, fig:supp-sel-miscal): the profile-marginal and threshold arms identical to
+    the published up to the last float digits; SIMFIT++ moves with its own scorer path (median error at ζ = 128
+    34.1° → 33.1°, mAA 0.134 → 0.142); the paper's claims hold.
+  - Paper text: HEB-H at calibration "within 0.012" (\HEBCalSpread, three digits) and TLS-LO+ "among the
+    strongest" (its gap to the top grew from 0.0029 to 0.0075). The matched-LO-time claim (main.tex, supplement
+    fig:supp-budget-time) now reads "From 1000 hypotheses on" (was "Beyond the smallest budget"): with the
+    regenerated per-call times, Welsch-IRLS and GM-IRLS exceed Welsch-HQ at matched time at its 500-hypothesis
+    checkpoint (0.5956, 0.5983 vs 0.5928); from 1000 on Welsch-HQ is the highest (owner decision 2026-11-24).
+- Fixes found by the run of record: fig2's ladder product is keyed when its stage runs (it folds the basin CV's
+  output, written in the same process); the stage graph runs fig2_basin after fig3_composed_miscal, whose scorer it
+  reads; e2e_timing records the code through Eval's code trees (a package installed from General is no git checkout).
 
 ## 0.7.2: on VisualGeometryToolkitCore 0.12
 
