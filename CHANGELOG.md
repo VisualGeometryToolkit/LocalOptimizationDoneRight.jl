@@ -62,6 +62,12 @@ accv2026 (the paper project, not part of the registered package):
   output, written in the same process); the stage graph runs fig2_basin after fig3_composed_miscal, whose scorer it
   reads; e2e_timing records the code through Eval's code trees (a package installed from General is no git checkout).
 
+- accv2026 stays on VisualGeometryToolkitEval 0.10.x in this release: its run of record ran there, and Eval 0.11.0
+  (breaking for it: a `Product` record holding a top-level `[render]` is an error) reached General the day before.
+  The release leg ran with the owner's scoped exemption `FLOOR_LATEST_EXEMPT="accv2026:VisualGeometryToolkitEval"`
+  (cau-release; the registered package's own dependencies are all at the registry latest). 0.7.4 ports accv2026 to
+  Eval 0.11 and re-runs the cells, on a schedule.
+
 ## 0.7.2: on VisualGeometryToolkitCore 0.12
 
 A patch: compat only. The package, test and accv2026 move to VisualGeometryToolkitCore 0.12, whose radiometric types (vignetting
