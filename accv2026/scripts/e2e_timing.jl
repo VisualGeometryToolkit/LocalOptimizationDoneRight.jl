@@ -55,22 +55,15 @@ function _repeats()
     end
 end
 
-"The git commit (and whether its tree is dirty) of every checkout the repeats ran."
-function _code_record()
-    mods = (LocalOptimizationDoneRight, VisualGeometryToolkitCore, VisualGeometryToolkitEstimation, RANSACScoringDoneRight, VisualGeometryToolkitEval)
-    Dict{String,Any}(string(nameof(m)) => begin
-                         d = pkgdir(m)
-                         head = readchomp(`git -C $d rev-parse HEAD`)
-                         dirty = !isempty(readchomp(`git -C $d status --porcelain --untracked-files=no`))
-                         head * (dirty ? "-dirty" : "")
-                     end for m in mods)
-end
+# The code the repeats ran: Eval's one record of it (a registered package's tree hash, a path checkout's git trees),
+# the record a product's key folds; a registered package is no git checkout, so no `git -C pkgdir` here.
+_code_record() = Dict{String,Any}(VisualGeometryToolkitEval.Experiments.current_code_trees())
 
 function _summary()
     require_input(LIVE; what = "the e2e cell's accuracy run", provenance = "scripts/e2e_ransac.jl --config=$(CFG["timing"]["e2e_config"]) stage live")
     path = timing_summary!(CFG, CFG_NAME, OUTDIR)
     open(joinpath(OUTDIR, "timing_code.toml"), "w") do io
-        println(io, "# The code the timed repeats ran (each package's checkout; this project's commit is _provenance.toml's).")
+        println(io, "# The code the timed repeats ran (Eval's code trees: a registered package's tree hash, a path checkout's git trees; this project's commit is _provenance.toml's).")
         TOML.print(io, _code_record(); sorted = true)
     end
     print(read(path, String))
