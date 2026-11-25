@@ -33,11 +33,14 @@ changes (the suite's expected values are unchanged).
 - README, the documentation's examples and docstrings use `solve(EstimationProblem(EssentialProblem(camera, camera,
   cs)), Ransac(; scoring, local_optimization_strategy); rng)` (was `find_essential`).
 
+### The paper project
+
+- accv2026 reproduces with LocalOptimizationDoneRight 0.7.x (its own pinned environment); its migration is the
+  planned paper re-run. It is not a member of 0.8's workspace, and the naming and duplication gates leave it out.
+
 ### On the solve branch only (TEMPORARY, removed when Core 0.14 etc. are registered)
 
-- `[sources]` path entries point at the monorepo's solve branch; accv2026 leaves the workspace (it stays on its
-  released LocalOptimizationDoneRight 0.7 and the Core 0.13 stack until its run of record is archived, migration plan
-  §5), and the naming and duplication gates leave its findings out. The README test develops the sourced stack
+- `[sources]` path entries point at the monorepo's solve branch; the README test develops the sourced stack
   packages from their paths.
 
 ## 0.7.3: on VisualGeometryToolkitCore 0.13; accv2026 on Eval 0.10's storage design and keyed products

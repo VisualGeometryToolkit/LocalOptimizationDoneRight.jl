@@ -33,10 +33,8 @@ const _M = LocalOptimizationDoneRight
     # The stack's naming vocabulary (VisualGeometryToolkitCore.check_naming) over the
     # whole repository: package, vendored-wrapper library and paper project.
     #
-    # TEMPORARY: solve branch; remove when Core 0.14 etc. are registered. The paper project accv2026/ stays on its
-    # released LocalOptimizationDoneRight 0.7 and the Core 0.13 stack until its run of record is archived (migration
-    # plan §5), so its findings against the 0.14 vocabulary are left out here; restore `VgtkCore.test_naming(_M)` and
-    # `VgtkCore.test_duplication(_M)` when it migrates.
+    # The paper project accv2026/ is out of these two gates: it reproduces with LocalOptimizationDoneRight 0.7.x
+    # (its own pinned environment), so it keeps that release's vocabulary; its migration is the planned paper re-run.
     _paper(f) = startswith(f, "accv2026/")
     _report_none(found) = (isempty(found) || foreach(v -> println(stderr, v), found); @test isempty(found))
     @testset "naming" begin

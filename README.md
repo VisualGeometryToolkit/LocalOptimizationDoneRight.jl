@@ -69,6 +69,7 @@ every strategy, its width modes and how it composes with a scorer.
 - [Home](https://localoptimizationdoneright.github.io): the paper's results, installation and this example.
 - [Overview](https://localoptimizationdoneright.github.io/overview/): the strategies, their width modes, scorers and TOML configuration.
 - [Reproducing the paper](https://localoptimizationdoneright.github.io/guide/reproducing/): every figure and table from its config and driver.
+  The paper project `accv2026/` reproduces with LocalOptimizationDoneRight 0.7.x (its own pinned environment).
 - [Baselines](https://localoptimizationdoneright.github.io/guide/baselines/): the classical LO arms (PoseLib, RansacLib).
 - [API Reference](https://localoptimizationdoneright.github.io/api/strategies/).
 

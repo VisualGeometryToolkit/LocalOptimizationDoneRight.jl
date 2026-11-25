@@ -4,8 +4,7 @@ version = "0.8.0"
 authors = ["James Pritts <jbpritts@gmail.com>"]
 
 [workspace]
-# TEMPORARY: solve branch; remove when Core 0.14 etc. are registered (accv2026 stays on its released LODR 0.7 and the
-# Core 0.13 stack until its run of record is archived, migration plan §5; restore it to the list then)
+# Not a member: accv2026 reproduces with LocalOptimizationDoneRight 0.7.x (its own pinned environment); its migration is the planned paper re-run.
 projects = ["test", "docs"]
 
 [deps]
