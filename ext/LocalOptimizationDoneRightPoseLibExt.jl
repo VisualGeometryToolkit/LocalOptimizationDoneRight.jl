@@ -1,37 +1,40 @@
 # =============================================================================
 # LocalOptimizationDoneRightPoseLibExt — the PoseLib truncated refiners'
 # solver calls: VisualGeometryToolkitCore's external-refit contract
-# (`external_workspace`, `prepare_external!`, `refine_external!`) for
+# (`external_workspace`, `prepare_external!`, `external_refit!`) for
 # `PoseLibLm`, `PoseLibLZ` and `PoseLibLmAdaptLossWidth` on two-view problems,
 # their pixel-form inputs read from the refit's two-view frame (`frame.Kc1`,
-# `frame.Kc2`, `frame.cs`).
+# `frame.Kc2`, `frame.cs`), and the solve of `TruncatedRefit`.
 #
-# E `refine_relpose` (camera-aware, from the seed's cheirality-resolved pose),
-# F `refine_fundamental`, H `refine_homography` (symmetric transfer error,
-# per-side truncation), all in the pool frame. `TLSShape()` = TLS-LM,
+# Every refine is VisualGeometryToolkitCore's Levenberg–Marquardt with PoseLib's
+# backend, `LevenbergMarquardt(PoseLibSolver(); optimization_strategy)`, its budget
+# `stops = LmStops(; max_iter)`: E on `RefineProblem(cs, pose, (; K1, K2))`
+# (camera-aware, from the seed's cheirality-resolved pose), F on
+# `RefineProblem(cs, FundMat(F))`, H on `RefineProblem(cs, HomographyMat(H))`
+# (symmetric transfer error, per-side truncation), all in the pool frame. `TLSShape()` = TLS-LM,
 # `LeZach()` = TLS-LZ. The E cheirality (fast cross-product vote,
 # strided-subsampled) runs INSIDE the refine — it is part of the refit
 # pipeline, matching a native refit, which decomposes internally.
 # =============================================================================
 module LocalOptimizationDoneRightPoseLibExt
 
-using LocalOptimizationDoneRight: LocalOptimizationDoneRight, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth
+using LocalOptimizationDoneRight: LocalOptimizationDoneRight, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth, TruncatedRefit
 # The package's internals, qualified: its defaults of record and the adaptive arm's operating point.
 const _config_default = LocalOptimizationDoneRight._config_default
 const _ADAPT_OPERATING_EFFICIENCY_CONSTANT = LocalOptimizationDoneRight._ADAPT_OPERATING_EFFICIENCY_CONSTANT
-import LocalOptimizationDoneRight: truncated_refit_pose
-using PoseLib: refine_relpose, refine_fundamental, refine_homography, LeZach
+using PoseLib: LeZach
 using StaticArrays: SMatrix
-using VisualGeometryToolkitCore: VisualGeometryToolkitCore, EssentialMat, Vec3,
+using VisualGeometryToolkitCore: VisualGeometryToolkitCore, EssentialMat, FundMat, HomographyMat, Vec3,
     EuclideanMap, TLSShape, LossWidth, OutlierHalfwidth, loss_width, sources, targets, cheiral_pose_fast,
     codimension, data_size, mahalanobis_distances!, with_width, loss_width_to_outlier_halfwidth, FixedS2, scale_s2,
-    deploy, fit_scale, JeffreysPrior, Irls, estimate
-import VisualGeometryToolkitCore: external_workspace, prepare_external!, refine_external!
+    deploy, JeffreysPrior, SquaredScale, ScaleMAP, EstimationProblem, RefineProblem, LevenbergMarquardt,
+    PoseLibSolver, LmStops, NullParameters, Irls, solve
+import VisualGeometryToolkitCore: external_workspace, prepare_external!, external_refit!, __solve
 using VisualGeometryToolkitEstimation: EssentialProblem, FundMatProblem, HomographyProblem, RansacWorkspace, consensus_s2!
 
-# The PoseLib strategy each truncated arm refines with (PoseLib's refine_* take
+# The PoseLib strategy each truncated arm refines with (PoseLib's backend takes
 # Core's `Irls{K}` or PoseLib's own `LeZach()` marker as `optimization_strategy`,
-# the width as `width`; robust-contract B5).
+# the width as the solve keyword `width`; robust-contract B5).
 _poselib_strategy(::PoseLibLm) = Irls{TLSShape}()
 _poselib_strategy(::PoseLibLZ) = LeZach()
 
@@ -41,7 +44,7 @@ _poselib_strategy(::PoseLibLZ) = LeZach()
 The per-pair workspace of a PoseLib refiner: the frame's calibrations `Kc₁`,
 `Kc₂` and its correspondences, as the two-view frame of VisualGeometryToolkitCore's
 external-refit contract hands them over (`Kc1`, `Kc2` 3×3; `cs` a `Correspondences` of
-2-vectors, which PoseLib's `refine_*` consume) — held as they are, of whatever
+2-vectors, which PoseLib's refines consume) — held as they are, of whatever
 type and layout the frame carries (attribute columns, element type), not re-packed.
 """
 struct PoseLibWorkspace{C}
@@ -66,27 +69,36 @@ function _cheiral_seed_pose(problem::EssentialProblem, seed_E)
     return EuclideanMap(R0, Vec3{Float64}(t0))
 end
 
-truncated_refit_pose(lo::Union{PoseLibLm, PoseLibLZ}, ws::PoseLibWorkspace, problem::EssentialProblem, seed_E,
-                     loss_width::Float64) =
-    estimate(refine_relpose(_cheiral_seed_pose(problem, seed_E), ws.Kc1, ws.Kc2, ws.cs;
-                            width = loss_width, max_iter = lo.max_iter, optimization_strategy = _poselib_strategy(lo)))
+# THE PoseLib refine of a guess (one copy): Core's LM with PoseLib's backend on the
+# frame's correspondences `cs` and context `p` (the cameras of a pose refine, else
+# none), at the absolute pool-frame loss width `w`, `max_iter` its budget.
+_poselib_refine(cs, guess, p, strategy, w::Float64, max_iter::Int) =
+    solve(RefineProblem(cs, guess, p), LevenbergMarquardt(PoseLibSolver(); optimization_strategy = strategy);
+          stops = LmStops(; max_iter), width = w)
 
-function refine_external!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, problem::EssentialProblem,
-                          seed_E, width::LossWidth, _scoring)
-    pose = truncated_refit_pose(lo, ws, problem, seed_E, loss_width(width))
+# THE E-branch body (one copy): the seed's cheirality-resolved pose refined
+# camera-aware on the frame's calibrations and correspondences.
+_truncated_refit(lo::Union{PoseLibLm, PoseLibLZ}, Kc1, Kc2, cs, problem::EssentialProblem, seed_E, w::Float64) =
+    _poselib_refine(cs, _cheiral_seed_pose(problem, seed_E), (; K1 = Kc1, K2 = Kc2), _poselib_strategy(lo),
+                    w, lo.max_iter)
+
+__solve(prob::RefineProblem{<:EssentialProblem}, alg::TruncatedRefit; width::Real) =
+    _truncated_refit(alg.lo, prob.p.Kc1, prob.p.Kc2, prob.p.cs, prob.f, prob.u0, Float64(width))
+
+function external_refit!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, problem::EssentialProblem,
+                         seed_E, width::LossWidth, _scoring)
+    pose = _truncated_refit(lo, ws.Kc1, ws.Kc2, ws.cs, problem, seed_E, loss_width(width)).u
     return EssentialMat(pose.R, pose.t)
 end
-function refine_external!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, ::FundMatProblem,
-                          seed_F, width::LossWidth, _scoring)
-    return estimate(refine_fundamental(SMatrix{3, 3, Float64, 9}(seed_F), ws.cs;
-                                       width = loss_width(width), max_iter = lo.max_iter,
-                                       optimization_strategy = _poselib_strategy(lo)))
+function external_refit!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, ::FundMatProblem,
+                         seed_F, width::LossWidth, _scoring)
+    return _poselib_refine(ws.cs, FundMat(SMatrix{3, 3, Float64, 9}(seed_F)), NullParameters(), _poselib_strategy(lo),
+                           loss_width(width), lo.max_iter).u
 end
-function refine_external!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, ::HomographyProblem,
-                          seed_H, width::LossWidth, _scoring)
-    return estimate(refine_homography(SMatrix{3, 3, Float64, 9}(seed_H), ws.cs;
-                                      width = loss_width(width), max_iter = lo.max_iter,
-                                      optimization_strategy = _poselib_strategy(lo)))
+function external_refit!(ws::PoseLibWorkspace, lo::Union{PoseLibLm, PoseLibLZ}, ::HomographyProblem,
+                         seed_H, width::LossWidth, _scoring)
+    return _poselib_refine(ws.cs, HomographyMat(SMatrix{3, 3, Float64, 9}(seed_H)), NullParameters(), _poselib_strategy(lo),
+                           loss_width(width), lo.max_iter).u
 end
 
 # =============================================================================
@@ -142,7 +154,7 @@ end
 # Within-width truncated second moment — the arm's definition of record (the
 # width "re-anchored on the refined partition", accv2026 protocol.toml
 # [arms.tls_adapt]): the partition is the truncated loss's own, |rᵢ| ≤ loss_width
-# (inclusive), and its scale is VGC's estimator `fit_scale(JeffreysPrior(), rss, ν)`
+# (inclusive), and its scale is VGC's estimator `ScaleMAP(JeffreysPrior())` of (rss, ν)
 # = rss/ν, ν the partition's size (a scalar distance: one component per point).
 # Fewer than `min_support` residuals within the truncation → nothing (a
 # consensus too thin for a stable scale).
@@ -153,7 +165,7 @@ function _truncated_moment_s2(loss_width::Float64, r::AbstractVector; min_suppor
         abs(r[i]) <= loss_width && (rss += r[i]^2; ν += 1)
     end
     ν < min_support && return nothing
-    return fit_scale(JeffreysPrior(), rss, ν)
+    return solve(EstimationProblem(SquaredScale, (; rss, dof = ν)), ScaleMAP(JeffreysPrior())).u
 end
 
 # The truncated loss the arm refines at: VGC's deployment of `TLSShape()` at
@@ -169,16 +181,15 @@ _adapt_loss_width(lo::PoseLibLmAdaptLossWidth, s2::Float64) =
 _adapt_s2(ws::AdaptWorkspace, problem, R, t, loss_width::Float64) =
     _truncated_moment_s2(loss_width, mahalanobis_distances!(ws.r, problem, EssentialMat(R, t)))
 
-function refine_external!(ws::AdaptWorkspace, lo::PoseLibLmAdaptLossWidth, problem::EssentialProblem,
-                          seed_E, ::LossWidth, _scoring)
+function external_refit!(ws::AdaptWorkspace, lo::PoseLibLmAdaptLossWidth, problem::EssentialProblem,
+                         seed_E, ::LossWidth, _scoring)
     pl = ws.pl
     w = _adapt_loss_width(lo, ws.s2₀)
     inner = max(1, lo.max_iter ÷ lo.rounds)
     pose = _cheiral_seed_pose(problem, seed_E)
     local ref = nothing
     for round in 1:lo.rounds
-        ref = estimate(refine_relpose(pose, pl.Kc1, pl.Kc2, pl.cs; width = w, max_iter = inner,
-                                      optimization_strategy = Irls{TLSShape}()))
+        ref = _poselib_refine(pl.cs, pose, (; K1 = pl.Kc1, K2 = pl.Kc2), Irls{TLSShape}(), w, inner).u
         pose = EuclideanMap(ref.R, Vec3{Float64}(ref.t))
         round == lo.rounds && break
         s2t = _adapt_s2(ws, problem, ref.R, ref.t, w)

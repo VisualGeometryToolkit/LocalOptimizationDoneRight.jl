@@ -15,14 +15,16 @@ VisualGeometryToolkitEstimation's problems:
   ([`StuTuHQTabulated`](@ref), [`StuTuRegemm`](@ref)) and the Barron-adaptive
   IRLS ([`BarronAdaptive`](@ref));
 - PoseLib's truncated refiners ([`PoseLibLm`](@ref), [`PoseLibLZ`](@ref),
-  [`PoseLibLmAdaptLossWidth`](@ref)) as external refiners (their solver calls
-  load with PoseLib, a package extension);
+  [`PoseLibLmAdaptLossWidth`](@ref)) as external refiners, and their pose
+  refine as an algorithm ([`TruncatedRefit`](@ref)) (their solver calls load with
+  PoseLib, a package extension);
 - the cross-validated operating points ([`tuning_constant`](@ref)) and the
   strategies' TOML registry ([`LODR_STRATEGY_TAGS`](@ref)), merged with the core's to load:
   `optimization_strategy_from_toml(d; class, tags = merge(VisualGeometryToolkitEstimation.OPTIMIZATION_STRATEGY_TAGS, LODR_STRATEGY_TAGS))`.
 
-Compose one with any scorer: `find_essential(cam1, cam2, pairs; local_optimization_strategy
-= HQ{WelschShape}(efficiency_constant = WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL))`.
+Compose one with any scorer: `solve(EstimationProblem(EssentialProblem(cam1, cam2, cs)),
+Ransac(; local_optimization_strategy = HQ{WelschShape}(efficiency_constant =
+WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL)); rng)`.
 """
 module LocalOptimizationDoneRight
 
@@ -46,7 +48,7 @@ using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractOptimization
     keep_best, StoppingCriterion, PosteriorWeightState, reset_posterior!, StudentTMixture, posterior_weight,
     posterior_weight_derivative, mixture_ecm!, mixture_nll, s_hat_sq,
     sq_distances, robust_weight, FrozenNuisance, truncated_log_normaliser, data_size,
-    refine!, fit_scale, JeffreysPrior, weighted_sq, iterations, retcode, stop_rule, ReturnCode,
+    refine!, JeffreysPrior, SquaredScale, ScaleMAP, EstimationProblem, solve, AbstractEstimationAlgorithm, RefineKind, weighted_sq, ReturnCode,
     IncrementSize, LadderConverged, LeftBasin, retcode_from_symbol, toml_default, parse_defaults, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
     lift_retract, lift_model, lift_valid, lift_rows, lift_residuals, lift_size,
     block_coordinate_descent!, path_suffix, optimization_path, EssentialMat
@@ -78,14 +80,16 @@ include("poselib_arms.jl")             # PoseLib's truncated refiners (solver ca
     CONTRACT_GENERICS
 
 The generic functions of LocalOptimizationDoneRight another module may add
-methods to (VisualGeometryToolkitCore's `contract_generic_violations`): the PoseLib
-truncated refiners' pose body, implemented by the PoseLib extension.
+methods to (VisualGeometryToolkitCore's `contract_generic_violations`): none. The
+PoseLib extension adds methods to VisualGeometryToolkitCore's contract generics only
+(the external-refit contract, and `__solve` for this package's own
+[`TruncatedRefit`](@ref)).
 """
-const CONTRACT_GENERICS = (truncated_refit_pose,)
+const CONTRACT_GENERICS = ()
 
 export HQ, Gnc, StudentTUniform, StuTuBCD, BarronAdaptive, BarronHQ, GmHqEps,
     WelschHQNewton, WelschHQEcm, StuTuHQTabulated, StuTuRegemm
-export PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth, truncated_refit_pose
+export PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth, TruncatedRefit
 export tuning_constant, WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL, WELSCH_HQ_EFFICIENCY_CONSTANT_FUNDMAT,
     WELSCH_HQ_EFFICIENCY_CONSTANT_HOMOGRAPHY, WELSCH_HQ_EFFICIENCY_CONSTANT_ABSOLUTE_POSE
 

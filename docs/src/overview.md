@@ -32,16 +32,19 @@ correspondences `cs` of the [Getting started](index.md#Getting-started) scene:
 
 ```julia
 using VisualGeometryToolkitEstimation, LocalOptimizationDoneRight
-using VisualGeometryToolkitCore: WelschShape, StudentTUniformScoring, JeffreysPrior, FlatLabelPrior
+using VisualGeometryToolkitCore: WelschShape, StudentTUniformScoring, JeffreysPrior, FlatLabelPrior, EstimationProblem, solve
+
+problem = EstimationProblem(EssentialProblem(camera, camera, cs))
 
 # the core default: MSAC at the class's threshold + TLS-IRLS following it
-result = find_essential(camera, camera, cs)
+result = solve(problem, Ransac(); rng = MersenneTwister(2))
 
 # the paper's recipe: Student-t + uniform selection (outlier half-width 250 px),
 # Welsch-HQ refinement
-result = find_essential(camera, camera, cs;
-    scoring = StudentTUniformScoring(EssentialProblem, 250.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-    local_optimization_strategy = HQ{WelschShape}(; efficiency_constant = WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL))
+result = solve(problem,
+    Ransac(; scoring = StudentTUniformScoring(EssentialProblem, 250.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
+             local_optimization_strategy = HQ{WelschShape}(; efficiency_constant = WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL));
+    rng = MersenneTwister(2))
 ```
 
 ## Strategies
@@ -87,7 +90,7 @@ mixture lifts) carry no width; they start from the consensus scale.
 
 PoseLib's truncated refiners are `ExternalRefit` strategies: they refine a seed
 at an absolute loss width through VisualGeometryToolkitCore's external-refit contract
-(`external_workspace`, `prepare_external!`, `refine_external!`), outside the
+(`external_workspace`, `prepare_external!`, `external_refit!`), outside the
 RANSAC loop. The PoseLib package extension implements those methods. The paper
 project's RansacLib arms implement the same contract; see
 [Baselines](guide/baselines.md).
@@ -100,7 +103,7 @@ cross-validated efficiency constant of a loss on a model class, with its provena
 constants are its Welsch-HQ entries.
 
 [`LODR_STRATEGY_TAGS`](@ref) registers the strategies' TOML tags. Merge it with the core's
-to read a strategy table of either package, such as a `find_*` pipeline's
+to read a strategy table of either package, such as a `Ransac` find's
 `local_optimization_strategy = { type = "hq", loss = "welsch", … }`:
 
 ```julia
@@ -118,7 +121,7 @@ matrices, the sample-budget engine, live RANSAC runs, the `Roster` of arms and
 its gate-enforced readers, the selection stream) is
 `VisualGeometryToolkitEval.Evaluation`, written against the core contracts alone. It
 evaluates any strategy here without per-type code: a native strategy through
-`locally_optimize!`, an external one through `refine_external!`.
+`locally_optimize!`, an external one through `external_refit!`.
 
 ## Defaults of record
 

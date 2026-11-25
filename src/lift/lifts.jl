@@ -81,7 +81,7 @@ struct ManifoldLiftHQ{L <: DeployedLoss, Prov, Z <: LiftZBlock, S <: LiftState} 
     ls::S        # the lift's own state (z and the reduced system)
 end
 ManifoldLiftHQ(prov, n::Int, loss::DeployedLoss, μ::Float64, zblock::LiftZBlock = JointGaussNewton()) =
-    ManifoldLiftHQ(prov, n, loss, μ, zblock, provider_lift_state(prov))
+    _with_lift_state(ManifoldLiftHQ, prov, n, loss, μ, zblock)
 
 """
     provider_lift_state(prov) -> LiftState{D}
@@ -91,6 +91,9 @@ The lift state for a provider's chart dimension and point count (one per
 """
 provider_lift_state(prov) = _lift_state_for(lift_rows(prov), lift_size(prov))
 _lift_state_for(::RowsWorkspace{D}, n::Int) where {D} = lift_state(Val(D), n)
+# A lift method `T` built from its provider, point count and configuration, its
+# last field the provider's lift state (every lift method's one constructor rule).
+_with_lift_state(::Type{T}, prov, n::Int, args...) where {T} = T(prov, n, args..., provider_lift_state(prov))
 
 # `loss` is THE loss this iterate runs at. It starts as the method's and a
 # fixed-scale arm never moves it (`FrozenNuisance`); a self-scaling policy
@@ -161,31 +164,34 @@ function _manifold_hq!(
     return block_coordinate_descent!(state, FrozenNuisance(), method, problem, model; max_iter)
 end
 
+# The fixed-shape arms (BarronHQ, GmHqEps and, on the essential matrix,
+# WelschHQNewton): the arm's one shape (`_hq_shape`) at its width mode's width
+# (VGC `loss_at`), flat z₀ as the arms always started, the arm's joint system
+# (`_hq_zblock`).
+#
 # The α-dial lift (BarronHQ): fixed-CORE-WIDTH standardization — the facet-B
 # Barron loss width efficiency_constant·ŝ holds the Gaussian-core curvature fixed
 # across α (α → −∞ is then EXACTLY HQ{WelschShape} at √2·efficiency_constant: the
 # Welsch-equivalent loss width is √2 times the Barron one), so the dial moves
 # tail steepness only. The retired `m/√2` currency's values are migrated once
-# (×1/√2). Flat z₀, as the arm always started.
-function locally_optimize!(
-        ::LoBuffers, lo::BarronHQ, problem::MinimalSolveProblem, model,
-        cs::ConsensusSet, buf::ScoreBuffers, scoring
-    )
-    loss = loss_at(lo, BarronShape(lo.α), cs, scoring, buf)
-    return _manifold_hq!(problem, model, loss, lo.μ, :flat, lo.max_iter)
-end
-
+# (×1/√2).
+#
 # The loss-width-parameterized Geman–McClure lift (GmHqEps): loss width
 # efficiency_constant·ŝ (the plain multiple), an absolute width,
 # or the scorer's decision point (its GM half-weight radius at the scorer's
-# threshold). Flat z₀, as the arm always started.
-function locally_optimize!(
-        ::LoBuffers, lo::GmHqEps, problem::MinimalSolveProblem, model,
-        cs::ConsensusSet, buf::ScoreBuffers, scoring
-    )
-    loss = loss_at(lo, GemanMcclureShape(), cs, scoring, buf)
-    return _manifold_hq!(problem, model, loss, lo.μ, :flat, lo.max_iter)
-end
+# threshold).
+_hq_shape(lo::BarronHQ) = BarronShape(lo.α)
+_hq_shape(::GmHqEps) = GemanMcclureShape()
+_hq_shape(::WelschHQNewton) = WelschShape()
+_hq_zblock(::Union{BarronHQ, GmHqEps}) = JointGaussNewton()
+_hq_zblock(::WelschHQNewton) = WelschConvexNewton()
+_fixed_shape_hq!(lo, problem, model, cs::ConsensusSet, buf::ScoreBuffers, scoring) =
+    _manifold_hq!(problem, model, loss_at(lo, _hq_shape(lo), cs, scoring, buf), lo.μ, :flat, lo.max_iter;
+                  zblock = _hq_zblock(lo))
+
+locally_optimize!(::LoBuffers, lo::Union{BarronHQ, GmHqEps}, problem::MinimalSolveProblem, model,
+                  cs::ConsensusSet, buf::ScoreBuffers, scoring) =
+    _fixed_shape_hq!(lo, problem, model, cs, buf, scoring)
 
 # `BoundedProblem` is a VALIDATION decorator, not a different estimation
 # problem: its extent is consumed by RANSAC's post-IRLS consensus hook
@@ -219,7 +225,7 @@ struct ManifoldLiftGnc{Prov, L <: DeployedLoss, S <: LiftState} <: AbstractLiftM
     loss::L      # c̄² = efficiency_constant²·ŝ² is `sq_loss_width(loss)`, frozen at the consensus anchor
     ls::S        # the lift's own state (the reduced system)
 end
-ManifoldLiftGnc(prov, n::Int, loss::DeployedLoss) = ManifoldLiftGnc(prov, n, loss, provider_lift_state(prov))
+ManifoldLiftGnc(prov, n::Int, loss::DeployedLoss) = _with_lift_state(ManifoldLiftGnc, prov, n, loss)
 
 mutable struct ManifoldLiftGncState{M}
     θ::M

@@ -30,11 +30,12 @@
 # absolute pool-frame loss width (the arms' `LossWidth` currency). They are
 # external refiners, timed through VisualGeometryToolkitCore's external-refit contract
 # directly: `external_workspace` once per pair (outside the timing), then one
-# `refine_external!(ws, lo, problem, seed, LossWidth(w), scoring)` per call —
-# the E seed's cheirality plus PoseLib's `refine_relpose`, the bracket Table 1
-# reports (the refit layer's `lo_ns`); the pose → essential conversion is
+# `external_refit!(ws, lo, problem, seed, LossWidth(w), scoring)` per call —
+# the E seed's cheirality plus PoseLib's camera-aware pose refine
+# (`RefineProblem(cs, pose, (; K1, K2))` under `LevenbergMarquardt(PoseLibSolver(); …)`),
+# the bracket Table 1 reports (the refit layer's `lo_ns`); the pose → essential conversion is
 # inside it now (negligible). The arms read no scoring (they are handed `nothing`).
-# A "call" is one `refine_external!`. `import PoseLib` loads the solver calls
+# A "call" is one `external_refit!`. `import PoseLib` loads the solver calls
 # (the package's PoseLib extension).
 #
 # THE LIFT KERNELS (from VisualGeometryToolkitCore's bench, with the lift core): the
@@ -55,7 +56,7 @@ using LocalOptimizationDoneRight: LiftState, _lift_hq_increment!, _lift_gnc_incr
     PoseLibLm, PoseLibLZ
 using VisualGeometryToolkitCore: RowsWorkspace, sampson_residuals!, sampson_jacobian_rows!, Correspondences, withattrs,
     retract, retract_directions,
-    zero_tangent, backproject_with_jacobian, EssentialManifold5, deploy, external_workspace, refine_external!,
+    zero_tangent, backproject_with_jacobian, EssentialManifold5, deploy, external_workspace, external_refit!,
     LossWidth
 using StaticArrays, LinearAlgebra, Random
 
@@ -87,7 +88,7 @@ const FRAMES = [(; Kc1 = pr.Kc1, Kc2 = pr.Kc2, cs = pool_correspondences(pr)) fo
 const LOSS_WIDTH = LossWidth(HALFWIDTH)
 
 external_workspaces(lo) = [external_workspace(lo, PROBS[i], FRAMES[i], nothing) for i in eachindex(PROBS)]
-ext_call(ws, lo, i, seed) = refine_external!(ws[i], lo, PROBS[i], seed, LOSS_WIDTH, nothing)
+ext_call(ws, lo, i, seed) = external_refit!(ws[i], lo, PROBS[i], seed, LOSS_WIDTH, nothing)
 
 # =============================================================================
 # The lift kernels on the seeded scene

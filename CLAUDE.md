@@ -31,7 +31,9 @@ Items share no bindings: each states its own imports. The `:timing` item (the
 opt-in LO timing gate) runs alone on one worker after the pool. The paper
 project has its own ReTestItems suite
 (`cd accv2026 && julia --project=. test/runtests.jl`): its `:data` items are
-skipped (a recorded skip) where no results root is bound.
+skipped (a recorded skip) where no results root is bound. On the Core 0.14 solve
+branch (0.8.0, unregistered) accv2026 is out of the workspace and stays on its
+released 0.7 environment until its run of record is archived (TEMPORARY).
 
 ## Git Commit Conventions
 

@@ -17,6 +17,7 @@
 
 @testitem "readme" begin
     using Test
+    using TOML
     root = pkgdir(LocalOptimizationDoneRight)
     julia_blocks(path) = [m[1] for m in eachmatch(r"^```julia\n(.*?)^```"ms, read(path, String))]
     illustrative(block) = startswith(block, "# Illustrative")
@@ -25,7 +26,7 @@
     example = filter(!illustrative, julia_blocks(joinpath(root, "README.md")))
     # Getting started, then the Overview's recipe, which reuses its scene.
     docs = [filter(!illustrative, julia_blocks(index_path));
-            filter(b -> occursin("find_essential", b), julia_blocks(joinpath(root, "docs", "src", "overview.md")))]
+            filter(b -> occursin("Ransac(", b), julia_blocks(joinpath(root, "docs", "src", "overview.md")))]
     @test length(example) == 1                      # pin the counts
     @test length(docs) == 2
     @test docs[1] == example[1]                     # one example, shown twice
@@ -49,11 +50,17 @@
     write(joinpath(env, "readme_example.jl"), only(example))
     write(joinpath(env, "docs_example.jl"), join(docs, "\n"))
     registered = filter(!=("LocalOptimizationDoneRight"), String.(packages))
+    # TEMPORARY: solve branch; remove when Core 0.14 etc. are registered. A package the root
+    # Project.toml sources by path (the unregistered stack) is developed from that path, before this package.
+    sourced = get(TOML.parsefile(joinpath(root, "Project.toml")), "sources", Dict{String, Any}())
+    paths = [sourced[p]["path"] for p in registered if haskey(sourced, p)]
+    registered = filter(p -> !haskey(sourced, p), registered)
     script = joinpath(env, "run.jl")
     write(script, """
     using Pkg
+    isempty($(repr(paths))) || Pkg.develop([PackageSpec(path = p) for p in $(repr(paths))]; io = devnull)
     Pkg.develop(path = $(repr(root)); io = devnull)
-    Pkg.add($(repr(registered)); io = devnull)
+    isempty($(repr(registered))) || Pkg.add($(repr(registered)); io = devnull)
     readme = Module(:ReadmeSandbox)
     Base.include(readme, $(repr(joinpath(env, "readme_example.jl"))))
     docs = Module(:DocsSandbox)

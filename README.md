@@ -10,7 +10,8 @@ LocalOptimizationDoneRight provides the local optimizers of the ACCV 2026 paper
 Student-t + uniform reweighting and PoseLib's truncated refiners, for the
 refinement step of a RANSAC. Each one implements VisualGeometryToolkitCore's
 local-optimization contract, so it composes with any scorer in
-VisualGeometryToolkitEstimation's `find_*` estimators.
+VisualGeometryToolkitEstimation's finds (`solve(problem, Ransac(; scoring,
+local_optimization_strategy))`).
 
 ## Installation
 
@@ -28,10 +29,10 @@ refinement at its cross-validated efficiency constant, on a synthetic two-view s
 
 ```julia
 using Random: MersenneTwister
-using VisualGeometryToolkitCore: CameraModel, Point2, WelschShape, estimate, inlier_mask, motion, px
+using VisualGeometryToolkitCore: CameraModel, Point2, WelschShape, inlier_mask, motion, px, EstimationProblem, solve
 using VisualGeometryToolkitCore: StudentTUniformScoring, JeffreysPrior, FlatLabelPrior
 using VisualGeometryToolkitCore.Synthetic: pose_error, sample_twoview_scene
-using VisualGeometryToolkitEstimation: EssentialProblem, find_essential
+using VisualGeometryToolkitEstimation: EssentialProblem, Ransac
 using LocalOptimizationDoneRight: HQ, WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL
 
 # Two 500 × 500 px views of one pinhole camera (focal length 600 px, principal
@@ -48,16 +49,16 @@ camera = CameraModel(600.0px, Point2(250.0px, 250.0px))
 # the scale integrated out against Jeffreys' prior and the labels flat, then
 # Welsch half-quadratic refinement at its cross-validated multiple of the
 # consensus set's scale.
-result = find_essential(camera, camera, cs;
-    scoring = StudentTUniformScoring(EssentialProblem, 250.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
-    local_optimization_strategy = HQ{WelschShape}(; efficiency_constant = WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL),
+result = solve(EstimationProblem(EssentialProblem(camera, camera, cs)),
+    Ransac(; scoring = StudentTUniformScoring(EssentialProblem, 250.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior()),
+             local_optimization_strategy = HQ{WelschShape}(; efficiency_constant = WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL));
     rng = MersenneTwister(2))
 
 n_inliers = count(inlier_mask(result))   # the 200 matches, and the few mismatches that land on their epipolar lines
 # Rotation and translation-direction errors in degrees, against the closest of
 # the four motions (R, t) the estimated essential matrix factors into.
 rotation_error, translation_error =
-    rad2deg.(minimum(pose_error(Rᵢ, tᵢ, R, t) for (Rᵢ, tᵢ) in motion(estimate(result))))
+    rad2deg.(minimum(pose_error(Rᵢ, tᵢ, R, t) for (Rᵢ, tᵢ) in motion(result.u)))
 ```
 
 The [Overview](https://localoptimizationdoneright.github.io/overview/) introduces

@@ -25,8 +25,8 @@ using StaticArrays: SA
 import VisualGeometryToolkitCore as VgtkCore
 using VisualGeometryToolkitCore: AbstractScoring, BarronShape, CameraModel, EssentialMat, GemanMcclureShape, LossWidth,
     MsacScoring, Point2, Rect, EfficiencyConstant, TLSShape, WelschShape, codimension, consensus_set, correspondences, decision_boundary, decision_width,
-    deploy, estimate, exp_so3, locally_optimize!, loss_at, lo_width, mahalanobis_distances!, minimal_sample_size, px,
-    retcode, scale_s2, score_model!, sq_loss_width, ReturnCode, stop_rule, IncrementSize, LadderConverged, NoImprovement,
+    deploy, exp_so3, locally_optimize!, loss_at, lo_width, mahalanobis_distances!, minimal_sample_size, px,
+    scale_s2, score_model!, sq_loss_width, ReturnCode, stop_rule, IncrementSize, LadderConverged, NoImprovement,
     LeftBasin, IterationCap, NoRule
 using VisualGeometryToolkitCore.Synthetic: projective_distance, sample_twoview_scene
 using VisualGeometryToolkitEstimation: BoundedProblem, EssentialProblem, RansacWorkspace
@@ -121,9 +121,9 @@ end
     )
     @testset "$(nameof(typeof(lo)))" for (lo, scoring) in arms
         result = run_lo(lo, problem, scoring, seed)
-        @test retcode(result) in (ReturnCode.Success, ReturnCode.MaxIters, ReturnCode.Terminated)
-        @test estimate(result) isa EssentialMat
-        @test inlier_rms(estimate(result)) < 0.6      # from 2.2 px, the truth's 0.32 px
+        @test result.retcode in (ReturnCode.Success, ReturnCode.MaxIters, ReturnCode.Terminated)
+        @test result.u isa EssentialMat
+        @test inlier_rms(result.u) < 0.6      # from 2.2 px, the truth's 0.32 px
     end
 end
 
@@ -133,8 +133,8 @@ end
 # the fit to the matches.
 @testset "StuTuRegemm improves or keeps the seed" begin
     result = run_lo(StuTuRegemm(), problem, stu, seed)
-    @test estimate(result) isa EssentialMat
-    @test inlier_rms(estimate(result)) <= inlier_rms(seed) * (1 + 1.0e-6)
+    @test result.u isa EssentialMat
+    @test inlier_rms(result.u) <= inlier_rms(seed) * (1 + 1.0e-6)
 end
 
 @testset "the posterior-weight arms refuse a scorer without an outlier model" begin
@@ -181,17 +181,17 @@ end
     st = LO.ScoreBcdState(VgtkCore.Attributed(seed, (; cost = -1.0)), -1.0, true)
     for (reason, rule, rc) in ((:converged, NoImprovement, ReturnCode.Success), (:max_iterations, IterationCap, ReturnCode.MaxIters))
         r = VgtkCore.block_coordinate_result(st, m, problem, seed, reason, 4, rule)
-        @test (retcode(r), stop_rule(r)) === (rc, rule)
+        @test (r.retcode, r.stop_rule) === (rc, rule)
     end
     # the arms on the scene
     r = run_lo(HQ{WelschShape}(efficiency_constant = 1.5), problem, msac, seed)
-    @test stop_rule(r) in (IncrementSize, IterationCap)
+    @test r.stop_rule in (IncrementSize, IterationCap)
     r = run_lo(Gnc{Irls{TLSShape}}(efficiency_constant = 2.5), problem, msac, seed)
-    @test stop_rule(r) in (LadderConverged, IterationCap)
+    @test r.stop_rule in (LadderConverged, IterationCap)
     r = run_lo(StuTuBCD(), problem, msac, seed)
-    @test stop_rule(r) in (NoImprovement, IterationCap)
+    @test r.stop_rule in (NoImprovement, IterationCap)
     r = run_lo(StuTuHQTabulated(), problem, stu, seed)
-    @test (retcode(r), stop_rule(r)) in ((ReturnCode.Success, NoImprovement), (ReturnCode.Success, IncrementSize),
+    @test (r.retcode, r.stop_rule) in ((ReturnCode.Success, NoImprovement), (ReturnCode.Success, IncrementSize),
                                           (ReturnCode.Terminated, LeftBasin), (ReturnCode.MaxIters, IterationCap))
 end
 
@@ -200,13 +200,13 @@ end
     welsch = run_lo(hq, problem, msac, seed)
     # BarronHQ standardizes on the Gaussian core, so α → −∞ is HQ{WelschShape}
     # at √2 times its efficiency constant.
-    @test projective_distance(estimate(run_lo(BarronHQ(-1.0e12; efficiency_constant = 1.5 / sqrt(2.0)), problem, msac, seed)),
-                              estimate(welsch)) < 1.0e-9
+    @test projective_distance(run_lo(BarronHQ(-1.0e12; efficiency_constant = 1.5 / sqrt(2.0)), problem, msac, seed).u,
+                              welsch.u) < 1.0e-9
     # A BoundedProblem is a validation decorator: the lift refines its inner problem.
     bounded = BoundedProblem(problem, Rect(0.0, 0.0, 500.0, 500.0))
-    @test estimate(run_lo(hq, bounded, msac, seed)) == estimate(welsch)
+    @test run_lo(hq, bounded, msac, seed).u == welsch.u
     gnc = Gnc{Irls{TLSShape}}(efficiency_constant = 2.5)
-    @test estimate(run_lo(gnc, bounded, msac, seed)) == estimate(run_lo(gnc, problem, msac, seed))
+    @test run_lo(gnc, bounded, msac, seed).u == run_lo(gnc, problem, msac, seed).u
     # The crossover sentinel (a non-positive multiple) is retired.
     @test_throws ArgumentError run_lo(GmHqEps(efficiency_constant = -1.0), problem, msac, seed)
 end
@@ -214,7 +214,7 @@ end
 @testset "StuTuBCD never lowers the score" begin
     ws = RansacWorkspace(problem, msac, StuTuBCD())
     before, _ = score_model!(ws.buf, msac, problem, seed)
-    after, _ = score_model!(ws.buf, msac, problem, estimate(run_lo(StuTuBCD(), problem, msac, seed)))
+    after, _ = score_model!(ws.buf, msac, problem, run_lo(StuTuBCD(), problem, msac, seed).u)
     @test after >= before
 end
 
@@ -223,8 +223,8 @@ end
 # recovery list above: from the perturbed seed on this pixel scene it returns
 # the seed.)
 @testset "WelschHQNewton keeps HQ{WelschShape}'s refined model" begin
-    refined = estimate(run_lo(HQ{WelschShape}(efficiency_constant = 1.5), problem, msac, seed))
-    kept = estimate(run_lo(WelschHQNewton(efficiency_constant = 1.5), problem, msac, refined))
+    refined = run_lo(HQ{WelschShape}(efficiency_constant = 1.5), problem, msac, seed).u
+    kept = run_lo(WelschHQNewton(efficiency_constant = 1.5), problem, msac, refined).u
     @test projective_distance(kept, refined) < 1.0e-6
     @test inlier_rms(kept) < 0.4
 end

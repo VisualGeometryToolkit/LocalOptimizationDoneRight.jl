@@ -23,7 +23,7 @@
 # not Student-t (Gaussian core, redescending tails), so the scale is re-estimated
 # from the loss's OWN weight ω(r) = e^{−r²/loss_width²} (VGC `lift_weight`) — NOT a
 # Gaussian variance or the t latent precision: ŝ² = Σωᵢrᵢ²/Σωᵢ, the
-# redescending-weighted second moment, as RSDR's `fit_scale` under the Jeffreys
+# redescending-weighted second moment, as RSDR's scale estimate under the Jeffreys
 # prior (rss = Σωr², dof = Σω); the loss width is then efficiency_constant·√ŝ² at the
 # same `efficiency_constant`.
 #
@@ -55,7 +55,7 @@ function update_nuisance!(lh::WelschEcmScale)
     end
     # A new noise VARIANCE at the same efficiency constant: `rescale` replaces the
     # one slot. No weight at all (every point beyond the loss) holds the scale.
-    sω > 0 && (s.loss = rescale(s.loss, fit_scale(JeffreysPrior(), sωr2, sω)))
+    sω > 0 && (s.loss = rescale(s.loss, solve(EstimationProblem(SquaredScale, (; rss = sωr2, dof = sω)), ScaleMAP(JeffreysPrior())).u))
     return nothing
 end
 update_weights!(::WelschEcmScale) = nothing          # closed-form Welsch: no table
@@ -64,13 +64,9 @@ current_s2(lh::WelschEcmScale) = scale_s2(lh.state.loss)   # the ECM scale (VGC 
 # Convexified-Newton lift (Zach & Bourmaud 2018): same fixed-scale setup as the GN
 # HQ{WelschShape}, but the joint system's z-block is the convexified Newton one
 # (VGC `WelschConvexNewton`). A/B partner for the GN lift in the LO ablation.
-function locally_optimize!(
-        ::LoBuffers, lo::WelschHQNewton, problem::EssentialProblem, model::EssentialMat,
-        cs::ConsensusSet, buf::ScoreBuffers, scoring
-    )
-    loss = loss_at(lo, WelschShape(), cs, scoring, buf)
-    return _manifold_hq!(problem, model, loss, lo.μ, :flat, lo.max_iter; zblock = WelschConvexNewton())
-end
+locally_optimize!(::LoBuffers, lo::WelschHQNewton, problem::EssentialProblem, model::EssentialMat,
+                  cs::ConsensusSet, buf::ScoreBuffers, scoring) =
+    _fixed_shape_hq!(lo, problem, model, cs, buf, scoring)   # the fixed-shape arms' body (lift/lifts.jl)
 
 # D2 selector: re-score seed + every visited iterate under ONE fixed objective
 # — the lift cost at the FINAL converged loss — and return its argmin.
@@ -100,7 +96,7 @@ function locally_optimize!(
     # D2: the ECM run's incumbent is selected at the FINAL converged scale —
     # one fixed objective for every candidate (see WelschEcmScale header).
     best = _ecm_final_scale_incumbent(prov, θ₀, lh.traj, state.loss)
-    return lo_estimate(lift_model(prov, best), retcode(res), stop_rule(res); iterations = iterations(res))   # the inner lift's record
+    return lo_estimate(lift_model(prov, best), res.retcode, res.stop_rule; iterations = res.stats.nsteps)   # the inner lift's record
 end
 
 # =============================================================================
@@ -201,7 +197,7 @@ struct LiftedMixtureMethod{Prov, S <: LiftState} <: JointLiftMethod
     ls::S                           # the lift's own state (z and the reduced system)
 end
 LiftedMixtureMethod(prov, n::Int, μ::Float64, patience::Int, table::TabulatedLift, pws::PosteriorWeightState) =
-    LiftedMixtureMethod(prov, n, μ, patience, table, pws, provider_lift_state(prov))
+    _with_lift_state(LiftedMixtureMethod, prov, n, μ, patience, table, pws)
 
 # `cur_cost` is the TRUE mixture NLL at `θ`; `seed_nll` the leave-basin cap.
 mutable struct LiftedMixtureState{M}

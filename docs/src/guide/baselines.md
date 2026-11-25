@@ -6,7 +6,7 @@ CurrentModule = LocalOptimizationDoneRight
 
 The paper compares its local optimizers with two families of established
 refiners, both run as `ExternalRefit` strategies (VisualGeometryToolkitCore's external
-refit contract: `external_workspace`, `refine_external!`) through the same refit
+refit contract: `external_workspace`, `external_refit!`) through the same refit
 layer (`VisualGeometryToolkitEval.Evaluation`) and under the same LO budget as every
 other arm: PoseLib's truncated refiners (in
 the package) and RansacLib's classical LO-MSAC (in the paper project
@@ -24,10 +24,20 @@ at an absolute loss width, never inside the native RANSAC loop.
 ## PoseLib truncated refiners
 
 [`PoseLibLm`](@ref) and [`PoseLibLZ`](@ref) refine relative pose
-(`refine_relpose`), fundamental matrices (`refine_fundamental`) and homographies
-(`refine_homography`) at the absolute loss width the refit hands
-`refine_external!` (a `LossWidth`). `max_iter` is their LM budget; the paper
-runs them at the evaluation's equal LO budget.
+(`RefineProblem(cs, pose, (; K1, K2))`), fundamental matrices
+(`RefineProblem(cs, FundMat(F))`) and homographies (`RefineProblem(cs, HomographyMat(H))`),
+each solved by VisualGeometryToolkitCore's `LevenbergMarquardt(PoseLibSolver(); optimization_strategy)`,
+at the absolute loss width the refit hands `external_refit!` (a `LossWidth`).
+`max_iter` is their LM budget (`stops = LmStops(; max_iter)`); the paper
+runs them at the evaluation's equal LO budget. The relative-pose refine from an
+essential-matrix seed is also an algorithm of its own, [`TruncatedRefit`](@ref),
+for a caller that needs the refined pose itself:
+
+```julia
+# Illustrative: `problem` an EssentialProblem, `seed_E` its seed, `frame` the pair's
+# two-view frame (`Kc1`, `Kc2`, the pool-frame correspondences `cs`), `w` the loss width
+pose = solve(RefineProblem(problem, seed_E, frame), TruncatedRefit(PoseLibLm(25)); width = w).u
+```
 
 ## RansacLib LO (RansacLibLO)
 
@@ -56,7 +66,7 @@ Chum, BMVC 2012), **run unmodified** as a seeded local optimization for E, F and
   `LocalOptimizationDoneRight` does not depend on it. The paper project devs it
   by path (`[sources]` in `accv2026/Project.toml`), and the two arms
   (`accv2026/src/lebeda_lo.jl`) implement VisualGeometryToolkitCore's external refit
-  contract (`external_workspace`, `refine_external!`), like any third-party
+  contract (`external_workspace`, `external_refit!`), like any third-party
   strategy.
 
 Building it compiles a small C++ shim and needs `git` and a C++17 `g++`; Eigen

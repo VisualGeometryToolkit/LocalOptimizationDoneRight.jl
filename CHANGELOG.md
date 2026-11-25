@@ -1,5 +1,45 @@
 # LocalOptimizationDoneRight changelog
 
+## 0.8.0 (unreleased): on VisualGeometryToolkitCore 0.14's `solve(problem, algorithm)`
+
+The breaking minor on VisualGeometryToolkitCore 0.14, VisualGeometryToolkitEstimation 0.13 and PoseLib 0.4
+(`[compat]` `"0.14"`, `"0.13"`, `"0.4"`), the stack's SciML-style estimation interface. The strategies are values, as
+before: they plug into `Ransac(; local_optimization_strategy = …)` and `LocalOptimization(…)`. No refined number
+changes (the suite's expected values are unchanged).
+
+### Breaking
+
+- **`truncated_refit_pose` is the algorithm `TruncatedRefit`.** `truncated_refit_pose(lo, ws, problem, seed_E,
+  loss_width)` → `solve(RefineProblem(problem, seed_E, frame), TruncatedRefit(lo); width = loss_width).u`: the problem
+  and the seed are the `RefineProblem`, the pair's two-view frame (`Kc1`, `Kc2`, the pool-frame `cs`, what
+  `external_workspace` read) its context, the absolute loss width the solve keyword `width`. The result is a
+  `FitResult` (`u` the refined `EuclideanMap{3}`, PoseLib's termination record). Its body is the E external refit's,
+  one copy. `CONTRACT_GENERICS` is empty: the extension adds methods to Core's generics only.
+- **The external-refit hook is Core's renamed `external_refit!`** (was `refine_external!`), for `PoseLibLm`,
+  `PoseLibLZ` and `PoseLibLmAdaptLossWidth`; `external_workspace` and `prepare_external!` keep their names.
+- **The PoseLib refines are Core's Levenberg–Marquardt with PoseLib's backend**:
+  `solve(RefineProblem(cs, guess[, (; K1, K2)]), LevenbergMarquardt(PoseLibSolver(); optimization_strategy);
+  stops = LmStops(; max_iter), width)`, the guess a `HomographyMat`, `FundMat` or the cheirality-resolved pose (PoseLib
+  0.4 retired `refine_relpose`, `refine_fundamental`, `refine_homography`). Same numbers.
+
+### Changed
+
+- The scale estimates (`WelschHQEcm`'s ECM scale, `PoseLibLmAdaptLossWidth`'s within-width moment) are Core's
+  `solve(EstimationProblem(SquaredScale, (; rss, dof)), ScaleMAP(JeffreysPrior())).u` (was `fit_scale`); results are
+  read by field (`r.u`, `r.retcode`, `r.stop_rule`, `r.stats.nsteps`). Bit-identical.
+- One body for the fixed-shape HQ arms (`BarronHQ`, `GmHqEps`, `WelschHQNewton`: the shape at its width mode, flat
+  z₀, the arm's z-block) and one constructor rule for the lift methods (the provider's lift state appended), the two
+  restatements Core 0.14's duplication checker finds. Bit-identical.
+- README, the documentation's examples and docstrings use `solve(EstimationProblem(EssentialProblem(camera, camera,
+  cs)), Ransac(; scoring, local_optimization_strategy); rng)` (was `find_essential`).
+
+### On the solve branch only (TEMPORARY, removed when Core 0.14 etc. are registered)
+
+- `[sources]` path entries point at the monorepo's solve branch; accv2026 leaves the workspace (it stays on its
+  released LocalOptimizationDoneRight 0.7 and the Core 0.13 stack until its run of record is archived, migration plan
+  §5), and the naming and duplication gates leave its findings out. The README test develops the sourced stack
+  packages from their paths.
+
 ## 0.7.3: on VisualGeometryToolkitCore 0.13; accv2026 on Eval 0.10's storage design and keyed products
 
 A patch: the package's code is unchanged. The package, test and accv2026 (with accv2026/envs/superansac) move to

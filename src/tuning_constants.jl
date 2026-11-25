@@ -233,7 +233,7 @@ end
 
 The Welsch-HQ `efficiency_constant` of the essential class.
 
-For `VisualGeometryToolkitEstimation.find_essential`, it is the
+For a `Ransac` find on an `EssentialProblem`, it is the
 deployed optimum of the PT-E-SIFT-4K product tuning (the essential class tier
 transfers it from the `(:sift, :phototourism)` entry, the one that tuned it).
 Equal to `tuning_constant(:essential, "welsch").efficiency_constant`.
@@ -243,7 +243,7 @@ const WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL = tuning_constant(:essential, "wel
 """
     WELSCH_HQ_EFFICIENCY_CONSTANT_FUNDMAT
 
-The Welsch-HQ `efficiency_constant` of the fundmat class (`VisualGeometryToolkitEstimation.find_fundmat`). TRANSFERRED
+The Welsch-HQ `efficiency_constant` of the fundmat class (a `Ransac` find on a `FundMatProblem`). TRANSFERRED
 from the essential entry — `tuning_constant(:fundmat, "welsch").validated` is `false`
 until the PT-F cross-validation lands.
 """
@@ -252,7 +252,7 @@ const WELSCH_HQ_EFFICIENCY_CONSTANT_FUNDMAT = tuning_constant(:fundmat, "welsch"
 """
     WELSCH_HQ_EFFICIENCY_CONSTANT_HOMOGRAPHY
 
-The Welsch-HQ `efficiency_constant` of the homography class (`VisualGeometryToolkitEstimation.find_homography`).
+The Welsch-HQ `efficiency_constant` of the homography class (a `Ransac` find on a `HomographyProblem`).
 TRANSFERRED from the essential entry — `tuning_constant(:homography, "welsch").validated`
 is `false` until the HEB-H re-CV succeeds at its gate.
 """
@@ -261,7 +261,7 @@ const WELSCH_HQ_EFFICIENCY_CONSTANT_HOMOGRAPHY = tuning_constant(:homography, "w
 """
     WELSCH_HQ_EFFICIENCY_CONSTANT_ABSOLUTE_POSE
 
-The Welsch-HQ `efficiency_constant` of the absolute_pose class (`VisualGeometryToolkitEstimation.find_absolute_pose`).
+The Welsch-HQ `efficiency_constant` of the absolute_pose class (a `Ransac` find on an `AbsolutePoseProblem`).
 TRANSFERRED from the essential entry — no PnP entry has been cross-validated
 yet, so `tuning_constant(:absolute_pose, "welsch").validated` is `false`.
 """

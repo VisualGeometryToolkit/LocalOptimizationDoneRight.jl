@@ -3,7 +3,7 @@
 # calls live in the PoseLib extension, ext/LocalOptimizationDoneRightPoseLibExt.jl).
 #
 # External refiners (VisualGeometryToolkitCore's `ExternalRefit`): they refine at an
-# absolute loss width through `refine_external!` on their per-pair
+# absolute loss width through `external_refit!` on their per-pair
 # `external_workspace` (the pool-frame calibrations and correspondences), never
 # in the native RANSAC loop — truncating at a marginal's outlier half-width
 # would degenerate TLS to least squares. Loading PoseLib makes the solver
@@ -15,7 +15,7 @@
 
 PoseLib Levenberg–Marquardt over the TRUNCATED Sampson loss (`TLSShape`) — the
 LO-RANSAC standard truncated refiner (TLS-IRLS). An external refiner
-(`ExternalRefit`): it refines at an absolute loss width (`refine_external!`),
+(`ExternalRefit`): it refines at an absolute loss width (`external_refit!`),
 not in the native RANSAC loop. `max_iter` is its LM budget.
 """
 struct PoseLibLm <: AbstractOptimizationStrategy
@@ -50,7 +50,7 @@ operating_efficiency_constant`), VisualGeometryToolkitEstimation's `consensus_s2
 plug-in scale; a consensus too thin to carry a scale makes no refit.
 `max_iter` is the total LM budget across rounds. Defaults:
 configs/default.toml `[optimization_strategy.poselib_adapt]`. E-track only
-(PoseLib `refine_relpose`).
+(PoseLib's camera-aware pose refine, `RefineProblem(cs, pose, (; K1, K2))`).
 """
 struct PoseLibLmAdaptLossWidth <: AbstractOptimizationStrategy
     max_iter::Int    # TOTAL LM budget across rounds (parity with PoseLibLm)
@@ -88,15 +88,23 @@ VgtkCore.lo_label(::PoseLibLmAdaptLossWidth) = raw"TLS-IRLS-$\hat s$"
 VgtkCore.lo_marker(::PoseLibLmAdaptLossWidth) = Symbol("square*")
 
 """
-    truncated_refit_pose(lo, ws, problem, seed_E, loss_width) -> refined pose
+    TruncatedRefit(lo::Union{PoseLibLm, PoseLibLZ})
 
-The relative pose a PoseLib truncated refiner reaches from an essential-matrix seed.
+The relative pose a PoseLib truncated refiner reaches from an essential-matrix seed, a
+`RefineKind` algorithm:
 
-The E-branch optimizer body of a PoseLib truncated refiner WITHOUT a guard or
+    solve(RefineProblem(problem::EssentialProblem, seed_E, frame), TruncatedRefit(lo); width) -> FitResult
+
+The E-branch optimizer body of the truncated refiner `lo` WITHOUT a guard or
 scoring bracket: the seed's cheirality-resolved pose (fast strided vote on the
-problem's bearings) refined by PoseLib `refine_relpose` at the absolute
-pool-frame `loss_width`, on the refiner's `external_workspace`. For callers
-that need the REFINED pose itself (a warm-started polish). Implemented by the
-PoseLib extension.
+problem's bearings) refined by PoseLib's camera-aware pose refine at the absolute
+pool-frame loss width `width` (a `Real`), `lo.max_iter` its LM budget. The context
+`frame` is the pair's two-view frame, as the external-refit contract hands it over:
+its `Kc1`, `Kc2` and pixel correspondences `cs`. The result's `u` is the refined
+pose (an `EuclideanMap{3}`), its termination PoseLib's. For callers that need the
+REFINED pose itself (a warm-started polish). Solved by the PoseLib extension.
 """
-function truncated_refit_pose end
+struct TruncatedRefit{L <: Union{PoseLibLm, PoseLibLZ}} <: AbstractEstimationAlgorithm
+    lo::L
+end
+VgtkCore.estimator_kind(::TruncatedRefit) = RefineKind()

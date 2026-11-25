@@ -1,10 +1,12 @@
 name = "LocalOptimizationDoneRight"
 uuid = "87a2e6a3-7afc-471f-bd1b-aa3740a29cd9"
-version = "0.7.3"
+version = "0.8.0"
 authors = ["James Pritts <jbpritts@gmail.com>"]
 
 [workspace]
-projects = ["test", "docs", "accv2026"]
+# TEMPORARY: solve branch; remove when Core 0.14 etc. are registered (accv2026 stays on its released LODR 0.7 and the
+# Core 0.13 stack until its run of record is archived, migration plan §5; restore it to the list then)
+projects = ["test", "docs"]
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -21,9 +23,15 @@ LocalOptimizationDoneRightPoseLibExt = "PoseLib"
 
 [compat]
 LinearAlgebra = "1"
-PoseLib = "0.3.3"
+PoseLib = "0.4"
 StaticArrays = "1.9"
 Statistics = "1.11"
-VisualGeometryToolkitCore = "0.13.3"
-VisualGeometryToolkitEstimation = "0.12.2"
+VisualGeometryToolkitCore = "0.14"
+VisualGeometryToolkitEstimation = "0.13"
 julia = "1.13"
+
+# TEMPORARY: solve branch; remove when Core 0.14 etc. are registered (PoseLib, a weak dependency here, is in
+# test/Project.toml: Pkg takes [sources] only for [deps]/[extras]; the workspace merges them per UUID)
+[sources]
+VisualGeometryToolkitCore = {path = "/home/jbpritts/src/_wt-solve-core014/VisualGeometryToolkitCore"}
+VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/_wt-solve-core014/VisualGeometryToolkitEstimation"}

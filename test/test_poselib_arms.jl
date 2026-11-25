@@ -1,20 +1,27 @@
 # =============================================================================
 # The PoseLib truncated refiners (src/poselib_arms.jl, their solver calls in
 # ext/LocalOptimizationDoneRightPoseLibExt.jl): identity traits, the
-# external-refit contract they implement, and the adaptive arm's
-# within-width scale moment. Their integration with the composition evaluator
+# external-refit contract they implement, the E-branch pose refine as an
+# algorithm (`TruncatedRefit`), and the adaptive arm's within-width scale moment. Their integration with the composition evaluator
 # (VisualGeometryToolkitEval.Evaluation) and the paper's scorer is
 # accv2026/test/test_engine_integration.jl.
 # =============================================================================
 using Test
 using LinearAlgebra: I
 using LocalOptimizationDoneRight
-using LocalOptimizationDoneRight: LocalOptimizationDoneRight as LODR, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth
+using LocalOptimizationDoneRight: LocalOptimizationDoneRight as LODR, PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth,
+    TruncatedRefit
 import PoseLib
+import VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: AbstractOptimizationStrategy, RefitFamily, ExternalRefit, FixedScale, ConsensusAnchored,
-    LossWidth, FixedS2, scale_interface, optimization_path, lo_label, external_workspace, refine_external!,
-    prepare_external!, Correspondences, Point2, withattrs
+    LossWidth, FixedS2, scale_interface, optimization_path, lo_label, external_workspace, external_refit!,
+    prepare_external!, Correspondences, Point2, withattrs, CameraModel, EssentialMat, EuclideanMap, RefineProblem,
+    RefineKind, estimator_kind, solve
+using VisualGeometryToolkitEstimation: EssentialProblem
 using StaticArrays: SMatrix
+using Random: Xoshiro
+# the seeded E scene of the stack's LO benches (`essential_bench_scene`, VisualGeometryToolkitCore's)
+include(joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "bench_record.jl"))
 
 const _EXT = Base.get_extension(LODR, :LocalOptimizationDoneRightPoseLibExt)
 
@@ -31,8 +38,8 @@ const _EXT = Base.get_extension(LODR, :LocalOptimizationDoneRightPoseLibExt)
     # the library's own types
     @test parentmodule(PoseLibLm) === LODR && parentmodule(PoseLibLZ) === LODR
     # the external-refit contract, implemented by the extension at an absolute loss width
-    @test any(m -> m.sig <: Tuple{typeof(refine_external!), Any, Union{PoseLibLm, PoseLibLZ}, Any, Any, LossWidth, Any},
-              methods(refine_external!))
+    @test any(m -> m.sig <: Tuple{typeof(external_refit!), Any, Union{PoseLibLm, PoseLibLZ}, Any, Any, LossWidth, Any},
+              methods(external_refit!))
     @test any(m -> m.sig <: Tuple{typeof(prepare_external!), Any, PoseLibLmAdaptLossWidth, Any, Any, FixedS2, Any},
               methods(prepare_external!))
 end
@@ -66,5 +73,23 @@ end
     for cs in (plain, withattrs(plain; weights = fill(1.0, 8)), Correspondences(Point2{Float32}.(x), Point2{Float32}.(x)))
         ws = external_workspace(PoseLibLm(25), nothing, (; Kc1 = K, Kc2 = K, cs), nothing)
         @test ws.cs === cs && ws.Kc1 === K
+    end
+end
+
+# The E-branch body as an algorithm: `TruncatedRefit(lo)` on the problem, the seed and the two-view frame,
+# at an absolute pool-frame loss width (the solve keyword `width`); the E external refit is the same body.
+@testset "TruncatedRefit: the truncated refiner's pose refine" begin
+    @test estimator_kind(TruncatedRefit(PoseLibLm(25))) isa RefineKind
+    sc = essential_bench_scene(Xoshiro(20261125); n = 300)
+    cs = Correspondences(sc.u₁, sc.u₂)
+    problem = EssentialProblem(CameraModel(sc.K), CameraModel(sc.K), cs)
+    frame = (; Kc1 = sc.K, Kc2 = sc.K, cs)
+    seed = EssentialMat(sc.R, sc.t)
+    for lo in (PoseLibLm(25), PoseLibLZ(25))
+        r = solve(RefineProblem(problem, seed, frame), TruncatedRefit(lo); width = 3.0)
+        @test r.u isa EuclideanMap && r.alg === TruncatedRefit(lo) && r.prob.f === problem
+        @test maximum(abs, r.u.R - sc.R) < 1.0e-2                  # 0.5 px noise, 30 % outliers truncated
+        ws = external_workspace(lo, problem, frame, nothing)
+        @test external_refit!(ws, lo, problem, seed, LossWidth(3.0), nothing) === EssentialMat(r.u.R, r.u.t)
     end
 end
