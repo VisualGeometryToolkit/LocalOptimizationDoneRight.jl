@@ -17,6 +17,14 @@ changes (the suite's expected values are unchanged).
   one copy. `CONTRACT_GENERICS` is empty: the extension adds methods to Core's generics only.
 - **The external-refit hook is Core's renamed `external_refit!`** (was `refine_external!`), for `PoseLibLm`,
   `PoseLibLZ` and `PoseLibLmAdaptLossWidth`; `external_workspace` and `prepare_external!` keep their names.
+- **Policies are types, not Symbols or flags** (the stack's settings-as-algorithm-arguments rule):
+  - `HQ`'s z₀ policy `init` is `FlatStart()` (the default), `PosteriorStart()` or `ConsensusStart()` (new, exported,
+    under `AbstractLiftStart`), was `:flat | :posterior | :consensus`;
+  - `Gnc`'s `budget` is `ParityBudget()` (the default) or `ConvergedBudget()` (new, exported, under
+    `AbstractGncBudget`), was `:parity | :converged`;
+  The TOML spellings are unchanged: `init = "flat"`, `budget = "parity"` (tags of the new `public` registries
+  `LIFT_START_TAGS` and `GNC_BUDGET_TAGS`). A Gnc on a numeric `entry` outside the
+  Welsch family is an `ArgumentError` (was an `ErrorException`). Same numbers.
 - **The PoseLib refines are Core's Levenberg–Marquardt with PoseLib's backend**:
   `solve(RefineProblem(cs, guess[, (; K1, K2)]), LevenbergMarquardt(PoseLibSolver(); optimization_strategy);
   stops = LmStops(; max_iter), width)`, the guess a `HomographyMat`, `FundMat` or the cheirality-resolved pose (PoseLib

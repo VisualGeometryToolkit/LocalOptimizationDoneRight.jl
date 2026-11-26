@@ -52,7 +52,7 @@
 
 using LocalOptimizationDoneRight, VisualGeometryToolkitEstimation, VisualGeometryToolkitCore
 import PoseLib                # the PoseLib extension: the truncated refiners' solver calls
-using LocalOptimizationDoneRight: LiftState, _lift_hq_increment!, _lift_gnc_increment!, _seed_lift_z!,
+using LocalOptimizationDoneRight: LiftState, _lift_hq_increment!, _lift_gnc_increment!, _seed_lift_z!, FlatStart,
     PoseLibLm, PoseLibLZ
 using VisualGeometryToolkitCore: RowsWorkspace, sampson_residuals!, sampson_jacobian_rows!, Correspondences, withattrs,
     retract, retract_directions,
@@ -114,7 +114,7 @@ const EE = retract(CHE, aE); const dE = retract_directions(CHE, aE)
 const XS = withattrs(Correspondences(F1, F2); M₁ = M1, M₂ = M2)
 sampson_residuals!(RWS.r, EE, XS)
 sampson_jacobian_rows!(RWS.J, EE, dE, XS)
-_seed_lift_z!(LS, WELSCH, RWS.r, N, :flat)
+_seed_lift_z!(LS, WELSCH, RWS.r, N, FlatStart())
 
 const KERNELS = [
     "lift-HQ"  => () -> _lift_hq_increment!(RWS, LS, WELSCH, 1.0e-9, N, nothing),

@@ -119,18 +119,18 @@ and the noise variance stored apart and never multiplied into a stored width:
 # Fields
 - `max_iter::Int`: max joint-GN iterations (25; 40 for `SmoothTLSShape`)
 - `μ::Float64=1e-9`: Gauss-Newton damping
-- `init::Symbol=:flat`: z₀ policy — `:flat` (all-in, default) | `:posterior`
-  (soft seed weights) | `:consensus` (hard r½ mask)
+- `init`: the z₀ policy — `FlatStart()` (all-in, default) | `PosteriorStart()`
+  (soft seed weights) | `ConsensusStart()` (hard r½ mask); TOML `init = "flat"` …
 - `width::W`: the width mode (`efficiency_constant = m`, the plain multiple,
   `loss_width = w`, or neither: follow the scorer), as [`Irls`](@extref VisualGeometryToolkitCore.Irls)
 """
 struct HQ{K <: AbstractLossShape, W} <: AbstractOptimizationStrategy
     max_iter::Int
     μ::Float64
-    init::Symbol
+    init::Union{FlatStart, PosteriorStart, ConsensusStart}
     width::W
 end
-HQ{K}(max_iter::Integer, μ::Real, init::Symbol, width::W) where {K, W} = HQ{K, W}(Int(max_iter), Float64(μ), init, width)
+HQ{K}(max_iter::Integer, μ::Real, init::AbstractLiftStart, width::W) where {K, W} = HQ{K, W}(Int(max_iter), Float64(μ), init, width)
 """
     WelschHQNewton(; efficiency_constant, max_iter=25, μ=1e-9)
 
@@ -239,6 +239,32 @@ struct GmHqEps{W} <: AbstractOptimizationStrategy
 end
 
 """
+    AbstractGncBudget
+
+A [`Gnc`](@ref)'s rung budget: `ParityBudget()` splits the total `max_iter` across the μ-ladder's rungs (the equal LO
+budget, the default); `ConvergedBudget()` runs each rung to its stall, `max_iter` a safety ceiling (Yang–Carlone
+faithful). Stored by its tag ([`GNC_BUDGET_TAGS`](@ref): `"parity"`, `"converged"`).
+"""
+abstract type AbstractGncBudget end
+"""    ParityBudget()
+
+A [`Gnc`](@ref)'s total `max_iter` split across the μ-ladder's rungs (the default; [`AbstractGncBudget`](@ref))."""
+struct ParityBudget <: AbstractGncBudget end
+"""    ConvergedBudget()
+
+A [`Gnc`](@ref)'s rungs each run to their stall, `max_iter` a safety ceiling ([`AbstractGncBudget`](@ref))."""
+struct ConvergedBudget <: AbstractGncBudget end
+
+"""
+    GNC_BUDGET_TAGS
+
+The `TagRegistry` (VisualGeometryToolkitCore's) of a [`Gnc`](@ref)'s rung budgets: `"parity"` ([`ParityBudget`](@ref)),
+`"converged"` ([`ConvergedBudget`](@ref)) — its `budget` key.
+"""
+const GNC_BUDGET_TAGS = TagRegistry(:gnc_budget, "Budget", "parity" => ParityBudget, "converged" => ConvergedBudget;
+    paths = [r"optimization_strategy\.gnc\.budget"])
+
+"""
     Gnc{S<:AbstractOptimizationStrategy} <: AbstractOptimizationStrategy
 
 Graduated non-convexity over the objective of the static strategy `S`.
@@ -283,7 +309,7 @@ Variants and μ-schedules:
 
 Budget parity: TOTAL model updates across ALL rungs = `max_iter` (the shared
 25-update LO cap; every GNC stage counts). Rung arithmetic is VGC `MuLadder`
-(`budget = :converged` ⇒ converged-rung mode, `max_iter` a safety ceiling).
+(`budget = ConvergedBudget()` ⇒ converged-rung mode, `max_iter` a safety ceiling).
 Rung advance is scheduled OR stall-early; termination is TERMINAL-only (the
 373d0a6 semantics via the `LoSchedule` trait). Best-tracking is on the TARGET
 loss (true TLS cost / true GM ρ / fixed-width Welsch cost at c̄) — graduation
@@ -292,16 +318,16 @@ shapes exploration only. Implemented for every liftable problem (the
 """
 struct Gnc{S <: AbstractOptimizationStrategy, W} <: AbstractOptimizationStrategy
     max_iter::Int        # TOTAL model-update budget across all rungs (parity: 25),
-    # or the SAFETY CEILING under budget = :converged
+    # or the SAFETY CEILING under budget = ConvergedBudget()
     factor::Float64      # μ-schedule factor (canonical 1.4)
     entry::Float64       # entry-breadth policy: NaN = r_max (Yang–Carlone seed
     # extreme); numeric m = entry at m× target width, μ₀ = m²
     # (Welsch family only — smooth-and-lift dose axis 1)
-    budget::Symbol       # :parity (rung budget split) | :converged (rung runs to
-    # stall; Yang–Carlone-faithful)
+    budget::Union{ParityBudget, ConvergedBudget}   # ParityBudget() (rung budget split) | ConvergedBudget()
+    # (rung runs to stall; Yang–Carlone-faithful)
     width::W             # target loss width c̄: EfficiencyConstant(m) → m·ŝ | LossWidth | nothing (the scorer's)
 end
-Gnc{S}(max_iter::Integer, factor::Real, entry::Real, budget::Symbol, width::W) where {S, W} =
+Gnc{S}(max_iter::Integer, factor::Real, entry::Real, budget::AbstractGncBudget, width::W) where {S, W} =
     Gnc{S, W}(Int(max_iter), Float64(factor), Float64(entry), budget, width)
 
 # Deleting RVG's Symbol map also deleted the check it carried: it used to REFUSE
@@ -652,8 +678,7 @@ VgtkCore.lo_admits(::Type{<:Gnc}, ::Type{S}) where {S} = _gnc_admits(S)
 # The longer ψ̂ schedule of the smooth-TLS lift defaults from its own key.
 VgtkCore.lo_key(::Type{<:HQ{SmoothTLSShape}}, ::Val{:max_iter}) = "max_iter_smooth_tls"
 function VgtkCore.lo_validate(lo::Gnc{S}) where {S}
-    lo.budget in (:parity, :converged) || error("Gnc: budget must be :parity or :converged, got :$(lo.budget)")
     isnan(lo.entry) || S === Irls{WelschShape} ||
-        error("Gnc: numeric entry is defined for the annealed-width (Irls{WelschShape}) family only")
+        throw(ArgumentError("Gnc: numeric entry is defined for the annealed-width (Irls{WelschShape}) family only"))
     return lo
 end

@@ -25,6 +25,20 @@ GmHqEps
 Gnc
 ```
 
+An `HQ`'s z₀ start and a `Gnc`'s rung budget are types, stored by their tags:
+
+```@docs
+AbstractLiftStart
+FlatStart
+PosteriorStart
+ConsensusStart
+LIFT_START_TAGS
+AbstractGncBudget
+ParityBudget
+ConvergedBudget
+GNC_BUDGET_TAGS
+```
+
 ## Student-t + uniform and Barron-adaptive strategies
 
 ```@docs

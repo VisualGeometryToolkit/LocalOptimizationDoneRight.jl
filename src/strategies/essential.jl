@@ -90,7 +90,7 @@ function locally_optimize!(
     prov = rows_provider(problem)
     method = ManifoldLiftHQ(prov, lift_size(prov), loss, lo.μ)
     θ₀ = lift_init(prov, model)                  # the seed (included in the candidate set)
-    state = _init_manifold_hq(method, θ₀, :flat)
+    state = _init_manifold_hq(method, θ₀, FlatStart())
     lh = WelschEcmScale(state, prov)
     res = block_coordinate_descent!(state, lh, method, problem, model; max_iter = lo.max_iter)
     # D2: the ECM run's incumbent is selected at the FINAL converged scale —
@@ -223,7 +223,7 @@ end
 # seed-NLL cap level and the FIRST ECM + table from the seed residuals.
 function _init_lifted_mixture(method::LiftedMixtureMethod, θ₀)
     prov = method.prov; n = method.n
-    _seed_lift_z!(method.ls, method.table, lift_residuals(prov), n, :flat)
+    _seed_lift_z!(method.ls, method.table, lift_residuals(prov), n, FlatStart())
     seed_nll = _seed_mixture!(prov, method.pws, method.table, θ₀, n)
     return reused_state(LiftedMixtureState{typeof(θ₀)}, (θ₀, seed_nll, seed_nll, Attributed(θ₀, (; cost = Float64(seed_nll))), 0, true, Inf))
 end

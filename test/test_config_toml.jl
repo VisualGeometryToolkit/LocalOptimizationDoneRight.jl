@@ -108,7 +108,7 @@ sm(lo) = VgtkCore.lo_width(lo).value
                       "factor" => 2.0, "budget" => "converged"); class = :essential)
         @test e isa Gnc{Irls{WelschShape}}
         @test sm(e) == tuning_constant(:essential, "welsch").efficiency_constant
-        @test e.factor == 2.0 && e.budget === :converged
+        @test e.factor == 2.0 && e.budget === ConvergedBudget()
         @test isnan(e.entry)                                             # inherited "r_max"
         @test e.max_iter == _config_default("optimization_strategy.gnc", "max_iter")
     end

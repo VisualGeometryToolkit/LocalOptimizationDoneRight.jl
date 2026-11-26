@@ -108,7 +108,7 @@ end
 
 # z₀ (VGC `_seed_lift_z!`, in the provider's residual currency, read off THE
 # DEPLOYED LOSS), then the seed cost — the incumbent's start.
-function _init_manifold_hq(method::ManifoldLiftHQ, θ₀, init::Symbol)
+function _init_manifold_hq(method::ManifoldLiftHQ, θ₀, init::AbstractLiftStart)
     prov = method.prov
     lift_refresh!(prov, θ₀)
     _seed_lift_z!(method.ls, method.loss, lift_residuals(prov), lift_size(prov), init)
@@ -155,7 +155,7 @@ end
 # (HQ{K}, BarronHQ, GmHqEps) deploys its loss and hands it here, so they
 # share the provider, the z₀ policy, the stop rule and the incumbent.
 function _manifold_hq!(
-        problem, model, loss::DeployedLoss, μ::Float64, init::Symbol, max_iter::Int;
+        problem, model, loss::DeployedLoss, μ::Float64, init::AbstractLiftStart, max_iter::Int;
         zblock::LiftZBlock = JointGaussNewton()
     )
     prov = rows_provider(problem)
@@ -186,7 +186,7 @@ _hq_shape(::WelschHQNewton) = WelschShape()
 _hq_zblock(::Union{BarronHQ, GmHqEps}) = JointGaussNewton()
 _hq_zblock(::WelschHQNewton) = WelschConvexNewton()
 _fixed_shape_hq!(lo, problem, model, cs::ConsensusSet, buf::ScoreBuffers, scoring) =
-    _manifold_hq!(problem, model, loss_at(lo, _hq_shape(lo), cs, scoring, buf), lo.μ, :flat, lo.max_iter;
+    _manifold_hq!(problem, model, loss_at(lo, _hq_shape(lo), cs, scoring, buf), lo.μ, FlatStart(), lo.max_iter;
                   zblock = _hq_zblock(lo))
 
 locally_optimize!(::LoBuffers, lo::Union{BarronHQ, GmHqEps}, problem::MinimalSolveProblem, model,
@@ -309,7 +309,7 @@ function locally_optimize!(
         r2max = max(r2max, res[i]^2)
     end
     μ0 = gnc_entry_mu0(loss, r2max, lo.entry)
-    sched = with_converged_rung(gnc_schedule(loss, lo.factor), lo.budget === :converged)
+    sched = with_converged_rung(gnc_schedule(loss, lo.factor), lo.budget isa ConvergedBudget)
     st = schedule_init(sched, μ0, lo.max_iter)
     cost0 = lift_cost(loss, res, n)
     state = reused_state(ManifoldLiftGncState{typeof(θ₀)}, (θ₀, cost0, Attributed(θ₀, (; cost = Float64(cost0))), Inf, st, 0, false))

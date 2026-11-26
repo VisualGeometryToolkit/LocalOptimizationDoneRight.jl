@@ -346,31 +346,58 @@ Returns the damped tangent step Δθ with the TLS middle-band count (points with
 end
 
 """
-    _seed_lift_z!(ls::LiftState, loss, res, n, policy::Symbol) -> nothing
+    AbstractLiftStart
 
 The z₀ policy of a lift run (w̄ = z² inside the loss's [`lift_window`](@ref),
-capped at the flat level 0.95): `:flat` — every point at the all-in convex-end
-start; `:posterior` — the loss's own normalized IRLS weight
-`lift_weight(loss, rᵢ²) / lift_wmax(loss)` at the seed residual `res[i]` (the
-provider's residual currency); `:consensus` — flat for a point whose weight is
-≥ ½, the window floor otherwise.
+capped at the flat level 0.95), an [`HQ`](@ref)'s `init`: `FlatStart()` — every
+point at the all-in convex-end start (the default); `PosteriorStart()` — the
+loss's own normalized IRLS weight `lift_weight(loss, rᵢ²) / lift_wmax(loss)` at
+the seed residual (the provider's residual currency); `ConsensusStart()` — flat
+for a point whose weight is ≥ ½, the window floor otherwise. Stored by its tag
+([`LIFT_START_TAGS`](@ref): `"flat"`, `"posterior"`, `"consensus"`).
 """
-function _seed_lift_z!(ls::LiftState, loss, res, n::Int, policy::Symbol)
-    z = ls.z
-    if policy === :flat                                 # reads neither the loss nor `res`
-        @inbounds for i in 1:n
-            z[i] = sqrt(_LIFT_W0)
-        end
-    elseif policy === :posterior || policy === :consensus
-        _seed_weighted_z!(z, loss, res, n, policy === :consensus)
-    else
-        throw(ArgumentError("lift: unknown z₀ policy :$policy (expected :flat|:posterior|:consensus)"))
+abstract type AbstractLiftStart end
+"""    FlatStart()
+
+The lift's all-in z₀ start: every point at the convex end (the default; [`AbstractLiftStart`](@ref))."""
+struct FlatStart <: AbstractLiftStart end
+"""    PosteriorStart()
+
+The lift's z₀ from the loss's normalized IRLS weight at the seed residual ([`AbstractLiftStart`](@ref))."""
+struct PosteriorStart <: AbstractLiftStart end
+"""    ConsensusStart()
+
+The lift's z₀ as a hard ½-weight mask: flat for a point whose weight is ≥ ½, the window floor otherwise
+([`AbstractLiftStart`](@ref))."""
+struct ConsensusStart <: AbstractLiftStart end
+
+"""
+    LIFT_START_TAGS
+
+The `TagRegistry` (VisualGeometryToolkitCore's) of the lift's z₀ policies: `"flat"` ([`FlatStart`](@ref)),
+`"posterior"` ([`PosteriorStart`](@ref)), `"consensus"` ([`ConsensusStart`](@ref)) — an `HQ`'s `init` key.
+"""
+const LIFT_START_TAGS = TagRegistry(:lift_start, "Start",
+    "flat" => FlatStart, "posterior" => PosteriorStart, "consensus" => ConsensusStart;
+    paths = [r"optimization_strategy\.hq\.init"])
+
+"""
+    _seed_lift_z!(ls::LiftState, loss, res, n, start::AbstractLiftStart) -> nothing
+
+Seed the lift's z₀ by the policy `start` ([`FlatStart`](@ref), [`PosteriorStart`](@ref), [`ConsensusStart`](@ref)).
+"""
+function _seed_lift_z!(ls::LiftState, loss, res, n::Int, ::FlatStart)
+    z = ls.z                                            # reads neither the loss nor `res`
+    @inbounds for i in 1:n
+        z[i] = sqrt(_LIFT_W0)
     end
     return nothing
 end
+_seed_lift_z!(ls::LiftState, loss, res, n::Int, ::PosteriorStart) = (_seed_weighted_z!(ls.z, loss, res, n, false); nothing)
+_seed_lift_z!(ls::LiftState, loss, res, n::Int, ::ConsensusStart) = (_seed_weighted_z!(ls.z, loss, res, n, true); nothing)
 
 # The weight-seeded z₀ policies read the loss's own IRLS weight: a closed-form
-# (deployed) loss's. `hard`: :consensus (inlier iff that weight ≥ ½), else :posterior.
+# (deployed) loss's. `hard`: ConsensusStart (inlier iff that weight ≥ ½), else PosteriorStart.
 function _seed_weighted_z!(z, loss::AnyLoss, res, n::Int, hard::Bool)
     wlo = first(lift_window(loss)); whi = _LIFT_W0
     wmax = lift_wmax(loss)

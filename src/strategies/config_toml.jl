@@ -33,6 +33,12 @@ _entry_to_toml(x::Float64) = isnan(x) ? "r_max" : x
 VgtkCore.lo_field_from_toml(::Type{<:Gnc}, ::Val{:entry}, v) = _entry_from_toml(v)
 VgtkCore.toml_field(lo::Gnc, ::Val{:entry}) = _entry_to_toml(lo.entry)
 
+# The policies that are types (HQ's z₀ start, Gnc's rung budget) are stored by their tags.
+VgtkCore.lo_field_from_toml(::Type{<:HQ}, ::Val{:init}, v::AbstractString) = LIFT_START_TAGS[v]()
+VgtkCore.toml_field(lo::HQ, ::Val{:init}) = tag_of(LIFT_START_TAGS, lo.init)
+VgtkCore.lo_field_from_toml(::Type{<:Gnc}, ::Val{:budget}, v::AbstractString) = GNC_BUDGET_TAGS[v]()
+VgtkCore.toml_field(lo::Gnc, ::Val{:budget}) = tag_of(GNC_BUDGET_TAGS, lo.budget)
+
 # Gnc{S} wraps the inner static strategy `inner` (+ `loss`): concrete at
 # `Gnc{Irls{loss}}`. (HQ{K}, a plain strategy: Estimation's default.)
 function VgtkEstimation.lo_concrete(::Type{Gnc}, d::AbstractDict, sec::AbstractString; tags::TagRegistry)

@@ -89,13 +89,14 @@ const CONTRACT_GENERICS = ()
 
 export HQ, Gnc, StudentTUniform, StuTuBCD, BarronAdaptive, BarronHQ, GmHqEps,
     WelschHQNewton, WelschHQEcm, StuTuHQTabulated, StuTuRegemm
+export FlatStart, PosteriorStart, ConsensusStart, ParityBudget, ConvergedBudget   # HQ's z₀ start, Gnc's rung budget
 export PoseLibLm, PoseLibLZ, PoseLibLmAdaptLossWidth, TruncatedRefit
 export tuning_constant, WELSCH_HQ_EFFICIENCY_CONSTANT_ESSENTIAL, WELSCH_HQ_EFFICIENCY_CONSTANT_FUNDMAT,
     WELSCH_HQ_EFFICIENCY_CONSTANT_HOMOGRAPHY, WELSCH_HQ_EFFICIENCY_CONSTANT_ABSOLUTE_POSE
 
 # Public, not exported: the registry, the provenance records, the lift
 # machinery a research arm builds on, and the continuation schedules.
-public LODR_STRATEGY_TAGS, CONTRACT_GENERICS, TuningConstant, TuningProvenance, BarronAdaptiveLikelihood,
+public LODR_STRATEGY_TAGS, LIFT_START_TAGS, GNC_BUDGET_TAGS, AbstractLiftStart, AbstractGncBudget, CONTRACT_GENERICS, TuningConstant, TuningProvenance, BarronAdaptiveLikelihood,
     LiftState, lift_state, LiftZBlock, JointGaussNewton, WelschConvexNewton, TabulatedLift,
     tabulate!, cubic_hermite, lift_window, lift_raw_window,
     LoSchedule, NoSchedule, MuLadder, GeometricAnneal, gnc_schedule, schedule_init, scale_mult,
