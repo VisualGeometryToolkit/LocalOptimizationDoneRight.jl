@@ -50,18 +50,17 @@ BarronAdaptive
 BarronAdaptiveLikelihood
 ```
 
-## PoseLib truncated refiners
+## The consensus-anchored truncated refit
 
-External refiners (VisualGeometryToolkitCore's `ExternalRefit`): they refine a seed at
-an absolute loss width through `external_refit!`, outside the RANSAC loop. The
-solver calls load with PoseLib (a package extension). See
+An external refiner (VisualGeometryToolkitCore's `ExternalRefit`) as Core's
+`BackendRefit` of this package's refine algorithm. PoseLib's truncated refiners
+themselves are Core's `BackendRefit` of its PoseLib-backed Levenberg–Marquardt. See
 [Baselines](../guide/baselines.md).
 
 ```@docs
-PoseLibLm
-PoseLibLZ
-PoseLibLmAdaptLossWidth
-TruncatedRefit
+AdaptiveLossWidthRefit
+RelativePoseRefitProblem
+LODR_CONFIG_VERSIONS
 ```
 
 ## Cross-validated operating points

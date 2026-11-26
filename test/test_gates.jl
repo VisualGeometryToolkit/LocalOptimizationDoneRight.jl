@@ -11,7 +11,7 @@ using Test
 using LocalOptimizationDoneRight
 using Aqua, ExplicitImports, JET
 using VisualGeometryToolkitCore: VisualGeometryToolkitCore
-import PoseLib                # loads the PoseLib extension, checked by the stack contracts below
+import PoseLib                # the PoseLib backend of the refines the package composes (BackendRefit, AdaptiveLossWidthRefit)
 const _M = LocalOptimizationDoneRight
 
 @testset "gates" begin
@@ -76,15 +76,11 @@ end
 
 # The stack contracts (VisualGeometryToolkitCore quality/stack_contracts.jl), enforced:
 # Project.toml names only the allow-listed stack packages, no `_`-prefixed
-# name of another stack package is reached from src/ or ext/, and every method
-# added to another stack package's function lands on its CONTRACT_GENERICS —
-# for the package and for its PoseLib extension.
+# name of another stack package is reached from src/, and every method
+# added to another stack package's function lands on its CONTRACT_GENERICS.
 @testset "stack contracts" begin
     root = pkgdir(_M)
     @test isempty(VgtkCore.stack_dependency_violations(joinpath(root, "Project.toml"), "LocalOptimizationDoneRight"))
-    @test isempty(vcat(VgtkCore.private_name_violations(joinpath(root, "src"), "LocalOptimizationDoneRight"),
-                       VgtkCore.private_name_violations(joinpath(root, "ext"), "LocalOptimizationDoneRight")))
+    @test isempty(VgtkCore.private_name_violations(joinpath(root, "src"), "LocalOptimizationDoneRight"))
     @test isempty(VgtkCore.contract_generic_violations(_M))
-    ext = Base.get_extension(_M, :LocalOptimizationDoneRightPoseLibExt)
-    @test ext !== nothing && isempty(VgtkCore.contract_generic_violations(ext))
 end

@@ -6,23 +6,28 @@
 # Read through ONE mechanism, `_config_default(table, key)`
 # (src/config_defaults.jl, VisualGeometryToolkitCore `toml_default`), which THROWS on
 # a missing table or key: there is no second set of Julia literals. Parsed at
-# precompile (`include_dependency`): an edit forces a recompile.
+# precompile (`include_dependency`): an edit forces a recompile. The file is read
+# through the package's versioned converter (`LODR_CONFIG_VERSIONS`): version 1
+# named the adaptive refit's tables `[optimization_strategy.poselib_adapt]` and
+# `[optimization_strategy.poselib]`.
 # =============================================================================
 
-[optimization_strategy.poselib]
-# The cheirality vote of an E seed's decomposition (the PoseLib E refiners)
-# strides its points down to about this many (a 4-way majority vote is
-# insensitive to the subsample).
-cheirality_vote_points = 256
+config_version = 2
 
-[optimization_strategy.poselib_adapt]
-max_iter = 25        # TOTAL LM budget across rounds (the evaluation's equal LO budget)
-rounds = 5           # scale re-estimation rounds of PoseLibLmAdaptLossWidth (max_iter ÷ rounds LM iterations each)
+[adaptive_loss_width_refit]
+rounds = 5           # scale re-estimation rounds of AdaptiveLossWidthRefit (max_iter ÷ rounds LM iterations each)
 min_support = 8      # fewer within-width residuals than this ⇒ no scale re-estimate (partition too thin)
 # The refit protocol's operating efficiency constant: the default efficiency constant of
 # the re-formed width, and the efficiency constant at which the delivered loss width
 # is read as an outlier half-width for the consensus-scale bootstrap.
 operating_efficiency_constant = 2.5
+# The cheirality vote of an E seed's decomposition (the external refit's seed)
+# strides its points down to about this many (a 4-way majority vote is
+# insensitive to the subsample).
+cheirality_vote_points = 256
+
+[adaptive_loss_width_refit.stops]
+max_iter = 25        # TOTAL LM budget across rounds (the evaluation's equal LO budget)
 
 # TOML has no NaN: where a struct field is NaN-by-default (`Gnc.entry`) the file
 # spells the meaning (`"r_max"`) and the loader maps it.

@@ -14,23 +14,16 @@ Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
 VisualGeometryToolkitCore = "96820d6b-1dad-4e77-ad4a-8276f2ec1ce7"
 VisualGeometryToolkitEstimation = "9a478df9-9a37-4dc7-9070-58617efe7573"
 
-[weakdeps]
-PoseLib = "a8c7e0b4-3d2f-4f1c-9a1e-7b2d9c8f4a3b"
-
-[extensions]
-LocalOptimizationDoneRightPoseLibExt = "PoseLib"
-
 [compat]
 LinearAlgebra = "1"
-PoseLib = "0.4"
 StaticArrays = "1.9"
 Statistics = "1.11"
 VisualGeometryToolkitCore = "0.14"
 VisualGeometryToolkitEstimation = "0.13"
 julia = "1.13"
 
-# TEMPORARY: solve branch; remove when Core 0.14 etc. are registered (PoseLib, a weak dependency here, is in
-# test/Project.toml: Pkg takes [sources] only for [deps]/[extras]; the workspace merges them per UUID)
+# TEMPORARY: solve branch; remove when Core 0.14 etc. are registered (PoseLib, which the tests load to run the
+# PoseLib-backed refines, is in test/Project.toml's [sources])
 [sources]
-VisualGeometryToolkitCore = {path = "/home/jbpritts/src/_wt-solve-core014/VisualGeometryToolkitCore"}
-VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/_wt-solve-core014/VisualGeometryToolkitEstimation"}
+VisualGeometryToolkitCore = {path = "/home/jbpritts/src/_wt-p1b-set2/VisualGeometryToolkitCore"}
+VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/_wt-p1b-set2/VisualGeometryToolkitEstimation"}

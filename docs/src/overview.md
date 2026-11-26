@@ -13,12 +13,12 @@ halves:
 
 | | |
 |:---|:---|
-| **the package** (`src/`, `ext/`) | the strategies, the joint-(θ,z) lift core and its continuation schedules, the cross-validated operating points, the strategies' TOML registry, and PoseLib's truncated refiners (a package extension) |
+| **the package** (`src/`) | the strategies, the joint-(θ,z) lift core and its continuation schedules, the cross-validated operating points, the strategies' TOML registry, and the consensus-anchored truncated refit |
 | **the research project** (`accv2026/`) | the paper's arm rosters, configs, drivers, renderers, the RansacLib baseline and the manuscript; see [Reproducing the paper](guide/reproducing.md) |
 
 The package depends on VisualGeometryToolkitCore (the contracts, the losses, the width
 axes) and VisualGeometryToolkitEstimation (the problems, the RANSAC loop, the core
-baselines `nothing` (no local optimization) and `Irls{K}`). PoseLib is a weak dependency.
+baselines `nothing` (no local optimization) and `Irls{K}`). PoseLib is a test dependency: the PoseLib-backed refines need it loaded.
 
 ## Scoring versus refinement
 
@@ -58,7 +58,7 @@ result = solve(problem,
 | [`StuTuBCD`](@ref) | `:bcd` | block-coordinate ascent of the scorer's own objective (the score-matched optimizer) |
 | [`StuTuHQTabulated`](@ref), [`StuTuRegemm`](@ref) | `:hq`, `:gnc` | mixture lifts |
 | [`BarronAdaptive`](@ref) | `:irls` | Barron's adaptive loss under IRLS |
-| [`PoseLibLm`](@ref), [`PoseLibLZ`](@ref), [`PoseLibLmAdaptLossWidth`](@ref) | `:irls`, `:gnc` | PoseLib's truncated refiners (external refiners) |
+| [`AdaptiveLossWidthRefit`](@ref) (Core's `BackendRefit` of it) | `:irls` | PoseLib's truncated LM with a re-estimated width (an external refiner) |
 
 The lifts run on VisualGeometryToolkitCore's chart-rows contract, which
 VisualGeometryToolkitEstimation implements per problem, so one code path serves every
@@ -88,10 +88,12 @@ mixture lifts) carry no width; they start from the consensus scale.
 
 ## External refiners
 
-PoseLib's truncated refiners are `ExternalRefit` strategies: they refine a seed
-at an absolute loss width through VisualGeometryToolkitCore's external-refit contract
-(`external_workspace`, `prepare_external!`, `external_refit!`), outside the
-RANSAC loop. The PoseLib package extension implements those methods. The paper
+PoseLib's truncated refiners are VisualGeometryToolkitCore's `BackendRefit` of
+`LevenbergMarquardt(PoseLibSolver(); optimization_strategy)`, an `ExternalRefit`
+strategy: it refines a seed at an absolute loss width through Core's external-refit
+contract (`external_workspace`, `prepare_external!`, `external_refit!`), outside the
+RANSAC loop. This package adds the consensus-anchored arm, `BackendRefit` of its
+[`AdaptiveLossWidthRefit`](@ref), and implements the contract for it. The paper
 project's RansacLib arms implement the same contract; see
 [Baselines](guide/baselines.md).
 
@@ -133,8 +135,8 @@ so an edit forces a recompile.
 | table | holds |
 |:---|:---|
 | `[optimization_strategy.<tag>]` | each strategy's defaults (`max_iter`, damping, schedule), keyed by its `LODR_STRATEGY_TAGS` tag |
-| `[optimization_strategy.poselib]` | `cheirality_vote_points`: points in the cheirality vote of an E decomposition |
-| `[optimization_strategy.poselib_adapt]` | [`PoseLibLmAdaptLossWidth`](@ref)'s total budget, rounds, `min_support` and operating efficiency constant |
+| `[adaptive_loss_width_refit]` | [`AdaptiveLossWidthRefit`](@ref)'s rounds, `min_support`, operating efficiency constant and `cheirality_vote_points` (points in the cheirality vote of an E seed) |
+| `[adaptive_loss_width_refit.stops]` | its total LM budget, `max_iter` |
 | `[[tuning_constants]]` | the cross-validated operating points with their provenance |
 
 A paper with its own protocol states its values explicitly; the ACCV 2026

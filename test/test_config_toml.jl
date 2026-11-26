@@ -235,5 +235,6 @@ end
     hits = [relpath(joinpath(r, f), src) for (r, _, fs) in walkdir(src) for f in fs
             if endswith(f, ".jl") && occursin("TOML.parsefile", read(joinpath(r, f), String))]
     @test isempty(hits)
-    @test LO._DEFAULTS_OF_RECORD == VgtkCore.parse_defaults(joinpath(pkgdir(LocalOptimizationDoneRight), "configs", "default.toml"))
+    @test LO._DEFAULTS_OF_RECORD == VgtkCore.parse_defaults(joinpath(pkgdir(LocalOptimizationDoneRight), "configs", "default.toml");
+                                                            versions = LO.LODR_CONFIG_VERSIONS)
 end

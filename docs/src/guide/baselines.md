@@ -15,29 +15,38 @@ at an absolute loss width, never inside the native RANSAC loop.
 
 | arm | strategy | what runs |
 |:---|:---|:---|
-| TLS-IRLS | [`PoseLibLm`](@ref)`(max_iter)` | PoseLib Levenberg–Marquardt on the truncated Sampson loss (`TLSShape`) |
-| TLS-LZ | [`PoseLibLZ`](@ref)`(max_iter)` | PoseLib's Le–Zach relaxed IRLS on the same truncated loss |
-| TLS-IRLS-ŝ | [`PoseLibLmAdaptLossWidth`](@ref)`()` | TLS-IRLS with a partition-anchored width, re-estimated between rounds (E only) |
+| TLS-IRLS | `BackendRefit(LevenbergMarquardt(PoseLibSolver(); optimization_strategy = Irls{TLSShape}()), LmStops(; max_iter))` | PoseLib Levenberg–Marquardt on the truncated Sampson loss (`TLSShape`) |
+| TLS-LZ | `BackendRefit(LevenbergMarquardt(PoseLibSolver(); optimization_strategy = LeZach()), LmStops(; max_iter))` | PoseLib's Le–Zach relaxed IRLS on the same truncated loss |
+| TLS-IRLS-ŝ | `BackendRefit(`[`AdaptiveLossWidthRefit`](@ref)`(), LmStops(; max_iter))` | TLS-IRLS with a partition-anchored width, re-estimated between rounds (E only) |
 | TLS-LO | `LebedaIterLO(opts, rng_seed)` (accv2026) | RansacLib's iterative least-squares ladder alone |
 | TLS-LO⁺ | `LebedaLOPlus(opts, rng_seed)` (accv2026) | RansacLib's full LO: least squares at the enlarged width, inner non-minimal resampling, per-sample ladder |
 
 ## PoseLib truncated refiners
 
-[`PoseLibLm`](@ref) and [`PoseLibLZ`](@ref) refine relative pose
-(`RefineProblem(cs, pose, (; K1, K2))`), fundamental matrices
-(`RefineProblem(cs, FundMat(F))`) and homographies (`RefineProblem(cs, HomographyMat(H))`),
-each solved by VisualGeometryToolkitCore's `LevenbergMarquardt(PoseLibSolver(); optimization_strategy)`,
-at the absolute loss width the refit hands `external_refit!` (a `LossWidth`).
-`max_iter` is their LM budget (`stops = LmStops(; max_iter)`); the paper
-runs them at the evaluation's equal LO budget. The relative-pose refine from an
-essential-matrix seed is also an algorithm of its own, [`TruncatedRefit`](@ref),
-for a caller that needs the refined pose itself:
+PoseLib's truncated refiners are VisualGeometryToolkitCore's `BackendRefit` of its
+Levenberg–Marquardt with PoseLib's backend, `LevenbergMarquardt(PoseLibSolver();
+optimization_strategy)`, at `stops = LmStops(; max_iter)` (the paper runs them at the
+evaluation's equal LO budget). They refine relative pose (an essential seed's
+cheirality-resolved pose on the pool-frame pixels with the two cameras), fundamental
+matrices and homographies at the absolute loss width the refit hands `external_refit!`
+(a `LossWidth`); the solves are Core's and PoseLib's (`import PoseLib`).
+
+The consensus-anchored arm, TLS-IRLS-ŝ, is this package's refine algorithm
+[`AdaptiveLossWidthRefit`](@ref): PoseLib's truncated LM in `rounds`, its loss width
+re-estimated between them from the refined pose's within-width residuals. It refines a
+[`RelativePoseRefitProblem`](@ref), which holds both the pixels and calibrations it refines
+on and the unit bearings its scale moment reads:
 
 ```julia
-# Illustrative: `problem` an EssentialProblem, `seed_E` its seed, `frame` the pair's
-# two-view frame (`Kc1`, `Kc2`, the pool-frame correspondences `cs`), `w` the loss width
-pose = solve(RefineProblem(problem, seed_E, frame), TruncatedRefit(PoseLibLm(25)); width = w).u
+# Illustrative: `K1`, `K2` the cameras' calibrations, `cs` the pixel correspondences, `ep` the pair's
+# EssentialProblem, `pose₀` a relative pose, `s2` a start scale
+f = RelativePoseRefitProblem(RelativePoseProblem(K1, K2, cs), ep)
+pose = solve(RefineProblem(f, pose₀), AdaptiveLossWidthRefit(); stops = LmStops(; max_iter = 25), scale = FixedS2(s2)).u
 ```
+
+As an external refiner, `BackendRefit(AdaptiveLossWidthRefit(), LmStops(; max_iter = 25))`
+bootstraps its start scale from the seed's consensus set (outside the timing bracket) and
+seeds the pose by the essential seed's cheirality vote.
 
 ## RansacLib LO (RansacLibLO)
 

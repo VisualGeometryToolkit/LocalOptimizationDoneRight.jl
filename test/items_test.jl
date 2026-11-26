@@ -27,8 +27,8 @@ end
     include("test_strategies.jl")
 end
 
-@testitem "poselib_arms" begin
-    include("test_poselib_arms.jl")
+@testitem "external_refits" begin
+    include("test_external_refits.jl")
 end
 
 @testitem "gates" begin

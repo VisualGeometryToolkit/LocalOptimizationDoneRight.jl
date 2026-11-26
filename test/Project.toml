@@ -20,7 +20,7 @@ VisualGeometryToolkitEstimation = "9a478df9-9a37-4dc7-9070-58617efe7573"
 [sources]
 LocalOptimizationDoneRight = {path = ".."}
 # TEMPORARY: solve branch; remove when Core 0.14 etc. are registered
-PoseLib = {path = "/home/jbpritts/src/_wt-solve-core014/PoseLib"}
+PoseLib = {path = "/home/jbpritts/src/_wt-p1b-set2/PoseLib"}
 
 [compat]
 Aqua = "0.8.18"

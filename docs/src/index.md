@@ -36,7 +36,7 @@ features:
     link: /guide/reproducing/
   - icon: ⚖️
     title: Compare against classical LO
-    details: "PoseLib's truncated refiners (`PoseLibLm`, `PoseLibLZ`) and, in the paper project, RansacLib's LO-MSAC (`LebedaLOPlus`, `LebedaIterLO`, vendored unmodified) run as baseline arms under the same budget."
+    details: "PoseLib's truncated refiners (Core's `BackendRefit` of PoseLib's LM, and the consensus-anchored `AdaptiveLossWidthRefit`) and, in the paper project, RansacLib's LO-MSAC (`LebedaLOPlus`, `LebedaIterLO`, vendored unmodified) run as baseline arms under the same budget."
     link: /guide/baselines/
 ---
 ```

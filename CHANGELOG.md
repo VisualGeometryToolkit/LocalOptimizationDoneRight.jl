@@ -9,14 +9,33 @@ changes (the suite's expected values are unchanged).
 
 ### Breaking
 
-- **`truncated_refit_pose` is the algorithm `TruncatedRefit`.** `truncated_refit_pose(lo, ws, problem, seed_E,
-  loss_width)` → `solve(RefineProblem(problem, seed_E, frame), TruncatedRefit(lo); width = loss_width).u`: the problem
-  and the seed are the `RefineProblem`, the pair's two-view frame (`Kc1`, `Kc2`, the pool-frame `cs`, what
-  `external_workspace` read) its context, the absolute loss width the solve keyword `width`. The result is a
-  `FitResult` (`u` the refined `EuclideanMap{3}`, PoseLib's termination record). Its body is the E external refit's,
-  one copy. `CONTRACT_GENERICS` is empty: the extension adds methods to Core's generics only.
-- **The external-refit hook is Core's renamed `external_refit!`** (was `refine_external!`), for `PoseLibLm`,
-  `PoseLibLZ` and `PoseLibLmAdaptLossWidth`; `external_workspace` and `prepare_external!` keep their names.
+- **PoseLib's truncated refiners are VisualGeometryToolkitCore's `BackendRefit`; the synonym arms are deleted.**
+  `PoseLibLm(n)` → `BackendRefit(LevenbergMarquardt(PoseLibSolver(); optimization_strategy = Irls{TLSShape}()),
+  LmStops(; max_iter = n))`, `PoseLibLZ(n)` → the same with `optimization_strategy = LeZach()` (PoseLib's), its
+  cheirality vote `cheirality_vote_points` (256, the former `[optimization_strategy.poselib]` key's value) Core's.
+  The H, F and E routes are Core's and PoseLib's (its `PoseLibEstimationExt`); the identity (`lo_label` "TLS-IRLS",
+  "TLS-LZ", `optimization_path`, `loss_family`, `scale_interface`) is the BackendRefit's, from its LM strategy.
+  Bit-identical: 72 of 72 refits `===` (the 24-call Table 1 set × both arms, and seeded H and F scenes at two widths).
+  `TruncatedRefit` (the E refine with the frame in the context) is deleted: an E refine on pixels is
+  `solve(RefineProblem(cs, pose, (; K1, K2)), LevenbergMarquardt(PoseLibSolver(); optimization_strategy); stops, width)`
+  from the seed's `cheiral_pose_fast(seed_E, problem.cs; vote_points)` (Core's).
+- **`PoseLibLmAdaptLossWidth` is the refine algorithm `AdaptiveLossWidthRefit`** (TLS-IRLS-ŝ) on the new problem
+  `RelativePoseRefitProblem(RelativePoseProblem(K1, K2, cs), essential_problem)` — the pixels and calibrations it
+  refines on and the bearings its scale moment reads, in the problem, nothing in the context:
+  `solve(RefineProblem(f, pose₀), AdaptiveLossWidthRefit(lm; rounds, efficiency_constant, min_support,
+  cheirality_vote_points); stops = LmStops(; max_iter), scale = FixedS2(ŝ²₀))`, with `init`/`solve!`/`reinit!` (the
+  cache owns the moment's buffer). Its external refiner is `BackendRefit(AdaptiveLossWidthRefit(), LmStops(; max_iter
+  = 25))`; its consensus bootstrap is Estimation's `ConsensusScale` (the deleted `consensus_s2!`, which 0.8.0's
+  PoseLib extension still called). An E-only use on another problem is an `ArgumentError` (was an `ErrorException`).
+- **No PoseLib extension, no PoseLib weak dependency**: the package composes PoseLib's backend through Core's
+  `solve` only; `import PoseLib` makes the refines run.
+- **Versioned configuration** (decision 11): `configs/default.toml` states `config_version = 2`, read through the new
+  converter `LODR_CONFIG_VERSIONS` (`public`). Version 1's `[optimization_strategy.poselib_adapt]` is
+  `[adaptive_loss_width_refit]` (its `max_iter` in `[adaptive_loss_width_refit.stops]`) and
+  `[optimization_strategy.poselib] cheirality_vote_points` is `[adaptive_loss_width_refit] cheirality_vote_points`:
+  a migration step, a stored version-1 file reads unchanged.
+- **The external-refit hook is Core's renamed `external_refit!`** (was `refine_external!`);
+  `external_workspace` and `prepare_external!` keep their names.
 - **Policies are types, not Symbols or flags** (the stack's settings-as-algorithm-arguments rule):
   - `HQ`'s z₀ policy `init` is `FlatStart()` (the default), `PosteriorStart()` or `ConsensusStart()` (new, exported,
     under `AbstractLiftStart`), was `:flat | :posterior | :consensus`;

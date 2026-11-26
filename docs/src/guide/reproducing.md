@@ -33,8 +33,8 @@ The package and the research project split by one rule:
 
 The package itself is `src/` (the strategies in `src/strategies/`, the joint-(θ,z)
 lift core and its continuation schedules in `src/lift/`, the cross-validated
-operating points in `src/tuning_constants.jl`, PoseLib's truncated refiners in
-`src/poselib_arms.jl`), `ext/` (the PoseLib extension), `configs/default.toml`
+operating points in `src/tuning_constants.jl`, the consensus-anchored truncated refit in
+`src/adaptive_refit.jl`), `configs/default.toml`
 (the strategies' defaults of record and tuning constants), `test/` and `docs/`.
 
 ## Drivers and stages

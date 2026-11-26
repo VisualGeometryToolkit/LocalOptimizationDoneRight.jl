@@ -12,7 +12,9 @@
 #
 # THE PoseLib TABLE 1 ARMS (from this package's former PoseLib bench,
 # lo_timing_poselib/): PoseLib's truncated LM (TLS-IRLS) and its Le–Zach
-# variant (TLS-LZ) at the equal LO budget (25), on THE CALL SET
+# variant (TLS-LZ) at the equal LO budget (25) — VisualGeometryToolkitCore's
+# `BackendRefit(LevenbergMarquardt(PoseLibSolver(); optimization_strategy),
+# LmStops(; max_iter = 25))` — on THE CALL SET
 # `lo_calls_phototourism_e.bin`: 24 recorded local optimizations of the ACCV
 # Table 1 timing protocol, 8 PhotoTourism british_museum pairs (346–1094
 # correspondences, the pool frame of VisualGeometryToolkitEval's PT-E-SIFT pool) × 3
@@ -29,14 +31,16 @@
 # The truncation loss width is the selection's outlier half-width as the
 # absolute pool-frame loss width (the arms' `LossWidth` currency). They are
 # external refiners, timed through VisualGeometryToolkitCore's external-refit contract
-# directly: `external_workspace` once per pair (outside the timing), then one
+# directly (a bracket microbenchmark of the refit layer's `lo_ns`: Estimation's
+# `LocalOptimization` front end does not run an external refit):
+# `external_workspace` once per pair (outside the timing), then one
 # `external_refit!(ws, lo, problem, seed, LossWidth(w), scoring)` per call —
 # the E seed's cheirality plus PoseLib's camera-aware pose refine
 # (`RefineProblem(cs, pose, (; K1, K2))` under `LevenbergMarquardt(PoseLibSolver(); …)`),
 # the bracket Table 1 reports (the refit layer's `lo_ns`); the pose → essential conversion is
 # inside it now (negligible). The arms read no scoring (they are handed `nothing`).
-# A "call" is one `external_refit!`. `import PoseLib` loads the solver calls
-# (the package's PoseLib extension).
+# A "call" is one `external_refit!`. `import PoseLib` loads PoseLib's backend
+# (and its Estimation extension, which holds the E route of a BackendRefit).
 #
 # THE LIFT KERNELS (from VisualGeometryToolkitCore's bench, with the lift core): the
 # joint-(θ,z) HQ and the GNC normal-equation accumulations on the 5-dof
@@ -51,13 +55,13 @@
 # =============================================================================
 
 using LocalOptimizationDoneRight, VisualGeometryToolkitEstimation, VisualGeometryToolkitCore
-import PoseLib                # the PoseLib extension: the truncated refiners' solver calls
-using LocalOptimizationDoneRight: LiftState, _lift_hq_increment!, _lift_gnc_increment!, _seed_lift_z!, FlatStart,
-    PoseLibLm, PoseLibLZ
+import PoseLib                # PoseLib's backend and its Estimation extension (the E route of a BackendRefit)
+using PoseLib: LeZach
+using LocalOptimizationDoneRight: LiftState, _lift_hq_increment!, _lift_gnc_increment!, _seed_lift_z!, FlatStart
 using VisualGeometryToolkitCore: RowsWorkspace, sampson_residuals!, sampson_jacobian_rows!, Correspondences, withattrs,
     retract, retract_directions,
     zero_tangent, backproject_with_jacobian, EssentialManifold5, deploy, external_workspace, external_refit!,
-    LossWidth
+    LossWidth, BackendRefit, LevenbergMarquardt, PoseLibSolver, LmStops, Irls, TLSShape
 using StaticArrays, LinearAlgebra, Random
 
 const OUT = ARGS[1]
@@ -77,8 +81,10 @@ const PROBS = [problem_of(pr) for pr in PAIRS]
 const NCALLS = call_set_size(PAIRS)
 
 const EXTERNAL_ARMS = [
-    "TLS-IRLS" => () -> PoseLibLm(BUDGET),
-    "TLS-LZ"   => () -> PoseLibLZ(BUDGET),
+    "TLS-IRLS" => () -> BackendRefit(LevenbergMarquardt(PoseLibSolver(); optimization_strategy = Irls{TLSShape}()),
+                                     LmStops(; max_iter = BUDGET)),
+    "TLS-LZ"   => () -> BackendRefit(LevenbergMarquardt(PoseLibSolver(); optimization_strategy = LeZach()),
+                                     LmStops(; max_iter = BUDGET)),
 ]
 # The refit's two-view frame (VisualGeometryToolkitEval hands over its pair geometry): the
 # pool-frame calibrations and correspondences.
