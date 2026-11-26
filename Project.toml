@@ -25,5 +25,5 @@ julia = "1.13"
 # TEMPORARY: solve branch; remove when Core 0.14 etc. are registered (PoseLib, which the tests load to run the
 # PoseLib-backed refines, is in test/Project.toml's [sources])
 [sources]
-VisualGeometryToolkitCore = {path = "/home/jbpritts/src/_wt-p1b-set2/VisualGeometryToolkitCore"}
-VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/_wt-p1b-set2/VisualGeometryToolkitEstimation"}
+VisualGeometryToolkitCore = {path = "/home/jbpritts/src/_wt-solve-core014/VisualGeometryToolkitCore"}
+VisualGeometryToolkitEstimation = {path = "/home/jbpritts/src/_wt-solve-core014/VisualGeometryToolkitEstimation"}
