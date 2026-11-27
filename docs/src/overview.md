@@ -49,16 +49,16 @@ result = solve(problem,
 
 ## Strategies
 
-| strategy | path | what it does |
+| strategy | path (`OptimizationPath`) | what it does |
 |:---|:---|:---|
-| [`HQ`](@ref)`{K}` | `:hq` | joint-(θ,z) half-quadratic lift on loss `K`; the paper's method (Welsch-HQ) |
-| [`WelschHQNewton`](@ref), [`WelschHQEcm`](@ref), [`BarronHQ`](@ref), `GmHqEps` | `:hq` | research variants of the lift |
-| [`Gnc`](@ref)`{Irls{K}}` | `:gnc` | graduated non-convexity over a core IRLS |
-| [`StudentTUniform`](@ref) | `:irls` | the Student-t + uniform mixture IRLS (EM), self-scaling |
-| [`StuTuBCD`](@ref) | `:bcd` | block-coordinate ascent of the scorer's own objective (the score-matched optimizer) |
-| [`StuTuHQTabulated`](@ref), [`StuTuRegemm`](@ref) | `:hq`, `:gnc` | mixture lifts |
-| [`BarronAdaptive`](@ref) | `:irls` | Barron's adaptive loss under IRLS |
-| [`AdaptiveLossWidthRefit`](@ref) (Core's `BackendRefit` of it) | `:irls` | PoseLib's truncated LM with a re-estimated width (an external refiner) |
+| [`HQ`](@ref)`{K}` | `hq` | joint-(θ,z) half-quadratic lift on loss `K`; the paper's method (Welsch-HQ) |
+| [`WelschHQNewton`](@ref), [`WelschHQEcm`](@ref), [`BarronHQ`](@ref), `GmHqEps` | `hq` | research variants of the lift |
+| [`Gnc`](@ref)`{Irls{K}}` | `gnc` | graduated non-convexity over a core IRLS |
+| [`StudentTUniform`](@ref) | `irls` | the Student-t + uniform mixture IRLS (EM), self-scaling |
+| [`StuTuBCD`](@ref) | `bcd` | block-coordinate ascent of the scorer's own objective (the score-matched optimizer) |
+| [`StuTuHQTabulated`](@ref), [`StuTuRegemm`](@ref) | `hq`, `gnc` | mixture lifts |
+| [`BarronAdaptive`](@ref) | `irls` | Barron's adaptive loss under IRLS |
+| [`AdaptiveLossWidthRefit`](@ref) (Core's `BackendRefit` of it) | `irls` | PoseLib's truncated LM with a re-estimated width (an external refiner) |
 
 The lifts run on VisualGeometryToolkitCore's chart-rows contract, which
 VisualGeometryToolkitEstimation implements per problem, so one code path serves every

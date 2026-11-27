@@ -438,14 +438,16 @@ lighter tail. `EssentialProblem` only.
 - `max_iter::Int=100`: number of ReGeMM rounds (one σ-graduation + one pose refit each)
 - `η::Float64=0.5`: diminishing-gap fraction (Zach & Le use η=1/2; `η→1` ⇒ touching/standard MM = IRLS)
 - `lut_points::Int=128`: `κ²` lookup-table resolution
+- `scale_interface = SelfScaling()`: the scale policy — `SelfScaling()` re-estimates (ŝ², π) by ECM every round;
+  `ConsensusAnchored()` freezes them at the seed partition (the strict fixed-scale consistent refiner, the
+  travel-mechanism ablation's other arm). Stored by its tag (VisualGeometryToolkitCore's `SCALE_INTERFACE_TAGS`:
+  `"self_scaling"`, `"consensus_anchored"`); it is the strategy's `scale_interface`.
 """
 struct StuTuRegemm <: AbstractOptimizationStrategy
     max_iter::Int
     η::Float64
     lut_points::Int
-    adapt_scale::Bool     # ECM (ŝ²,π) re-estimation per round; false ⇒ frozen at
-    # the seed partition (the strict fixed-scale consistent
-    # refiner — the travel-mechanism ablation's other arm)
+    scale_interface::Union{SelfScaling, ConsensusAnchored}
 end
 
 
@@ -461,7 +463,7 @@ IRLS on Barron's loss whose shape is re-estimated from the residuals each
 iteration.
 
 Solver-matched ADAPTIVE-SHAPE robust IRLS: the identical
-`PosteriorIrlsMethod`/`block_coordinate_descent!` machinery as [`StudentTUniform`](@ref) /
+`PosteriorIrlsMethod`/`BlockCoordinateDescent` machinery as [`StudentTUniform`](@ref) /
 [`Irls{WelschShape}`](@extref VisualGeometryToolkitCore.Irls), with Barron's generalized loss ρ(r; α, loss_width)
 (CVPR 2019) whose SHAPE α is re-estimated each iteration from the current
 residuals by minimizing the truncated-partition negative log-likelihood of
@@ -510,14 +512,14 @@ _barron_sq_width(lo::BarronAdaptive, cs, scoring, buf) =
 
 # log Z̃(α) lookup on the canonical α grid — built lazily once per truncation_multiple T.
 # Z̃(α) = ∫_{-T}^{T} e^{−½ρ(x², α)} dx is VisualGeometryToolkitCore's truncated
-# normaliser `truncated_log_normaliser(shape, c² = 1, Δ = ½, T)` (adaptive quadrature over
+# normaliser `truncated_log_normalizer(shape, c² = 1, Δ = ½, T)` (adaptive quadrature over
 # [0, T], doubled for the symmetric domain). Unit scale, so one table serves
 # every c: log(c·Z̃) = log c + logZ̃_unit.
 const _BARRON_ALPHA_GRID = collect(-10.0:0.1:2.0)
 const _BARRON_LOGZ_CACHE = Dict{Float64, Vector{Float64}}()
 function _barron_logZ_table(truncation_multiple::Float64)
     return get!(_BARRON_LOGZ_CACHE, truncation_multiple) do
-        [truncated_log_normaliser(_barron_grid_shape(α), 1.0, 0.5, truncation_multiple) for α in _BARRON_ALPHA_GRID]
+        [truncated_log_normalizer(_barron_grid_shape(α), 1.0, 0.5, truncation_multiple) for α in _BARRON_ALPHA_GRID]
     end
 end
 
@@ -633,19 +635,19 @@ VgtkCore.lo_width(lo::WelschHQEcm) = EfficiencyConstant(lo.efficiency_constant)
 # too. The Student-t/uniform mixture arms report loss family :tls — they share
 # the paper's "uniform mixtures" column.
 #
-#   type                 tag                      path   scale          family   label                     shape              parametric
+#   type                 tag                      path                   scale          family   label                     shape              parametric
 const _STRATEGY_ROWS = (
-    (StudentTUniform,     "student_t_uniform",     :irls, SelfScaling(), :tls,    raw"Stu-$t$U-IRLS",       nothing,           false),
-    (HQ,                  "hq",                    :hq,   nothing,       nothing, nothing,                  nothing,           true),
-    (Gnc,                 "gnc",                   :gnc,  nothing,       nothing, nothing,                  nothing,           true),
-    (StuTuBCD,            "stu_tu_bcd",            :bcd,  SelfScaling(), :tls,    raw"Stu-$t$U-BCD",        nothing,           false),
-    (WelschHQNewton,      "welsch_hq_newton",      :hq,   nothing,       nothing, raw"Welsch-HQ (Newton)",  WelschShape,       false),
-    (WelschHQEcm,         "welsch_hq_ecm",         :hq,   SelfScaling(), nothing, raw"Welsch-HQ (ECM)",     WelschShape,       false),
-    (BarronHQ,            "barron_hq",             :hq,   nothing,       nothing, raw"Barron-HQ",           BarronShape,       false),
-    (StuTuHQTabulated,    "stu_tu_hq_tabulated",   :hq,   SelfScaling(), :tls,    raw"Stu-$t$U-HQ",         nothing,           false),
-    (StuTuRegemm,         "stu_tu_regemm",         :gnc,  nothing,       :tls,    raw"Stu-$t$U-ReGeMM",     nothing,           false),
-    (BarronAdaptive,      "barron_adaptive",       :irls, nothing,       nothing, raw"Barron-IRLS",         BarronShape,       false),
-    (GmHqEps,             "gm_hq_eps",             :hq,   nothing,       nothing, raw"GM-HQ ($\epsilon$)",  GemanMcclureShape, false),
+    (StudentTUniform,     "student_t_uniform",     OptimizationPath.irls, SelfScaling(), :tls,    raw"Stu-$t$U-IRLS",       nothing,           false),
+    (HQ,                  "hq",                    OptimizationPath.hq,   nothing,       nothing, nothing,                  nothing,           true),
+    (Gnc,                 "gnc",                   OptimizationPath.gnc,  nothing,       nothing, nothing,                  nothing,           true),
+    (StuTuBCD,            "stu_tu_bcd",            OptimizationPath.bcd,  SelfScaling(), :tls,    raw"Stu-$t$U-BCD",        nothing,           false),
+    (WelschHQNewton,      "welsch_hq_newton",      OptimizationPath.hq,   nothing,       nothing, raw"Welsch-HQ (Newton)",  WelschShape,       false),
+    (WelschHQEcm,         "welsch_hq_ecm",         OptimizationPath.hq,   SelfScaling(), nothing, raw"Welsch-HQ (ECM)",     WelschShape,       false),
+    (BarronHQ,            "barron_hq",             OptimizationPath.hq,   nothing,       nothing, raw"Barron-HQ",           BarronShape,       false),
+    (StuTuHQTabulated,    "stu_tu_hq_tabulated",   OptimizationPath.hq,   SelfScaling(), :tls,    raw"Stu-$t$U-HQ",         nothing,           false),
+    (StuTuRegemm,         "stu_tu_regemm",         OptimizationPath.gnc,  nothing,       :tls,    raw"Stu-$t$U-ReGeMM",     nothing,           false),
+    (BarronAdaptive,      "barron_adaptive",       OptimizationPath.irls, nothing,       nothing, raw"Barron-IRLS",         BarronShape,       false),
+    (GmHqEps,             "gm_hq_eps",             OptimizationPath.hq,   nothing,       nothing, raw"GM-HQ ($\epsilon$)",  GemanMcclureShape, false),
 )
 
 """
@@ -663,9 +665,9 @@ const LODR_STRATEGY_TAGS = VgtkCore.@lo_registry _STRATEGY_ROWS defaults = _DEFA
     "stutu_bcd" => "stu_tu_bcd", "stutu_hq_tabulated" => "stu_tu_hq_tabulated", "stutu_regemm" => "stu_tu_regemm",
 )
 
-# ReGeMM's scale policy is a FIELD's value, not a type's: frozen (ŝ², π) is the
+# ReGeMM's scale policy is its `scale_interface` field: frozen (ŝ², π) is the
 # strict fixed-scale consistent refiner, anchored at the consensus set.
-VgtkCore.scale_interface(lo::StuTuRegemm) = lo.adapt_scale ? SelfScaling() : ConsensusAnchored()
+VgtkCore.scale_interface(lo::StuTuRegemm) = lo.scale_interface
 
 # The Barron shape α is the arm's identity, so it is also positional; the
 # registry gives BarronHQ its keyword constructor as well (`BarronHQ(; alpha…)`).

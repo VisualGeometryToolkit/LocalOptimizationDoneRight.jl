@@ -41,6 +41,15 @@ sm(lo) = VgtkCore.lo_width(lo).value
         @test Gnc{Irls{WelschShape}}(efficiency_constant = 1.0).factor == _config_default("optimization_strategy.gnc", "factor")
         @test isnan(Gnc{Irls{WelschShape}}(efficiency_constant = 1.0).entry)      # "r_max" in the file
         @test StuTuRegemm().lut_points == _config_default("optimization_strategy.stu_tu_regemm", "lut_points")
+        # L10: ReGeMM's scale policy is its `scale_interface` (a Core ScaleInterface, stored by its tag), not a Bool
+        @test StuTuRegemm().scale_interface === VgtkCore.SCALE_INTERFACE_TAGS[_config_default("optimization_strategy.stu_tu_regemm", "scale_interface")]()
+        @test VgtkCore.scale_interface(StuTuRegemm()) === VgtkCore.SelfScaling()
+        @test VgtkCore.scale_interface(StuTuRegemm(scale_interface = VgtkCore.ConsensusAnchored())) === VgtkCore.ConsensusAnchored()
+        @test load(Dict("type" => "stu_tu_regemm", "scale_interface" => "consensus_anchored"); class = :essential).scale_interface ===
+            VgtkCore.ConsensusAnchored()
+        @test config_dict(StuTuRegemm(scale_interface = VgtkCore.ConsensusAnchored()))["scale_interface"] == "consensus_anchored"
+        @test_throws ArgumentError StuTuRegemm(adapt_scale = false)          # the retired Bool keyword
+        @test_throws ArgumentError load(Dict("type" => "stu_tu_regemm", "adapt_scale" => false); class = :essential)
         @test BarronAdaptive(efficiency_constant = 1.5).α_min == _config_default("optimization_strategy.barron_adaptive", "alpha_min")
         @test LO.GmHqEps(efficiency_constant = 1.0).max_iter == _config_default("optimization_strategy.gm_hq_eps", "max_iter")
     end

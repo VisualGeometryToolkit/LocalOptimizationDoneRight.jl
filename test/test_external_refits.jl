@@ -1,3 +1,4 @@
+# R22: contract test — the external-refit contract (`external_workspace`, `prepare_external!`, `external_refit!`) of this package's BackendRefit(AdaptiveLossWidthRefit())
 # =============================================================================
 # The external refiners (VisualGeometryToolkitCore's `ExternalRefit` family): PoseLib's
 # truncated refiners as Core's `BackendRefit` of `LevenbergMarquardt(PoseLibSolver();
@@ -19,7 +20,7 @@ import VisualGeometryToolkitCore
 using VisualGeometryToolkitCore: AbstractOptimizationStrategy, RefitFamily, ExternalRefit, FixedScale, ConsensusAnchored,
     LossWidth, FixedS2, scale_interface, optimization_path, lo_label, lo_marker, loss_family, external_workspace,
     external_refit!, prepare_external!, Correspondences, CameraModel, EssentialMat, EuclideanMap, RefineProblem, RefineKind,
-    estimator_kind, solve, BackendRefit, LevenbergMarquardt, PoseLibSolver, LmStops, Irls, TLSShape, cheiral_pose_fast,
+    estimator_kind, solve, BackendRefit, OptimizationPath, found_model, LevenbergMarquardt, PoseLibSolver, LmStops, Irls, TLSShape, cheiral_pose_fast,
     migrate_config, current_config_version, StudentTUniformScoring, JeffreysPrior, FlatLabelPrior
 using VisualGeometryToolkitEstimation: EssentialProblem, RelativePoseProblem
 using StaticArrays: SMatrix
@@ -33,7 +34,7 @@ include(joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "bench_
     lm = BackendRefit(LevenbergMarquardt(PoseLibSolver(); optimization_strategy = Irls{TLSShape}()), LmStops(; max_iter = 25))
     lz = BackendRefit(LevenbergMarquardt(PoseLibSolver(); optimization_strategy = LeZach()), LmStops(; max_iter = 25))
     @test RefitFamily(lm) isa ExternalRefit && RefitFamily(lz) isa ExternalRefit
-    @test optimization_path(lm) === :irls && optimization_path(lz) === :gnc
+    @test optimization_path(lm) === OptimizationPath.irls && optimization_path(lz) === OptimizationPath.gnc
     @test lo_label(lm) == "TLS-IRLS" && lo_label(lz) == "TLS-LZ"
     @test loss_family(lm) === :tls && loss_family(lz) === :tls
     @test scale_interface(lm) isa FixedScale && scale_interface(lz) isa FixedScale
@@ -42,7 +43,7 @@ include(joinpath(pkgdir(VisualGeometryToolkitCore), "test", "lo_timing", "bench_
     @test estimator_kind(alg) isa RefineKind && alg.lm === LevenbergMarquardt(PoseLibSolver(); optimization_strategy = Irls{TLSShape}())
     ad = BackendRefit(alg, LmStops(; max_iter = 25))
     @test ad isa AbstractOptimizationStrategy && RefitFamily(ad) isa ExternalRefit
-    @test scale_interface(ad) isa ConsensusAnchored && optimization_path(ad) === :irls && loss_family(ad) === :tls
+    @test scale_interface(ad) isa ConsensusAnchored && optimization_path(ad) === OptimizationPath.irls && loss_family(ad) === :tls
     @test lo_label(ad) == raw"TLS-IRLS-$\hat s$" && lo_marker(ad) === Symbol("square*")
     @test (alg.rounds, alg.min_support, alg.cheirality_vote_points, alg.efficiency_constant) === (5, 8, 256, 2.5)
     @test_throws ArgumentError AdaptiveLossWidthRefit(; rounds = 0)
@@ -87,15 +88,19 @@ end
     scoring = StudentTUniformScoring(problem, 3.0; scale_prior = JeffreysPrior(), label_prior = FlatLabelPrior())
     ws = external_workspace(lo, problem, frame, scoring)
     @test prepare_external!(ws, lo, problem, seed, FixedS2(1.0), scoring)
-    @test external_refit!(ws, lo, problem, seed, LossWidth(3.0), scoring) === EssentialMat(r.u.R, r.u.t)
+    # the external refit's record (Core's contract: a FitResult), its model the refine's essential, its record the refine's
+    re = external_refit!(ws, lo, problem, seed, LossWidth(3.0), scoring)
+    @test re.u === EssentialMat(r.u.R, r.u.t) && found_model(re)
+    @test (re.retcode, re.stop_rule, re.stats.nsteps, re.metadata) === (r.retcode, r.stop_rule, r.stats.nsteps, r.metadata)
     @test prepare_external!(ws, lo, problem, seed, LossWidth(3.0), scoring) && ws.s2₀ > 0   # the consensus bootstrap
     @test_throws ArgumentError solve(RefineProblem(f, pose, (; K1 = K)), alg; stops, scale = FixedS2(1.0))   # no context
     @test_throws ArgumentError external_workspace(lo, nothing, frame, scoring)                             # E only
 end
 
-# Decision 11: the version-1 tables of the deleted PoseLib arms are a converter step, never a refusal.
+# Decision 11: the version-1 tables of the deleted PoseLib arms, and version 2's Bool `adapt_scale`, are converter
+# steps, never a refusal.
 @testset "configuration converter" begin
-    @test current_config_version(LODR_CONFIG_VERSIONS) == 2
+    @test current_config_version(LODR_CONFIG_VERSIONS) == 3
     # as TOML parses a version-1 file: tables of Any
     t(ps...) = Dict{String, Any}(ps...)
     v1 = t("optimization_strategy" => t("poselib" => t("cheirality_vote_points" => 128),
@@ -105,7 +110,19 @@ end
     m = migrate_config(v1, LODR_CONFIG_VERSIONS)
     @test m["adaptive_loss_width_refit"] == Dict("rounds" => 3, "min_support" => 6, "operating_efficiency_constant" => 2.0,
                                                  "cheirality_vote_points" => 128, "stops" => Dict("max_iter" => 30))
-    @test m["optimization_strategy"] == Dict("hq" => Dict("max_iter" => 25)) && m["config_version"] == 2
-    @test_throws r"adaptive_loss_width_refit" migrate_config(t("config_version" => 2,
+    @test m["optimization_strategy"] == Dict("hq" => Dict("max_iter" => 25)) && m["config_version"] == 3
+    @test_throws r"adaptive_loss_width_refit" migrate_config(t("config_version" => 3,
         "optimization_strategy" => t("poselib_adapt" => t("rounds" => 3))), LODR_CONFIG_VERSIONS)
+    # version 2 → 3 (L10): StuTuRegemm's Bool `adapt_scale` becomes its `scale_interface` tag (Core's `values` step)
+    for (b, tag) in ((true, "self_scaling"), (false, "consensus_anchored"))
+        v2 = t("config_version" => 2, "optimization_strategy" => t("stu_tu_regemm" => t("max_iter" => 100, "adapt_scale" => b)))
+        m = migrate_config(v2, LODR_CONFIG_VERSIONS)
+        @test m["optimization_strategy"]["stu_tu_regemm"] == Dict("max_iter" => 100, "scale_interface" => tag) &&
+            m["config_version"] == 3
+    end
+    @test_throws r"adapt_scale.*Bool" migrate_config(t("config_version" => 2,
+        "optimization_strategy" => t("stu_tu_regemm" => t("adapt_scale" => "yes"))), LODR_CONFIG_VERSIONS)
+    # the old form in a current file is refused, naming its version
+    @test_throws r"adapt_scale.*version 2" migrate_config(t("config_version" => 3,
+        "optimization_strategy" => t("stu_tu_regemm" => t("adapt_scale" => true))), LODR_CONFIG_VERSIONS)
 end

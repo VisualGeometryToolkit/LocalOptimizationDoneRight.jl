@@ -80,7 +80,7 @@ const _ADAPT_STOPS = LmStops(; max_iter = Int(_config_default("adaptive_loss_wid
 # Identity (VisualGeometryToolkitCore traits, which its BackendRefit reports): the truncated LS refined with a
 # RE-ESTIMATED scale ŝ, anchored on the seed's consensus scale; the filled square marks a refiner that re-estimates
 # its scale.
-VgtkCore.optimization_path(::AdaptiveLossWidthRefit) = :irls
+VgtkCore.optimization_path(::AdaptiveLossWidthRefit) = OptimizationPath.irls
 VgtkCore.scale_interface(::AdaptiveLossWidthRefit) = ConsensusAnchored()
 VgtkCore.loss_family(::AdaptiveLossWidthRefit) = :tls
 VgtkCore.lo_label(::AdaptiveLossWidthRefit) = raw"TLS-IRLS-$\hat s$"
@@ -206,9 +206,10 @@ function VgtkCore.prepare_external!(ws::AdaptiveRefitWorkspace, ::_AdaptiveRefit
 end
 
 # The bracketed refit: the seed's cheirality-resolved pose (the caller's step), refined from the bootstrap scale.
+# The refine's record (Core's external-refit contract: a FitResult), its model the refined pose's essential.
 function VgtkCore.external_refit!(ws::AdaptiveRefitWorkspace, lo::_AdaptiveRefit, problem::EssentialProblem,
                                   seed_E, ::LossWidth, _scoring)
     pose = cheiral_pose_fast(seed_E, problem.cs; vote_points = lo.alg.cheirality_vote_points)
-    u = solve!(reinit!(ws.refine, pose; scale = FixedS2(ws.s2₀))).u
-    return EssentialMat(u.R, u.t)
+    r = solve!(reinit!(ws.refine, pose; scale = FixedS2(ws.s2₀)))
+    return FitResult(EssentialMat(r.u.R, r.u.t), r.retcode, r.stop_rule, r.stats, r.rms, r.n, r.metadata; original = r.original)
 end

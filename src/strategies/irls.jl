@@ -72,7 +72,7 @@ function locally_optimize!(
     score = _bcd_seed_score(buf, scoring, problem, model, cs)
     method = ScoreBcdMethod(scoring, L, buf, lo.tol)
     state = reused_state(ScoreBcdState{M}, (Attributed{M, @NamedTuple{cost::Float64}}(model, (; cost = -Float64(score))), -Float64(score), false))
-    return block_coordinate_descent!(state, FrozenNuisance(), method, problem, model; max_iter = lo.max_iter)
+    return solve(RefineProblem(problem, model, state), BlockCoordinateDescent(method); stops = StopAfterIteration(lo.max_iter))
 end
 
 function _bcd_seed_score(buf, scoring, problem, model, cs::ConsensusSet)
@@ -87,7 +87,7 @@ end
 # posterior scratch); the residuals block is the scorer itself at the refit,
 # which also moves the set. The incumbent carries the NEGATED score, so ascent
 # on S is descent on its cost. A failed refit (underdetermined set, singular
-# normal equations) is the loop's `:solve_failed` exit and keeps the incumbent.
+# normal equations) is the loop's `(Failure, NonFinite)` exit and keeps the incumbent.
 struct ScoreBcdMethod{S, L <: LoBuffers, B <: ScoreBuffers} <: AbstractBlockCoordinateMethod
     scoring::S
     lo_ws::L
@@ -126,5 +126,5 @@ end
 stopping_criterion(::ScoreBcdMethod) = StopWhenNoImprovement(1, 1)
 current_cost(state::ScoreBcdState) = state.cur_cost
 
-block_coordinate_result(state::ScoreBcdState, method::ScoreBcdMethod, prob, θ, stop_reason, final_iter, rule) =
-    lo_estimate(state.best.value, lo_termination(stop_reason, rule)...; iterations = final_iter)
+block_coordinate_result(state::ScoreBcdState, method::ScoreBcdMethod, prob, θ, code::ReturnCode.T, final_iter, rule) =
+    lo_estimate(state.best.value, code, rule; iterations = final_iter)

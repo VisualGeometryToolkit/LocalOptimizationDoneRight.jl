@@ -114,7 +114,7 @@ end
 
 # The damped D×D solve every θ-block below ends in: Δθ = −(H + 1e-9·I)⁻¹g from
 # the accumulated Hessian/gradient buffers, or `nothing` when the solve throws
-# or yields a non-finite entry (the callers' `:solve_failed` exit).
+# or yields a non-finite entry (the callers' `(Failure, NonFinite)` exit).
 @inline function _damped_solve(::Val{D}, Hbuf, gbuf) where {D}
     Δθ = try
         -((SMatrix{D, D, Float64}(Hbuf) + 1.0e-9 * I) \ SVector{D, Float64}(gbuf))
@@ -228,7 +228,7 @@ solve the damped D×D system. `w̄ = z²` is clamped to [`lift_window`](@ref)`(l
 Fills `ls.dvec`/`ls.gzv` for the follow-up [`_update_lift_z!`](@ref)
 (zeroed for `valid`-masked points). Returns Δθ, or `nothing` when the solve
 fails or produces non-finite entries — the caller's `update_model!` converts
-that to the `block_coordinate_descent!` `:solve_failed` exit.
+that to the `BlockCoordinateDescent` `(Failure, NonFinite)` exit.
 
 THE LOSS CARRIES ITS WIDTH: a caller whose scale MOVES supplies a FRESH deployment
 per iteration (`rescale(loss, s2)`), never a stored loss beside a changing

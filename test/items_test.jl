@@ -27,6 +27,10 @@ end
     include("test_strategies.jl")
 end
 
+@testitem "lo_contract" begin
+    include("test_lo_contract.jl")
+end
+
 @testitem "external_refits" begin
     include("test_external_refits.jl")
 end

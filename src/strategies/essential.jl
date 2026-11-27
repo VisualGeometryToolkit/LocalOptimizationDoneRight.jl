@@ -92,7 +92,7 @@ function locally_optimize!(
     θ₀ = lift_init(prov, model)                  # the seed (included in the candidate set)
     state = _init_manifold_hq(method, θ₀, FlatStart())
     lh = WelschEcmScale(state, prov)
-    res = block_coordinate_descent!(state, lh, method, problem, model; max_iter = lo.max_iter)
+    res = solve(RefineProblem(problem, model, state), BlockCoordinateDescent(method; likelihood = lh); stops = StopAfterIteration(lo.max_iter))
     # D2: the ECM run's incumbent is selected at the FINAL converged scale —
     # one fixed objective for every candidate (see WelschEcmScale header).
     best = _ecm_final_scale_incumbent(prov, θ₀, lh.traj, state.loss)
@@ -114,10 +114,21 @@ end
 # mixture's weight and slope after every ECM update.
 
 # The state (`PosteriorWeightState(n; ν, s_hat_sq, log_two_outlier_halfwidth, codimension,
-# inlier_prior, prior)` — the scoring's scale prior, π clamped by the toolkit's one clamp), the ECM cycle
-# (`mixture_ecm!`), the NLL (`mixture_nll(pws, r, n)`) and the κ² table
+# inlier_prior, prior)` — the scoring's scale prior, π clamped by the toolkit's one clamp), the ECM cycle's four
+# updates (`square_distances!`, `update_weights!`, `update_scale!`, `update_inlier_prior!`, in that order, called once
+# in `_mixture_ecm_cycle!`), the NLL (`mixture_nll(pws, r, n)`) and the κ² table
 # (`tabulate!(tab, StudentTMixture(pws))`) are all VisualGeometryToolkitCore's; nothing of the
 # mixture's math is restated here.
+
+# One ECM cycle of the mixture at fixed ν from the unsquared residuals `r[1:n]`: Core's four updates in order, each an
+# exact conditional maximisation (the mixture NLL never rises). The seed's first cycle and the nuisance block's.
+function _mixture_ecm_cycle!(pws::PosteriorWeightState, r::AbstractVector, n::Int)
+    square_distances!(sq_distances(pws), r, n)
+    update_weights!(pws, n)
+    update_scale!(pws, n)
+    update_inlier_prior!(pws, n)
+    return nothing
+end
 
 # The setup both mixture arms' dispatch shares: E's lift provider and a fresh ECM
 # state at the consensus set's (ν, ŝ², π), from the one posterior seeding
@@ -138,12 +149,12 @@ end
 # The seed both mixture arms' init shares: residuals at θ₀ and their mixture NLL
 # (the returned seed level), then the first ECM from those residuals and the κ²
 # table at its parameters — the table the first `update_model!` reads (the only
-# consequence of `block_coordinate_descent!`'s solve-before-scale ordering,
+# consequence of `BlockCoordinateDescent`'s solve-before-scale ordering,
 # absorbed here).
 function _seed_mixture!(prov, pws::PosteriorWeightState, tab::TabulatedLift, θ₀, n::Int)
     lift_refresh!(prov, θ₀)
     seed_nll = mixture_nll(pws, lift_residuals(prov), n)
-    mixture_ecm!(pws, lift_residuals(prov), n)
+    _mixture_ecm_cycle!(pws, lift_residuals(prov), n)
     tabulate!(tab, StudentTMixture(pws))
     return seed_nll
 end
@@ -251,13 +262,13 @@ end
 """
     StopWhenLeftBasin()
 
-`:left_basin` once the true objective at the current iterate exceeds the seed's
-(`state.cur_cost > state.seed_nll`): the step left the seed basin.
+`(Terminated, LeftBasin)` once the true objective at the current iterate exceeds the seed's
+(`state.cur_cost > state.seed_nll`): the step left the seed basin, and the arm returns its INCUMBENT (a success, the
+owner's rulings of 2026-11-11).
 """
 struct StopWhenLeftBasin <: StoppingCriterion end
 @inline stop_reason(::StopWhenLeftBasin, state, method, prob, θ, θ_old, iter) =
-    state.cur_cost > state.seed_nll ? :left_basin : :continue
-VgtkCore.stop_rule(::StopWhenLeftBasin, _method) = LeftBasin
+    state.cur_cost > state.seed_nll ? (ReturnCode.Terminated, LeftBasin) : CONTINUE
 @inline VgtkEstimation.iterations_without_improvement(state::LiftedMixtureState) = state.no_improve
 stopping_criterion(method::LiftedMixtureMethod) =
     StopWhenLeftBasin() | StopWhenNoImprovement(method.patience, 2) | StopWhenIncrementSmall()
@@ -265,7 +276,7 @@ current_cost(state::LiftedMixtureState) = state.cur_cost
 
 # RANSAC LO dispatch — EssentialProblem specialization (VisualGeometryToolkitCore's
 # contract refuses other problem types). Builds the seed partition's posterior
-# state for the data-driven scale ŝ² and ν, then runs `block_coordinate_descent!`.
+# state for the data-driven scale ŝ² and ν, then runs `BlockCoordinateDescent`.
 function locally_optimize!(
         L::LoBuffers, lo::StuTuHQTabulated, problem::EssentialProblem,
         model::EssentialMat, cs::ConsensusSet, buf::ScoreBuffers, scoring
@@ -275,7 +286,7 @@ function locally_optimize!(
     method = LiftedMixtureMethod(prov, n, lo.μ, lo.patience, tabulated_lift(lo.lut_points; γ = lo.γ), pws)
     state = _init_lifted_mixture(method, lift_init(prov, model))
     lh = LiftedMixtureLikelihood(state, method)
-    return block_coordinate_descent!(state, lh, method, problem, model; max_iter = lo.max_iter)
+    return solve(RefineProblem(problem, model, state), BlockCoordinateDescent(method; likelihood = lh); stops = StopAfterIteration(lo.max_iter))
 end
 
 # =============================================================================
@@ -338,7 +349,7 @@ struct LiftedReGeMMMethod{Prov} <: AbstractLiftMethod
     prov::Prov
     n::Int
     η::Float64
-    adapt_scale::Bool
+    scale_interface::Union{SelfScaling, ConsensusAnchored}   # SelfScaling: the ECM (ŝ², π) per round
     table::TabulatedLift
     pws::PosteriorWeightState       # the ECM state: ν (fixed), ŝ², π and E-step buffers
     w::Vector{Float64}              # the graduated weights (length n)
@@ -362,10 +373,10 @@ end
 const _MixtureLiftMethod = Union{LiftedMixtureMethod, LiftedReGeMMMethod}
 _lift_objective(_state, method::_MixtureLiftMethod, r) = mixture_nll(method.pws, r, method.n)
 _adapts_scale(::LiftedMixtureMethod) = true
-_adapts_scale(method::LiftedReGeMMMethod) = method.adapt_scale
+_adapts_scale(method::LiftedReGeMMMethod) = method.scale_interface isa SelfScaling
 function update_nuisance!(lh::Union{LiftedMixtureLikelihood, LiftedReGeMMLikelihood})
     m = lh.method
-    _adapts_scale(m) && mixture_ecm!(m.pws, lift_residuals(m.prov), m.n)
+    _adapts_scale(m) && _mixture_ecm_cycle!(m.pws, lift_residuals(m.prov), m.n)
     return nothing
 end
 update_weights!(lh::LiftedReGeMMLikelihood) = (tabulate!(lh.method.table, StudentTMixture(lh.method.pws)); nothing)
@@ -431,10 +442,10 @@ function locally_optimize!(
     prov, pws = _mixture_lift_setup(L, problem, model, cs, buf, scoring)
     n = lift_size(prov)
     method = LiftedReGeMMMethod(
-        prov, n, lo.η, lo.adapt_scale, tabulated_lift(lo.lut_points), pws,
+        prov, n, lo.η, lo.scale_interface, tabulated_lift(lo.lut_points), pws,
         task_buffers(Vector{Float64}, () -> Vector{Float64}(undef, n), (:lodr_regemm_scratch, n))
     )
     state = _init_lifted_regemm(method, lift_init(prov, model))
     lh = LiftedReGeMMLikelihood(state, method)
-    return block_coordinate_descent!(state, lh, method, problem, model; max_iter = lo.max_iter)
+    return solve(RefineProblem(problem, model, state), BlockCoordinateDescent(method; likelihood = lh); stops = StopAfterIteration(lo.max_iter))
 end

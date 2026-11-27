@@ -1,9 +1,12 @@
 # =============================================================================
-# The strategies on one essential-matrix scene, through the local-optimization
-# contract (`locally_optimize!`) directly: the HQ and GNC dispatch of
-# src/lift/lifts.jl, the posterior-weight IRLS arms and the score-matched BCD of
-# src/strategies/irls.jl, and the essential-matrix research lifts of
-# src/strategies/essential.jl.
+# The strategies on one essential-matrix scene, through the front end: one RANSAC
+# local optimization from a seed, `solve(RefineProblem(problem, seed),
+# LocalOptimization(strategy; scoring))` (VisualGeometryToolkitEstimation's), which
+# scores the seed, takes its consensus set and runs the strategy's
+# `locally_optimize!`: the HQ and GNC dispatch of src/lift/lifts.jl, the
+# posterior-weight IRLS arms and the score-matched BCD of src/strategies/irls.jl,
+# and the essential-matrix research lifts of src/strategies/essential.jl. The stop
+# contract of their criteria, and the BoundedProblem decorator, are test_lo_contract.jl (the contract test).
 #
 # The scene is VisualGeometryToolkitCore's synthetic two-view scene in pixels
 # (focal length 600 px, 500 × 500 px images): 150 matches with 0.5 px noise and
@@ -24,12 +27,12 @@ using Random: MersenneTwister, randn
 using StaticArrays: SA
 import VisualGeometryToolkitCore as VgtkCore
 using VisualGeometryToolkitCore: AbstractScoring, BarronShape, CameraModel, EssentialMat, GemanMcclureShape, LossWidth,
-    MsacScoring, Point2, Rect, EfficiencyConstant, TLSShape, WelschShape, codimension, consensus_set, correspondences, decision_boundary, decision_width,
-    deploy, exp_so3, locally_optimize!, loss_at, lo_width, mahalanobis_distances!, minimal_sample_size, px,
-    scale_s2, score_model!, sq_loss_width, ReturnCode, stop_rule, IncrementSize, LadderConverged, NoImprovement,
-    LeftBasin, IterationCap, NoRule
+    MsacScoring, Point2, EfficiencyConstant, TLSShape, WelschShape, codimension, consensus_set, correspondences, decision_boundary, decision_width,
+    deploy, exp_so3, loss_at, lo_width, mahalanobis_distances!, minimal_sample_size, px,
+    scale_s2, score_model!, sq_loss_width, ReturnCode, IncrementSize, LadderConverged, NoImprovement,
+    LeftBasin, IterationCap, RefineProblem, solve
 using VisualGeometryToolkitCore.Synthetic: projective_distance, sample_twoview_scene
-using VisualGeometryToolkitEstimation: BoundedProblem, EssentialProblem, RansacWorkspace
+using VisualGeometryToolkitEstimation: EssentialProblem, RansacWorkspace, LocalOptimization
 using VisualGeometryToolkitCore: Irls
 using LocalOptimizationDoneRight
 
@@ -46,6 +49,7 @@ VgtkCore.consensus_order(s::UniformOutlierScoring, W) = VgtkCore.consensus_order
 VgtkCore.decision_boundary(s::UniformOutlierScoring, buf) = VgtkCore.decision_boundary(s.inner, buf)
 VgtkCore.has_decision_boundary(::Type{UniformOutlierScoring{S}}) where {S} = VgtkCore.has_decision_boundary(S)
 VgtkCore.score_bound(s::UniformOutlierScoring) = VgtkCore.score_bound(s.inner)
+VgtkCore.weight_kind(::Type{UniformOutlierScoring{S}}) where {S} = VgtkCore.weight_kind(S)
 
 # The same scorer with a non-Jeffreys scale prior (its own `scale_prior`), for the test
 # that a mixture lift keeps the scoring's prior.
@@ -94,11 +98,8 @@ function scored_consensus(lo, problem, scoring, model)
     return ws, cs
 end
 
-# One local optimization from `model`: score it, take its consensus set, refine.
-function run_lo(lo, problem, scoring, model)
-    ws, cs = scored_consensus(lo, problem, scoring, model)
-    return locally_optimize!(ws.lo_ws, lo, problem, model, cs, ws.buf, scoring)
-end
+# One local optimization from `model` through the front end: it scores the seed, takes its consensus set and refines.
+run_lo(lo, problem, scoring, model) = solve(RefineProblem(problem, model), LocalOptimization(lo; scoring))
 
 @testset "the scene" begin
     @test inlier_rms(E_true) < 0.4
@@ -158,32 +159,9 @@ end
     @test pws.prior == VgtkCore.JeffreysPrior()          # a scorer without a prior: Jeffreys, as before
 end
 
-# The §14 record: Core's loop hands `block_coordinate_result` the `stop_rule(criterion, method)` of the criterion that
-# FIRED (a composite's member, in Core's order); each criterion of this package states its rule (Estimation's
-# no-improvement stop its own). Leaving the basin is Terminated (a success: the incumbent).
+# The §14 record of the arms on the scene: the record of the criterion that fired (test_lo_contract.jl), which the
+# front end's result carries for a kept refit.
 @testset "termination record" begin
-    LO = LocalOptimizationDoneRight
-    @test stop_rule(LO.StopWhenIncrementSmall(), nothing) === IncrementSize
-    @test stop_rule(LO.StopWhenLadderConverged(), nothing) === LadderConverged
-    @test stop_rule(LO.StopWhenLeftBasin(), nothing) === LeftBasin
-    @test LO.lo_termination(:left_basin, LeftBasin) === (ReturnCode.Terminated, LeftBasin)
-    @test LO.lo_termination(:max_iterations, IterationCap) === (ReturnCode.MaxIters, IterationCap)
-    @test LO.lo_termination(:converged, LadderConverged) === (ReturnCode.Success, LadderConverged)
-    @test_throws ArgumentError LO.lo_termination(:no_such_reason, NoRule)
-    # LODR#2 (wave-10 catch-up): the rule is the one Core hands over, never re-derived from the final state. Fail-first: 0.6
-    # re-ran each composite member's `stop_reason` at the final state (θ as θ_old) to guess the member that fired, so a
-    # member whose verdict had changed since (impure, or reading state the last iteration moved) was named instead.
-    # Here the state says "improved" — re-evaluating the no-improvement stop answers :continue, the old guess NoRule —
-    # while the loop reports that stop fired.
-    ws, cs = scored_consensus(StuTuBCD(), problem, msac, seed)
-    m = LO.ScoreBcdMethod(msac, ws.lo_ws, ws.buf, 0.0)
-    @test stop_rule(LO.StopWhenNoImprovement(1, 1), m) === NoImprovement
-    st = LO.ScoreBcdState(VgtkCore.Attributed(seed, (; cost = -1.0)), -1.0, true)
-    for (reason, rule, rc) in ((:converged, NoImprovement, ReturnCode.Success), (:max_iterations, IterationCap, ReturnCode.MaxIters))
-        r = VgtkCore.block_coordinate_result(st, m, problem, seed, reason, 4, rule)
-        @test (r.retcode, r.stop_rule) === (rc, rule)
-    end
-    # the arms on the scene
     r = run_lo(HQ{WelschShape}(efficiency_constant = 1.5), problem, msac, seed)
     @test r.stop_rule in (IncrementSize, IterationCap)
     r = run_lo(Gnc{Irls{TLSShape}}(efficiency_constant = 2.5), problem, msac, seed)
@@ -202,11 +180,6 @@ end
     # at √2 times its efficiency constant.
     @test projective_distance(run_lo(BarronHQ(-1.0e12; efficiency_constant = 1.5 / sqrt(2.0)), problem, msac, seed).u,
                               welsch.u) < 1.0e-9
-    # A BoundedProblem is a validation decorator: the lift refines its inner problem.
-    bounded = BoundedProblem(problem, Rect(0.0, 0.0, 500.0, 500.0))
-    @test run_lo(hq, bounded, msac, seed).u == welsch.u
-    gnc = Gnc{Irls{TLSShape}}(efficiency_constant = 2.5)
-    @test run_lo(gnc, bounded, msac, seed).u == run_lo(gnc, problem, msac, seed).u
     # The crossover sentinel (a non-positive multiple) is retired.
     @test_throws ArgumentError run_lo(GmHqEps(efficiency_constant = -1.0), problem, msac, seed)
 end

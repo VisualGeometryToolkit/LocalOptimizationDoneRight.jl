@@ -44,15 +44,15 @@ using VisualGeometryToolkitCore: VisualGeometryToolkitCore, AbstractOptimization
     gnc_surrogate, gnc_weight, gnc_entry_mu0, gnc_mu_cap, band_signal, NoSurrogate, MuScaled,
     BandAnnealed, GaussianShape, WelschShape, GemanMcclureShape, SmoothTLSShape,
     BarronShape, ConsensusSet, consensus_score, is_predictive, ScoreBuffers, EfficiencyConstant, TagRegistry, tag_of,
-    SelfScaling, ConsensusAnchored, scale_s2, inlier_count,
+    SelfScaling, ConsensusAnchored, SCALE_INTERFACE_TAGS, scale_s2, inlier_count,
     outlier_halfwidth, score_model!, loss_at, width_scale_interface, lo_estimate, Attributed,
     keep_best, StoppingCriterion, PosteriorWeightState, reset_posterior!, StudentTMixture, posterior_weight,
-    posterior_weight_derivative, mixture_ecm!, mixture_nll, s_hat_sq,
-    sq_distances, robust_weight, FrozenNuisance, truncated_log_normaliser, data_size,
+    posterior_weight_derivative, mixture_nll, s_hat_sq, square_distances!, update_scale!, update_inlier_prior!,
+    sq_distances, robust_weight, truncated_log_normalizer, data_size,
     refine!, JeffreysPrior, SquaredScale, ScaleMAP, EstimationProblem, solve, AbstractEstimationAlgorithm, RefineKind, weighted_sq, ReturnCode,
-    IncrementSize, LadderConverged, LeftBasin, retcode_from_symbol, toml_default, parse_defaults, ConfigVersions, ConfigMigration, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
+    IncrementSize, LadderConverged, LeftBasin, toml_default, parse_defaults, ConfigVersions, ConfigMigration, RowsWorkspace, task_buffers, rows_provider, lift_init, lift_refresh!, lift_jacobian!,
     lift_retract, lift_model, lift_valid, lift_rows, lift_residuals, lift_size,
-    block_coordinate_descent!, path_suffix, optimization_path, EssentialMat,
+    BlockCoordinateDescent, StopAfterIteration, CONTINUE, path_suffix, optimization_path, OptimizationPath, EssentialMat,
     BackendRefit, LevenbergMarquardt, PoseLibSolver, LmStops, FitResult, SolveStats, NullParameters, RefineProblem,
     FixedS2, LossWidth, OutlierHalfwidth, TLSShape, EuclideanMap, Vec3, cheiral_pose_fast, deploy, loss_width,
     loss_width_to_outlier_halfwidth, codimension, mahalanobis_distances!, with_width, init, solve!, reinit!
@@ -73,7 +73,6 @@ include("lift/schedules.jl")           # LoSchedule, MuLadder, GeometricAnneal, 
 include("lift/lift_core.jl")           # the lift θ/z-blocks, LiftState, TabulatedLift
 include("strategies/types.jl")         # the strategies, their identity and registry (LODR_STRATEGY_TAGS)
 include("lift/lifts.jl")               # ManifoldLiftHQ / ManifoldLiftGnc and the HQ/GNC locally_optimize!
-include("lift/termination.jl")         # the §14 record: lo_termination (the rule is Core's stop_rule of the criterion that fired)
 include("strategies/irls.jl")          # StudentTUniform, BarronAdaptive, StuTuBCD
 include("strategies/essential.jl")     # the essential-matrix research lifts
 include("tuning_constants.jl")         # [[tuning_constants]] → tuning_constant

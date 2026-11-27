@@ -9,10 +9,11 @@
 # precompile (`include_dependency`): an edit forces a recompile. The file is read
 # through the package's versioned converter (`LODR_CONFIG_VERSIONS`): version 1
 # named the adaptive refit's tables `[optimization_strategy.poselib_adapt]` and
-# `[optimization_strategy.poselib]`.
+# `[optimization_strategy.poselib]`; version 2 stated StuTuRegemm's scale policy as
+# the Bool `adapt_scale`.
 # =============================================================================
 
-config_version = 2
+config_version = 3
 
 [adaptive_loss_width_refit]
 rounds = 5           # scale re-estimation rounds of AdaptiveLossWidthRefit (max_iter ÷ rounds LM iterations each)
@@ -88,7 +89,7 @@ patience   = 5
 max_iter    = 100
 eta         = 0.5
 lut_points  = 128
-adapt_scale = true
+scale_interface = "self_scaling"   # "self_scaling" (ECM per round) | "consensus_anchored" (frozen at the seed partition)
 
 [optimization_strategy.barron_adaptive]
 max_iter   = 25

@@ -1,3 +1,4 @@
+# R22: contract test — a bracket microbenchmark of the external-refit contract (`external_workspace`, `external_refit!`): the refit layer's `lo_ns`
 # =============================================================================
 # lo_timing/bench.jl — the LO timing benchmark this package's timing gate runs
 # (test/test_lo_timing_gate.jl). A standalone script, run in its own
@@ -37,7 +38,7 @@
 # `external_refit!(ws, lo, problem, seed, LossWidth(w), scoring)` per call —
 # the E seed's cheirality plus PoseLib's camera-aware pose refine
 # (`RefineProblem(cs, pose, (; K1, K2))` under `LevenbergMarquardt(PoseLibSolver(); …)`),
-# the bracket Table 1 reports (the refit layer's `lo_ns`); the pose → essential conversion is
+# the bracket Table 1 reports (the refit layer's `lo_ns`); the pose → essential conversion and the record (a FitResult) are
 # inside it now (negligible). The arms read no scoring (they are handed `nothing`).
 # A "call" is one `external_refit!`. `import PoseLib` loads PoseLib's backend
 # (and its Estimation extension, which holds the E route of a BackendRefit).

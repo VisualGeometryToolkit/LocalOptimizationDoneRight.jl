@@ -29,6 +29,29 @@ changes (the suite's expected values are unchanged).
   PoseLib extension still called). An E-only use on another problem is an `ArgumentError` (was an `ErrorException`).
 - **No PoseLib extension, no PoseLib weak dependency**: the package composes PoseLib's backend through Core's
   `solve` only; `import PoseLib` makes the refines run.
+- **On VisualGeometryToolkitCore 0.14's breaking set** (R22, C8, C9, C11, G-r, Q10; audit rows L10, L11, L14, L15):
+  - every block-coordinate run is the front end, `solve(RefineProblem(problem, θ₀, state), BlockCoordinateDescent(method;
+    likelihood); stops = StopAfterIteration(max_iter))` (the retired `block_coordinate_descent!`, R22);
+  - the stop contract records the enums: each criterion's `stop_reason` returns `(ReturnCode.T, StopRule)` or Core's
+    `CONTINUE` — `StopWhenIncrementSmall` `(Success, IncrementSize)`, `StopWhenLadderConverged` `(Success,
+    LadderConverged)`, `StopWhenLeftBasin` `(Terminated, LeftBasin)` — and `block_coordinate_result` reads that record;
+    `lo_termination` (its Symbol map through the retired `retcode_from_symbol`) and the `stop_rule` methods are deleted;
+  - the mixture's ECM cycle is Core's four updates in order (`square_distances!`, `update_weights!`, `update_scale!`,
+    `update_inlier_prior!`; the retired `mixture_ecm!`), stated once;
+  - `optimization_path` is Core's `OptimizationPath` enum (`OptimizationPath.hq`, …), not a Symbol;
+  - `BackendRefit(AdaptiveLossWidthRefit(), stops)`'s `external_refit!` returns the refine's `FitResult` (its `u` the
+    refined `EssentialMat`, the refine's record, iterations and metadata), Core's external-refit contract; a caller
+    reads `.u`;
+  - `StuTuRegemm`'s `adapt_scale::Bool` is the field `scale_interface::Union{SelfScaling, ConsensusAnchored}` (default
+    `SelfScaling()`), stored by its tag `scale_interface = "self_scaling" | "consensus_anchored"` (Core's
+    `SCALE_INTERFACE_TAGS`); `adapt_scale` is refused as a keyword. `configs/default.toml` is `config_version = 3`: the
+    version 2 → 3 step of `LODR_CONFIG_VERSIONS` converts a stored `adapt_scale` (Core's `ConfigMigration` `values`),
+    and a current file that still holds it is refused naming its version;
+  - the strategy tests run through `solve(RefineProblem(problem, seed), LocalOptimization(strategy; scoring))`; the
+    stop contract and the external-refit contract keep their contract tests (`test/test_lo_contract.jl`,
+    `test/test_external_refits.jl`) and the LO timing bench is stated as the external-refit contract's bracket
+    microbenchmark.
+  Bit-identical (the external refits `===` on the recorded call set and seeded H/F scenes).
 - **Versioned configuration** (decision 11): `configs/default.toml` states `config_version = 2`, read through the new
   converter `LODR_CONFIG_VERSIONS` (`public`). Version 1's `[optimization_strategy.poselib_adapt]` is
   `[adaptive_loss_width_refit]` (its `max_iter` in `[adaptive_loss_width_refit.stops]`) and

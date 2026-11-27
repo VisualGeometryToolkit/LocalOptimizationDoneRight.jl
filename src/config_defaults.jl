@@ -13,21 +13,32 @@
 "The defaults of record (configs/default.toml)."
 const DEFAULTS_PATH = normpath(joinpath(@__DIR__, "..", "configs", "default.toml"))
 
+# Version 2 → 3: StuTuRegemm's `adapt_scale::Bool` becomes its `scale_interface` tag (Core's `ConfigMigration`
+# `values` step, the one owner of a value that changes form). A non-Bool is refused naming the key.
+_scale_interface_of_adapt_scale(v::Bool) =
+    "optimization_strategy.stu_tu_regemm.scale_interface" => (v ? "self_scaling" : "consensus_anchored")
+_scale_interface_of_adapt_scale(v) = throw(ArgumentError(
+    "[optimization_strategy.stu_tu_regemm] adapt_scale (configuration version 2) is a Bool, got $(repr(v))"))
+
 """
     LODR_CONFIG_VERSIONS
 
 LocalOptimizationDoneRight's configuration converter (VisualGeometryToolkitCore's `ConfigVersions`):
-`configs/default.toml` is version 2. Version 1 (0.7 and earlier, no `config_version` key) held the adaptive refit's
-defaults under the deleted PoseLib arms' names; its one migration moves `[optimization_strategy.poselib_adapt]` to
+`configs/default.toml` is version 3. Version 1 (0.7 and earlier, no `config_version` key) held the adaptive refit's
+defaults under the deleted PoseLib arms' names; its migration moves `[optimization_strategy.poselib_adapt]` to
 `[adaptive_loss_width_refit]` (its `max_iter`, the total LM budget, to `[adaptive_loss_width_refit.stops]`) and
-`[optimization_strategy.poselib] cheirality_vote_points` to `[adaptive_loss_width_refit]`. Read a stored file at the
+`[optimization_strategy.poselib] cheirality_vote_points` to `[adaptive_loss_width_refit]`. Version 2 stated
+[`StuTuRegemm`](@ref)'s scale policy as the Bool `adapt_scale`; its migration converts the value to the
+`scale_interface` tag (`true` → `"self_scaling"`, `false` → `"consensus_anchored"`). Read a stored file at the
 current version with `VisualGeometryToolkitCore.migrate_config(stored, LODR_CONFIG_VERSIONS)`, `stored` the parsed file.
 """
 const LODR_CONFIG_VERSIONS = ConfigVersions("LocalOptimizationDoneRight",
     ConfigMigration(; tables = ["optimization_strategy", "tuning_constants"],
         renames = ["optimization_strategy.poselib_adapt" => "adaptive_loss_width_refit",
                    "adaptive_loss_width_refit.max_iter" => "adaptive_loss_width_refit.stops.max_iter",
-                   "optimization_strategy.poselib.cheirality_vote_points" => "adaptive_loss_width_refit.cheirality_vote_points"]);
+                   "optimization_strategy.poselib.cheirality_vote_points" => "adaptive_loss_width_refit.cheirality_vote_points"]),
+    ConfigMigration(; tables = ["optimization_strategy", "tuning_constants", "adaptive_loss_width_refit"],
+        values = ["optimization_strategy.stu_tu_regemm.adapt_scale" => _scale_interface_of_adapt_scale]);
     tables = ["optimization_strategy", "tuning_constants", "adaptive_loss_width_refit"])
 
 const _DEFAULTS_OF_RECORD = parse_defaults(DEFAULTS_PATH; versions = LODR_CONFIG_VERSIONS)

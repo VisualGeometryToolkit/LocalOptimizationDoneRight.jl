@@ -41,13 +41,12 @@ const _LIFT_INCREMENT_TOL = 1.0e-10
 """
     StopWhenIncrementSmall()
 
-`:converged` once the last tangent increment's norm is below the lift's floor
+`(Success, IncrementSize)` once the last tangent increment's norm is below the lift's floor
 (`_increment_stalled`, `_LIFT_INCREMENT_TOL`).
 """
 struct StopWhenIncrementSmall <: StoppingCriterion end
 @inline stop_reason(::StopWhenIncrementSmall, state, method, prob, θ, θ_old, iter) =
-    _increment_stalled(state) ? :converged : :continue
-VgtkCore.stop_rule(::StopWhenIncrementSmall, _method) = IncrementSize
+    _increment_stalled(state) ? (ReturnCode.Success, IncrementSize) : CONTINUE
 
 post_iteration!(state, ::AbstractLiftMethod, prob, θ, iter) = (_track_incumbent!(state); nothing)
 
@@ -61,8 +60,8 @@ function update_residuals!(state, method::AbstractLiftMethod, prob, θ)
     return nothing
 end
 
-block_coordinate_result(state, method::AbstractLiftMethod, prob, θ, stop_reason, final_iter, rule) =
-    lo_estimate(lift_model(method.prov, state.best.value), lo_termination(stop_reason, rule)...; iterations = final_iter)
+block_coordinate_result(state, method::AbstractLiftMethod, prob, θ, code::ReturnCode.T, final_iter, rule) =
+    lo_estimate(lift_model(method.prov, state.best.value), code, rule; iterations = final_iter)
 
 
 # =============================================================================
@@ -122,7 +121,7 @@ end
 # `_lift_loss` names what the z-block reads (the deployed loss THIS iterate
 # runs at, or the mixture's κ² table), `_lift_zblock` the joint system. Reads the
 # residuals at the current iterate (filled by the prior refresh); returns the
-# new model, or `nothing` on a singular/non-finite solve (:solve_failed).
+# new model, or `nothing` on a singular/non-finite solve (the loop's `(Failure, NonFinite)` exit).
 function update_model!(state, method::JointLiftMethod, prob, θ)
     prov = method.prov; n = method.n
     loss = _lift_loss(state, method); zblock = _lift_zblock(method)
@@ -161,7 +160,7 @@ function _manifold_hq!(
     prov = rows_provider(problem)
     method = ManifoldLiftHQ(prov, lift_size(prov), loss, μ, zblock)
     state = _init_manifold_hq(method, lift_init(prov, model), init)
-    return block_coordinate_descent!(state, FrozenNuisance(), method, problem, model; max_iter)
+    return solve(RefineProblem(problem, model, state), BlockCoordinateDescent(method); stops = StopAfterIteration(max_iter))
 end
 
 # The fixed-shape arms (BarronHQ, GmHqEps and, on the essential matrix,
@@ -211,7 +210,7 @@ locally_optimize!(
 # =============================================================================
 #
 # Plain surrogate-weighted Gauss–Newton — no z block — driven by the SAME
-# `block_coordinate_descent!` loop. Per-iteration weights are the GNC surrogate at the
+# `BlockCoordinateDescent` loop. Per-iteration weights are the GNC surrogate at the
 # current rung (`gnc_weight` on x = rᵢ² in the provider's residual currency;
 # codim 2: one weight per correspondence scaling both rows), the μ-ladder is
 # VGC `MuLadder`, the target loss width is frozen at c̄² = efficiency_constant²·ŝ² from the seed
@@ -277,13 +276,12 @@ end
 """
     StopWhenLadderConverged()
 
-`:converged` once an iteration stalled on the terminal rung of the GNC μ-ladder
+`(Success, LadderConverged)` once an iteration stalled on the terminal rung of the GNC μ-ladder
 (the verdict `post_iteration!` stores in `state.converged`).
 """
 struct StopWhenLadderConverged <: StoppingCriterion end
 @inline stop_reason(::StopWhenLadderConverged, state, method, prob, θ, θ_old, iter) =
-    state.converged ? :converged : :continue
-VgtkCore.stop_rule(::StopWhenLadderConverged, _method) = LadderConverged
+    state.converged ? (ReturnCode.Success, LadderConverged) : CONTINUE
 stopping_criterion(::ManifoldLiftGnc) = StopWhenLadderConverged()
 current_cost(state::ManifoldLiftGncState) = state.cur_cost
 
@@ -313,5 +311,5 @@ function locally_optimize!(
     st = schedule_init(sched, μ0, lo.max_iter)
     cost0 = lift_cost(loss, res, n)
     state = reused_state(ManifoldLiftGncState{typeof(θ₀)}, (θ₀, cost0, Attributed(θ₀, (; cost = Float64(cost0))), Inf, st, 0, false))
-    return block_coordinate_descent!(state, FrozenNuisance(), method, problem, model; max_iter = lo.max_iter)
+    return solve(RefineProblem(problem, model, state), BlockCoordinateDescent(method); stops = StopAfterIteration(lo.max_iter))
 end

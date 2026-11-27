@@ -38,6 +38,8 @@ VgtkCore.lo_field_from_toml(::Type{<:HQ}, ::Val{:init}, v::AbstractString) = LIF
 VgtkCore.toml_field(lo::HQ, ::Val{:init}) = tag_of(LIFT_START_TAGS, lo.init)
 VgtkCore.lo_field_from_toml(::Type{<:Gnc}, ::Val{:budget}, v::AbstractString) = GNC_BUDGET_TAGS[v]()
 VgtkCore.toml_field(lo::Gnc, ::Val{:budget}) = tag_of(GNC_BUDGET_TAGS, lo.budget)
+VgtkCore.lo_field_from_toml(::Type{StuTuRegemm}, ::Val{:scale_interface}, v::AbstractString) = SCALE_INTERFACE_TAGS[v]()
+VgtkCore.toml_field(lo::StuTuRegemm, ::Val{:scale_interface}) = tag_of(SCALE_INTERFACE_TAGS, lo.scale_interface)
 
 # Gnc{S} wraps the inner static strategy `inner` (+ `loss`): concrete at
 # `Gnc{Irls{loss}}`. (HQ{K}, a plain strategy: Estimation's default.)
